@@ -1,0 +1,2888 @@
+import 'package:flutter/material.dart';
+
+import '../domain/alagagi_controller.dart';
+
+const inviteNicknameFieldKey = Key('invite-nickname-field');
+const answerFieldKey = Key('answer-field');
+
+class AlagagiApp extends StatelessWidget {
+  const AlagagiApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: '알아가기',
+      theme: ThemeData(
+        useMaterial3: true,
+        scaffoldBackgroundColor: AlagagiColors.outerBackground,
+        fontFamily: 'Apple SD Gothic Neo',
+        fontFamilyFallback: alagagiSansFonts,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AlagagiColors.sageDeep,
+          brightness: Brightness.light,
+        ),
+        textTheme: ThemeData.light().textTheme.apply(
+          bodyColor: AlagagiColors.ink,
+          displayColor: AlagagiColors.ink,
+        ),
+      ),
+      home: const AlagagiRoot(),
+    );
+  }
+}
+
+class AlagagiRoot extends StatefulWidget {
+  const AlagagiRoot({super.key, this.controller});
+
+  final AlagagiController? controller;
+
+  @override
+  State<AlagagiRoot> createState() => _AlagagiRootState();
+}
+
+class _AlagagiRootState extends State<AlagagiRoot> {
+  late final AlagagiController _controller;
+  late final bool _ownsController;
+
+  @override
+  void initState() {
+    super.initState();
+    _ownsController = widget.controller == null;
+    _controller = widget.controller ?? AlagagiController();
+  }
+
+  @override
+  void dispose() {
+    if (_ownsController) {
+      _controller.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        return _PhoneShell(child: _buildRoute());
+      },
+    );
+  }
+
+  Widget _buildRoute() {
+    return switch (_controller.state.route) {
+      AlagagiRoute.invite => InviteScreen(controller: _controller),
+      AlagagiRoute.home => HomeScreen(controller: _controller),
+      AlagagiRoute.answer => AnswerScreen(controller: _controller),
+      AlagagiRoute.archive => ArchiveScreen(controller: _controller),
+      AlagagiRoute.records => RecordsScreen(controller: _controller),
+      AlagagiRoute.balance => BalanceScreen(controller: _controller),
+      AlagagiRoute.profileCard => ProfileCardScreen(controller: _controller),
+      AlagagiRoute.wishlist => WishlistScreen(controller: _controller),
+      AlagagiRoute.my => MyScreen(controller: _controller),
+    };
+  }
+}
+
+class AlagagiColors {
+  static const outerBackground = Color(0xFFE9E8E2);
+  static const appBackground = Color(0xFFF4F3EF);
+  static const paper = Color(0xFFFCFCFA);
+  static const ink = Color(0xFF2E2E2C);
+  static const muted = Color(0xFF9A9890);
+  static const sage = Color(0xFF8A9A7E);
+  static const sageDeep = Color(0xFF6F7F63);
+  static const lavender = Color(0xFFB9A8C9);
+  static const line = Color(0xFFE8E6DF);
+  static const softSage = Color(0xFFDFE6D4);
+  static const sagePanel = Color(0xFFCDD6C2);
+}
+
+const alagagiSansFonts = [
+  'Apple SD Gothic Neo',
+  'Noto Sans CJK KR',
+  'Noto Sans KR',
+  'Malgun Gothic',
+  'Arial Unicode MS',
+  'Apple Color Emoji',
+];
+
+const alagagiSerifFonts = [
+  'Nanum Myeongjo',
+  'AppleMyungjo',
+  'Noto Serif CJK KR',
+  'Noto Serif KR',
+  'Apple SD Gothic Neo',
+  'Noto Sans CJK KR',
+  'Apple Color Emoji',
+];
+
+TextStyle serif(
+  BuildContext context, {
+  double? size,
+  FontWeight? weight,
+  Color? color,
+  double? height,
+}) {
+  return TextStyle(
+    fontFamily: 'Nanum Myeongjo',
+    fontFamilyFallback: alagagiSerifFonts,
+    fontSize: size,
+    fontWeight: weight,
+    color: color ?? AlagagiColors.ink,
+    height: height,
+    letterSpacing: 0,
+  );
+}
+
+TextStyle sans({
+  double? size,
+  FontWeight? weight,
+  Color? color,
+  double? height,
+  double? letterSpacing,
+}) {
+  return TextStyle(
+    fontFamily: 'Apple SD Gothic Neo',
+    fontFamilyFallback: alagagiSansFonts,
+    fontSize: size,
+    fontWeight: weight,
+    color: color ?? AlagagiColors.ink,
+    height: height,
+    letterSpacing: letterSpacing ?? 0,
+  );
+}
+
+class _PhoneShell extends StatelessWidget {
+  const _PhoneShell({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final mediaSize = MediaQuery.sizeOf(context);
+    final shellWidth = mediaSize.width < 390 ? mediaSize.width : 390.0;
+    final availableHeight = mediaSize.height - 48;
+    final shellHeight = availableHeight.clamp(520.0, 840.0);
+
+    return Scaffold(
+      body: Center(
+        child: Container(
+          width: shellWidth,
+          height: shellHeight,
+          constraints: const BoxConstraints(maxWidth: 390),
+          margin: const EdgeInsets.symmetric(vertical: 24),
+          decoration: BoxDecoration(
+            color: AlagagiColors.appBackground,
+            borderRadius: BorderRadius.circular(40),
+            border: Border.all(color: Colors.white, width: 8),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x2E3C3C32),
+                blurRadius: 70,
+                offset: Offset(0, 30),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusBar extends StatelessWidget {
+  const _StatusBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(28, 16, 28, 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text('9:41', style: sans(size: 13, color: AlagagiColors.muted)),
+          Text('● ● ●  🔋', style: sans(size: 13, color: AlagagiColors.muted)),
+        ],
+      ),
+    );
+  }
+}
+
+class _ScreenScroll extends StatelessWidget {
+  const _ScreenScroll({
+    required this.children,
+    this.bottomNavigation,
+    this.padding = const EdgeInsets.fromLTRB(28, 14, 28, 112),
+  });
+
+  final List<Widget> children;
+  final Widget? bottomNavigation;
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              const _StatusBar(),
+              Padding(
+                padding: padding,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: children,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (bottomNavigation != null)
+          Positioned(left: 0, right: 0, bottom: 0, child: bottomNavigation!),
+      ],
+    );
+  }
+}
+
+class InviteScreen extends StatefulWidget {
+  const InviteScreen({super.key, required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  State<InviteScreen> createState() => _InviteScreenState();
+}
+
+class _InviteScreenState extends State<InviteScreen> {
+  final TextEditingController _nicknameController = TextEditingController(
+    text: '민영',
+  );
+
+  @override
+  void dispose() {
+    _nicknameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        const _StatusBar(),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(34, 44, 34, 34),
+          child: Column(
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [AlagagiColors.softSage, AlagagiColors.sagePanel],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x47788C64),
+                      blurRadius: 26,
+                      offset: Offset(0, 12),
+                    ),
+                  ],
+                ),
+                alignment: Alignment.center,
+                child: const Text('✉️', style: TextStyle(fontSize: 34)),
+              ),
+              const SizedBox(height: 26),
+              Text(
+                'A L A G A G I',
+                style: sans(
+                  size: 11,
+                  color: AlagagiColors.sageDeep,
+                  letterSpacing: 4,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                '우리, 천천히\n알아가 볼래요?',
+                textAlign: TextAlign.center,
+                style: serif(
+                  context,
+                  size: 27,
+                  weight: FontWeight.w800,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '영우',
+                      style: serif(
+                        context,
+                        size: 14,
+                        weight: FontWeight.w700,
+                        color: AlagagiColors.sageDeep,
+                      ),
+                    ),
+                    const TextSpan(text: '님이 당신을 초대했어요.\n'),
+                    const TextSpan(
+                      text: '하루에 질문 하나, 서로의 이야기를 나누는\n작고 조용한 공간이에요.',
+                    ),
+                  ],
+                ),
+                textAlign: TextAlign.center,
+                style: sans(
+                  size: 14,
+                  color: const Color(0xFF5A5A54),
+                  height: 1.7,
+                ),
+              ),
+              const SizedBox(height: 26),
+              const _InviteNotes(),
+              const SizedBox(height: 28),
+              _NicknameField(
+                controller: _nicknameController,
+                errorText: widget.controller.state.inviteError,
+              ),
+              const SizedBox(height: 12),
+              _PrimaryButton(
+                label: '우리 공간으로 들어가기',
+                onPressed: () =>
+                    widget.controller.enterSpace(_nicknameController.text),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                '가입 절차 없이 바로 시작해요 · 언제든 그만둘 수 있어요',
+                textAlign: TextAlign.center,
+                style: sans(size: 11, color: AlagagiColors.muted, height: 1.6),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InviteNotes extends StatelessWidget {
+  const _InviteNotes();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AlagagiColors.paper,
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      child: const Column(
+        children: [
+          _NoteRow(
+            icon: '☀️',
+            title: '하루에 딱 하나',
+            body: '부담 없이, 답하고 싶을 때만 답해요.',
+          ),
+          _NoteDivider(),
+          _NoteRow(icon: '🔒', title: '둘만의 공간', body: '오직 두 사람만 볼 수 있어요.'),
+          _NoteDivider(),
+          _NoteRow(
+            icon: '🌿',
+            title: '천천히 가까워지기',
+            body: '매일 한 걸음씩, 서두르지 않아도 돼요.',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NoteDivider extends StatelessWidget {
+  const _NoteDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 13),
+      child: Divider(height: 1, color: AlagagiColors.line),
+    );
+  }
+}
+
+class _NoteRow extends StatelessWidget {
+  const _NoteRow({required this.icon, required this.title, required this.body});
+
+  final String icon;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 26,
+          height: 26,
+          decoration: BoxDecoration(
+            color: const Color(0xFFEEF1E8),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          alignment: Alignment.center,
+          child: Text(icon, style: const TextStyle(fontSize: 14)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '$title\n',
+                  style: sans(size: 13, weight: FontWeight.w500),
+                ),
+                TextSpan(text: body),
+              ],
+            ),
+            style: sans(size: 13, color: const Color(0xFF55554F), height: 1.5),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NicknameField extends StatelessWidget {
+  const _NicknameField({required this.controller, required this.errorText});
+
+  final TextEditingController controller;
+  final String? errorText;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: AlagagiColors.line),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Text('나는', style: sans(size: 13, color: AlagagiColors.muted)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  key: inviteNicknameFieldKey,
+                  controller: controller,
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: '불러줬으면 하는 이름',
+                  ),
+                  style: sans(size: 14),
+                ),
+              ),
+              Text('이에요', style: sans(size: 13, color: AlagagiColors.muted)),
+            ],
+          ),
+        ),
+        if (errorText != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            errorText!,
+            style: sans(size: 12, color: AlagagiColors.sageDeep),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key, required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return _ScreenScroll(
+      bottomNavigation: _BottomNav(controller: controller),
+      children: [
+        _HomeHeader(controller: controller),
+        const SizedBox(height: 18),
+        _ProgressStrip(controller: controller),
+        const SizedBox(height: 22),
+        const _SectionLabel('오늘의 질문'),
+        const SizedBox(height: 12),
+        _QuestionCard(controller: controller),
+        const SizedBox(height: 22),
+        const _SectionLabel('우리의 기록'),
+        const SizedBox(height: 12),
+        _InsightGrid(controller: controller),
+        const SizedBox(height: 24),
+        const _SectionLabel('천천히 알아가는 장치들'),
+        const SizedBox(height: 12),
+        _PlusGrid(controller: controller),
+      ],
+    );
+  }
+}
+
+class _HomeHeader extends StatelessWidget {
+  const _HomeHeader({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text.rich(
+          TextSpan(
+            children: [
+              const TextSpan(text: '알아'),
+              TextSpan(
+                text: '가기',
+                style: serif(
+                  context,
+                  color: AlagagiColors.sageDeep,
+                  weight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          style: serif(context, size: 23, weight: FontWeight.w800),
+        ),
+        _CircleButton(
+          label: '🔔',
+          onTap: () => controller.goTo(AlagagiRoute.my),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProgressStrip extends StatelessWidget {
+  const _ProgressStrip({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AlagagiColors.ink,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'DAY 12 · 서로의 12번째 질문',
+                  style: sans(
+                    size: 11,
+                    color: const Color(0xFFB8B6AD),
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '오늘도 한 걸음 가까워졌어요',
+                  style: serif(
+                    context,
+                    size: 16,
+                    weight: FontWeight.w700,
+                    color: AlagagiColors.appBackground,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _AvatarStack(
+            me: controller.state.me,
+            partner: controller.state.partner,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AvatarStack extends StatelessWidget {
+  const _AvatarStack({required this.me, required this.partner});
+
+  final AppProfile me;
+  final AppProfile partner;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 60,
+      height: 36,
+      child: Stack(
+        children: [
+          Positioned(
+            left: 0,
+            child: _SmallAvatar(profile: me, color: AlagagiColors.sagePanel),
+          ),
+          Positioned(
+            left: 26,
+            child: _SmallAvatar(
+              profile: partner,
+              color: const Color(0xFFD8CCE2),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SmallAvatar extends StatelessWidget {
+  const _SmallAvatar({required this.profile, required this.color});
+
+  final AppProfile profile;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+        border: Border.all(color: AlagagiColors.ink, width: 2),
+      ),
+      alignment: Alignment.center,
+      child: Text(profile.avatar, style: const TextStyle(fontSize: 15)),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: sans(size: 11, color: AlagagiColors.muted, letterSpacing: 3),
+    );
+  }
+}
+
+class _QuestionCard extends StatelessWidget {
+  const _QuestionCard({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final question = controller.todayQuestion;
+    final myAnswer = controller.todayMyAnswer;
+    final partnerAnswer = controller.todayPartnerAnswer;
+    final isSkipped = myAnswer?.skipped ?? false;
+
+    return _PaperCard(
+      radius: 22,
+      padding: const EdgeInsets.all(26),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Align(
+            alignment: Alignment.topRight,
+            child: Text(
+              '${question.number}',
+              style: serif(
+                context,
+                size: 54,
+                weight: FontWeight.w800,
+                color: const Color(0xFFECEAE2),
+              ),
+            ),
+          ),
+          Text(
+            'TODAY\'S QUESTION',
+            style: sans(
+              size: 11,
+              color: AlagagiColors.sageDeep,
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            question.text,
+            style: serif(
+              context,
+              size: 22,
+              weight: FontWeight.w700,
+              height: 1.5,
+            ),
+          ),
+          const Divider(height: 44, color: AlagagiColors.line),
+          if (isSkipped)
+            Text(
+              '오늘은 내일 다시 보기로 남겨뒀어요.',
+              style: sans(size: 14, color: AlagagiColors.muted, height: 1.6),
+            )
+          else if (myAnswer == null)
+            _AnswerPrompt(controller: controller)
+          else ...[
+            _AnswerLine(
+              tag: '나',
+              tagColor: AlagagiColors.sageDeep,
+              body: myAnswer.body,
+            ),
+            const SizedBox(height: 16),
+            if (partnerAnswer == null)
+              _LockedAnswer(partnerName: controller.state.partner.nickname)
+            else
+              _AnswerLine(
+                tag: controller.state.partner.nickname,
+                tagColor: AlagagiColors.lavender,
+                body: partnerAnswer.body,
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AnswerPrompt extends StatelessWidget {
+  const _AnswerPrompt({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _LockedAnswer(partnerName: controller.state.partner.nickname),
+        const SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: AlagagiColors.line),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '지금의 마음을 한 줄로…',
+                  style: sans(size: 13, color: AlagagiColors.muted),
+                ),
+              ),
+              TextButton(
+                onPressed: () => controller.goTo(AlagagiRoute.answer),
+                style: TextButton.styleFrom(
+                  backgroundColor: AlagagiColors.sageDeep,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text('답 남기기'),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AnswerLine extends StatelessWidget {
+  const _AnswerLine({
+    required this.tag,
+    required this.tagColor,
+    required this.body,
+  });
+
+  final String tag;
+  final Color tagColor;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 48,
+          child: Text(
+            tag,
+            style: serif(
+              context,
+              size: 13,
+              weight: FontWeight.w700,
+              color: tagColor,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            body,
+            style: sans(size: 14, color: const Color(0xFF4A4A46), height: 1.65),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LockedAnswer extends StatelessWidget {
+  const _LockedAnswer({required this.partnerName});
+
+  final String partnerName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 48,
+          child: Text(
+            '그대',
+            style: serif(
+              context,
+              size: 13,
+              weight: FontWeight.w700,
+              color: AlagagiColors.lavender,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            '$partnerName님의 답은 내 답을 남기면 함께 열려요.',
+            style: sans(
+              size: 14,
+              color: AlagagiColors.muted,
+              height: 1.65,
+            ).copyWith(fontStyle: FontStyle.italic),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InsightGrid extends StatelessWidget {
+  const _InsightGrid({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final insight = controller.insight;
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _InsightBox(
+                title: '마음의 결',
+                value: '${insight.similarityPercent}',
+                suffix: '% 닮음',
+                highlighted: true,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: _InsightBox(
+                title: '주고받은 질문',
+                value: '${insight.questionCount}',
+                suffix: '개',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        _PaperCard(
+          radius: 18,
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '닮은 취향 키워드',
+                style: sans(
+                  size: 11,
+                  color: AlagagiColors.muted,
+                  letterSpacing: 1,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 6,
+                runSpacing: 8,
+                children: insight.matchedKeywords.take(4).map((keyword) {
+                  return _KeywordChip(label: keyword);
+                }).toList(),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InsightBox extends StatelessWidget {
+  const _InsightBox({
+    required this.title,
+    required this.value,
+    required this.suffix,
+    this.highlighted = false,
+  });
+
+  final String title;
+  final String value;
+  final String suffix;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: highlighted ? null : AlagagiColors.paper,
+        gradient: highlighted
+            ? const LinearGradient(
+                colors: [AlagagiColors.softSage, AlagagiColors.sagePanel],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : null,
+        border: highlighted ? null : Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: sans(size: 11, color: AlagagiColors.muted)),
+          const SizedBox(height: 8),
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(text: value),
+                TextSpan(
+                  text: suffix,
+                  style: serif(
+                    context,
+                    size: 13,
+                    color: AlagagiColors.muted,
+                    weight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+            style: serif(
+              context,
+              size: 30,
+              weight: FontWeight.w800,
+              color: highlighted ? AlagagiColors.sageDeep : AlagagiColors.ink,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlusGrid extends StatelessWidget {
+  const _PlusGrid({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _PlusTile(
+          icon: '⚖️',
+          title: '밸런스 게임',
+          body: '글 안 써도 되는 취향 선택',
+          onTap: () => controller.goTo(AlagagiRoute.balance),
+        ),
+        const SizedBox(height: 10),
+        _PlusTile(
+          icon: '🪪',
+          title: '소개 카드',
+          body: '하루 한 칸씩 서로가 또렷해져요',
+          onTap: () => controller.goTo(AlagagiRoute.profileCard),
+        ),
+        const SizedBox(height: 10),
+        _PlusTile(
+          icon: '✈️',
+          title: '언젠가, 같이',
+          body: '같이 해보고 싶은 것 담기',
+          onTap: () => controller.goTo(AlagagiRoute.wishlist),
+        ),
+      ],
+    );
+  }
+}
+
+class _PlusTile extends StatelessWidget {
+  const _PlusTile({
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.onTap,
+  });
+
+  final String icon;
+  final String title;
+  final String body;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AlagagiColors.paper,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: AlagagiColors.line),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F2EB),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                alignment: Alignment.center,
+                child: Text(icon, style: const TextStyle(fontSize: 22)),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: serif(context, size: 17, weight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      body,
+                      style: sans(size: 12.5, color: AlagagiColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              const Text('→'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class AnswerScreen extends StatefulWidget {
+  const AnswerScreen({super.key, required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  State<AnswerScreen> createState() => _AnswerScreenState();
+}
+
+class _AnswerScreenState extends State<AnswerScreen> {
+  late final TextEditingController _answerController;
+
+  @override
+  void initState() {
+    super.initState();
+    _answerController = TextEditingController(
+      text: widget.controller.state.draftAnswer,
+    );
+  }
+
+  @override
+  void dispose() {
+    _answerController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final question = widget.controller.todayQuestion;
+    final count = widget.controller.state.draftAnswer.length;
+
+    return Stack(
+      children: [
+        _ScreenScroll(
+          padding: const EdgeInsets.fromLTRB(28, 12, 28, 166),
+          children: [
+            _TopBar(
+              title: '오늘의 질문',
+              trailing: 'DAY ${question.day}',
+              onBack: () => widget.controller.goTo(AlagagiRoute.home),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '${question.number}',
+              style: serif(
+                context,
+                size: 64,
+                weight: FontWeight.w800,
+                color: const Color(0xFFECEAE2),
+              ),
+            ),
+            Text(
+              'TODAY\'S QUESTION',
+              style: sans(
+                size: 11,
+                color: AlagagiColors.sageDeep,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              question.text,
+              style: serif(
+                context,
+                size: 24,
+                weight: FontWeight.w700,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            _PaperCard(
+              radius: 20,
+              padding: const EdgeInsets.all(20),
+              child: TextField(
+                key: answerFieldKey,
+                controller: _answerController,
+                minLines: 5,
+                maxLines: 7,
+                maxLength: 300,
+                onChanged: widget.controller.updateDraftAnswer,
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  counterText: '',
+                  hintText: '떠오르는 대로 적어볼까요...',
+                ),
+                style: sans(size: 15, height: 1.7),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                '$count / 300자',
+                style: sans(size: 11, color: AlagagiColors.muted),
+              ),
+            ),
+            const SizedBox(height: 18),
+            const _HintBox(),
+            const SizedBox(height: 18),
+            _PartnerLockedBox(
+              partnerName: widget.controller.state.partner.nickname,
+            ),
+            if (widget.controller.state.answerError != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                widget.controller.state.answerError!,
+                style: sans(size: 12, color: AlagagiColors.sageDeep),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ],
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(28, 18, 28, 26),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0x00F4F3EF), AlagagiColors.appBackground],
+                begin: Alignment.topCenter,
+                end: Alignment.center,
+              ),
+            ),
+            child: Column(
+              children: [
+                TextButton(
+                  onPressed: widget.controller.skipToday,
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '오늘은 답하기 어렵나요? ',
+                          style: sans(size: 12, color: AlagagiColors.muted),
+                        ),
+                        TextSpan(
+                          text: '내일 다시 보기',
+                          style: sans(
+                            size: 12,
+                            color: AlagagiColors.sageDeep,
+                            weight: FontWeight.w500,
+                          ).copyWith(decoration: TextDecoration.underline),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                _PrimaryButton(
+                  label:
+                      '답 남기고 ${widget.controller.state.partner.nickname}님 답 열어보기',
+                  onPressed: widget.controller.submitTodayAnswer,
+                  color: AlagagiColors.sageDeep,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HintBox extends StatelessWidget {
+  const _HintBox();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F2EB),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      child: Row(
+        children: [
+          const Text('🌿', style: TextStyle(fontSize: 16)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '정답은 없어요. 떠오르는 대로, 솔직한 한 줄이면 충분해요.',
+              style: sans(
+                size: 12,
+                color: const Color(0xFF5A5A54),
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PartnerLockedBox extends StatelessWidget {
+  const _PartnerLockedBox({required this.partnerName});
+
+  final String partnerName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: AlagagiColors.line, width: 1.5),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      padding: const EdgeInsets.all(20),
+      alignment: Alignment.center,
+      child: Column(
+        children: [
+          const Text(
+            '🔒',
+            style: TextStyle(fontSize: 22, color: AlagagiColors.muted),
+          ),
+          const SizedBox(height: 8),
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(text: '$partnerName님의 답은 내 답을 남기면\n'),
+                TextSpan(
+                  text: '같이 열려요',
+                  style: sans(
+                    size: 12.5,
+                    color: AlagagiColors.lavender,
+                    weight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            textAlign: TextAlign.center,
+            style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.5),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ArchiveScreen extends StatelessWidget {
+  const ArchiveScreen({super.key, required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return _ScreenScroll(
+      bottomNavigation: _BottomNav(controller: controller),
+      children: [
+        Text('질문함', style: serif(context, size: 23, weight: FontWeight.w800)),
+        const SizedBox(height: 4),
+        Text(
+          '그동안 주고받은 12개의 이야기',
+          style: sans(size: 12.5, color: AlagagiColors.muted),
+        ),
+        const SizedBox(height: 16),
+        _ArchiveTabs(controller: controller),
+        const SizedBox(height: 16),
+        for (final item in controller.archiveItems) ...[
+          _ArchiveCard(
+            item: item,
+            partnerName: controller.state.partner.nickname,
+          ),
+          const SizedBox(height: 14),
+        ],
+      ],
+    );
+  }
+}
+
+class _ArchiveTabs extends StatelessWidget {
+  const _ArchiveTabs({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      children: [
+        _FilterPill(
+          label: '전체',
+          selected: controller.state.archiveFilter == ArchiveFilter.all,
+          onTap: () => controller.setArchiveFilter(ArchiveFilter.all),
+        ),
+        _FilterPill(
+          label: '둘 다 답함',
+          selected:
+              controller.state.archiveFilter == ArchiveFilter.bothAnswered,
+          onTap: () => controller.setArchiveFilter(ArchiveFilter.bothAnswered),
+        ),
+        _FilterPill(
+          label: '닮은 답',
+          selected: controller.state.archiveFilter == ArchiveFilter.similar,
+          onTap: () => controller.setArchiveFilter(ArchiveFilter.similar),
+        ),
+      ],
+    );
+  }
+}
+
+class _ArchiveCard extends StatelessWidget {
+  const _ArchiveCard({required this.item, required this.partnerName});
+
+  final ArchiveItem item;
+  final String partnerName;
+
+  @override
+  Widget build(BuildContext context) {
+    final waiting = item.myAnswer != null && item.partnerAnswer == null;
+    return _PaperCard(
+      radius: 20,
+      dashed: waiting,
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: waiting
+            ? CrossAxisAlignment.center
+            : CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'No.${item.question.number} · ${item.myAnswer?.createdLabel ?? '오늘'}',
+                style: serif(
+                  context,
+                  size: 12,
+                  weight: FontWeight.w700,
+                  color: AlagagiColors.sageDeep,
+                ),
+              ),
+              Text(
+                item.bothAnswered ? '둘 다 답함' : '답 기다리는 중',
+                style: sans(size: 11, color: AlagagiColors.muted),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            item.question.text,
+            style: serif(
+              context,
+              size: 16,
+              weight: FontWeight.w700,
+              height: 1.5,
+            ),
+            textAlign: waiting ? TextAlign.center : TextAlign.start,
+          ),
+          const SizedBox(height: 14),
+          if (item.myAnswer == null)
+            Text(
+              '아직 답을 남기지 않았어요.',
+              style: sans(size: 13, color: AlagagiColors.muted),
+            )
+          else if (waiting)
+            Text(
+              '내 답은 남겼어요.\n$partnerName님이 답하면 함께 열려요 🔒',
+              textAlign: TextAlign.center,
+              style: sans(size: 13, color: AlagagiColors.muted, height: 1.5),
+            )
+          else ...[
+            _AnswerLine(
+              tag: '나',
+              tagColor: AlagagiColors.sageDeep,
+              body: item.myAnswer!.body,
+            ),
+            const SizedBox(height: 10),
+            _AnswerLine(
+              tag: partnerName,
+              tagColor: AlagagiColors.lavender,
+              body: item.partnerAnswer!.body,
+            ),
+          ],
+          if (item.matchedKeywords.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _SimilarityBadge(keyword: item.matchedKeywords.first),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class RecordsScreen extends StatelessWidget {
+  const RecordsScreen({super.key, required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final insight = controller.insight;
+    return _ScreenScroll(
+      bottomNavigation: _BottomNav(controller: controller),
+      children: [
+        Text('우리 기록', style: serif(context, size: 23, weight: FontWeight.w800)),
+        const SizedBox(height: 4),
+        Text(
+          '${insight.daysTogether}일 동안 우리가 닮아온 이야기',
+          style: sans(size: 12.5, color: AlagagiColors.muted),
+        ),
+        const SizedBox(height: 22),
+        Container(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AlagagiColors.softSage, AlagagiColors.sagePanel],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+          ),
+          padding: const EdgeInsets.all(26),
+          child: Column(
+            children: [
+              _AvatarStack(
+                me: controller.state.me,
+                partner: controller.state.partner,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '${insight.similarityPercent}%',
+                style: serif(
+                  context,
+                  size: 46,
+                  weight: FontWeight.w800,
+                  color: AlagagiColors.sageDeep,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '생각보다 결이 잘 맞는 사이예요',
+                style: sans(size: 12, color: const Color(0xFF5A6650)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        const _SectionLabel('우리가 닮은 키워드'),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: insight.matchedKeywords
+              .map((keyword) => _KeywordChip(label: keyword, leaf: true))
+              .toList(),
+        ),
+        const SizedBox(height: 24),
+        const _SectionLabel('숫자로 보는 우리'),
+        const SizedBox(height: 12),
+        _StatsGrid(insight: insight),
+        const SizedBox(height: 24),
+        const _SectionLabel('우리의 발자취'),
+        const SizedBox(height: 12),
+        _Timeline(events: insight.timeline),
+      ],
+    );
+  }
+}
+
+class _StatsGrid extends StatelessWidget {
+  const _StatsGrid({required this.insight});
+
+  final RelationshipInsight insight;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                title: '함께한 날',
+                value: '${insight.daysTogether}',
+                suffix: '일',
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: _StatCard(
+                title: '주고받은 질문',
+                value: '${insight.questionCount}',
+                suffix: '개',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                title: '닮은 답',
+                value: '${insight.matchCount}',
+                suffix: '번',
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: _StatCard(
+                title: '가장 긴 답',
+                value: '${insight.longestAnswerLength}',
+                suffix: '자',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  const _StatCard({
+    required this.title,
+    required this.value,
+    required this.suffix,
+  });
+
+  final String title;
+  final String value;
+  final String suffix;
+
+  @override
+  Widget build(BuildContext context) {
+    return _PaperCard(
+      radius: 18,
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: sans(size: 11, color: AlagagiColors.muted)),
+          const SizedBox(height: 6),
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(text: value),
+                TextSpan(
+                  text: suffix,
+                  style: serif(context, size: 12, color: AlagagiColors.muted),
+                ),
+              ],
+            ),
+            style: serif(context, size: 28, weight: FontWeight.w800),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Timeline extends StatelessWidget {
+  const _Timeline({required this.events});
+
+  final List<TimelineEvent> events;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: events.map((event) {
+        return Padding(
+          padding: const EdgeInsets.only(left: 6, bottom: 18),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                margin: const EdgeInsets.only(top: 4),
+                decoration: BoxDecoration(
+                  color: AlagagiColors.sage,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      event.dateLabel,
+                      style: sans(size: 11, color: AlagagiColors.muted),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      event.description,
+                      style: sans(size: 13.5, height: 1.5),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class BalanceScreen extends StatelessWidget {
+  const BalanceScreen({super.key, required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final question = controller.activeBalanceQuestion;
+    final selected = controller.activeBalanceSelection;
+    final partnerChoice = question.partnerChoiceId;
+
+    return Stack(
+      children: [
+        _ScreenScroll(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 156),
+          children: [
+            _TopBar(
+              title: '밸런스 게임',
+              trailing:
+                  '${controller.state.activeBalanceIndex + 1} / ${controller.balanceQuestions.length}',
+              onBack: () => controller.goTo(AlagagiRoute.home),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              '⚖️',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 30),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '둘 중 하나만!',
+              textAlign: TextAlign.center,
+              style: serif(context, size: 22, weight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '고민하지 말고 끌리는 쪽으로 톡',
+              textAlign: TextAlign.center,
+              style: sans(size: 12.5, color: AlagagiColors.muted),
+            ),
+            const SizedBox(height: 28),
+            Text(
+              'QUESTION ${controller.state.activeBalanceIndex + 1}',
+              textAlign: TextAlign.center,
+              style: sans(
+                size: 11,
+                color: AlagagiColors.sageDeep,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              question.prompt,
+              textAlign: TextAlign.center,
+              style: serif(context, size: 18, weight: FontWeight.w700),
+            ),
+            const SizedBox(height: 18),
+            _BalanceOptionCard(
+              option: question.left,
+              selectedByMe: selected == question.left.id,
+              selectedByPartner: partnerChoice == question.left.id,
+              onTap: () => controller.selectBalanceOption(question.left.id),
+            ),
+            const SizedBox(height: 14),
+            Center(
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  color: AlagagiColors.ink,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  'VS',
+                  style: serif(
+                    context,
+                    size: 14,
+                    weight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            _BalanceOptionCard(
+              option: question.right,
+              selectedByMe: selected == question.right.id,
+              selectedByPartner: partnerChoice == question.right.id,
+              onTap: () => controller.selectBalanceOption(question.right.id),
+            ),
+            const SizedBox(height: 18),
+            if (selected != null)
+              _BalanceResult(
+                me: selected == question.left.id
+                    ? question.left.label
+                    : question.right.label,
+                partner: partnerChoice == question.left.id
+                    ? question.left.label
+                    : question.right.label,
+                partnerName: controller.state.partner.nickname,
+              ),
+          ],
+        ),
+        Positioned(
+          left: 28,
+          right: 28,
+          bottom: 26,
+          child: Column(
+            children: [
+              _ProgressDots(
+                activeIndex: controller.state.activeBalanceIndex,
+                count: controller.balanceQuestions.length,
+              ),
+              const SizedBox(height: 16),
+              _PrimaryButton(
+                label: '다음 질문',
+                onPressed: controller.nextBalanceQuestion,
+                color: AlagagiColors.sageDeep,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BalanceOptionCard extends StatelessWidget {
+  const _BalanceOptionCard({
+    required this.option,
+    required this.selectedByMe,
+    required this.selectedByPartner,
+    required this.onTap,
+  });
+
+  final BalanceOption option;
+  final bool selectedByMe;
+  final bool selectedByPartner;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: selectedByMe
+                ? const LinearGradient(
+                    colors: [Color(0xFFEAF0E0), AlagagiColors.softSage],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: selectedByMe ? null : AlagagiColors.paper,
+            border: Border.all(
+              color: selectedByMe
+                  ? AlagagiColors.sage
+                  : selectedByPartner
+                  ? AlagagiColors.lavender
+                  : AlagagiColors.line,
+              width: 1.5,
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              if (selectedByMe)
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Text(
+                    '나의 선택',
+                    style: serif(
+                      context,
+                      size: 13,
+                      color: AlagagiColors.sageDeep,
+                      weight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              Text(option.icon, style: const TextStyle(fontSize: 34)),
+              const SizedBox(height: 8),
+              Text(
+                option.label,
+                style: serif(context, size: 18, weight: FontWeight.w700),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (selectedByMe)
+                    const _MiniChoiceAvatar(
+                      icon: '🌿',
+                      color: AlagagiColors.softSage,
+                    ),
+                  if (selectedByPartner)
+                    const _MiniChoiceAvatar(
+                      icon: '🪻',
+                      color: Color(0xFFE7DDF0),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniChoiceAvatar extends StatelessWidget {
+  const _MiniChoiceAvatar({required this.icon, required this.color});
+
+  final String icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 26,
+      height: 26,
+      margin: const EdgeInsets.symmetric(horizontal: 3),
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 5,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      alignment: Alignment.center,
+      child: Text(icon, style: const TextStyle(fontSize: 13)),
+    );
+  }
+}
+
+class _BalanceResult extends StatelessWidget {
+  const _BalanceResult({
+    required this.me,
+    required this.partner,
+    required this.partnerName,
+  });
+
+  final String me;
+  final String partner;
+  final String partnerName;
+
+  @override
+  Widget build(BuildContext context) {
+    final same = me == partner;
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEF1E8),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(text: '$partnerName님은 '),
+            TextSpan(
+              text: partner,
+              style: sans(
+                weight: FontWeight.w500,
+                color: AlagagiColors.sageDeep,
+              ),
+            ),
+            const TextSpan(text: ', 나는 '),
+            TextSpan(
+              text: me,
+              style: sans(
+                weight: FontWeight.w500,
+                color: AlagagiColors.sageDeep,
+              ),
+            ),
+            TextSpan(
+              text: same
+                  ? '를 골랐어요.\n역시 닮은 구석이 있네요 🌿'
+                  : '를 골랐어요.\n서로 달라서 더 궁금해져요 🌿',
+            ),
+          ],
+        ),
+        textAlign: TextAlign.center,
+        style: sans(size: 13, color: const Color(0xFF5A6650), height: 1.5),
+      ),
+    );
+  }
+}
+
+class ProfileCardScreen extends StatelessWidget {
+  const ProfileCardScreen({super.key, required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final card = controller.activeProfileCard;
+    return _ScreenScroll(
+      bottomNavigation: _BottomNav(controller: controller),
+      children: [
+        _TopBar(
+          title: '소개 카드',
+          trailing: '',
+          onBack: () => controller.goTo(AlagagiRoute.home),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '하루 한 칸씩, 서로가 또렷해져요',
+          style: sans(size: 12.5, color: AlagagiColors.muted),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _SegmentButton(
+                label: '${controller.state.partner.nickname}님 카드',
+                selected:
+                    controller.state.profileCardTab == ProfileCardTab.partner,
+                onTap: () =>
+                    controller.setProfileCardTab(ProfileCardTab.partner),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _SegmentButton(
+                label: '내 카드',
+                selected: controller.state.profileCardTab == ProfileCardTab.me,
+                onTap: () => controller.setProfileCardTab(ProfileCardTab.me),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        _ProfileCardView(card: card),
+        const SizedBox(height: 18),
+        _TodaySlotCard(controller: controller),
+      ],
+    );
+  }
+}
+
+class _ProfileCardView extends StatelessWidget {
+  const _ProfileCardView({required this.card});
+
+  final ProfileCardData card;
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = card.filledCount / card.totalCount;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AlagagiColors.paper, Color(0xFFF3F5EE)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: card.profile.isMe
+                      ? AlagagiColors.softSage
+                      : const Color(0xFFE7DDF0),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  card.profile.avatar,
+                  style: const TextStyle(fontSize: 28),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      card.profile.nickname,
+                      style: serif(context, size: 20, weight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      card.subtitle,
+                      style: sans(size: 12, color: AlagagiColors.muted),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: LinearProgressIndicator(
+                              value: progress,
+                              minHeight: 6,
+                              backgroundColor: const Color(0xFFE6E9DF),
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                AlagagiColors.lavender,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${card.filledCount}/${card.totalCount} 채움',
+                          style: sans(size: 11, color: AlagagiColors.lavender),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          for (final slot in card.slots) _ProfileSlotRow(slot: slot),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileSlotRow extends StatelessWidget {
+  const _ProfileSlotRow({required this.slot});
+
+  final ProfileSlot slot;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Color(0xFFECE9E1))),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 13),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 108,
+            child: Text(
+              '${slot.icon} ${slot.label}',
+              style: sans(size: 12, color: AlagagiColors.muted),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              slot.locked
+                  ? '🔒 ${slot.unlockHint ?? '아직 비밀'}'
+                  : slot.value ?? '비어 있어요',
+              style:
+                  sans(
+                    size: slot.locked ? 12.5 : 14,
+                    color: slot.locked
+                        ? const Color(0xFFC4C1B8)
+                        : const Color(0xFF3A3A36),
+                    weight: slot.locked ? FontWeight.w400 : FontWeight.w500,
+                  ).copyWith(
+                    fontStyle: slot.locked
+                        ? FontStyle.italic
+                        : FontStyle.normal,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TodaySlotCard extends StatefulWidget {
+  const _TodaySlotCard({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  State<_TodaySlotCard> createState() => _TodaySlotCardState();
+}
+
+class _TodaySlotCardState extends State<_TodaySlotCard> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _PaperCard(
+      radius: 20,
+      padding: const EdgeInsets.all(20),
+      highlightedBorder: AlagagiColors.softSage,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFEEF1E8),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: Text(
+              '오늘 채울 칸 ✶',
+              style: sans(
+                size: 11,
+                color: AlagagiColors.sageDeep,
+                letterSpacing: 1,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '나의 ‘좌우명’은?',
+            style: serif(context, size: 17, weight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '한 칸 채우면, 민영님의 좌우명도 함께 열려요',
+            style: sans(size: 12.5, color: AlagagiColors.muted),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: AlagagiColors.line),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            padding: const EdgeInsets.fromLTRB(14, 4, 6, 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      hintText: '한 줄로 적어볼까요…',
+                    ),
+                    style: sans(size: 13),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () =>
+                      widget.controller.fillTodayProfileSlot(_controller.text),
+                  style: TextButton.styleFrom(
+                    backgroundColor: AlagagiColors.sageDeep,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text('채우기'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class WishlistScreen extends StatelessWidget {
+  const WishlistScreen({super.key, required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final wishes = controller.visibleWishes;
+    return Stack(
+      children: [
+        _ScreenScroll(
+          bottomNavigation: _BottomNav(controller: controller),
+          padding: const EdgeInsets.fromLTRB(28, 14, 28, 170),
+          children: [
+            _TopBar(
+              title: '언젠가, 같이',
+              trailing: '',
+              onBack: () => controller.goTo(AlagagiRoute.home),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '부담 없이 적어두는 우리의 위시리스트',
+              style: sans(size: 12.5, color: AlagagiColors.muted),
+            ),
+            const SizedBox(height: 16),
+            _WishlistFilters(controller: controller),
+            const SizedBox(height: 16),
+            _SectionLabel(
+              controller.state.wishlistFilter == WishlistFilter.mutual
+                  ? '⭐ 둘 다 하고 싶어요'
+                  : '🌱 위시리스트',
+            ),
+            const SizedBox(height: 12),
+            for (final wish in wishes) ...[
+              _WishCard(
+                wish: wish,
+                meId: controller.state.me.id,
+                partnerName: controller.state.partner.nickname,
+                onHeart: () => controller.toggleWishLike(wish.id),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ],
+        ),
+        Positioned(
+          left: 28,
+          right: 28,
+          bottom: 84,
+          child: _PrimaryButton(
+            label: '＋ 하고 싶은 것 담기',
+            onPressed: () {},
+            color: AlagagiColors.sageDeep,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _WishlistFilters extends StatelessWidget {
+  const _WishlistFilters({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _FilterPill(
+          label: '전체',
+          selected: controller.state.wishlistFilter == WishlistFilter.all,
+          onTap: () => controller.setWishlistFilter(WishlistFilter.all),
+        ),
+        _FilterPill(
+          label: '둘 다 ♥',
+          selected: controller.state.wishlistFilter == WishlistFilter.mutual,
+          onTap: () => controller.setWishlistFilter(WishlistFilter.mutual),
+        ),
+        _FilterPill(
+          label: '가고 싶은 곳',
+          selected: controller.state.wishlistFilter == WishlistFilter.places,
+          onTap: () => controller.setWishlistFilter(WishlistFilter.places),
+        ),
+        _FilterPill(
+          label: '해보고 싶은 것',
+          selected:
+              controller.state.wishlistFilter == WishlistFilter.activities,
+          onTap: () => controller.setWishlistFilter(WishlistFilter.activities),
+        ),
+      ],
+    );
+  }
+}
+
+class _WishCard extends StatelessWidget {
+  const _WishCard({
+    required this.wish,
+    required this.meId,
+    required this.partnerName,
+    required this.onHeart,
+  });
+
+  final WishItem wish;
+  final String meId;
+  final String partnerName;
+  final VoidCallback onHeart;
+
+  @override
+  Widget build(BuildContext context) {
+    final likedByMe = wish.likedByProfileIds.contains(meId);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onHeart,
+        child: Container(
+          decoration: BoxDecoration(
+            color: wish.isMutual ? null : AlagagiColors.paper,
+            gradient: wish.isMutual
+                ? const LinearGradient(
+                    colors: [Color(0xFFEEF1E8), Color(0xFFE6ECDC)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            border: Border.all(
+              color: wish.isMutual ? AlagagiColors.sage : AlagagiColors.line,
+            ),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F2EB),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                alignment: Alignment.center,
+                child: Text(wish.icon, style: const TextStyle(fontSize: 21)),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      wish.title,
+                      style:
+                          sans(
+                            size: 14.5,
+                            weight: FontWeight.w500,
+                            color: wish.done
+                                ? AlagagiColors.muted
+                                : const Color(0xFF33332F),
+                          ).copyWith(
+                            decoration: wish.done
+                                ? TextDecoration.lineThrough
+                                : null,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      wish.isMutual
+                          ? '둘 다 마음에 담음'
+                          : wish.likedByProfileIds.contains('partner')
+                          ? '$partnerName님이 담음'
+                          : '내가 담음',
+                      style: sans(size: 11, color: AlagagiColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                wish.done
+                    ? '✅'
+                    : likedByMe
+                    ? '💚'
+                    : '🤍',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class MyScreen extends StatelessWidget {
+  const MyScreen({super.key, required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return _ScreenScroll(
+      bottomNavigation: _BottomNav(controller: controller),
+      children: [
+        _TopBar(
+          title: '마이',
+          trailing: '',
+          onBack: () => controller.goTo(AlagagiRoute.home),
+        ),
+        const SizedBox(height: 18),
+        _PaperCard(
+          radius: 22,
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '둘만의 공간',
+                style: serif(context, size: 20, weight: FontWeight.w800),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                '지금은 로컬 MVP라 기기 안에서만 상태가 유지돼요. 다음 단계에서 저장과 공유를 붙이면 실제 둘만의 링크가 됩니다.',
+                style: sans(size: 13, color: AlagagiColors.muted, height: 1.6),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BottomNav extends StatelessWidget {
+  const _BottomNav({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AlagagiColors.paper.withValues(alpha: 0.94),
+        border: const Border(top: BorderSide(color: AlagagiColors.line)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _NavItem(
+            label: '홈',
+            selected: controller.state.route == AlagagiRoute.home,
+            onTap: () => controller.goTo(AlagagiRoute.home),
+          ),
+          _NavItem(
+            label: '질문함',
+            selected: controller.state.route == AlagagiRoute.archive,
+            onTap: () => controller.goTo(AlagagiRoute.archive),
+          ),
+          _NavItem(
+            label: '기록',
+            selected: controller.state.route == AlagagiRoute.records,
+            onTap: () => controller.goTo(AlagagiRoute.records),
+          ),
+          _NavItem(
+            label: '마이',
+            selected: controller.state.route == AlagagiRoute.my,
+            onTap: () => controller.goTo(AlagagiRoute.my),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              width: selected ? 18 : 7,
+              height: 7,
+              decoration: BoxDecoration(
+                color: selected
+                    ? AlagagiColors.sageDeep
+                    : const Color(0xFFCFCDC4),
+                borderRadius: BorderRadius.circular(7),
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              label,
+              style: sans(
+                size: 10,
+                weight: selected ? FontWeight.w500 : FontWeight.w400,
+                color: selected ? AlagagiColors.ink : AlagagiColors.muted,
+                letterSpacing: 1,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TopBar extends StatelessWidget {
+  const _TopBar({
+    required this.title,
+    required this.trailing,
+    required this.onBack,
+  });
+
+  final String title;
+  final String trailing;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _CircleButton(label: '←', onTap: onBack),
+        Text(
+          title,
+          style: sans(size: 13, color: AlagagiColors.muted, letterSpacing: 2),
+        ),
+        SizedBox(
+          width: 72,
+          child: Text(
+            trailing,
+            textAlign: TextAlign.right,
+            style: serif(
+              context,
+              size: 13,
+              color: AlagagiColors.sageDeep,
+              weight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CircleButton extends StatelessWidget {
+  const _CircleButton({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: AlagagiColors.line),
+          ),
+          alignment: Alignment.center,
+          child: Text(label, style: sans(size: 16)),
+        ),
+      ),
+    );
+  }
+}
+
+class _PrimaryButton extends StatelessWidget {
+  const _PrimaryButton({
+    required this.label,
+    required this.onPressed,
+    this.color = AlagagiColors.ink,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton(
+        onPressed: onPressed,
+        style: FilledButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: AlagagiColors.appBackground,
+          padding: const EdgeInsets.symmetric(vertical: 17),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: serif(context, size: 15, weight: FontWeight.w700),
+        ),
+        child: Text(label, textAlign: TextAlign.center),
+      ),
+    );
+  }
+}
+
+class _PaperCard extends StatelessWidget {
+  const _PaperCard({
+    required this.child,
+    required this.radius,
+    required this.padding,
+    this.dashed = false,
+    this.highlightedBorder,
+  });
+
+  final Widget child;
+  final double radius;
+  final EdgeInsets padding;
+  final bool dashed;
+  final Color? highlightedBorder;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: dashed ? Colors.transparent : AlagagiColors.paper,
+        border: Border.all(
+          color: highlightedBorder ?? AlagagiColors.line,
+          width: dashed ? 1.5 : 1,
+        ),
+        borderRadius: BorderRadius.circular(radius),
+      ),
+      padding: padding,
+      child: child,
+    );
+  }
+}
+
+class _FilterPill extends StatelessWidget {
+  const _FilterPill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: selected ? AlagagiColors.ink : Colors.white,
+          border: Border.all(
+            color: selected ? AlagagiColors.ink : AlagagiColors.line,
+          ),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Text(
+          label,
+          style: sans(
+            size: 12.5,
+            color: selected ? AlagagiColors.appBackground : AlagagiColors.muted,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _KeywordChip extends StatelessWidget {
+  const _KeywordChip({required this.label, this.leaf = false});
+
+  final String label;
+  final bool leaf;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AlagagiColors.paper,
+        border: leaf ? Border.all(color: AlagagiColors.line) : null,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      child: Text(
+        leaf ? '🌿 $label' : label,
+        style: sans(size: 11.5, color: const Color(0xFF5A5A54)),
+      ),
+    );
+  }
+}
+
+class _SimilarityBadge extends StatelessWidget {
+  const _SimilarityBadge({required this.keyword});
+
+  final String keyword;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEF1E8),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      child: Text(
+        '🌿 둘 다 ‘$keyword’ 취향',
+        style: sans(size: 11, color: AlagagiColors.sageDeep),
+      ),
+    );
+  }
+}
+
+class _SegmentButton extends StatelessWidget {
+  const _SegmentButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: selected ? AlagagiColors.ink : Colors.white,
+          border: Border.all(
+            color: selected ? AlagagiColors.ink : AlagagiColors.line,
+          ),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 9),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: sans(
+            size: 12.5,
+            color: selected ? AlagagiColors.appBackground : AlagagiColors.muted,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProgressDots extends StatelessWidget {
+  const _ProgressDots({required this.activeIndex, required this.count});
+
+  final int activeIndex;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(count, (index) {
+        final active = activeIndex == index;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: active ? 20 : 6,
+          height: 6,
+          margin: const EdgeInsets.symmetric(horizontal: 3),
+          decoration: BoxDecoration(
+            color: active ? AlagagiColors.sageDeep : const Color(0xFFD5D3CA),
+            borderRadius: BorderRadius.circular(6),
+          ),
+        );
+      }),
+    );
+  }
+}

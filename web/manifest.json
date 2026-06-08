@@ -1,11 +1,11 @@
 {
-    "name": "민영 Pick",
-    "short_name": "민영 Pick",
+    "name": "알아가기",
+    "short_name": "알아가기",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#F7FAFF",
     "theme_color": "#EF6F6C",
-    "description": "다음 약속을 가볍게 고르는 민영 Pick.",
+    "description": "하루 한 질문으로 천천히 가까워지는 둘만의 웹앱.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

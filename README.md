@@ -1,10 +1,11 @@
-# 민영 Pick
+# 알아가기
 
-소개팅 이후 다음 약속을 부담 없이 고르는 Flutter Web 우선 MVP입니다.
+소개팅 이후 하루 한 질문으로 천천히 가까워지는 Flutter Web 우선 MVP입니다.
 
 ## 개발 방식
 
-- SDD: [docs/sdd.md](docs/sdd.md)에 MVP 범위와 인수 기준을 먼저 고정합니다.
+- Product Spec: [docs/spec.md](docs/spec.md)에 화면 흐름과 인수 기준을 고정합니다.
+- SDD: [docs/sdd.md](docs/sdd.md)는 기존 MVP 기록이며, 새 개발은 Product Spec을 기준으로 진행합니다.
 - TDD: 새 행동은 domain/widget test로 먼저 표현하고 구현합니다.
 - 배포: v0.1은 Flutter Web 링크 공유를 우선합니다.
 
@@ -23,6 +24,6 @@ flutter run -d chrome
 ```sh
 git remote add origin <your-repo-url>
 git add .
-git commit -m "Start Minyoung Pick MVP"
+git commit -m "Build Alagagi MVP"
 git push -u origin main
 ```

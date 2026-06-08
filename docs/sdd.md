@@ -1,4 +1,8 @@
-# Minyoung Pick SDD
+# 알아가기 SDD
+
+> Current source of truth: [spec.md](spec.md)
+
+이 문서는 최초 `민영 Pick` MVP 기록을 보존한다. 현재 개발 방향은 `index.html` 디자인 시안 기반의 `알아가기` 제품이며, 상세 요구사항과 화면별 인수 기준은 [spec.md](spec.md)를 따른다.
 
 ## 1. Product Intent
 

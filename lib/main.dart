@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'src/ui/minyoung_pick_app.dart';
+import 'src/ui/alagagi_app.dart';
 
 void main() {
-  runApp(const MinyoungPickApp());
+  runApp(const AlagagiApp());
 }
