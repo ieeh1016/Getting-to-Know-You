@@ -12,7 +12,7 @@
 - Firebase mode의 빈 Firestore profile slots snapshot은 샘플 소개 카드 값이 아닌 locked/empty state로 변환된다.
 - 질문 카탈로그는 day/depth 규칙에 맞는 질문만 선택한다.
 - 밸런스 결과는 나와 상대의 실제 선택이 모두 있을 때만 계산된다.
-- 우리 기록 insight는 실제 답변 데이터만 기반으로 계산한다.
+- 알아간 기록 insight는 실제 답변 데이터만 기반으로 계산한다.
 - `AlagagiController` 기본 로컬 모드는 초대 화면에서 시작한다.
 - session 기반 controller는 로그인된 홈 화면에서 시작한다.
 - 답변 제출/패스가 repository 저장 경계로 전달된다.
@@ -32,9 +32,10 @@
 - answer comment 수정 저장은 같은 comment key를 덮어쓰고 `edited`로 표시한다.
 - 상대 답변이 잠겨 있거나 skipped이면 comment 저장을 거부한다.
 - 소개 카드 슬롯 입력이 진행률에 반영된다.
-- 위시리스트 좋아요가 둘 다 필터에 반영된다.
+- 위시리스트 관심 표시가 `서로 관심` 필터에 반영된다.
 - 위시 추가 draft는 제목/종류를 받아 내가 만든 wish를 저장한다.
-- 위시 추가/좋아요/완료는 각각 1개 wish 문서 갱신으로 표현된다.
+- 위시 추가/관심 표시/완료는 각각 1개 wish 문서 갱신으로 표현된다.
+- 질문/밸런스 카탈로그는 사귀는 사이를 전제하는 `하트`, `애정 표현`, `데이트 계획`, `기념일`, `커플` 문구를 노출하지 않는다.
 - 개인화 설정이 없으면 기본 이름/아바타/초대 문구로 fallback한다.
 - 새 Firestore-backed 기능은 명시적 user action당 1 write 이하를 유지한다.
 
@@ -47,7 +48,7 @@
 - `users/{uid}` 문서가 없으면 setup required 화면에 UID를 보여준다.
 - 로그아웃 버튼을 누르면 로그인 화면으로 돌아온다.
 - Firebase mode에서 실제 답변이 없으면 홈/질문함에 샘플 상대 답변이 보이지 않는다.
-- Firebase mode에서 실제 기록이 없으면 우리 기록은 0/empty state를 보여준다.
+- Firebase mode에서 실제 기록이 없으면 알아간 기록은 0/empty state를 보여준다.
 - Firebase mode에서 실제 위시가 없으면 위시리스트는 비어 있고 추천 템플릿만 제안으로 보인다.
 - Firebase mode에서 밸런스 선택 전에는 샘플 상대 선택이 보이지 않는다.
 - 로컬 데모 모드는 초대 화면과 닉네임 진입을 유지한다.
@@ -63,6 +64,9 @@
 - 답변/위시/밸런스 저장 중에는 중복 저장 버튼 입력이 방지된다.
 - 아카이브/기록/밸런스/소개 카드/위시 화면 내비게이션을 검증한다.
 - 위시 화면의 `하고 싶은 것 담기` CTA는 draft 입력 UI를 열고 새 wish를 카드로 추가한다.
+- 위시 화면은 하트 아이콘/하트 문구 대신 `서로 관심`, `관심 표시` 계열 표현을 사용한다.
+- 위시 카드의 저장 emoji icon은 UI primary icon으로 직접 렌더링하지 않는다.
+- 초대 노트, 홈 기능 카드, 밸런스 선택지, 소개 카드 슬롯, 위시 카드는 큰 텍스트 이모지 장식 대신 일관된 line icon을 사용한다.
 - 마이 화면에서 앱 이름/홈 문구를 저장하면 홈/마이 화면에 반영된다.
 - 개인화 설정 저장 전 draft 입력은 repository write를 호출하지 않는다.
 
@@ -86,7 +90,7 @@
 - Warning threshold: 1,000 reads/day 또는 100 writes/day.
 - Review/stop threshold: 2,500 reads/day 또는 500 writes/day.
 - Keystroke, scroll, tab switch는 Firestore write를 만들지 않는다.
-- 답변 submit/edit, answer comment save/edit, personalization save, balance select, profile slot fill, wish add/edit/done은 각각 1 document write 이하.
+- 답변 submit/edit, answer comment save/edit, personalization save, balance select, profile slot fill, wish add/interest/done은 각각 1 document write 이하.
 - Summary/current 갱신이 필요한 action만 2 writes까지 허용한다.
 - Home은 전체 answer/wish/profile slot subcollection hydration 없이 summary/progress/today docs로 렌더링 가능해야 한다.
 - TTL, backup, PITR, restore, clone, Storage upload, Cloud Functions가 필요한 기능은 Spark/free-plan MVP 테스트 범위에 넣지 않는다.

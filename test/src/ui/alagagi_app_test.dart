@@ -6,9 +6,9 @@ import 'package:minyoung_pick/src/ui/alagagi_app.dart';
 void main() {
   Future<void> enterSpace(WidgetTester tester) async {
     await tester.enterText(find.byKey(inviteNicknameFieldKey), '영우');
-    await tester.ensureVisible(find.text('우리 공간으로 들어가기'));
+    await tester.ensureVisible(find.text('대화 공간으로 들어가기'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('우리 공간으로 들어가기'));
+    await tester.tap(find.text('대화 공간으로 들어가기'));
     await tester.pumpAndSettle();
   }
 
@@ -210,7 +210,7 @@ void main() {
     );
     await tester.enterText(
       find.byKey(personalizationHomeLineFieldKey),
-      '천천히 가까워지는 중',
+      '천천히 알아가는 중',
     );
     await tester.ensureVisible(find.byKey(personalizationSubmitButtonKey));
     await tester.pumpAndSettle();
@@ -221,7 +221,42 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('민영과 영우'), findsOneWidget);
-    expect(find.text('천천히 가까워지는 중'), findsOneWidget);
+    expect(find.text('천천히 알아가는 중'), findsOneWidget);
+  });
+
+  testWidgets('uses a low-pressure invite and wishlist tone', (tester) async {
+    await tester.pumpWidget(const AlagagiApp());
+
+    expect(find.text('대화 공간으로 들어가기'), findsOneWidget);
+    expect(find.text('둘만의 공간'), findsNothing);
+    expect(find.text('천천히 가까워지기'), findsNothing);
+    expect(find.text('☀️'), findsNothing);
+    expect(find.text('🔒'), findsNothing);
+    expect(find.text('🌿'), findsNothing);
+
+    await enterSpace(tester);
+    await tester.drag(find.byType(Scrollable), const Offset(0, -700));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('언젠가, 같이'));
+    await tester.pumpAndSettle();
+    expect(find.text('⚖️'), findsNothing);
+    expect(find.text('🪪'), findsNothing);
+    expect(find.text('✈️'), findsNothing);
+
+    await tester.tap(find.text('언젠가, 같이'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('서로 관심'), findsOneWidget);
+    expect(find.textContaining('🌱'), findsNothing);
+    expect(find.textContaining('🌊'), findsNothing);
+    expect(find.textContaining('🍜'), findsNothing);
+    expect(find.textContaining('🎬'), findsNothing);
+    expect(find.textContaining('🥾'), findsNothing);
+    expect(find.textContaining('📷'), findsNothing);
+    expect(find.textContaining('☕'), findsNothing);
+    expect(find.text('둘 다 ♥'), findsNothing);
+    expect(find.textContaining('💚'), findsNothing);
+    expect(find.textContaining('🤍'), findsNothing);
   });
 
   testWidgets('navigates archive, records, and plus screens', (tester) async {
@@ -234,7 +269,7 @@ void main() {
 
     await tester.tap(find.text('기록'));
     await tester.pumpAndSettle();
-    expect(find.text('생각보다 결이 잘 맞는 사이예요'), findsOneWidget);
+    expect(find.text('답변 속 공통점이 조금씩 보여요'), findsOneWidget);
 
     await tester.tap(find.text('홈'));
     await tester.pumpAndSettle();
@@ -246,5 +281,20 @@ void main() {
     await tester.tap(find.text('밸런스 게임'));
     await tester.pumpAndSettle();
     expect(find.text('둘 중 하나만!'), findsOneWidget);
+    expect(find.text('⚖️'), findsNothing);
+    expect(find.textContaining('🌊'), findsNothing);
+    expect(find.textContaining('🌲'), findsNothing);
+
+    await tester.tap(find.text('←'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('소개 카드'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('소개 카드'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('🎂'), findsNothing);
+    expect(find.textContaining('🧭'), findsNothing);
+    expect(find.textContaining('🍙'), findsNothing);
+    expect(find.textContaining('🎧'), findsNothing);
+    expect(find.textContaining('🔒'), findsNothing);
   });
 }

@@ -12,14 +12,14 @@
 
 `알아가기`는 소개팅 이후 두 사람이 부담 없이 서로를 알아가도록 돕는 비공개 모바일 웹앱이다.
 사용자는 링크 하나로 들어오고, 민영과 영우에게만 발급된 아이디/비밀번호로 로그인해 시작한다.
-앱은 매일 하나의 질문, 가벼운 밸런스 선택, 천천히 채워지는 소개 카드, 함께 해보고 싶은 위시리스트를 통해 관계가 서두르지 않고 자연스럽게 깊어지도록 설계한다.
+앱은 매일 하나의 질문, 가벼운 밸런스 선택, 천천히 채워지는 소개 카드, 함께 해보고 싶은 위시리스트를 통해 대화가 서두르지 않고 자연스럽게 이어지도록 설계한다.
 
-현재 Flutter 앱 `민영 Pick`은 `알아가기` 컨셉으로 전체 리디자인한다.
-데이트 후보 선택/쿠폰 중심 구조는 제거하거나 후순위로 내리고, 질문 기반의 친밀감 형성 경험을 핵심으로 삼는다.
+초기 Flutter MVP는 `알아가기` 컨셉으로 전체 리디자인한다.
+다음 만남 후보 선택/쿠폰 중심 구조는 제거하거나 후순위로 내리고, 질문 기반의 상호 이해 경험을 핵심으로 삼는다.
 
 ## 2. Product Goals
 
-- 링크만 열어도 바로 이해되는 둘만의 초대 경험을 만든다.
+- 링크만 열어도 바로 이해되는 비공개 대화 경험을 만든다.
 - 매일 하나의 질문에 답하는 가벼운 루틴을 만든다.
 - 내 답을 남기면 상대 답이 열리는 구조로 상호성을 만든다.
 - 답하지 않아도 괜찮은 무압박 흐름을 제공한다.
@@ -60,6 +60,8 @@
 - 안전하다: 언제든 패스/그만두기 가능하다는 감각을 준다.
 - 상호적이다: 한 사람이 일방적으로 관찰하는 느낌을 피한다.
 - 천천히 깊어진다: 처음부터 가치관/속마음 질문으로 들어가지 않는다.
+- 연애를 전제하지 않는다: 사귀는 사이처럼 보이는 하트, 사랑, 커플, 애정 표현, 기념일 톤을 피한다.
+- 관심은 가볍게 표시한다: `좋아요`나 heart icon보다 `관심 표시`, `서로 관심`처럼 부담 없는 표현을 쓴다.
 
 ### Preferred Copy
 
@@ -68,13 +70,18 @@
 - `정답은 없어요. 떠오르는 대로, 솔직한 한 줄이면 충분해요.`
 - `내 답을 남기면 함께 열려요.`
 - `오늘은 답하기 어렵나요? 내일 다시 보기`
-- `생각보다 결이 잘 맞는 사이예요`
+- `답변 속 공통점이 조금씩 보여요`
+- `비공개 대화 공간`
+- `서로 관심`
 
 ### Avoided Copy
 
 - `여자친구 앱`
 - `커플 전용`
 - `사랑 지수`
+- `하트`
+- `애정 표현`
+- `기념일`
 - `상대 추적`
 - `답장 안 했어요`
 - `왜 답하지 않았나요?`
@@ -93,6 +100,7 @@ Reference `design2.html`: Modern Minimal, sage, warm paper, serif title.
 - serif headline
 - 조용한 카드형 정보
 - 작은 점 형태의 bottom navigation indicator
+- 텍스트 이모지 장식보다 일관된 line icon
 
 ### Color Tokens
 
@@ -124,6 +132,7 @@ Reference `design2.html`: Modern Minimal, sage, warm paper, serif title.
 - Cards use 18-24px radius in this specific design system, matching the reference.
 - Bottom navigation is fixed at bottom with translucent paper background.
 - Avoid nested cards except where the reference explicitly frames a phone preview or a repeated list item.
+- 초대 노트, 홈 기능 카드, 밸런스 선택지, 소개 카드 슬롯, 위시 카드의 아이콘은 모바일에서 텍스트보다 시각 우선순위가 높아지지 않게 작고 일관된 line icon으로 표시한다.
 
 ## 7. Information Architecture
 
@@ -158,7 +167,7 @@ If the app grows, bottom navigation may become:
 - 내 답 저장 후 상대 답 공개 상태 표현
 - 오늘은 패스
 - 질문함 목록
-- 우리 기록 화면
+- 알아간 기록 화면
 - 밸런스 게임 1세트
 - 소개 카드 화면
 - 언젠가 같이 위시리스트 화면
@@ -188,7 +197,7 @@ If the app grows, bottom navigation may become:
 - 로그인 후 Firestore `users/{uid}` 프로필 문서 로드
 - `users/{uid}` 문서가 없으면 UID와 설정 안내를 보여주는 setup required 상태
 - Firestore `spaces/{spaceId}` 멤버 공간 모델
-- 답변, 패스, 소개 카드 슬롯, 위시 좋아요의 repository 저장 경계
+- 답변, 패스, 소개 카드 슬롯, 위시 관심 표시의 repository 저장 경계
 - Firebase dart-define 값이 없을 때 로컬 데모 모드로 빌드/테스트 가능
 
 ### MVP v0.3 Firebase Private Out Of Scope
@@ -209,10 +218,10 @@ If the app grows, bottom navigation may become:
 - Firestore 데이터가 없을 때는 샘플을 대신 보여주지 않고 빈 상태를 보여준다.
 - 오늘의 질문은 실제 질문 카탈로그에서 날짜/순번/depth 기준으로 선택한다.
 - 아카이브는 실제 저장된 답변/패스만 보여준다.
-- 우리 기록은 실제 답변 수, 함께 답한 수, 닮은 키워드 기반으로 계산한다.
+- 알아간 기록은 실제 답변 수, 함께 답한 수, 겹치는 키워드 기반으로 계산한다.
 - 밸런스 게임은 실제 선택 전에는 상대 선택을 노출하지 않는다.
 - 소개 카드는 실제 작성한 슬롯만 채워진 상태로 보여준다.
-- 위시리스트는 실제 추가/좋아요/완료 데이터만 보여준다.
+- 위시리스트는 실제 추가/관심 표시/완료 데이터만 보여준다.
 
 ### MVP v0.4 Real Content & Data Cleanup Out Of Scope
 
@@ -470,10 +479,10 @@ Required UI:
 - Inviter copy: `{inviterName}님이 당신을 초대했어요.`
 - Note rows:
   - 하루에 딱 하나
-  - 둘만의 공간
-  - 천천히 가까워지기
+  - 비공개 기록
+  - 천천히 알아가기
 - Nickname field
-- CTA: `우리 공간으로 들어가기`
+- CTA: `대화 공간으로 들어가기`
 - Fine print: `가입 절차 없이 바로 시작해요 · 언제든 그만둘 수 있어요`
 
 State:
@@ -504,7 +513,7 @@ Required UI:
 - Notification dot or icon
 - Progress strip:
   - `DAY 12 · 서로의 12번째 질문`
-  - `오늘도 한 걸음 가까워졌어요`
+  - `오늘도 한 가지를 알아가요`
   - two avatar markers
 - Today question label
 - Question card:
@@ -640,24 +649,24 @@ Acceptance Criteria:
 - 둘 다 답한 항목은 상대 답변 아래에 기존 댓글을 읽기 좋게 보여준다.
 - 질문함 댓글 입력은 v0.7에서 read-only existing comment 표시까지만 포함하고, 새 댓글 작성은 홈의 오늘 질문부터 시작한다.
 
-### 10.5 Us Record Screen
+### 10.5 Record Screen
 
 Reference: `us.html`
 
 Purpose:
 
-- 두 사람의 누적 기록과 닮은 키워드를 보여준다.
-- “잘 맞네” 하는 작은 즐거움을 제공한다.
+- 두 사람의 누적 답변과 겹치는 키워드를 보여준다.
+- “조금씩 알아가고 있네” 하는 작은 즐거움을 제공한다.
 
 Required UI:
 
-- Header: `우리 기록`
-- Subtitle: `{days}일 동안 우리가 닮아온 이야기`
+- Header: `알아간 기록`
+- Subtitle: `답변에서 보이는 작은 공통점`
 - Hero similarity percentage
-- Copy: `생각보다 결이 잘 맞는 사이예요`
+- Copy: `답변 속 공통점이 조금씩 보여요`
 - Matched keyword chips
 - Stats:
-  - 함께한 날
+  - 기록된 날
   - 주고받은 질문
   - 닮은 답
   - 가장 긴 답
@@ -767,21 +776,21 @@ Purpose:
 Required UI:
 
 - Header: `언젠가, 같이`
-- Subtitle: `부담 없이 적어두는 우리의 위시리스트`
+- Subtitle: `언젠가 해볼 만한 것을 가볍게 적어둬요`
 - Filters:
   - 전체
-  - 둘 다
+  - 서로 관심
   - 가고 싶은 곳
   - 해보고 싶은 것
 - Groups:
-  - 둘 다 하고 싶어요
+  - 서로 관심 있어요
   - 한 명이 담아둔 것
   - 이미 함께했어요
 - Wish cards:
-  - icon
+  - kind-based line icon
   - title
   - who added
-  - liked/hearted state
+  - interest state
   - done state
 - Add button: `하고 싶은 것 담기`
 - Add draft card:
@@ -799,14 +808,15 @@ State:
 - Done wishes
 - Add wish draft
 - Add wish validation error
-- Toggle heart
+- Toggle interest
 - Mark as done
 
 Acceptance Criteria:
 
-- 둘 다 선택한 wish는 별도 강조된다.
-- 한 명만 담은 wish는 heart action이 가능하다.
+- 서로 관심 표시한 wish는 별도 강조된다.
+- 한 명만 담은 wish는 관심 표시 action이 가능하다.
 - 완료된 wish는 흐리게 처리되고 취소선이 보인다.
+- wish의 저장 `icon` 필드는 호환용으로 유지하되, UI에서는 텍스트 이모지를 primary icon으로 직접 노출하지 않는다.
 - Add CTA는 새 wish draft flow로 이어진다.
 - wish title을 입력하고 담기를 누르면 내가 만든 wish가 생성되고 저장된다.
 - 빈 wish title은 저장하지 않고 부드러운 오류 문구를 보여준다.
@@ -835,7 +845,7 @@ Static product content can live in code for MVP, but it must be named as catalog
 - Balance selections
 - Profile card slot values
 - Wishlist items
-- Wish likes
+- Wish interest marks
 - Wish done state
 - Answer comments
 - Daily question progress
@@ -848,7 +858,7 @@ Firebase mode must never fabricate these records.
 - 오늘의 답변 없음: `아직 오늘 답을 남기지 않았어요.`
 - 상대 답변 없음: `{partnerName}님이 답하면 함께 열려요.`
 - 질문함 비어 있음: `아직 쌓인 질문이 없어요. 오늘의 질문부터 천천히 시작해요.`
-- 우리 기록 비어 있음: `기록은 답이 쌓이면 자연스럽게 만들어져요.`
+- 알아간 기록 비어 있음: `기록은 답이 쌓이면 자연스럽게 만들어져요.`
 - 밸런스 선택 없음: `둘 중 끌리는 쪽을 골라볼까요?`
 - 소개 카드 비어 있음: `오늘 한 칸만 채워도 충분해요.`
 - 위시리스트 비어 있음: `같이 해보고 싶은 걸 하나만 담아볼까요?`
@@ -885,18 +895,18 @@ Question IDs are stable and must not be reused for different text.
 | q014 | 14 | daily | 나를 편하게 해주는 말이나 행동은 뭐예요? | 편안함 |
 | q015 | 15 | beliefs | 어떤 사람과 있을 때 마음이 편해져요? | 관계 기준 |
 | q016 | 16 | beliefs | 약속에서 은근히 중요하게 생각하는 게 있다면요? | 만남 기준 |
-| q017 | 17 | beliefs | 처음엔 잘 안 보이지만 가까워지면 드러나는 내 모습은? | 자기 이해 |
+| q017 | 17 | beliefs | 처음엔 잘 안 보이지만 친해지면 드러나는 내 모습은? | 자기 이해 |
 | q018 | 18 | beliefs | 마음에 드는 공간들은 어떤 공통점이 있어요? | 감각의 이유 |
 | q019 | 19 | beliefs | 오래 기억에 남는 다정함은 어떤 종류예요? | 다정함의 기준 |
 | q020 | 20 | beliefs | 요즘 나에게 필요한 속도는 어느 정도인 것 같아요? | 관계 속도 |
-| q021 | 21 | beliefs | 관계에서 서두르고 싶지 않은 부분이 있다면요? | 안전한 경계 |
+| q021 | 21 | beliefs | 사람들과 친해질 때 천천히 가고 싶은 부분이 있다면요? | 안전한 경계 |
 | q022 | 22 | inner | 힘든 날에는 티가 나는 편이에요, 조용해지는 편이에요? | 감정 표현 |
 | q023 | 23 | inner | 마음이 놓인다고 느끼는 순간은 언제예요? | 안정감 |
-| q024 | 24 | inner | 내가 좋아하는 애정 표현은 어떤 쪽에 가까워요? | 애정 언어 |
+| q024 | 24 | inner | 고마움을 표현할 때 어떤 방식이 편해요? | 표현 방식 |
 | q025 | 25 | inner | 요즘 나를 가장 많이 움직이게 하는 건 뭐예요? | 동기 |
-| q026 | 26 | inner | 천천히 가까워지면 알려주고 싶은 내 모습이 있나요? | 자기 개방 |
+| q026 | 26 | inner | 조금 더 친해지면 알려주고 싶은 내 모습이 있나요? | 자기 개방 |
 | q027 | 27 | inner | 언젠가 같이 해보고 싶은 작은 장면이 있다면요? | 다음 만남 |
-| q028 | 28 | inner | 지금 우리 사이에서 고마운 점을 하나만 적는다면요? | 상호 감사 |
+| q028 | 28 | inner | 최근 대화에서 기억에 남은 작은 장면이 있다면요? | 대화 기억 |
 
 Question rules:
 
@@ -916,7 +926,7 @@ Question rules:
 | b003 | 카페를 고른다면? | 조용한 분위기 | 디저트 맛집 | 공간 선택 |
 | b004 | 영화를 본다면? | 잔잔한 영화 | 많이 웃는 영화 | 콘텐츠 취향 |
 | b005 | 만나기 좋은 시간은? | 낮 브런치 | 저녁 산책 | 만남 시간 |
-| b006 | 데이트 계획은? | 미리 예약 | 즉흥 발견 | 계획 성향 |
+| b006 | 약속을 잡는다면? | 미리 예약 | 즉흥 발견 | 계획 성향 |
 | b007 | 대화 분위기는? | 깊은 이야기 | 가벼운 수다 | 대화 리듬 |
 | b008 | 메뉴를 고른다면? | 익숙한 맛집 | 새로운 곳 | 음식 모험도 |
 
@@ -967,7 +977,8 @@ Rules:
 
 - 템플릿은 사용자가 누르기 전까지 Firestore wish가 아니다.
 - wish는 `createdByProfileId`, `likedByProfileIds`, `done`, `createdAt`, `updatedAt`을 가진다.
-- 둘 다 좋아요한 wish만 mutual group에 들어간다.
+- `likedByProfileIds`는 내부 필드명으로 유지하되 UI에서는 `관심 표시`로 표현한다.
+- 서로 관심 표시한 wish만 mutual group에 들어간다.
 
 ## 13. Future Feature Board
 
@@ -1162,7 +1173,7 @@ class SpaceSummary {
   "memberIds": ["{youngwooUid}", "{minyoungUid}"],
   "personalization": {
     "appTitle": "알아가기",
-    "homeLine": "오늘도 한 걸음 가까워졌어요",
+    "homeLine": "오늘도 한 가지를 알아가요",
     "inviteLine": "하루에 하나씩, 조용히 알아가요",
     "accentEmoji": "🌿"
   },
@@ -1500,11 +1511,11 @@ class AlagagiState {
 - Keep invite-line/accent emoji as fallback data fields for a later UI pass.
 - Avoid photos, file uploads, and Storage.
 
-## 18. Migration Notes From Current App
+## 18. Migration Notes From Initial Prototype
 
-Current app:
+Initial prototype:
 
-- `민영 Pick`
+- personal app title
 - date option cards
 - random date idea panel
 - preference chips
@@ -1516,13 +1527,13 @@ New app:
 - invite and nickname
 - daily question and answer
 - archive
-- relationship record
+- answer record
 - balance/profile/wishlist plus features
 
 Migration decision:
 
 - Remove date option selection from the primary MVP.
-- Reuse the idea of “위시리스트” as the new home for future date ideas.
+- Reuse the idea of “위시리스트” as the new home for future outing ideas.
 - Remove coupon concept from MVP.
 - Preserve mobile-first Flutter Web approach.
 - Preserve SDD/TDD workflow.
@@ -1530,7 +1541,7 @@ Migration decision:
 
 ## 19. Open Questions
 
-- 앱 이름을 최종적으로 `알아가기`로 고정할지, `민영 Pick`의 개인화 이름을 일부 남길지.
+- 앱 이름은 `알아가기`로 고정하고, 홈 문구만 개인화할지.
 - 상대 이름을 `민영`으로 고정할지, 닉네임 입력 기반으로 바꿀지.
 - 내 이름/상대 이름의 기본값을 무엇으로 둘지.
 - MVP에서 실제 local persistence를 넣을지, 메모리 상태로만 갈지.

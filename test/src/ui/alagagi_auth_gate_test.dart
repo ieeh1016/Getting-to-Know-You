@@ -21,7 +21,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('우리, 천천히\n알아가 볼래요?'), findsOneWidget);
-      expect(find.text('민영과 영우만 들어올 수 있어요.'), findsOneWidget);
+      expect(find.text('두 사람만 로그인할 수 있어요.'), findsOneWidget);
       expect(find.byKey(loginIdFieldKey), findsOneWidget);
       expect(find.byKey(loginPasswordFieldKey), findsOneWidget);
     });
@@ -53,7 +53,7 @@ void main() {
 
       expect(find.text('알아가기'), findsOneWidget);
       expect(find.text('오늘의 질문'), findsOneWidget);
-      expect(find.textContaining('민영님의 답'), findsOneWidget);
+      expect(find.textContaining('상대 답'), findsOneWidget);
       expect(find.text('아직 오늘 답을 남기지 않았어요.'), findsOneWidget);
       expect(find.textContaining('공기가 조금 조용해지는 시간'), findsNothing);
       expect(data.loadedUsers.single.uid, 'youngwooUid');
@@ -137,7 +137,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(loginIdFieldKey), findsOneWidget);
-      expect(find.text('민영과 영우만 들어올 수 있어요.'), findsOneWidget);
+      expect(find.text('두 사람만 로그인할 수 있어요.'), findsOneWidget);
     });
 
     testWidgets('Firebase session shows empty states instead of sample data', (

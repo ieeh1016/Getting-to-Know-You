@@ -137,5 +137,28 @@ void main() {
         contains('movie'),
       );
     });
+
+    test(
+      'question and balance catalogs avoid romantic commitment language',
+      () {
+        const blockedWords = ['하트', '애정 표현', '데이트 계획', '기념일', '커플'];
+        final questionTexts = questionCatalogV1.expand(
+          (question) => [question.text, question.highlightedText],
+        );
+        final balanceTexts = balanceQuestionCatalogV1.expand(
+          (question) => [
+            question.prompt,
+            question.left.label,
+            question.right.label,
+          ],
+        );
+
+        for (final text in [...questionTexts, ...balanceTexts]) {
+          for (final blockedWord in blockedWords) {
+            expect(text, isNot(contains(blockedWord)));
+          }
+        }
+      },
+    );
   });
 }

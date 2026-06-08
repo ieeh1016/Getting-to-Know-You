@@ -257,7 +257,7 @@ class DailyQuestionProgress {
 class SpacePersonalization {
   const SpacePersonalization({
     this.appTitle = '알아가기',
-    this.homeLine = '오늘도 한 걸음 가까워졌어요',
+    this.homeLine = '오늘도 한 가지를 알아가요',
     this.inviteLine = '하루에 하나씩, 조용히 알아가요',
     this.accentEmoji = '🌿',
   });
@@ -1745,8 +1745,8 @@ const questionCatalogV1 = [
     day: 17,
     number: 17,
     depth: QuestionDepth.beliefs,
-    text: '처음엔 잘 안 보이지만 가까워지면 드러나는 내 모습은?',
-    highlightedText: '가까워지면',
+    text: '처음엔 잘 안 보이지만 친해지면 드러나는 내 모습은?',
+    highlightedText: '친해지면',
   ),
   DailyQuestion(
     id: 'q018',
@@ -1777,7 +1777,7 @@ const questionCatalogV1 = [
     day: 21,
     number: 21,
     depth: QuestionDepth.beliefs,
-    text: '관계에서 서두르고 싶지 않은 부분이 있다면요?',
+    text: '사람들과 친해질 때 천천히 가고 싶은 부분이 있다면요?',
     highlightedText: '서두르지 않기',
   ),
   DailyQuestion(
@@ -1801,8 +1801,8 @@ const questionCatalogV1 = [
     day: 24,
     number: 24,
     depth: QuestionDepth.inner,
-    text: '내가 좋아하는 애정 표현은 어떤 쪽에 가까워요?',
-    highlightedText: '애정 표현',
+    text: '고마움을 표현할 때 어떤 방식이 편해요?',
+    highlightedText: '표현 방식',
   ),
   DailyQuestion(
     id: 'q025',
@@ -1817,7 +1817,7 @@ const questionCatalogV1 = [
     day: 26,
     number: 26,
     depth: QuestionDepth.inner,
-    text: '천천히 가까워지면 알려주고 싶은 내 모습이 있나요?',
+    text: '조금 더 친해지면 알려주고 싶은 내 모습이 있나요?',
     highlightedText: '알려주고 싶은 모습',
   ),
   DailyQuestion(
@@ -1833,8 +1833,8 @@ const questionCatalogV1 = [
     day: 28,
     number: 28,
     depth: QuestionDepth.inner,
-    text: '지금 우리 사이에서 고마운 점을 하나만 적는다면요?',
-    highlightedText: '고마운 점',
+    text: '최근 대화에서 기억에 남은 작은 장면이 있다면요?',
+    highlightedText: '기억에 남은 장면',
   ),
 ];
 
@@ -1871,7 +1871,7 @@ const balanceQuestionCatalogV1 = [
   ),
   BalanceQuestion(
     id: 'b006',
-    prompt: '데이트 계획은?',
+    prompt: '약속을 잡는다면?',
     left: BalanceOption(id: 'reserved', icon: '🗓️', label: '미리 예약'),
     right: BalanceOption(id: 'spontaneous', icon: '✨', label: '즉흥 발견'),
   ),

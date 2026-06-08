@@ -509,7 +509,7 @@ void main() {
 
       controller.updatePersonalizationDraft(
         appTitle: '민영과 영우',
-        homeLine: '천천히 가까워지는 중',
+        homeLine: '천천히 알아가는 중',
       );
 
       expect(repository.savedPersonalizations, isEmpty);
@@ -524,7 +524,7 @@ void main() {
         '민영과 영우',
       );
       expect(controller.state.personalization.appTitle, '민영과 영우');
-      expect(controller.state.personalization.homeLine, '천천히 가까워지는 중');
+      expect(controller.state.personalization.homeLine, '천천히 알아가는 중');
     });
   });
 }

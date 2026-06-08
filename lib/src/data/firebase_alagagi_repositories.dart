@@ -114,7 +114,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       partner: _profileFromData(
         id: partnerUid ?? 'partner',
         data: partnerData ?? const {},
-        fallbackName: '그대',
+        fallbackName: '상대',
         fallbackAvatar: '🪻',
         isMe: false,
       ),
