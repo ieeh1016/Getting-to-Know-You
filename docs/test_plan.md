@@ -26,11 +26,15 @@
 - 밸런스 선택과 다음 질문 이동이 상태에 반영된다.
 - 밸런스 마지막 질문 완료는 첫 질문으로 순환하지 않고 홈으로 돌아간다.
 - 하루 질문 progress는 같은 space의 두 사용자에게 같은 current question을 제공한다.
-- answer reaction은 question/answer owner/reactor 조합당 하나만 저장된다.
+- progress가 없거나 유효하지 않으면 첫 질문으로 안전하게 fallback한다.
+- answer comment는 question/answer owner/commenter 조합당 하나만 저장된다.
+- answer comment draft 변경은 repository write를 호출하지 않는다.
+- answer comment 수정 저장은 같은 comment key를 덮어쓰고 `edited`로 표시한다.
+- 상대 답변이 잠겨 있거나 skipped이면 comment 저장을 거부한다.
 - 소개 카드 슬롯 입력이 진행률에 반영된다.
 - 위시리스트 좋아요가 둘 다 필터에 반영된다.
 - 위시 추가 draft는 제목/종류를 받아 내가 만든 wish를 저장한다.
-- 위시 수정/완료/숨김은 각각 1개 wish 문서 갱신으로 표현된다.
+- 위시 추가/좋아요/완료는 각각 1개 wish 문서 갱신으로 표현된다.
 - 개인화 설정이 없으면 기본 이름/아바타/초대 문구로 fallback한다.
 - 새 Firestore-backed 기능은 명시적 user action당 1 write 이하를 유지한다.
 
@@ -52,13 +56,15 @@
 - 홈의 긴 답변은 접힌 preview와 `더 보기` 확장을 검증한다.
 - `수정하기`를 누르면 답변 화면에 기존 본문이 채워지고 `수정 저장하기`가 보인다.
 - 수정 저장 후 홈에서 수정된 본문이 보이고 상대 답변 공개 상태가 유지된다.
+- 상대 답변이 공개되면 댓글 입력 UI가 보인다.
+- 상대 답변이 잠겨 있으면 댓글 입력 UI가 보이지 않는다.
+- 댓글을 저장하면 상대 답변 아래에 내 댓글이 보인다.
 - 수정 저장 실패 시 재시도 가능한 오류 문구가 보인다.
 - 답변/위시/밸런스 저장 중에는 중복 저장 버튼 입력이 방지된다.
 - 아카이브/기록/밸런스/소개 카드/위시 화면 내비게이션을 검증한다.
 - 위시 화면의 `하고 싶은 것 담기` CTA는 draft 입력 UI를 열고 새 wish를 카드로 추가한다.
-- 반응 버튼은 하나만 선택 상태가 되고 다시 누르면 같은 reaction 문서를 갱신한다.
-- 위시 `같이 했어요` 처리 후 완료 상태/메모가 카드에 보인다.
-- 개인화 설정 저장 후 홈/초대/마이 화면의 이름과 emoji가 바뀐다.
+- 마이 화면에서 앱 이름/홈 문구를 저장하면 홈/마이 화면에 반영된다.
+- 개인화 설정 저장 전 draft 입력은 repository write를 호출하지 않는다.
 
 ## Manual Checks
 
@@ -80,7 +86,7 @@
 - Warning threshold: 1,000 reads/day 또는 100 writes/day.
 - Review/stop threshold: 2,500 reads/day 또는 500 writes/day.
 - Keystroke, scroll, tab switch는 Firestore write를 만들지 않는다.
-- 답변 submit/edit, balance select, profile slot fill, wish add/edit/done, reaction select는 각각 1 document write 이하.
+- 답변 submit/edit, answer comment save/edit, personalization save, balance select, profile slot fill, wish add/edit/done은 각각 1 document write 이하.
 - Summary/current 갱신이 필요한 action만 2 writes까지 허용한다.
 - Home은 전체 answer/wish/profile slot subcollection hydration 없이 summary/progress/today docs로 렌더링 가능해야 한다.
 - TTL, backup, PITR, restore, clone, Storage upload, Cloud Functions가 필요한 기능은 Spark/free-plan MVP 테스트 범위에 넣지 않는다.

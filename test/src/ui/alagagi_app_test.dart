@@ -98,6 +98,132 @@ void main() {
     expect(find.text('접기'), findsOneWidget);
   });
 
+  testWidgets('saves a short comment after partner answer is revealed', (
+    tester,
+  ) async {
+    final controller = AlagagiController()..enterSpace('영우');
+    controller
+      ..updateDraftAnswer('노을 질 때가 좋아요.')
+      ..submitTodayAnswer();
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(answerCommentFieldKey));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(answerCommentFieldKey), '이 답 좋다.');
+    await tester.tap(find.byKey(answerCommentSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('이 답 좋다.'), findsOneWidget);
+  });
+
+  testWidgets('keeps comment editor open when an edit is emptied', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          answers: [
+            Answer(
+              questionId: 'q001',
+              profileId: 'youngwooUid',
+              body: '노을 질 때가 좋아요.',
+              createdLabel: '오늘',
+            ),
+            Answer(
+              questionId: 'q001',
+              profileId: 'minyoungUid',
+              body: '저는 아침 공기가 좋아요.',
+              createdLabel: '오늘',
+            ),
+          ],
+          answerComments: [
+            AnswerComment(
+              questionId: 'q001',
+              answerOwnerProfileId: 'minyoungUid',
+              commenterProfileId: 'youngwooUid',
+              body: '이 답 좋다.',
+              createdLabel: '오늘',
+            ),
+          ],
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('댓글 수정하기'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('댓글 수정하기'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(answerCommentFieldKey), '');
+    await tester.tap(find.byKey(answerCommentSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(answerCommentFieldKey), findsOneWidget);
+    expect(find.text('한 줄만 남겨도 괜찮아요.'), findsOneWidget);
+  });
+
+  testWidgets('hides comment composer while partner answer is locked', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const AlagagiApp());
+    await enterSpace(tester);
+
+    expect(find.byKey(answerCommentFieldKey), findsNothing);
+  });
+
+  testWidgets('customizes app title and home line from my screen', (
+    tester,
+  ) async {
+    final controller = AlagagiController()
+      ..enterSpace('영우')
+      ..goTo(AlagagiRoute.my);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(personalizationAppTitleFieldKey),
+      '민영과 영우',
+    );
+    await tester.enterText(
+      find.byKey(personalizationHomeLineFieldKey),
+      '천천히 가까워지는 중',
+    );
+    await tester.ensureVisible(find.byKey(personalizationSubmitButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(personalizationSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('홈'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('민영과 영우'), findsOneWidget);
+    expect(find.text('천천히 가까워지는 중'), findsOneWidget);
+  });
+
   testWidgets('navigates archive, records, and plus screens', (tester) async {
     await tester.pumpWidget(const AlagagiApp());
     await enterSpace(tester);

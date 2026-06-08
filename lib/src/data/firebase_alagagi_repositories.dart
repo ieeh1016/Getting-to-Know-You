@@ -141,6 +141,55 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
   }
 
   @override
+  Future<void> saveAnswerComment(String spaceId, AnswerComment comment) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('answerComments')
+        .doc(
+          '${comment.questionId}_${comment.answerOwnerProfileId}_${comment.commenterProfileId}',
+        )
+        .set({
+          'questionId': comment.questionId,
+          'answerOwnerProfileId': comment.answerOwnerProfileId,
+          'commenterProfileId': comment.commenterProfileId,
+          'body': comment.body,
+          'createdLabel': comment.createdLabel,
+          'edited': comment.edited,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> saveDailyQuestionProgress(
+    String spaceId,
+    DailyQuestionProgress progress,
+  ) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('progress')
+        .doc('daily')
+        .set({
+          'currentQuestionId': progress.currentQuestionId,
+          'openedDateKey': progress.openedDateKey,
+          'catalogVersion': progress.catalogVersion,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> saveSpacePersonalization(
+    String spaceId,
+    SpacePersonalization personalization,
+  ) {
+    return _firestore.collection('spaces').doc(spaceId).set({
+      'personalization': _personalizationToData(personalization),
+      'personalizationUpdatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  @override
   Future<void> saveBalanceSelection(
     String spaceId,
     BalanceSelection selection,
@@ -210,9 +259,15 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     required String? partnerId,
   }) async {
     final space = _firestore.collection('spaces').doc(spaceId);
+    final spaceSnapshot = await space.get();
     final answersSnapshot = await space.collection('answers').get();
+    final commentsSnapshot = await space.collection('answerComments').get();
     final balanceSnapshot = await space.collection('balanceSelections').get();
     final wishesSnapshot = await space.collection('wishes').get();
+    final progressSnapshot = await space
+        .collection('progress')
+        .doc('daily')
+        .get();
 
     final profileSlots = <ProfileSlotValue>[];
     for (final profileId in {meId, ?partnerId}) {
@@ -234,6 +289,10 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           .map((doc) => _answerFromData(doc.data()))
           .nonNulls
           .toList(),
+      answerComments: commentsSnapshot.docs
+          .map((doc) => _answerCommentFromData(doc.data()))
+          .nonNulls
+          .toList(),
       balanceSelections: balanceSnapshot.docs
           .map((doc) => _balanceSelectionFromData(doc.data()))
           .nonNulls
@@ -243,6 +302,8 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           .map((doc) => _wishFromData(doc.id, doc.data()))
           .nonNulls
           .toList(),
+      dailyProgress: _dailyProgressFromData(progressSnapshot.data()),
+      personalization: _personalizationFromData(spaceSnapshot.data()),
     );
   }
 
@@ -259,6 +320,43 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       createdLabel: _readString(data, 'createdLabel') ?? '오늘',
       skipped: data['skipped'] == true,
       edited: data['edited'] == true,
+    );
+  }
+
+  AnswerComment? _answerCommentFromData(Map<String, dynamic> data) {
+    final questionId = _readString(data, 'questionId');
+    final answerOwnerProfileId = _readString(data, 'answerOwnerProfileId');
+    final commenterProfileId = _readString(data, 'commenterProfileId');
+    final body = _readString(data, 'body');
+    if (questionId == null ||
+        answerOwnerProfileId == null ||
+        commenterProfileId == null ||
+        body == null) {
+      return null;
+    }
+    return AnswerComment(
+      questionId: questionId,
+      answerOwnerProfileId: answerOwnerProfileId,
+      commenterProfileId: commenterProfileId,
+      body: body,
+      createdLabel: _readString(data, 'createdLabel') ?? '오늘',
+      edited: data['edited'] == true,
+    );
+  }
+
+  DailyQuestionProgress? _dailyProgressFromData(Map<String, dynamic>? data) {
+    if (data == null) {
+      return null;
+    }
+    final currentQuestionId = _readString(data, 'currentQuestionId');
+    final openedDateKey = _readString(data, 'openedDateKey');
+    if (currentQuestionId == null || openedDateKey == null) {
+      return null;
+    }
+    return DailyQuestionProgress(
+      currentQuestionId: currentQuestionId,
+      openedDateKey: openedDateKey,
+      catalogVersion: _readString(data, 'catalogVersion') ?? 'v1',
     );
   }
 
@@ -334,6 +432,31 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       avatar: _readString(data, 'avatar') ?? fallbackAvatar,
       isMe: isMe,
     );
+  }
+
+  SpacePersonalization _personalizationFromData(Map<String, dynamic>? data) {
+    final raw = data?['personalization'];
+    if (raw is! Map<String, dynamic>) {
+      return const SpacePersonalization();
+    }
+    const defaults = SpacePersonalization();
+    return SpacePersonalization(
+      appTitle: _readString(raw, 'appTitle') ?? defaults.appTitle,
+      homeLine: _readString(raw, 'homeLine') ?? defaults.homeLine,
+      inviteLine: _readString(raw, 'inviteLine') ?? defaults.inviteLine,
+      accentEmoji: _readString(raw, 'accentEmoji') ?? defaults.accentEmoji,
+    );
+  }
+
+  Map<String, dynamic> _personalizationToData(
+    SpacePersonalization personalization,
+  ) {
+    return {
+      'appTitle': personalization.appTitle,
+      'homeLine': personalization.homeLine,
+      'inviteLine': personalization.inviteLine,
+      'accentEmoji': personalization.accentEmoji,
+    };
   }
 
   String? _readString(Map<String, dynamic> data, String key) {

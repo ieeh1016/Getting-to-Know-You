@@ -295,6 +295,8 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   final Map<String, AlagagiSession> sessionsByUid;
   final List<AlagagiAuthUser> loadedUsers = [];
   final List<WishItem> savedWishes = [];
+  final List<AnswerComment> savedAnswerComments = [];
+  final List<SpacePersonalization> savedPersonalizations = [];
 
   @override
   Future<AlagagiSession?> loadSession(AlagagiAuthUser user) async {
@@ -304,6 +306,25 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveAnswer(String spaceId, Answer answer) async {}
+
+  @override
+  Future<void> saveAnswerComment(String spaceId, AnswerComment comment) async {
+    savedAnswerComments.add(comment);
+  }
+
+  @override
+  Future<void> saveDailyQuestionProgress(
+    String spaceId,
+    DailyQuestionProgress progress,
+  ) async {}
+
+  @override
+  Future<void> saveSpacePersonalization(
+    String spaceId,
+    SpacePersonalization personalization,
+  ) async {
+    savedPersonalizations.add(personalization);
+  }
 
   @override
   Future<void> saveBalanceSelection(

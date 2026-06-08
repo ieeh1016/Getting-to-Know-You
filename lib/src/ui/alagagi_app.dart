@@ -12,6 +12,11 @@ const wishTitleFieldKey = Key('wish-title-field');
 const wishSubmitButtonKey = Key('wish-submit-button');
 const editAnswerButtonKey = Key('edit-answer-button');
 const answerRetryButtonKey = Key('answer-retry-button');
+const answerCommentFieldKey = Key('answer-comment-field');
+const answerCommentSubmitButtonKey = Key('answer-comment-submit-button');
+const personalizationAppTitleFieldKey = Key('personalization-app-title-field');
+const personalizationHomeLineFieldKey = Key('personalization-home-line-field');
+const personalizationSubmitButtonKey = Key('personalization-submit-button');
 
 const _longAnswerPreviewLength = 120;
 
@@ -974,20 +979,8 @@ class _HomeHeader extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Text.rich(
-          TextSpan(
-            children: [
-              const TextSpan(text: '알아'),
-              TextSpan(
-                text: '가기',
-                style: serif(
-                  context,
-                  color: AlagagiColors.sageDeep,
-                  weight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
+        Text(
+          controller.state.personalization.appTitle,
           style: serif(context, size: 23, weight: FontWeight.w800),
         ),
         _CircleButton(
@@ -1028,7 +1021,7 @@ class _ProgressStrip extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '오늘도 한 걸음 가까워졌어요',
+                  controller.state.personalization.homeLine,
                   style: serif(
                     context,
                     size: 16,
@@ -1226,20 +1219,142 @@ class _QuestionCard extends StatelessWidget {
             if (partnerAnswer == null)
               _LockedAnswer(partnerName: controller.state.partner.nickname)
             else
-              _AnswerLine(
-                tag: controller.state.partner.nickname,
-                tagColor: AlagagiColors.lavender,
-                body: partnerAnswer.body,
-                expanded: controller.isAnswerExpanded(
-                  partnerAnswer.questionId,
-                  partnerAnswer.profileId,
-                ),
-                onToggle: () => controller.toggleAnswerExpanded(
-                  partnerAnswer.questionId,
-                  partnerAnswer.profileId,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _AnswerLine(
+                    tag: controller.state.partner.nickname,
+                    tagColor: AlagagiColors.lavender,
+                    body: partnerAnswer.body,
+                    expanded: controller.isAnswerExpanded(
+                      partnerAnswer.questionId,
+                      partnerAnswer.profileId,
+                    ),
+                    onToggle: () => controller.toggleAnswerExpanded(
+                      partnerAnswer.questionId,
+                      partnerAnswer.profileId,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _AnswerCommentBox(
+                    controller: controller,
+                    questionId: partnerAnswer.questionId,
+                    answerOwnerProfileId: partnerAnswer.profileId,
+                  ),
+                ],
               ),
             _AnswerSaveStatus(controller: controller),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AnswerCommentBox extends StatelessWidget {
+  const _AnswerCommentBox({
+    required this.controller,
+    required this.questionId,
+    required this.answerOwnerProfileId,
+    this.readOnly = false,
+  });
+
+  final AlagagiController controller;
+  final String questionId;
+  final String answerOwnerProfileId;
+  final bool readOnly;
+
+  @override
+  Widget build(BuildContext context) {
+    final existingComment = controller.commentForAnswer(
+      questionId,
+      answerOwnerProfileId,
+      controller.state.me.id,
+    );
+    final inputValue = controller.commentInputValueForAnswer(
+      questionId,
+      answerOwnerProfileId,
+    );
+    final hasDraft = controller.hasCommentDraftForAnswer(
+      questionId,
+      answerOwnerProfileId,
+    );
+    final showEditor = !readOnly && (hasDraft || existingComment == null);
+    final showEditButton = !readOnly && existingComment != null && !hasDraft;
+    if (readOnly && existingComment == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (existingComment != null) ...[
+            Text('내 댓글', style: sans(size: 11, color: AlagagiColors.muted)),
+            const SizedBox(height: 4),
+            Text(
+              existingComment.body,
+              style: sans(size: 13, color: AlagagiColors.ink, height: 1.5),
+            ),
+          ],
+          if (showEditButton) ...[
+            const SizedBox(height: 8),
+            _InlineTextAction(
+              label: '댓글 수정하기',
+              onPressed: () => controller.updateAnswerCommentDraft(
+                questionId: questionId,
+                answerOwnerProfileId: answerOwnerProfileId,
+                value: existingComment.body,
+              ),
+            ),
+          ],
+          if (showEditor) ...[
+            if (existingComment != null) const SizedBox(height: 10),
+            TextFormField(
+              key: answerCommentFieldKey,
+              initialValue: inputValue,
+              maxLength: 120,
+              minLines: 1,
+              maxLines: 3,
+              onChanged: (value) => controller.updateAnswerCommentDraft(
+                questionId: questionId,
+                answerOwnerProfileId: answerOwnerProfileId,
+                value: value,
+              ),
+              decoration: InputDecoration(
+                counterText: '',
+                border: InputBorder.none,
+                hintText: existingComment == null
+                    ? '이 답에 짧게 남겨볼까요?'
+                    : '댓글을 다듬어볼까요?',
+              ),
+              style: sans(size: 13, height: 1.5),
+            ),
+            if (controller.state.commentError != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                controller.state.commentError!,
+                style: sans(size: 11, color: AlagagiColors.sageDeep),
+              ),
+            ],
+            Align(
+              alignment: Alignment.centerRight,
+              child: _InlineTextAction(
+                key: answerCommentSubmitButtonKey,
+                label: existingComment == null ? '댓글 남기기' : '댓글 수정 저장',
+                onPressed: () => controller.submitAnswerComment(
+                  questionId: questionId,
+                  answerOwnerProfileId: answerOwnerProfileId,
+                ),
+              ),
+            ),
           ],
         ],
       ),
@@ -2111,6 +2226,13 @@ class _ArchiveCard extends StatelessWidget {
                 item.partnerAnswer!.questionId,
                 item.partnerAnswer!.profileId,
               ),
+            ),
+            const SizedBox(height: 10),
+            _AnswerCommentBox(
+              controller: controller,
+              questionId: item.partnerAnswer!.questionId,
+              answerOwnerProfileId: item.partnerAnswer!.profileId,
+              readOnly: true,
             ),
           ],
           if (item.matchedKeywords.isNotEmpty) ...[
@@ -3294,7 +3416,93 @@ class MyScreen extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(height: 16),
+        _PaperCard(
+          radius: 22,
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '내 공간 다듬기',
+                style: serif(context, size: 20, weight: FontWeight.w800),
+              ),
+              const SizedBox(height: 14),
+              _PersonalizationField(
+                fieldKey: personalizationAppTitleFieldKey,
+                label: '앱 이름',
+                initialValue: controller.state.personalizationDraft.appTitle,
+                maxLength: 16,
+                onChanged: (value) =>
+                    controller.updatePersonalizationDraft(appTitle: value),
+              ),
+              const SizedBox(height: 12),
+              _PersonalizationField(
+                fieldKey: personalizationHomeLineFieldKey,
+                label: '홈 문구',
+                initialValue: controller.state.personalizationDraft.homeLine,
+                maxLength: 40,
+                onChanged: (value) =>
+                    controller.updatePersonalizationDraft(homeLine: value),
+              ),
+              if (controller.state.personalizationError != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  controller.state.personalizationError!,
+                  style: sans(size: 12, color: AlagagiColors.sageDeep),
+                ),
+              ],
+              const SizedBox(height: 16),
+              _PrimaryButton(
+                label: '커스텀 저장',
+                onPressed: controller.savePersonalizationDraft,
+                color: AlagagiColors.sageDeep,
+                buttonKey: personalizationSubmitButtonKey,
+              ),
+            ],
+          ),
+        ),
       ],
+    );
+  }
+}
+
+class _PersonalizationField extends StatelessWidget {
+  const _PersonalizationField({
+    required this.fieldKey,
+    required this.label,
+    required this.initialValue,
+    required this.maxLength,
+    required this.onChanged,
+  });
+
+  final Key fieldKey;
+  final String label;
+  final String initialValue;
+  final int maxLength;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+      child: TextFormField(
+        key: fieldKey,
+        initialValue: initialValue,
+        maxLength: maxLength,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          labelText: label,
+          counterText: '',
+          border: InputBorder.none,
+        ),
+        style: sans(size: 14, height: 1.5),
+      ),
     );
   }
 }

@@ -151,6 +151,63 @@ void main() {
       expect(controller.insight.matchCount, 1);
     });
 
+    test('daily progress selects the shared current question', () {
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            dailyProgress: DailyQuestionProgress(
+              currentQuestionId: 'q003',
+              openedDateKey: '2026-06-08',
+            ),
+          ),
+        ),
+      );
+
+      expect(controller.todayQuestion.id, 'q003');
+      expect(controller.todayQuestion.number, 3);
+    });
+
+    test('invalid daily progress safely falls back to the first question', () {
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            dailyProgress: DailyQuestionProgress(
+              currentQuestionId: 'missing-question',
+              openedDateKey: '2026-06-08',
+            ),
+          ),
+        ),
+      );
+
+      expect(controller.todayQuestion.id, 'q001');
+    });
+
     test('last balance question completes instead of looping', () {
       final controller = AlagagiController.forSession(firebaseTestSession);
 
@@ -262,6 +319,213 @@ void main() {
       expect(controller.state.answerSaveStatus, SaveStatus.saved);
       expect(repository.savedAnswers.single.answer.body, '저장 실패를 확인하는 답변');
     });
+
+    test('answer comment draft does not write until submit', () {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            answers: [
+              Answer(
+                questionId: 'q001',
+                profileId: 'youngwooUid',
+                body: '저는 노을 질 때가 좋아요.',
+                createdLabel: '오늘',
+              ),
+              Answer(
+                questionId: 'q001',
+                profileId: 'minyoungUid',
+                body: '저는 아침 공기가 좋아요.',
+                createdLabel: '오늘',
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+      );
+
+      controller.updateAnswerCommentDraft(
+        questionId: 'q001',
+        answerOwnerProfileId: 'minyoungUid',
+        value: '이 답 좋다. 조금 더 듣고 싶어.',
+      );
+
+      expect(repository.savedAnswerComments, isEmpty);
+      expect(
+        controller.commentDraftForAnswer('q001', 'minyoungUid'),
+        '이 답 좋다. 조금 더 듣고 싶어.',
+      );
+    });
+
+    test(
+      'answer comment save and edit overwrite the same comment key',
+      () async {
+        final repository = RecordingAlagagiRepository();
+        final controller = AlagagiController.forSession(
+          const AlagagiSession(
+            spaceId: 'main',
+            me: AppProfile(
+              id: 'youngwooUid',
+              nickname: '영우',
+              avatar: '🌿',
+              isMe: true,
+            ),
+            partner: AppProfile(
+              id: 'minyoungUid',
+              nickname: '민영',
+              avatar: '🪻',
+              isMe: false,
+            ),
+            data: AlagagiSpaceData(
+              answers: [
+                Answer(
+                  questionId: 'q001',
+                  profileId: 'youngwooUid',
+                  body: '저는 노을 질 때가 좋아요.',
+                  createdLabel: '오늘',
+                ),
+                Answer(
+                  questionId: 'q001',
+                  profileId: 'minyoungUid',
+                  body: '저는 아침 공기가 좋아요.',
+                  createdLabel: '오늘',
+                ),
+              ],
+            ),
+          ),
+          repository: repository,
+        );
+
+        controller.updateAnswerCommentDraft(
+          questionId: 'q001',
+          answerOwnerProfileId: 'minyoungUid',
+          value: '이 답 좋다.',
+        );
+        controller.submitAnswerComment(
+          questionId: 'q001',
+          answerOwnerProfileId: 'minyoungUid',
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        controller.updateAnswerCommentDraft(
+          questionId: 'q001',
+          answerOwnerProfileId: 'minyoungUid',
+          value: '이 답 좋다. 조금 더 듣고 싶어.',
+        );
+        controller.submitAnswerComment(
+          questionId: 'q001',
+          answerOwnerProfileId: 'minyoungUid',
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(repository.savedAnswerComments, hasLength(2));
+        expect(repository.savedAnswerComments.first.comment.edited, isFalse);
+        expect(repository.savedAnswerComments.last.comment.edited, isTrue);
+        expect(repository.savedAnswerComments.last.comment.questionId, 'q001');
+        expect(
+          repository.savedAnswerComments.last.comment.answerOwnerProfileId,
+          'minyoungUid',
+        );
+        expect(
+          controller
+              .commentForAnswer('q001', 'minyoungUid', 'youngwooUid')
+              ?.body,
+          '이 답 좋다. 조금 더 듣고 싶어.',
+        );
+      },
+    );
+
+    test('answer comment is rejected when partner answer is skipped', () {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            answers: [
+              Answer(
+                questionId: 'q001',
+                profileId: 'youngwooUid',
+                body: '저는 노을 질 때가 좋아요.',
+                createdLabel: '오늘',
+              ),
+              Answer(
+                questionId: 'q001',
+                profileId: 'minyoungUid',
+                body: '',
+                createdLabel: '오늘',
+                skipped: true,
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+      );
+
+      controller.updateAnswerCommentDraft(
+        questionId: 'q001',
+        answerOwnerProfileId: 'minyoungUid',
+        value: '나중에 다시 들어볼게.',
+      );
+      controller.submitAnswerComment(
+        questionId: 'q001',
+        answerOwnerProfileId: 'minyoungUid',
+      );
+
+      expect(repository.savedAnswerComments, isEmpty);
+      expect(controller.state.commentError, contains('상대 답이 열린 뒤'));
+    });
+
+    test('personalization draft saves only on explicit action', () async {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        firebaseTestSession,
+        repository: repository,
+      );
+
+      controller.updatePersonalizationDraft(
+        appTitle: '민영과 영우',
+        homeLine: '천천히 가까워지는 중',
+      );
+
+      expect(repository.savedPersonalizations, isEmpty);
+      expect(controller.state.personalizationDraft.appTitle, '민영과 영우');
+
+      controller.savePersonalizationDraft();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(repository.savedPersonalizations.single.spaceId, 'main');
+      expect(
+        repository.savedPersonalizations.single.personalization.appTitle,
+        '민영과 영우',
+      );
+      expect(controller.state.personalization.appTitle, '민영과 영우');
+      expect(controller.state.personalization.homeLine, '천천히 가까워지는 중');
+    });
   });
 }
 
@@ -284,6 +548,12 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   final List<({String spaceId, String profileId, ProfileSlot slot})>
   savedProfileSlots = [];
   final List<({String spaceId, WishItem wish})> savedWishes = [];
+  final List<({String spaceId, AnswerComment comment})> savedAnswerComments =
+      [];
+  final List<({String spaceId, DailyQuestionProgress progress})>
+  savedDailyQuestionProgress = [];
+  final List<({String spaceId, SpacePersonalization personalization})>
+  savedPersonalizations = [];
 
   @override
   Future<AlagagiSession?> loadSession(AlagagiAuthUser user) async {
@@ -318,5 +588,29 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   @override
   Future<void> saveWish(String spaceId, WishItem wish) async {
     savedWishes.add((spaceId: spaceId, wish: wish));
+  }
+
+  @override
+  Future<void> saveAnswerComment(String spaceId, AnswerComment comment) async {
+    savedAnswerComments.add((spaceId: spaceId, comment: comment));
+  }
+
+  @override
+  Future<void> saveDailyQuestionProgress(
+    String spaceId,
+    DailyQuestionProgress progress,
+  ) async {
+    savedDailyQuestionProgress.add((spaceId: spaceId, progress: progress));
+  }
+
+  @override
+  Future<void> saveSpacePersonalization(
+    String spaceId,
+    SpacePersonalization personalization,
+  ) async {
+    savedPersonalizations.add((
+      spaceId: spaceId,
+      personalization: personalization,
+    ));
   }
 }

@@ -23,16 +23,19 @@
   - 저장 피드백과 실패 재시도
 - v0.6: Daily Question Operations
   - 하루 질문 progress 문서
-  - 지난 질문 다시 보기/수정
+  - progress의 currentQuestionId로 오늘 질문 결정
+  - progress fallback
   - static question catalog 유지
-- v0.7: Lightweight Reactions
-  - 답변당 사용자별 반응 1개
-  - 채팅이 아닌 작은 읽음/공감 신호
-- v0.8: Wishlist Polish
-  - wish 수정/숨김/완료
-  - 완료 날짜와 짧은 메모
-- v0.9: Personalization & Stability
-  - 이름/emoji/초대 문구 설정
+- v0.7: Answer Comments
+  - 상대 답변에 직접 입력하는 짧은 댓글
+  - 답변당 사용자별 댓글 1개
+  - 채팅/typing/presence 없이 명시적 저장만
+- v0.8: Personalization
+  - 앱 이름/홈 문구 설정
+  - inviteLine/accentEmoji fallback 필드 보존
+- v0.9: Question Mood & Stability
+  - 질문 분위기 선택
+  - 다음 만남/타임캡슐 후보 검토
   - loading/error/offline UX
 
 ## 1. Product Intent

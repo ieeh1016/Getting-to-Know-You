@@ -83,15 +83,21 @@ class AlagagiSession {
 class AlagagiSpaceData {
   const AlagagiSpaceData({
     this.answers = const [],
+    this.answerComments = const [],
     this.balanceSelections = const [],
     this.profileSlots = const [],
     this.wishes = const [],
+    this.dailyProgress,
+    this.personalization = const SpacePersonalization(),
   });
 
   final List<Answer> answers;
+  final List<AnswerComment> answerComments;
   final List<BalanceSelection> balanceSelections;
   final List<ProfileSlotValue> profileSlots;
   final List<WishItem> wishes;
+  final DailyQuestionProgress? dailyProgress;
+  final SpacePersonalization personalization;
 }
 
 class BalanceSelection {
@@ -118,6 +124,18 @@ abstract class AlagagiDataRepository {
 
   Future<void> saveAnswer(String spaceId, Answer answer);
 
+  Future<void> saveAnswerComment(String spaceId, AnswerComment comment);
+
+  Future<void> saveDailyQuestionProgress(
+    String spaceId,
+    DailyQuestionProgress progress,
+  );
+
+  Future<void> saveSpacePersonalization(
+    String spaceId,
+    SpacePersonalization personalization,
+  );
+
   Future<void> saveBalanceSelection(String spaceId, BalanceSelection selection);
 
   Future<void> saveProfileSlot(
@@ -142,11 +160,11 @@ class AppProfile {
   final String avatar;
   final bool isMe;
 
-  AppProfile copyWith({String? nickname}) {
+  AppProfile copyWith({String? nickname, String? avatar}) {
     return AppProfile(
       id: id,
       nickname: nickname ?? this.nickname,
-      avatar: avatar,
+      avatar: avatar ?? this.avatar,
       isMe: isMe,
     );
   }
@@ -202,6 +220,64 @@ class Answer {
       createdLabel: createdLabel ?? this.createdLabel,
       skipped: skipped ?? this.skipped,
       edited: edited ?? this.edited,
+    );
+  }
+}
+
+class AnswerComment {
+  const AnswerComment({
+    required this.questionId,
+    required this.answerOwnerProfileId,
+    required this.commenterProfileId,
+    required this.body,
+    required this.createdLabel,
+    this.edited = false,
+  });
+
+  final String questionId;
+  final String answerOwnerProfileId;
+  final String commenterProfileId;
+  final String body;
+  final String createdLabel;
+  final bool edited;
+}
+
+class DailyQuestionProgress {
+  const DailyQuestionProgress({
+    required this.currentQuestionId,
+    required this.openedDateKey,
+    this.catalogVersion = 'v1',
+  });
+
+  final String currentQuestionId;
+  final String openedDateKey;
+  final String catalogVersion;
+}
+
+class SpacePersonalization {
+  const SpacePersonalization({
+    this.appTitle = '알아가기',
+    this.homeLine = '오늘도 한 걸음 가까워졌어요',
+    this.inviteLine = '하루에 하나씩, 조용히 알아가요',
+    this.accentEmoji = '🌿',
+  });
+
+  final String appTitle;
+  final String homeLine;
+  final String inviteLine;
+  final String accentEmoji;
+
+  SpacePersonalization copyWith({
+    String? appTitle,
+    String? homeLine,
+    String? inviteLine,
+    String? accentEmoji,
+  }) {
+    return SpacePersonalization(
+      appTitle: appTitle ?? this.appTitle,
+      homeLine: homeLine ?? this.homeLine,
+      inviteLine: inviteLine ?? this.inviteLine,
+      accentEmoji: accentEmoji ?? this.accentEmoji,
     );
   }
 }
@@ -396,8 +472,13 @@ class AlagagiState {
     this.draftAnswer = '',
     this.inviteError,
     this.answerError,
+    this.commentError,
     this.answerSaveStatus = SaveStatus.idle,
     this.answerSaveFeedback,
+    this.commentDraftsByAnswerKey = const {},
+    this.personalization = const SpacePersonalization(),
+    this.personalizationDraft = const SpacePersonalization(),
+    this.personalizationError,
     this.wishDraftError,
     this.skippedToday = false,
     this.editingAnswer = false,
@@ -417,8 +498,13 @@ class AlagagiState {
   final String draftAnswer;
   final String? inviteError;
   final String? answerError;
+  final String? commentError;
   final SaveStatus answerSaveStatus;
   final String? answerSaveFeedback;
+  final Map<String, String> commentDraftsByAnswerKey;
+  final SpacePersonalization personalization;
+  final SpacePersonalization personalizationDraft;
+  final String? personalizationError;
   final String? wishDraftError;
   final bool skippedToday;
   final bool editingAnswer;
@@ -440,9 +526,16 @@ class AlagagiState {
     bool clearInviteError = false,
     String? answerError,
     bool clearAnswerError = false,
+    String? commentError,
+    bool clearCommentError = false,
     SaveStatus? answerSaveStatus,
     String? answerSaveFeedback,
     bool clearAnswerSaveFeedback = false,
+    Map<String, String>? commentDraftsByAnswerKey,
+    SpacePersonalization? personalization,
+    SpacePersonalization? personalizationDraft,
+    String? personalizationError,
+    bool clearPersonalizationError = false,
     String? wishDraftError,
     bool clearWishDraftError = false,
     bool? skippedToday,
@@ -463,10 +556,20 @@ class AlagagiState {
       draftAnswer: draftAnswer ?? this.draftAnswer,
       inviteError: clearInviteError ? null : inviteError ?? this.inviteError,
       answerError: clearAnswerError ? null : answerError ?? this.answerError,
+      commentError: clearCommentError
+          ? null
+          : commentError ?? this.commentError,
       answerSaveStatus: answerSaveStatus ?? this.answerSaveStatus,
       answerSaveFeedback: clearAnswerSaveFeedback
           ? null
           : answerSaveFeedback ?? this.answerSaveFeedback,
+      commentDraftsByAnswerKey:
+          commentDraftsByAnswerKey ?? this.commentDraftsByAnswerKey,
+      personalization: personalization ?? this.personalization,
+      personalizationDraft: personalizationDraft ?? this.personalizationDraft,
+      personalizationError: clearPersonalizationError
+          ? null
+          : personalizationError ?? this.personalizationError,
       wishDraftError: clearWishDraftError
           ? null
           : wishDraftError ?? this.wishDraftError,
@@ -482,7 +585,7 @@ class AlagagiController extends ChangeNotifier {
     : _repository = repository,
       _spaceId = null,
       _usesDemoData = true,
-      todayQuestion = seedQuestions.first,
+      _todayQuestion = seedQuestions.first,
       questions = seedQuestions,
       balanceQuestions = seedBalanceQuestions,
       _state = const AlagagiState(
@@ -503,13 +606,18 @@ class AlagagiController extends ChangeNotifier {
   }) : _repository = repository,
        _spaceId = session.spaceId,
        _usesDemoData = false,
-       todayQuestion = questionCatalogV1.first,
+       _todayQuestion = _questionForProgress(
+         questionCatalogV1,
+         session.data.dailyProgress,
+       ),
        questions = questionCatalogV1,
        balanceQuestions = balanceQuestionCatalogV1,
        _state = AlagagiState(
          me: session.me,
          partner: session.partner,
          route: AlagagiRoute.home,
+         personalization: session.data.personalization,
+         personalizationDraft: session.data.personalization,
        ) {
     _applySessionData(session.data);
   }
@@ -519,12 +627,13 @@ class AlagagiController extends ChangeNotifier {
   final String? _spaceId;
   final bool _usesDemoData;
 
-  final DailyQuestion todayQuestion;
+  final DailyQuestion _todayQuestion;
   final List<DailyQuestion> questions;
   final List<BalanceQuestion> balanceQuestions;
 
   final Map<String, Answer> _myAnswersByQuestionId = {};
   final Map<String, Answer> _partnerAnswersByQuestionId = {};
+  final Map<String, AnswerComment> _answerCommentsByKey = {};
   final Map<String, String> _balanceSelections = {};
   final Map<String, String> _partnerBalanceSelections = {};
   final List<ProfileCardData> _profileCards = [];
@@ -532,6 +641,8 @@ class AlagagiController extends ChangeNotifier {
   Answer? _lastFailedAnswer;
 
   AlagagiState get state => _state;
+
+  DailyQuestion get todayQuestion => _todayQuestion;
 
   RelationshipInsight get insight {
     if (_usesDemoData) {
@@ -593,6 +704,21 @@ class AlagagiController extends ChangeNotifier {
       }
     }
 
+    _answerCommentsByKey
+      ..clear()
+      ..addEntries(
+        data.answerComments.map((comment) {
+          return MapEntry(
+            _answerCommentKey(
+              comment.questionId,
+              comment.answerOwnerProfileId,
+              comment.commenterProfileId,
+            ),
+            comment,
+          );
+        }),
+      );
+
     _balanceSelections.clear();
     _partnerBalanceSelections.clear();
     for (final selection in data.balanceSelections) {
@@ -626,6 +752,21 @@ class AlagagiController extends ChangeNotifier {
     _wishes
       ..clear()
       ..addAll(data.wishes);
+  }
+
+  static DailyQuestion _questionForProgress(
+    List<DailyQuestion> catalog,
+    DailyQuestionProgress? progress,
+  ) {
+    if (progress == null) {
+      return catalog.first;
+    }
+    for (final question in catalog) {
+      if (question.id == progress.currentQuestionId) {
+        return question;
+      }
+    }
+    return catalog.first;
   }
 
   List<ProfileCardData> _emptyProfileCardsForSession() {
@@ -819,6 +960,30 @@ class AlagagiController extends ChangeNotifier {
     unawaited(repository.saveWish(spaceId, wish).catchError((_) {}));
   }
 
+  void _persistAnswerComment(AnswerComment comment) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      return;
+    }
+    unawaited(
+      repository.saveAnswerComment(spaceId, comment).catchError((_) {}),
+    );
+  }
+
+  void _persistSpacePersonalization(SpacePersonalization personalization) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      return;
+    }
+    unawaited(
+      repository
+          .saveSpacePersonalization(spaceId, personalization)
+          .catchError((_) {}),
+    );
+  }
+
   Answer? get todayMyAnswer => _myAnswersByQuestionId[todayQuestion.id];
 
   Answer? get todayPartnerAnswer => todayMyAnswer == null
@@ -827,6 +992,21 @@ class AlagagiController extends ChangeNotifier {
 
   static String _answerExpansionKey(String questionId, String profileId) {
     return '$questionId::$profileId';
+  }
+
+  static String _answerCommentKey(
+    String questionId,
+    String answerOwnerProfileId,
+    String commenterProfileId,
+  ) {
+    return '$questionId::$answerOwnerProfileId::$commenterProfileId';
+  }
+
+  static String _answerCommentDraftKey(
+    String questionId,
+    String answerOwnerProfileId,
+  ) {
+    return '$questionId::$answerOwnerProfileId';
   }
 
   BalanceQuestion get activeBalanceQuestion =>
@@ -930,6 +1110,176 @@ class AlagagiController extends ChangeNotifier {
   void updateDraftAnswer(String value) {
     _state = _state.copyWith(draftAnswer: value, clearAnswerError: true);
     notifyListeners();
+  }
+
+  AnswerComment? commentForAnswer(
+    String questionId,
+    String answerOwnerProfileId,
+    String commenterProfileId,
+  ) {
+    return _answerCommentsByKey[_answerCommentKey(
+      questionId,
+      answerOwnerProfileId,
+      commenterProfileId,
+    )];
+  }
+
+  String commentDraftForAnswer(String questionId, String answerOwnerProfileId) {
+    final draftKey = _answerCommentDraftKey(questionId, answerOwnerProfileId);
+    return _state.commentDraftsByAnswerKey[draftKey] ??
+        commentForAnswer(
+          questionId,
+          answerOwnerProfileId,
+          _state.me.id,
+        )?.body ??
+        '';
+  }
+
+  String commentInputValueForAnswer(
+    String questionId,
+    String answerOwnerProfileId,
+  ) {
+    return _state.commentDraftsByAnswerKey[_answerCommentDraftKey(
+          questionId,
+          answerOwnerProfileId,
+        )] ??
+        '';
+  }
+
+  bool hasCommentDraftForAnswer(
+    String questionId,
+    String answerOwnerProfileId,
+  ) {
+    return _state.commentDraftsByAnswerKey.containsKey(
+      _answerCommentDraftKey(questionId, answerOwnerProfileId),
+    );
+  }
+
+  void updateAnswerCommentDraft({
+    required String questionId,
+    required String answerOwnerProfileId,
+    required String value,
+  }) {
+    final draftKey = _answerCommentDraftKey(questionId, answerOwnerProfileId);
+    final drafts = Map<String, String>.of(_state.commentDraftsByAnswerKey)
+      ..[draftKey] = value;
+    _state = _state.copyWith(
+      commentDraftsByAnswerKey: Map<String, String>.unmodifiable(drafts),
+      clearCommentError: true,
+    );
+    notifyListeners();
+  }
+
+  void submitAnswerComment({
+    required String questionId,
+    required String answerOwnerProfileId,
+  }) {
+    final body = commentDraftForAnswer(questionId, answerOwnerProfileId).trim();
+    if (body.isEmpty) {
+      _state = _state.copyWith(commentError: '한 줄만 남겨도 괜찮아요.');
+      notifyListeners();
+      return;
+    }
+    if (body.length > 120) {
+      _state = _state.copyWith(commentError: '댓글은 120자 안으로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    if (answerOwnerProfileId != _state.partner.id) {
+      _state = _state.copyWith(commentError: '상대 답변에만 댓글을 남길 수 있어요.');
+      notifyListeners();
+      return;
+    }
+    final myAnswer = _myAnswersByQuestionId[questionId];
+    final partnerAnswer = _partnerAnswersByQuestionId[questionId];
+    if (myAnswer == null ||
+        myAnswer.skipped ||
+        partnerAnswer == null ||
+        partnerAnswer.skipped) {
+      _state = _state.copyWith(commentError: '상대 답이 열린 뒤에 댓글을 남길 수 있어요.');
+      notifyListeners();
+      return;
+    }
+
+    final existing = commentForAnswer(
+      questionId,
+      answerOwnerProfileId,
+      _state.me.id,
+    );
+    final comment = AnswerComment(
+      questionId: questionId,
+      answerOwnerProfileId: answerOwnerProfileId,
+      commenterProfileId: _state.me.id,
+      body: body,
+      createdLabel: existing?.createdLabel ?? '오늘',
+      edited: existing != null,
+    );
+    _answerCommentsByKey[_answerCommentKey(
+          questionId,
+          answerOwnerProfileId,
+          _state.me.id,
+        )] =
+        comment;
+    final drafts = Map<String, String>.of(_state.commentDraftsByAnswerKey)
+      ..remove(_answerCommentDraftKey(questionId, answerOwnerProfileId));
+    _state = _state.copyWith(
+      commentDraftsByAnswerKey: Map<String, String>.unmodifiable(drafts),
+      clearCommentError: true,
+    );
+    notifyListeners();
+    _persistAnswerComment(comment);
+  }
+
+  void updatePersonalizationDraft({
+    String? appTitle,
+    String? homeLine,
+    String? inviteLine,
+    String? accentEmoji,
+  }) {
+    _state = _state.copyWith(
+      personalizationDraft: _state.personalizationDraft.copyWith(
+        appTitle: appTitle,
+        homeLine: homeLine,
+        inviteLine: inviteLine,
+        accentEmoji: accentEmoji,
+      ),
+      clearPersonalizationError: true,
+    );
+    notifyListeners();
+  }
+
+  void savePersonalizationDraft() {
+    final appTitle = _state.personalizationDraft.appTitle.trim();
+    final homeLine = _state.personalizationDraft.homeLine.trim();
+    final inviteLine = _state.personalizationDraft.inviteLine.trim();
+    final accentEmoji = _state.personalizationDraft.accentEmoji.trim();
+    if (appTitle.isEmpty || appTitle.length > 16) {
+      _state = _state.copyWith(personalizationError: '앱 이름은 1-16자로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    if (homeLine.isEmpty || homeLine.length > 40) {
+      _state = _state.copyWith(personalizationError: '홈 문구는 1-40자로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    final personalization = SpacePersonalization(
+      appTitle: appTitle,
+      homeLine: homeLine,
+      inviteLine: inviteLine.isEmpty
+          ? const SpacePersonalization().inviteLine
+          : inviteLine,
+      accentEmoji: accentEmoji.isEmpty
+          ? const SpacePersonalization().accentEmoji
+          : accentEmoji,
+    );
+    _state = _state.copyWith(
+      personalization: personalization,
+      personalizationDraft: personalization,
+      clearPersonalizationError: true,
+    );
+    notifyListeners();
+    _persistSpacePersonalization(personalization);
   }
 
   void submitTodayAnswer() {

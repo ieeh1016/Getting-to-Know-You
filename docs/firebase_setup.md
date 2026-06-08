@@ -96,7 +96,13 @@ minyoung@gettoknow.local
 ```json
 {
   "name": "알아가기",
-  "memberIds": ["{youngwooUid}", "{minyoungUid}"]
+  "memberIds": ["{youngwooUid}", "{minyoungUid}"],
+  "personalization": {
+    "appTitle": "알아가기",
+    "homeLine": "오늘도 한 걸음 가까워졌어요",
+    "inviteLine": "하루에 하나씩, 조용히 알아가요",
+    "accentEmoji": "🌿"
+  }
 }
 ```
 
@@ -130,6 +136,60 @@ service cloud.firestore {
         && request.auth.uid in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds;
     }
 
+    function validPersonalization(personalization) {
+      return personalization is map
+        && personalization.keys().hasOnly(['appTitle', 'homeLine', 'inviteLine', 'accentEmoji'])
+        && personalization.appTitle is string
+        && personalization.appTitle.size() > 0
+        && personalization.appTitle.size() <= 16
+        && personalization.homeLine is string
+        && personalization.homeLine.size() > 0
+        && personalization.homeLine.size() <= 40
+        && personalization.inviteLine is string
+        && personalization.inviteLine.size() <= 40
+        && personalization.accentEmoji is string
+        && personalization.accentEmoji.size() <= 8;
+    }
+
+    function validAnswerComment(spaceId, commentId) {
+      return request.resource.data.keys().hasOnly([
+          'questionId',
+          'answerOwnerProfileId',
+          'commenterProfileId',
+          'body',
+          'createdLabel',
+          'edited',
+          'updatedAt'
+        ])
+        && request.resource.data.questionId is string
+        && request.resource.data.answerOwnerProfileId is string
+        && request.resource.data.commenterProfileId == request.auth.uid
+        && request.resource.data.answerOwnerProfileId != request.auth.uid
+        && request.resource.data.answerOwnerProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        && request.resource.data.body is string
+        && request.resource.data.body.size() > 0
+        && request.resource.data.body.size() <= 120
+        && request.resource.data.createdLabel is string
+        && request.resource.data.edited is bool
+        && commentId == request.resource.data.questionId + '_' + request.resource.data.answerOwnerProfileId + '_' + request.resource.data.commenterProfileId;
+    }
+
+    function validDailyProgress(progressId) {
+      return progressId == 'daily'
+        && request.resource.data.keys().hasOnly([
+          'currentQuestionId',
+          'openedDateKey',
+          'catalogVersion',
+          'updatedAt'
+        ])
+        && request.resource.data.currentQuestionId is string
+        && request.resource.data.openedDateKey is string
+        && request.resource.data.catalogVersion is string
+        && request.resource.data.currentQuestionId.size() <= 16
+        && request.resource.data.openedDateKey.size() <= 16
+        && request.resource.data.catalogVersion.size() <= 8;
+    }
+
     match /users/{userId} {
       allow read: if signedIn()
         && (
@@ -144,7 +204,13 @@ service cloud.firestore {
 
     match /spaces/{spaceId} {
       allow read: if isSpaceMember(spaceId);
-      allow write: if false;
+      allow create, delete: if false;
+      allow update: if isSpaceMember(spaceId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'personalization',
+          'personalizationUpdatedAt'
+        ])
+        && validPersonalization(request.resource.data.personalization);
 
       match /answers/{answerId} {
         allow read: if isSpaceMember(spaceId);
@@ -154,6 +220,20 @@ service cloud.firestore {
           && request.resource.data.body is string
           && request.resource.data.createdLabel is string
           && request.resource.data.skipped is bool;
+        allow delete: if false;
+      }
+
+      match /answerComments/{commentId} {
+        allow read: if isSpaceMember(spaceId);
+        allow create, update: if isSpaceMember(spaceId)
+          && validAnswerComment(spaceId, commentId);
+        allow delete: if false;
+      }
+
+      match /progress/{progressId} {
+        allow read: if isSpaceMember(spaceId);
+        allow create, update: if isSpaceMember(spaceId)
+          && validDailyProgress(progressId);
         allow delete: if false;
       }
 

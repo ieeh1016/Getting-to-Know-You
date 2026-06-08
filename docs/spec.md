@@ -256,29 +256,40 @@ If the app grows, bottom navigation may become:
 - `spaces/{spaceId}/progress/daily` 문서로 질문 진행 상태를 관리한다.
 - 두 사용자 모두 같은 오늘의 질문을 본다.
 - 하루 하나의 질문을 유지하되, 패스/미답변이 다음 날 진행을 막지 않는다.
-- 지난 질문은 질문함에서 다시 열고 내 답변을 수정할 수 있다.
 - 질문 카탈로그는 무료 플랜 보호를 위해 앱 코드의 static product content로 유지한다.
+- Progress 문서의 `currentQuestionId`가 있으면 앱은 해당 질문을 오늘의 질문으로 사용한다.
+- Progress 문서가 없거나 유효하지 않으면 질문 카탈로그의 첫 질문을 오늘의 질문으로 사용한다.
+- 날짜 변경에 따른 자동 진행은 v0.6에서 도메인 함수와 repository write 경계까지만 둔다.
+- 앱 로드, route 이동, scroll, tab switch는 progress write를 만들지 않는다.
+- 오늘 질문 진행 write는 명시적인 daily progress action에서만 발생한다.
 
-### MVP v0.7 Lightweight Reactions In Scope
+### MVP v0.7 Answer Comments In Scope
 
-- 상대 답변에 가벼운 반응 1개를 남길 수 있다.
-- 허용 반응은 `나도 그래`, `의외야`, `더 듣고 싶어`처럼 3개 이내로 제한한다.
-- 반응은 answer마다 사용자별 1개 문서로 저장하고, 같은 반응을 다시 누르면 갱신한다.
-- 채팅처럼 이어지는 코멘트가 아니라, 답변을 읽었다는 작은 신호로만 사용한다.
+- 상대 답변에 직접 입력한 짧은 댓글을 남길 수 있다.
+- 댓글은 답변당 작성자별 1개 문서로 제한한다.
+- 기존 댓글을 다시 저장하면 같은 문서를 덮어쓴다.
+- 댓글 본문은 120자 이하로 제한한다.
+- 댓글은 채팅이 아니며 realtime thread, typing, presence, read receipt를 만들지 않는다.
+- 댓글은 상대 답변이 공개된 상태에서만 입력 UI를 보인다.
+- 댓글 draft 입력 중에는 Firestore write가 발생하지 않는다.
+- 댓글 저장은 명시적인 `댓글 남기기` 또는 `댓글 수정 저장` 액션에서만 발생한다.
 
-### MVP v0.8 Wishlist Polish In Scope
+### MVP v0.8 Personalization In Scope
 
-- 내가 만든 wish 수정
-- 내가 만든 wish 삭제 또는 숨김
-- wish 완료 처리: `같이 했어요`
-- 완료 날짜/짧은 메모
-- 둘 다 하트 누른 wish 상단 강조
+- 앱 이름 커스텀
+- 홈 상단 배너 문구 커스텀
+- `inviteLine`, `accentEmoji`는 data model fallback 필드로 보존하되 v0.8 UI에서는 앱 이름/홈 문구 저장부터 제공한다.
+- 초대/홈/마이 화면에서 기본값 fallback
+- 커스텀 설정은 text/emoji only로 제한한다.
+- 사진/파일/외부 이미지 업로드는 포함하지 않는다.
+- 저장은 명시적인 `커스텀 저장` 액션에서만 발생한다.
 
-### MVP v0.9 Personalization & Stability In Scope
+### MVP v0.9 Question Mood & Stability In Scope
 
-- 서로 부르는 이름/아바타 emoji 수정
-- 앱 첫 화면의 짧은 개인화 문구
-- 기념일/처음 만난 날 텍스트 설정
+- 질문 분위기 선택: 가벼움, 취향, 일상, 속마음, 관계
+- 영우가 오늘 민영이에게 묻고 싶은 질문을 고르는 manual pick mode
+- 다음 만남 카운트다운
+- 타임캡슐 답변
 - 저장 실패 시 재시도 CTA
 - 로그인/Firestore load 중 skeleton 또는 조용한 loading state
 - 오프라인/네트워크 실패 안내
@@ -320,9 +331,10 @@ Product budget for this private 2-person app:
 - No polling loops and no broad realtime listeners over large collections.
 - Queries must be scoped to `spaces/{spaceId}` and small subcollections.
 - Answer body stays capped at 300 chars for MVP v0.5. If expanded later, the hard cap must remain below 800 chars.
+- Answer comment body stays capped at 120 chars.
 - Wish title should stay capped around 80 chars.
 - Wishlist active items should stay below 100 per space for MVP.
-- Reaction documents should be bounded to one reaction per `{questionId, answerOwnerId, reactorId}`.
+- Answer comment documents should be bounded to one comment per `{questionId, answerOwnerId, commenterId}`.
 - No base64/media blobs in Firestore documents.
 - Prefer soft state fields such as `hidden`, `done`, or `deletedAt` over TTL automation.
 
@@ -331,8 +343,7 @@ Allowed within free-plan MVP:
 - 저장 pending/saved/failed/retry 상태
 - 답변 수정/접기/펼치기
 - 하루 질문 진행 문서
-- 제한된 답변 반응
-- 위시 수정/완료/숨김
+- 제한된 답변 댓글
 - 텍스트/emoji 기반 개인화
 - 수동 저장/재시도
 
@@ -526,6 +537,10 @@ Acceptance Criteria:
 - 내 답이 있으면 `수정하기` 액션이 보인다.
 - 오늘 패스한 질문에는 `다시 답하기` 액션이 보인다.
 - 상대 답이 잠겨 있으면 `내 답을 남기면 함께 열려요` 계열 문구가 보인다.
+- 상대 답이 공개되면 그 아래에 짧은 댓글 입력 UI가 보인다.
+- 댓글 입력 UI는 상대 답이 잠겨 있거나 skipped 답변이면 보이지 않는다.
+- 댓글 draft 입력 중에는 Firestore write가 발생하지 않는다.
+- 댓글 저장은 답변당 내 댓글 1개 문서만 create/merge한다.
 - 기록 요약으로 닮음 퍼센트, 질문 수, 키워드가 보인다.
 
 ### 10.3 Answer Screen
@@ -622,6 +637,8 @@ Acceptance Criteria:
 - `둘 다 답함` 탭은 양쪽 답이 있는 항목만 보여준다.
 - `닮은 답` 탭은 similarity badge가 있는 항목만 보여준다.
 - 상대 답 대기 항목은 답변 내용을 보여주지 않고 locked/waiting copy를 보여준다.
+- 둘 다 답한 항목은 상대 답변 아래에 기존 댓글을 읽기 좋게 보여준다.
+- 질문함 댓글 입력은 v0.7에서 read-only existing comment 표시까지만 포함하고, 새 댓글 작성은 홈의 오늘 질문부터 시작한다.
 
 ### 10.5 Us Record Screen
 
@@ -820,7 +837,7 @@ Static product content can live in code for MVP, but it must be named as catalog
 - Wishlist items
 - Wish likes
 - Wish done state
-- Answer reactions
+- Answer comments
 - Daily question progress
 - Space personalization settings
 
@@ -842,7 +859,7 @@ Acceptance Criteria:
 - Firebase mode에서 Firestore wish 문서가 없으면 샘플 wish card가 보이지 않는다.
 - Firebase mode에서 상대가 아직 답하지 않았으면 샘플 상대 답변이 보이지 않는다.
 - Firebase mode에서 실제 데이터가 없어도 홈, 질문함, 기록, 밸런스, 카드, 위시는 모두 빈 상태로 자연스럽게 렌더링된다.
-- Firebase mode에서 reaction/progress/personalization 문서가 없어도 기본 product content로 안전하게 동작한다.
+- Firebase mode에서 answer comment/progress/personalization 문서가 없어도 기본 product content로 안전하게 동작한다.
 
 ## 12. Real Content Catalog
 
@@ -1076,11 +1093,13 @@ class AlagagiSession {
   final AppProfile partner;
 }
 
-class AnswerReaction {
+class AnswerComment {
   final String questionId;
   final String answerOwnerProfileId;
-  final String reactorProfileId;
-  final ReactionKind kind;
+  final String commenterProfileId;
+  final String body;
+  final String createdLabel;
+  final bool edited;
   final DateTime? updatedAt;
 }
 
@@ -1091,6 +1110,10 @@ class DailyQuestionProgress {
 }
 
 class SpacePersonalization {
+  final String appTitle;
+  final String homeLine;
+  final String inviteLine;
+  final String accentEmoji;
   final String? inviteCopy;
   final String? startedDateLabel;
   final Map<String, String> displayNamesByProfileId;
@@ -1136,7 +1159,14 @@ class SpaceSummary {
 ```json
 {
   "name": "알아가기",
-  "memberIds": ["{youngwooUid}", "{minyoungUid}"]
+  "memberIds": ["{youngwooUid}", "{minyoungUid}"],
+  "personalization": {
+    "appTitle": "알아가기",
+    "homeLine": "오늘도 한 걸음 가까워졌어요",
+    "inviteLine": "하루에 하나씩, 조용히 알아가요",
+    "accentEmoji": "🌿"
+  },
+  "personalizationUpdatedAt": "serverTimestamp"
 }
 ```
 
@@ -1223,17 +1253,27 @@ Rules:
 }
 ```
 
-`spaces/{spaceId}/answerReactions/{questionId_answerOwnerUid_reactorUid}`
+`spaces/{spaceId}/answerComments/{questionId_answerOwnerUid_commenterUid}`
 
 ```json
 {
   "questionId": "q001",
   "answerOwnerProfileId": "{minyoungUid}",
-  "reactorProfileId": "{youngwooUid}",
-  "kind": "same",
+  "commenterProfileId": "{youngwooUid}",
+  "body": "이 답 좋다. 조금 더 듣고 싶어.",
+  "createdLabel": "오늘",
+  "edited": false,
   "updatedAt": "serverTimestamp"
 }
 ```
+
+Rules:
+
+- Document ID remains `{questionId}_{answerOwnerUid}_{commenterUid}`.
+- Initial comment writes `edited: false`.
+- Comment edit writes `edited: true` and overwrites the same document.
+- No comment threads, replies, read receipts, typing indicators, or realtime listeners are part of MVP v0.7.
+- Comment draft text is local app state only and must not be written to Firestore.
 
 `spaces/{spaceId}/progress/daily`
 
@@ -1242,24 +1282,6 @@ Rules:
   "startedAt": "serverTimestamp",
   "currentQuestionId": "q001",
   "openedDateKey": "2026-06-08",
-  "updatedAt": "serverTimestamp"
-}
-```
-
-`spaces/{spaceId}/settings/personalization`
-
-```json
-{
-  "inviteCopy": "우리, 천천히 알아가 볼래요?",
-  "startedDateLabel": "처음 만난 날",
-  "displayNamesByProfileId": {
-    "{youngwooUid}": "영우",
-    "{minyoungUid}": "민영"
-  },
-  "avatarsByProfileId": {
-    "{youngwooUid}": "🌿",
-    "{minyoungUid}": "🪻"
-  },
   "updatedAt": "serverTimestamp"
 }
 ```
@@ -1291,8 +1313,12 @@ class AlagagiState {
   final AppRoute route;
   final DailyQuestion todayQuestion;
   final Map<String, Answer> answersByQuestionAndProfile;
+  final Map<String, AnswerComment> commentsByAnswerAndProfile;
+  final DailyQuestionProgress dailyProgress;
+  final SpacePersonalization personalization;
   final Set<String> expandedAnswerIds;
   final bool editingAnswer;
+  final Map<String, String> commentDraftsByAnswerId;
   final String? saveFeedback;
   final ArchiveFilter archiveFilter;
   final int activeBalanceIndex;
@@ -1314,8 +1340,14 @@ class AlagagiState {
 - Relationship insight is computed from real answers only
 - Invite nickname validation
 - Daily question selection by day/depth
+- Daily question progress resolves `currentQuestionId` and falls back safely
 - Answer submit and skip state
 - Answer edit preloads existing body and overwrites the same answer key
+- Answer comment draft changes do not write to repository
+- Answer comment save writes one bounded comment document
+- Answer comment edit overwrites the same comment key with `edited: true`
+- Personalization draft changes do not write to repository
+- Personalization save updates one space document
 - Long answer preview expansion state
 - Answer persistence writes only on submit/edit submit, not on draft updates
 - Firestore free-plan budget estimate for new repository reads/writes
@@ -1324,10 +1356,10 @@ class AlagagiState {
 - Similarity keyword aggregation
 - Balance selection result
 - Daily question progress selection
-- Lightweight answer reaction create/update
+- Answer comment create/update
 - Profile card fill progress
 - Wishlist filter and mutual matching
-- Wishlist edit, hide/delete, and done metadata
+- Wishlist add, like, and done metadata
 - Personalization settings fallback and save
 
 ### Widget Tests
@@ -1346,13 +1378,15 @@ class AlagagiState {
 - Home answer preview collapses long text and expands with `더 보기`
 - Answer edit opens existing answer text and saves the edited body
 - Answer edit keeps partner answer visibility after save
+- Home shows comment composer after partner answer is revealed and hides it while locked
+- Saving a comment renders it under the partner answer
+- My screen saves app title and home line, and Home reflects the saved copy
 - Archive tabs filter list
 - Us record renders stats and timeline
 - Balance option selection updates selected state
 - Profile card tab switches card content
 - Wishlist filter shows mutual wishes
-- Reaction buttons update one visible reaction state
-- Wishlist edit/done flows update cards without leaving the screen
+- Existing answer comments render in archive read-only surfaces
 
 ### Visual/Manual Checks
 
@@ -1452,19 +1486,19 @@ class AlagagiState {
 - Add bounded `progress/daily` load to session data.
 - Keep question catalog local.
 - Add deterministic date-key/day selection tests.
-- Avoid Cloud Functions; client computes the next question from progress and catalog.
+- Avoid Cloud Functions; client resolves the current question from progress and catalog.
 
-### Step 12: Lightweight Reactions
+### Step 12: Answer Comments
 
-- Add a small reaction catalog.
-- Add one reaction document per answer owner/reactor/question.
-- Keep reactions visible but quiet; do not introduce chat.
+- Add one bounded comment document per answer owner/commenter/question.
+- Keep comments explicit-save only; do not introduce chat, typing, presence, or realtime threads.
+- Hide comment input until both answers are visible and not skipped.
 
-### Step 13: Wishlist Polish And Personalization
+### Step 13: Personalization
 
-- Add wish edit/hide/done metadata.
-- Add text/emoji personalization settings.
-- Avoid photos and file uploads.
+- Add text-only app title and home-line personalization.
+- Keep invite-line/accent emoji as fallback data fields for a later UI pass.
+- Avoid photos, file uploads, and Storage.
 
 ## 18. Migration Notes From Current App
 
@@ -1507,4 +1541,4 @@ Migration decision:
 - 질문 카탈로그는 Spark/free-plan MVP에서는 앱 코드에 둔다. Firestore CMS 이전은 관리자 기능이 필요해질 때 다시 논의한다.
 - 답변 최대 길이를 300자로 유지할지, 500-800자 사이로 늘릴지.
 - 답변 수정 후 `수정됨` 표시를 홈과 질문함 양쪽에 보여줄지.
-- 반응 기능을 v0.7에 바로 넣을지, 답변 수정 UX가 안정된 뒤 넣을지.
+- 댓글을 홈 오늘 질문에서만 작성할지, 질문함에서도 수정 가능하게 열지.
