@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:minyoung_pick/src/domain/alagagi_controller.dart';
 import 'package:minyoung_pick/src/ui/alagagi_app.dart';
 
 void main() {
@@ -38,6 +39,63 @@ void main() {
 
     expect(find.text('노을 질 때가 좋아요.'), findsOneWidget);
     expect(find.textContaining('공기가 조금 조용해지는 시간'), findsOneWidget);
+  });
+
+  testWidgets('edits today answer from home with existing text prefilled', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const AlagagiApp());
+    await enterSpace(tester);
+
+    await tester.ensureVisible(find.text('답 남기기'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('답 남기기'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(answerFieldKey), '처음 남긴 답이에요.');
+    await tester.tap(find.text('답 남기고 영우님 답 열어보기'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(editAnswerButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(editAnswerButtonKey));
+    await tester.pumpAndSettle();
+
+    final editable = tester.widget<EditableText>(find.byType(EditableText));
+    expect(editable.controller.text, '처음 남긴 답이에요.');
+
+    await tester.enterText(find.byKey(answerFieldKey), '조금 더 다듬은 답이에요.');
+    await tester.tap(find.text('수정 저장하기'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('조금 더 다듬은 답이에요.'), findsOneWidget);
+    expect(find.textContaining('공기가 조금 조용해지는 시간'), findsOneWidget);
+  });
+
+  testWidgets('expands and collapses a long today answer preview', (
+    tester,
+  ) async {
+    final controller = AlagagiController()..enterSpace('영우');
+    const tail = '마지막문장';
+    final longAnswer = '${'차분하게 이어지는 생각을 적어둡니다. ' * 8}$tail';
+    controller
+      ..updateDraftAnswer(longAnswer)
+      ..submitTodayAnswer();
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining(tail), findsNothing);
+    expect(find.text('더 보기'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('더 보기'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('더 보기'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining(tail), findsOneWidget);
+    expect(find.text('접기'), findsOneWidget);
   });
 
   testWidgets('navigates archive, records, and plus screens', (tester) async {

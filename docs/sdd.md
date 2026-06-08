@@ -4,6 +4,37 @@
 
 이 문서는 최초 `민영 Pick` MVP 기록을 보존한다. 현재 개발 방향은 `index.html` 디자인 시안 기반의 `알아가기` 제품이며, 상세 요구사항과 화면별 인수 기준은 [spec.md](spec.md)를 따른다.
 
+## Current SDD Operating Rules
+
+- 모든 기능 변경은 [spec.md](spec.md)를 먼저 수정한다.
+- spec 변경 후 [test_plan.md](test_plan.md)에 실패해야 하는 테스트를 추가한다.
+- 테스트가 실패하는 것을 확인한 뒤 production code를 수정한다.
+- Firestore-backed 기능은 Spark/free-plan budget을 먼저 확인한다.
+- 사용자 입력 중 keystroke는 Firestore write를 만들지 않는다.
+- 명시적 저장/선택/수정 액션은 기본적으로 1 document write 이하로 설계한다.
+- 사진/음성/영상 업로드, TTL, backup, PITR, restore, clone, Cloud Functions 의존 기능은 무료 플랜 MVP에서 제외한다.
+
+## Current Roadmap
+
+- v0.5: Answer Experience
+  - 답변 수정
+  - 긴 답변 preview 접기/펼치기
+  - draft 유지
+  - 저장 피드백과 실패 재시도
+- v0.6: Daily Question Operations
+  - 하루 질문 progress 문서
+  - 지난 질문 다시 보기/수정
+  - static question catalog 유지
+- v0.7: Lightweight Reactions
+  - 답변당 사용자별 반응 1개
+  - 채팅이 아닌 작은 읽음/공감 신호
+- v0.8: Wishlist Polish
+  - wish 수정/숨김/완료
+  - 완료 날짜와 짧은 메모
+- v0.9: Personalization & Stability
+  - 이름/emoji/초대 문구 설정
+  - loading/error/offline UX
+
 ## 1. Product Intent
 
 `민영 Pick`은 소개팅 이후 다음 만남을 가볍게 고를 수 있는 모바일 우선 웹앱이다.

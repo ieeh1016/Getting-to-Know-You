@@ -201,6 +201,67 @@ void main() {
       expect(controller.state.wishDraftError, contains('한 줄'));
       expect(controller.visibleWishes, isEmpty);
     });
+
+    test('answer draft changes do not call repository writes', () {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        firebaseTestSession,
+        repository: repository,
+      );
+
+      controller.updateDraftAnswer('아직 제출하지 않은 답변');
+
+      expect(controller.state.draftAnswer, '아직 제출하지 않은 답변');
+      expect(repository.savedAnswers, isEmpty);
+    });
+
+    test('answer edit persists same key with edited marker', () async {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        firebaseTestSession,
+        repository: repository,
+      );
+
+      controller.updateDraftAnswer('처음 답변');
+      controller.submitTodayAnswer();
+      await Future<void>.delayed(Duration.zero);
+
+      controller.editTodayAnswer();
+      controller.updateDraftAnswer('수정한 답변');
+      controller.submitTodayAnswer();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(repository.savedAnswers, hasLength(2));
+      expect(repository.savedAnswers.first.answer.questionId, 'q001');
+      expect(repository.savedAnswers.last.answer.questionId, 'q001');
+      expect(repository.savedAnswers.first.answer.profileId, 'youngwooUid');
+      expect(repository.savedAnswers.last.answer.profileId, 'youngwooUid');
+      expect(repository.savedAnswers.first.answer.edited, isFalse);
+      expect(repository.savedAnswers.last.answer.edited, isTrue);
+    });
+
+    test('answer save failure exposes retry state', () async {
+      final repository = RecordingAlagagiRepository()..failAnswerSaves = true;
+      final controller = AlagagiController.forSession(
+        firebaseTestSession,
+        repository: repository,
+      );
+
+      controller.updateDraftAnswer('저장 실패를 확인하는 답변');
+      controller.submitTodayAnswer();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.state.answerSaveStatus, SaveStatus.failed);
+      expect(controller.state.answerError, contains('저장하지 못했어요'));
+      expect(repository.savedAnswers, isEmpty);
+
+      repository.failAnswerSaves = false;
+      controller.retryAnswerSave();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.state.answerSaveStatus, SaveStatus.saved);
+      expect(repository.savedAnswers.single.answer.body, '저장 실패를 확인하는 답변');
+    });
   });
 }
 
@@ -216,6 +277,7 @@ const firebaseTestSession = AlagagiSession(
 );
 
 class RecordingAlagagiRepository implements AlagagiDataRepository {
+  bool failAnswerSaves = false;
   final List<({String spaceId, Answer answer})> savedAnswers = [];
   final List<({String spaceId, BalanceSelection selection})>
   savedBalanceSelections = [];
@@ -230,6 +292,9 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveAnswer(String spaceId, Answer answer) async {
+    if (failAnswerSaves) {
+      throw StateError('save failed');
+    }
     savedAnswers.add((spaceId: spaceId, answer: answer));
   }
 

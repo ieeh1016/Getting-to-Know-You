@@ -135,6 +135,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           'body': answer.body,
           'createdLabel': answer.createdLabel,
           'skipped': answer.skipped,
+          'edited': answer.edited,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
   }
@@ -257,6 +258,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       body: _readString(data, 'body') ?? '',
       createdLabel: _readString(data, 'createdLabel') ?? '오늘',
       skipped: data['skipped'] == true,
+      edited: data['edited'] == true,
     );
   }
 

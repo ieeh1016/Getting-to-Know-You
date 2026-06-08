@@ -24,6 +24,8 @@ enum WishKind { place, activity }
 
 enum QuestionDepth { light, daily, beliefs, inner }
 
+enum SaveStatus { idle, saving, saved, failed }
+
 String firebaseEmailForLoginId(String loginId) {
   final normalized = loginId.trim().toLowerCase();
   if (normalized.contains('@')) {
@@ -175,6 +177,7 @@ class Answer {
     required this.body,
     required this.createdLabel,
     this.skipped = false,
+    this.edited = false,
   });
 
   final String questionId;
@@ -182,6 +185,7 @@ class Answer {
   final String body;
   final String createdLabel;
   final bool skipped;
+  final bool edited;
 
   Answer copyWith({
     String? questionId,
@@ -189,6 +193,7 @@ class Answer {
     String? body,
     String? createdLabel,
     bool? skipped,
+    bool? edited,
   }) {
     return Answer(
       questionId: questionId ?? this.questionId,
@@ -196,6 +201,7 @@ class Answer {
       body: body ?? this.body,
       createdLabel: createdLabel ?? this.createdLabel,
       skipped: skipped ?? this.skipped,
+      edited: edited ?? this.edited,
     );
   }
 }
@@ -390,8 +396,12 @@ class AlagagiState {
     this.draftAnswer = '',
     this.inviteError,
     this.answerError,
+    this.answerSaveStatus = SaveStatus.idle,
+    this.answerSaveFeedback,
     this.wishDraftError,
     this.skippedToday = false,
+    this.editingAnswer = false,
+    this.expandedAnswerKeys = const {},
   });
 
   final AppProfile me;
@@ -407,8 +417,12 @@ class AlagagiState {
   final String draftAnswer;
   final String? inviteError;
   final String? answerError;
+  final SaveStatus answerSaveStatus;
+  final String? answerSaveFeedback;
   final String? wishDraftError;
   final bool skippedToday;
+  final bool editingAnswer;
+  final Set<String> expandedAnswerKeys;
 
   AlagagiState copyWith({
     AppProfile? me,
@@ -426,9 +440,14 @@ class AlagagiState {
     bool clearInviteError = false,
     String? answerError,
     bool clearAnswerError = false,
+    SaveStatus? answerSaveStatus,
+    String? answerSaveFeedback,
+    bool clearAnswerSaveFeedback = false,
     String? wishDraftError,
     bool clearWishDraftError = false,
     bool? skippedToday,
+    bool? editingAnswer,
+    Set<String>? expandedAnswerKeys,
   }) {
     return AlagagiState(
       me: me ?? this.me,
@@ -444,10 +463,16 @@ class AlagagiState {
       draftAnswer: draftAnswer ?? this.draftAnswer,
       inviteError: clearInviteError ? null : inviteError ?? this.inviteError,
       answerError: clearAnswerError ? null : answerError ?? this.answerError,
+      answerSaveStatus: answerSaveStatus ?? this.answerSaveStatus,
+      answerSaveFeedback: clearAnswerSaveFeedback
+          ? null
+          : answerSaveFeedback ?? this.answerSaveFeedback,
       wishDraftError: clearWishDraftError
           ? null
           : wishDraftError ?? this.wishDraftError,
       skippedToday: skippedToday ?? this.skippedToday,
+      editingAnswer: editingAnswer ?? this.editingAnswer,
+      expandedAnswerKeys: expandedAnswerKeys ?? this.expandedAnswerKeys,
     );
   }
 }
@@ -504,6 +529,7 @@ class AlagagiController extends ChangeNotifier {
   final Map<String, String> _partnerBalanceSelections = {};
   final List<ProfileCardData> _profileCards = [];
   final List<WishItem> _wishes = [];
+  Answer? _lastFailedAnswer;
 
   AlagagiState get state => _state;
 
@@ -727,9 +753,37 @@ class AlagagiController extends ChangeNotifier {
     final repository = _repository;
     final spaceId = _spaceId;
     if (repository == null || spaceId == null) {
+      _lastFailedAnswer = null;
+      _state = _state.copyWith(
+        answerSaveStatus: SaveStatus.saved,
+        answerSaveFeedback: '저장됐어요.',
+        clearAnswerError: true,
+      );
+      notifyListeners();
       return;
     }
-    unawaited(repository.saveAnswer(spaceId, answer).catchError((_) {}));
+    unawaited(
+      repository
+          .saveAnswer(spaceId, answer)
+          .then<void>((_) {
+            _lastFailedAnswer = null;
+            _state = _state.copyWith(
+              answerSaveStatus: SaveStatus.saved,
+              answerSaveFeedback: '저장됐어요.',
+              clearAnswerError: true,
+            );
+            notifyListeners();
+          })
+          .catchError((Object _) {
+            _lastFailedAnswer = answer;
+            _state = _state.copyWith(
+              answerError: '저장하지 못했어요. 다시 시도해 주세요.',
+              answerSaveStatus: SaveStatus.failed,
+              clearAnswerSaveFeedback: true,
+            );
+            notifyListeners();
+          }),
+    );
   }
 
   void _persistBalanceSelection(BalanceSelection selection) {
@@ -770,6 +824,10 @@ class AlagagiController extends ChangeNotifier {
   Answer? get todayPartnerAnswer => todayMyAnswer == null
       ? null
       : _partnerAnswersByQuestionId[todayQuestion.id];
+
+  static String _answerExpansionKey(String questionId, String profileId) {
+    return '$questionId::$profileId';
+  }
 
   BalanceQuestion get activeBalanceQuestion =>
       balanceQuestions[_state.activeBalanceIndex];
@@ -860,7 +918,12 @@ class AlagagiController extends ChangeNotifier {
   }
 
   void goTo(AlagagiRoute route) {
-    _state = _state.copyWith(route: route, clearAnswerError: true);
+    _state = _state.copyWith(
+      route: route,
+      editingAnswer: false,
+      clearAnswerError: true,
+      clearAnswerSaveFeedback: route == AlagagiRoute.answer,
+    );
     notifyListeners();
   }
 
@@ -870,6 +933,9 @@ class AlagagiController extends ChangeNotifier {
   }
 
   void submitTodayAnswer() {
+    if (_state.answerSaveStatus == SaveStatus.saving) {
+      return;
+    }
     final body = _state.draftAnswer.trim();
     if (body.isEmpty) {
       _state = _state.copyWith(answerError: '한 줄만 적어도 괜찮아요.');
@@ -882,24 +948,33 @@ class AlagagiController extends ChangeNotifier {
       return;
     }
 
+    final existingAnswer = _myAnswersByQuestionId[todayQuestion.id];
     final answer = Answer(
       questionId: todayQuestion.id,
       profileId: _state.me.id,
       body: body,
-      createdLabel: '오늘',
+      createdLabel: existingAnswer?.createdLabel ?? '오늘',
+      edited: existingAnswer != null && !existingAnswer.skipped,
     );
     _myAnswersByQuestionId[todayQuestion.id] = answer;
-    _persistAnswer(answer);
+    _lastFailedAnswer = null;
     _state = _state.copyWith(
       draftAnswer: '',
       route: AlagagiRoute.home,
       skippedToday: false,
+      editingAnswer: false,
+      answerSaveStatus: SaveStatus.saving,
       clearAnswerError: true,
+      clearAnswerSaveFeedback: true,
     );
     notifyListeners();
+    _persistAnswer(answer);
   }
 
   void skipToday() {
+    if (_state.answerSaveStatus == SaveStatus.saving) {
+      return;
+    }
     final answer = Answer(
       questionId: todayQuestion.id,
       profileId: _state.me.id,
@@ -908,12 +983,81 @@ class AlagagiController extends ChangeNotifier {
       skipped: true,
     );
     _myAnswersByQuestionId[todayQuestion.id] = answer;
-    _persistAnswer(answer);
+    _lastFailedAnswer = null;
     _state = _state.copyWith(
       route: AlagagiRoute.home,
       skippedToday: true,
       draftAnswer: '',
+      editingAnswer: false,
+      answerSaveStatus: SaveStatus.saving,
       clearAnswerError: true,
+      clearAnswerSaveFeedback: true,
+    );
+    notifyListeners();
+    _persistAnswer(answer);
+  }
+
+  void editTodayAnswer() {
+    final answer = todayMyAnswer;
+    if (answer == null) {
+      return;
+    }
+    if (answer.skipped) {
+      answerTodayAfterSkip();
+      return;
+    }
+
+    _state = _state.copyWith(
+      route: AlagagiRoute.answer,
+      draftAnswer: answer.body,
+      editingAnswer: true,
+      clearAnswerError: true,
+      clearAnswerSaveFeedback: true,
+    );
+    notifyListeners();
+  }
+
+  void answerTodayAfterSkip() {
+    _state = _state.copyWith(
+      route: AlagagiRoute.answer,
+      draftAnswer: '',
+      skippedToday: false,
+      editingAnswer: true,
+      clearAnswerError: true,
+      clearAnswerSaveFeedback: true,
+    );
+    notifyListeners();
+  }
+
+  void retryAnswerSave() {
+    final answer = _lastFailedAnswer;
+    if (answer == null || _state.answerSaveStatus == SaveStatus.saving) {
+      return;
+    }
+
+    _state = _state.copyWith(
+      answerSaveStatus: SaveStatus.saving,
+      clearAnswerError: true,
+      clearAnswerSaveFeedback: true,
+    );
+    notifyListeners();
+    _persistAnswer(answer);
+  }
+
+  bool isAnswerExpanded(String questionId, String profileId) {
+    return _state.expandedAnswerKeys.contains(
+      _answerExpansionKey(questionId, profileId),
+    );
+  }
+
+  void toggleAnswerExpanded(String questionId, String profileId) {
+    final key = _answerExpansionKey(questionId, profileId);
+    final expandedKeys = Set<String>.of(_state.expandedAnswerKeys);
+    if (!expandedKeys.add(key)) {
+      expandedKeys.remove(key);
+    }
+    _state = _state.copyWith(
+      expandedAnswerKeys: Set<String>.unmodifiable(expandedKeys),
     );
     notifyListeners();
   }

@@ -10,6 +10,10 @@ const loginButtonKey = Key('login-button');
 const answerFieldKey = Key('answer-field');
 const wishTitleFieldKey = Key('wish-title-field');
 const wishSubmitButtonKey = Key('wish-submit-button');
+const editAnswerButtonKey = Key('edit-answer-button');
+const answerRetryButtonKey = Key('answer-retry-button');
+
+const _longAnswerPreviewLength = 120;
 
 class AlagagiApp extends StatelessWidget {
   const AlagagiApp({
@@ -1161,9 +1165,24 @@ class _QuestionCard extends StatelessWidget {
           ),
           const Divider(height: 44, color: AlagagiColors.line),
           if (isSkipped)
-            Text(
-              '오늘은 내일 다시 보기로 남겨뒀어요.',
-              style: sans(size: 14, color: AlagagiColors.muted, height: 1.6),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '오늘은 내일 다시 보기로 남겨뒀어요.',
+                  style: sans(
+                    size: 14,
+                    color: AlagagiColors.muted,
+                    height: 1.6,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                _InlineTextAction(
+                  label: '다시 답하기',
+                  onPressed: controller.answerTodayAfterSkip,
+                ),
+                _AnswerSaveStatus(controller: controller),
+              ],
             )
           else if (myAnswer == null)
             Column(
@@ -1186,6 +1205,22 @@ class _QuestionCard extends StatelessWidget {
               tag: '나',
               tagColor: AlagagiColors.sageDeep,
               body: myAnswer.body,
+              expanded: controller.isAnswerExpanded(
+                myAnswer.questionId,
+                myAnswer.profileId,
+              ),
+              onToggle: () => controller.toggleAnswerExpanded(
+                myAnswer.questionId,
+                myAnswer.profileId,
+              ),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: _InlineTextAction(
+                key: editAnswerButtonKey,
+                label: '수정하기',
+                onPressed: controller.editTodayAnswer,
+              ),
             ),
             const SizedBox(height: 16),
             if (partnerAnswer == null)
@@ -1195,7 +1230,16 @@ class _QuestionCard extends StatelessWidget {
                 tag: controller.state.partner.nickname,
                 tagColor: AlagagiColors.lavender,
                 body: partnerAnswer.body,
+                expanded: controller.isAnswerExpanded(
+                  partnerAnswer.questionId,
+                  partnerAnswer.profileId,
+                ),
+                onToggle: () => controller.toggleAnswerExpanded(
+                  partnerAnswer.questionId,
+                  partnerAnswer.profileId,
+                ),
               ),
+            _AnswerSaveStatus(controller: controller),
           ],
         ],
       ),
@@ -1253,14 +1297,23 @@ class _AnswerLine extends StatelessWidget {
     required this.tag,
     required this.tagColor,
     required this.body,
+    this.expanded = false,
+    this.onToggle,
   });
 
   final String tag;
   final Color tagColor;
   final String body;
+  final bool expanded;
+  final VoidCallback? onToggle;
 
   @override
   Widget build(BuildContext context) {
+    final isLong = body.length > _longAnswerPreviewLength;
+    final visibleBody = isLong && !expanded
+        ? '${body.substring(0, _longAnswerPreviewLength).trimRight()}...'
+        : body;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1277,12 +1330,101 @@ class _AnswerLine extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: Text(
-            body,
-            style: sans(size: 14, color: const Color(0xFF4A4A46), height: 1.65),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                visibleBody,
+                style: sans(
+                  size: 14,
+                  color: const Color(0xFF4A4A46),
+                  height: 1.65,
+                ),
+              ),
+              if (isLong && onToggle != null) ...[
+                const SizedBox(height: 4),
+                _InlineTextAction(
+                  label: expanded ? '접기' : '더 보기',
+                  onPressed: onToggle,
+                ),
+              ],
+            ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class _InlineTextAction extends StatelessWidget {
+  const _InlineTextAction({
+    super.key,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: AlagagiColors.sageDeep,
+        minimumSize: const Size(0, 30),
+        padding: EdgeInsets.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Text(label, style: sans(size: 12, weight: FontWeight.w700)),
+    );
+  }
+}
+
+class _AnswerSaveStatus extends StatelessWidget {
+  const _AnswerSaveStatus({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = controller.state;
+    final status = state.answerSaveStatus;
+    final message = switch (status) {
+      SaveStatus.saving => '저장 중이에요...',
+      SaveStatus.saved => state.answerSaveFeedback,
+      SaveStatus.failed => state.answerError,
+      SaveStatus.idle => null,
+    };
+    if (message == null || message.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Text(
+              message,
+              style: sans(
+                size: 12,
+                color: status == SaveStatus.failed
+                    ? AlagagiColors.sageDeep
+                    : AlagagiColors.muted,
+                height: 1.5,
+              ),
+            ),
+          ),
+          if (status == SaveStatus.failed)
+            _InlineTextAction(
+              key: answerRetryButtonKey,
+              label: '다시 시도',
+              onPressed: controller.retryAnswerSave,
+            ),
+        ],
+      ),
     );
   }
 }
@@ -1587,7 +1729,10 @@ class _AnswerScreenState extends State<AnswerScreen> {
   @override
   Widget build(BuildContext context) {
     final question = widget.controller.todayQuestion;
-    final count = widget.controller.state.draftAnswer.length;
+    final state = widget.controller.state;
+    final count = state.draftAnswer.length;
+    final isSaving = state.answerSaveStatus == SaveStatus.saving;
+    final isEditing = state.editingAnswer;
 
     return Stack(
       children: [
@@ -1660,13 +1805,21 @@ class _AnswerScreenState extends State<AnswerScreen> {
             _PartnerLockedBox(
               partnerName: widget.controller.state.partner.nickname,
             ),
-            if (widget.controller.state.answerError != null) ...[
+            if (state.answerError != null) ...[
               const SizedBox(height: 12),
               Text(
-                widget.controller.state.answerError!,
+                state.answerError!,
                 style: sans(size: 12, color: AlagagiColors.sageDeep),
                 textAlign: TextAlign.center,
               ),
+              if (state.answerSaveStatus == SaveStatus.failed) ...[
+                const SizedBox(height: 8),
+                _InlineTextAction(
+                  key: answerRetryButtonKey,
+                  label: '저장 다시 시도',
+                  onPressed: widget.controller.retryAnswerSave,
+                ),
+              ],
             ],
           ],
         ),
@@ -1685,31 +1838,35 @@ class _AnswerScreenState extends State<AnswerScreen> {
             ),
             child: Column(
               children: [
-                TextButton(
-                  onPressed: widget.controller.skipToday,
-                  child: Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '오늘은 답하기 어렵나요? ',
-                          style: sans(size: 12, color: AlagagiColors.muted),
-                        ),
-                        TextSpan(
-                          text: '내일 다시 보기',
-                          style: sans(
-                            size: 12,
-                            color: AlagagiColors.sageDeep,
-                            weight: FontWeight.w500,
-                          ).copyWith(decoration: TextDecoration.underline),
-                        ),
-                      ],
+                if (!isEditing)
+                  TextButton(
+                    onPressed: isSaving ? null : widget.controller.skipToday,
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: '오늘은 답하기 어렵나요? ',
+                            style: sans(size: 12, color: AlagagiColors.muted),
+                          ),
+                          TextSpan(
+                            text: '내일 다시 보기',
+                            style: sans(
+                              size: 12,
+                              color: AlagagiColors.sageDeep,
+                              weight: FontWeight.w500,
+                            ).copyWith(decoration: TextDecoration.underline),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
                 _PrimaryButton(
-                  label:
-                      '답 남기고 ${widget.controller.state.partner.nickname}님 답 열어보기',
-                  onPressed: widget.controller.submitTodayAnswer,
+                  label: isEditing
+                      ? '수정 저장하기'
+                      : '답 남기고 ${state.partner.nickname}님 답 열어보기',
+                  onPressed: isSaving
+                      ? null
+                      : widget.controller.submitTodayAnswer,
                   color: AlagagiColors.sageDeep,
                 ),
               ],
@@ -1821,6 +1978,7 @@ class ArchiveScreen extends StatelessWidget {
         else
           for (final item in items) ...[
             _ArchiveCard(
+              controller: controller,
               item: item,
               partnerName: controller.state.partner.nickname,
             ),
@@ -1863,8 +2021,13 @@ class _ArchiveTabs extends StatelessWidget {
 }
 
 class _ArchiveCard extends StatelessWidget {
-  const _ArchiveCard({required this.item, required this.partnerName});
+  const _ArchiveCard({
+    required this.controller,
+    required this.item,
+    required this.partnerName,
+  });
 
+  final AlagagiController controller;
   final ArchiveItem item;
   final String partnerName;
 
@@ -1926,12 +2089,28 @@ class _ArchiveCard extends StatelessWidget {
               tag: '나',
               tagColor: AlagagiColors.sageDeep,
               body: item.myAnswer!.body,
+              expanded: controller.isAnswerExpanded(
+                item.myAnswer!.questionId,
+                item.myAnswer!.profileId,
+              ),
+              onToggle: () => controller.toggleAnswerExpanded(
+                item.myAnswer!.questionId,
+                item.myAnswer!.profileId,
+              ),
             ),
             const SizedBox(height: 10),
             _AnswerLine(
               tag: partnerName,
               tagColor: AlagagiColors.lavender,
               body: item.partnerAnswer!.body,
+              expanded: controller.isAnswerExpanded(
+                item.partnerAnswer!.questionId,
+                item.partnerAnswer!.profileId,
+              ),
+              onToggle: () => controller.toggleAnswerExpanded(
+                item.partnerAnswer!.questionId,
+                item.partnerAnswer!.profileId,
+              ),
             ),
           ],
           if (item.matchedKeywords.isNotEmpty) ...[

@@ -223,6 +223,139 @@ If the app grows, bottom navigation may become:
 - 관리자 CMS
 - 다수 커플/다수 공간 운영
 
+### MVP v0.5 Answer Experience In Scope
+
+- User-triggered save reliability:
+  - 저장 중
+  - 저장 완료
+  - 저장 실패
+  - 수동 재시도
+- 내 답변 수정
+- 긴 답변 홈 preview 접기/펼치기
+- 질문함에서는 저장된 전체 답변을 읽기 쉽게 표시
+- 답변 작성/수정 화면에 기존 답변 preload
+- 제출 후 짧은 저장 피드백
+- 답변 수정 저장은 같은 Firestore answer 문서를 덮어쓴다.
+- 답변 입력 중 route 이동 시 draft를 유지한다.
+- 답변 저장은 명시적인 제출/수정 저장 버튼을 누를 때만 발생한다.
+- 오늘 질문을 패스한 뒤 `다시 답하기`로 정상 답변을 새로 남길 수 있다.
+- 120자를 넘는 답변은 홈/질문함 preview에서 접힌 상태로 시작한다.
+
+### MVP v0.5 Answer Experience Out Of Scope
+
+- 답변 수정 이력 전체 보관
+- 답변별 공개 댓글 스레드
+- 실시간 공동 편집
+- 입력 중 자동 저장
+- 300자를 크게 넘는 장문 에세이 모드
+- 자동 재시도 loop
+- 저장 실패를 사용자에게 숨기는 fire-and-forget UX
+
+### MVP v0.6 Daily Question Operations In Scope
+
+- `spaces/{spaceId}/progress/daily` 문서로 질문 진행 상태를 관리한다.
+- 두 사용자 모두 같은 오늘의 질문을 본다.
+- 하루 하나의 질문을 유지하되, 패스/미답변이 다음 날 진행을 막지 않는다.
+- 지난 질문은 질문함에서 다시 열고 내 답변을 수정할 수 있다.
+- 질문 카탈로그는 무료 플랜 보호를 위해 앱 코드의 static product content로 유지한다.
+
+### MVP v0.7 Lightweight Reactions In Scope
+
+- 상대 답변에 가벼운 반응 1개를 남길 수 있다.
+- 허용 반응은 `나도 그래`, `의외야`, `더 듣고 싶어`처럼 3개 이내로 제한한다.
+- 반응은 answer마다 사용자별 1개 문서로 저장하고, 같은 반응을 다시 누르면 갱신한다.
+- 채팅처럼 이어지는 코멘트가 아니라, 답변을 읽었다는 작은 신호로만 사용한다.
+
+### MVP v0.8 Wishlist Polish In Scope
+
+- 내가 만든 wish 수정
+- 내가 만든 wish 삭제 또는 숨김
+- wish 완료 처리: `같이 했어요`
+- 완료 날짜/짧은 메모
+- 둘 다 하트 누른 wish 상단 강조
+
+### MVP v0.9 Personalization & Stability In Scope
+
+- 서로 부르는 이름/아바타 emoji 수정
+- 앱 첫 화면의 짧은 개인화 문구
+- 기념일/처음 만난 날 텍스트 설정
+- 저장 실패 시 재시도 CTA
+- 로그인/Firestore load 중 skeleton 또는 조용한 loading state
+- 오프라인/네트워크 실패 안내
+
+### Firestore Spark Plan Boundary
+
+Official Firebase docs checked on 2026-06-08.
+
+Cloud Firestore free quota for one free database per project:
+
+- Stored data: 1 GiB
+- Document reads: 50,000 per day
+- Document writes: 20,000 per day
+- Document deletes: 20,000 per day
+- Outbound data transfer: 10 GiB per month
+- Daily quotas reset around midnight Pacific time.
+
+Features that require billing and must stay out of MVP while the project remains on the free plan:
+
+- TTL deletes
+- PITR data
+- Backup data
+- Restore operations
+- Clone operations
+
+Product budget for this private 2-person app:
+
+- Normal total usage target: 500 reads/day 이하.
+- Warning threshold: 1,000 reads/day 또는 100 writes/day.
+- Review/stop threshold: 2,500 reads/day 또는 500 writes/day.
+- Normal deletes target: 0/day. Manual cleanup only, 10/day 이하.
+- v0.6+ optimized cold home/session load target: 10 document reads 이하.
+- Archive page target: 30 reads/page 이하 with cursor pagination.
+- Wishlist page target: 30 reads/page 이하 with cursor pagination.
+- Each explicit save/toggle action should write 1 Firestore document.
+- Two writes are allowed only when the action also updates `summary/current`.
+- Keystrokes must never write to Firestore.
+- Route changes, tab changes, scroll, background timers must never write to Firestore.
+- No polling loops and no broad realtime listeners over large collections.
+- Queries must be scoped to `spaces/{spaceId}` and small subcollections.
+- Answer body stays capped at 300 chars for MVP v0.5. If expanded later, the hard cap must remain below 800 chars.
+- Wish title should stay capped around 80 chars.
+- Wishlist active items should stay below 100 per space for MVP.
+- Reaction documents should be bounded to one reaction per `{questionId, answerOwnerId, reactorId}`.
+- No base64/media blobs in Firestore documents.
+- Prefer soft state fields such as `hidden`, `done`, or `deletedAt` over TTL automation.
+
+Allowed within free-plan MVP:
+
+- 저장 pending/saved/failed/retry 상태
+- 답변 수정/접기/펼치기
+- 하루 질문 진행 문서
+- 제한된 답변 반응
+- 위시 수정/완료/숨김
+- 텍스트/emoji 기반 개인화
+- 수동 저장/재시도
+
+Out of scope while staying on free plan:
+
+- 사진/음성/영상 업로드
+- 공개 회원가입과 다수 커플 운영
+- 실시간 채팅
+- push notification pipeline
+- AI 질문 생성
+- 관리자 CMS
+- 사용량이 큰 analytics dashboard
+- 자동 백업/복구/TTL 기반 정리
+- collection-group reporting
+- typing indicator, presence, read receipts
+- Cloud Functions, scheduled jobs, Firebase Extensions dependency
+
+Security rules guidance:
+
+- Rules should avoid extra `get()`/`exists()` calls unless needed for access control.
+- Rule document access calls can add billable reads and have per-request limits.
+- For this private MVP, prefer simple path-scoped member checks and bounded member documents.
+
 ### Dummy Data Policy
 
 - `seedMyAnswers`, `seedPartnerAnswers`, `seedInsight`, `seedWishes`처럼 실제 두 사람이 만들지 않은 기록은 Firebase 모드에서 노출하지 않는다.
@@ -388,6 +521,10 @@ Acceptance Criteria:
 - 홈에 `오늘의 질문`과 질문 번호가 보인다.
 - 내 답이 없으면 답변 CTA가 보인다.
 - 내 답이 있으면 내 답 preview가 보인다.
+- 내 답 preview가 길면 4줄 안팎으로 접히고 `더 보기`로 펼칠 수 있다.
+- 120자를 넘는 답변은 long answer로 간주한다.
+- 내 답이 있으면 `수정하기` 액션이 보인다.
+- 오늘 패스한 질문에는 `다시 답하기` 액션이 보인다.
 - 상대 답이 잠겨 있으면 `내 답을 남기면 함께 열려요` 계열 문구가 보인다.
 - 기록 요약으로 닮음 퍼센트, 질문 수, 키워드가 보인다.
 
@@ -414,21 +551,32 @@ Required UI:
 - Partner answer locked box
 - Skip link: `내일 다시 보기`
 - Submit CTA: `답 남기고 {partnerName}님 답 열어보기`
+- Edit CTA when editing an existing answer: `수정 저장하기`
+- Save feedback text after submit/edit
 
 State:
 
 - Draft answer
 - Character count
 - Submitted answer
+- Editing existing answer
 - Skipped today
 - Partner answer locked
 - Partner answer revealed
+- Save success feedback
+- Save failure retry
 
 Acceptance Criteria:
 
 - 답변 입력 시 글자 수가 갱신된다.
 - 300자를 넘으면 제출을 막거나 초과 상태를 안내한다.
 - 제출 후 내 답이 저장된다.
+- 기존 답변의 `수정하기`를 누르면 답변 화면에 기존 본문이 채워진다.
+- 수정 저장 시 같은 answer 문서를 덮어쓰고 홈으로 돌아온다.
+- 수정 저장 후 상대 답변 공개 상태는 닫히지 않는다.
+- skipped 답변에서 다시 답하면 `skipped: false`인 정상 답변으로 저장된다.
+- 입력 중 뒤로 갔다가 돌아와도 draft가 유지된다.
+- Firestore write는 제출/수정 저장 시에만 발생한다.
 - 상대 답이 준비된 경우 상대 답이 열린다.
 - 상대 답이 없는 경우 대기 상태가 유지된다.
 - 패스 선택 시 홈으로 돌아가며 오늘 질문은 skipped 상태가 된다.
@@ -672,6 +820,9 @@ Static product content can live in code for MVP, but it must be named as catalog
 - Wishlist items
 - Wish likes
 - Wish done state
+- Answer reactions
+- Daily question progress
+- Space personalization settings
 
 Firebase mode must never fabricate these records.
 
@@ -691,6 +842,7 @@ Acceptance Criteria:
 - Firebase mode에서 Firestore wish 문서가 없으면 샘플 wish card가 보이지 않는다.
 - Firebase mode에서 상대가 아직 답하지 않았으면 샘플 상대 답변이 보이지 않는다.
 - Firebase mode에서 실제 데이터가 없어도 홈, 질문함, 기록, 밸런스, 카드, 위시는 모두 빈 상태로 자연스럽게 렌더링된다.
+- Firebase mode에서 reaction/progress/personalization 문서가 없어도 기본 product content로 안전하게 동작한다.
 
 ## 12. Real Content Catalog
 
@@ -806,22 +958,24 @@ Reference: `features.html`
 
 ### Priority P1
 
-- 질문 깊이 단계화
-- 밸런스 게임
-- 소개 카드
-- 위시리스트
+- 답변 수정과 긴 답변 UX
+- 저장 실패 재시도
+- 하루 질문 진행
+- 위시리스트 수정/완료
 
 ### Priority P2
 
+- 제한된 답변 반응
 - 상대 답 맞춰보기
 - 오늘의 기분 한 단어
-- 사진 한 장으로 답하기
+- 텍스트/emoji 개인화
 
 ### Priority P3
 
 - 함께 만드는 플레이리스트
 - 한 줄 쪽지함
 - 타임캡슐 편지
+- 사진 한 장으로 답하기
 
 ### Question Depth Ladder
 
@@ -865,8 +1019,10 @@ class Answer {
   final String questionId;
   final String profileId;
   final String body;
-  final DateTime createdAt;
+  final String createdLabel;
   final bool skipped;
+  final bool edited;
+  final DateTime? updatedAt;
 }
 
 class ArchiveItem {
@@ -909,12 +1065,46 @@ class WishItem {
   final String createdByProfileId;
   final Set<String> likedByProfileIds;
   final bool done;
+  final bool hidden;
+  final String? doneLabel;
+  final String? doneMemo;
 }
 
 class AlagagiSession {
   final String spaceId;
   final AppProfile me;
   final AppProfile partner;
+}
+
+class AnswerReaction {
+  final String questionId;
+  final String answerOwnerProfileId;
+  final String reactorProfileId;
+  final ReactionKind kind;
+  final DateTime? updatedAt;
+}
+
+class DailyQuestionProgress {
+  final DateTime startedAt;
+  final String currentQuestionId;
+  final String openedDateKey;
+}
+
+class SpacePersonalization {
+  final String? inviteCopy;
+  final String? startedDateLabel;
+  final Map<String, String> displayNamesByProfileId;
+  final Map<String, String> avatarsByProfileId;
+}
+
+class SpaceSummary {
+  final int answeredQuestionCount;
+  final int bothAnsweredQuestionCount;
+  final int wishCount;
+  final int mutualWishCount;
+  final List<String> topMatchedKeywords;
+  final String? latestActivityLabel;
+  final DateTime? updatedAt;
 }
 ```
 
@@ -950,6 +1140,27 @@ class AlagagiSession {
 }
 ```
 
+`spaces/{spaceId}/summary/current`
+
+```json
+{
+  "answeredQuestionCount": 12,
+  "bothAnsweredQuestionCount": 8,
+  "wishCount": 6,
+  "mutualWishCount": 2,
+  "topMatchedKeywords": ["잔잔한 음악", "산책"],
+  "latestActivityLabel": "오늘 영우님이 답을 남겼어요",
+  "updatedAt": "serverTimestamp"
+}
+```
+
+Rules:
+
+- Home and Records should read `summary/current` instead of scanning every answer.
+- Summary may be updated opportunistically by the same explicit user action that changes the source data.
+- If summary is missing, UI falls back to lightweight empty/unknown state instead of broad scanning.
+- Updating summary is allowed as a second write only when the source action already writes one user-generated document.
+
 `spaces/{spaceId}/answers/{questionId_uid}`
 
 ```json
@@ -959,9 +1170,18 @@ class AlagagiSession {
   "body": "노을 질 때가 좋아요.",
   "createdLabel": "오늘",
   "skipped": false,
+  "edited": false,
   "updatedAt": "serverTimestamp"
 }
 ```
+
+Rules:
+
+- Document ID remains `{questionId}_{uid}` so answer edits overwrite the same document.
+- Initial submit writes `edited: false`.
+- Edit submit writes `edited: true` and updates `updatedAt`.
+- No edit history documents are written in MVP v0.5.
+- Draft text is local app state only and must not be written to Firestore.
 
 `spaces/{spaceId}/balanceSelections/{questionId_uid}`
 
@@ -996,6 +1216,50 @@ class AlagagiSession {
   "createdByProfileId": "{uid}",
   "likedByProfileIds": ["{uid}"],
   "done": false,
+  "hidden": false,
+  "doneLabel": null,
+  "doneMemo": null,
+  "updatedAt": "serverTimestamp"
+}
+```
+
+`spaces/{spaceId}/answerReactions/{questionId_answerOwnerUid_reactorUid}`
+
+```json
+{
+  "questionId": "q001",
+  "answerOwnerProfileId": "{minyoungUid}",
+  "reactorProfileId": "{youngwooUid}",
+  "kind": "same",
+  "updatedAt": "serverTimestamp"
+}
+```
+
+`spaces/{spaceId}/progress/daily`
+
+```json
+{
+  "startedAt": "serverTimestamp",
+  "currentQuestionId": "q001",
+  "openedDateKey": "2026-06-08",
+  "updatedAt": "serverTimestamp"
+}
+```
+
+`spaces/{spaceId}/settings/personalization`
+
+```json
+{
+  "inviteCopy": "우리, 천천히 알아가 볼래요?",
+  "startedDateLabel": "처음 만난 날",
+  "displayNamesByProfileId": {
+    "{youngwooUid}": "영우",
+    "{minyoungUid}": "민영"
+  },
+  "avatarsByProfileId": {
+    "{youngwooUid}": "🌿",
+    "{minyoungUid}": "🪻"
+  },
   "updatedAt": "serverTimestamp"
 }
 ```
@@ -1006,6 +1270,17 @@ class AlagagiSession {
 - `AlagagiDataRepository` owns session/profile load and user-generated writes.
 - `AlagagiController` owns screen state and domain transitions, but delegates persistence writes to the repository when present.
 - Widget tests use fake repositories; Firebase SDK is not required for ordinary test execution.
+- Repository methods must be action-based. They should not persist every keystroke.
+- Repository reads should load bounded, space-scoped collections only.
+- Current broad session hydration over all `answers`, `balanceSelections`, `wishes`, and profile slot subcollections is acceptable only for early private beta data volume.
+- v0.6+ should split reads by screen:
+  - Home: me profile, partner profile, space, summary, progress, today answers only.
+  - Archive: answers page with `limit()` and cursor pagination.
+  - Wishlist: visible wishes page with `limit()` and cursor pagination.
+  - Profile card: one bounded profile-card document or capped slot map if the slot count stays fixed.
+- Use cursor pagination, never offset pagination.
+- Avoid broad realtime listeners; use one-shot reads or at most a tiny listener for today answers/summary.
+- Large future features must add an estimated read/write budget before implementation.
 
 ## 15. App State Draft
 
@@ -1016,6 +1291,9 @@ class AlagagiState {
   final AppRoute route;
   final DailyQuestion todayQuestion;
   final Map<String, Answer> answersByQuestionAndProfile;
+  final Set<String> expandedAnswerIds;
+  final bool editingAnswer;
+  final String? saveFeedback;
   final ArchiveFilter archiveFilter;
   final int activeBalanceIndex;
   final ProfileCardTab profileCardTab;
@@ -1037,12 +1315,20 @@ class AlagagiState {
 - Invite nickname validation
 - Daily question selection by day/depth
 - Answer submit and skip state
+- Answer edit preloads existing body and overwrites the same answer key
+- Long answer preview expansion state
+- Answer persistence writes only on submit/edit submit, not on draft updates
+- Firestore free-plan budget estimate for new repository reads/writes
 - Partner answer visibility rule
 - Archive filtering
 - Similarity keyword aggregation
 - Balance selection result
+- Daily question progress selection
+- Lightweight answer reaction create/update
 - Profile card fill progress
 - Wishlist filter and mutual matching
+- Wishlist edit, hide/delete, and done metadata
+- Personalization settings fallback and save
 
 ### Widget Tests
 
@@ -1057,11 +1343,16 @@ class AlagagiState {
 - Invite shows headline and enters home after nickname submit
 - Home shows today question and record summary
 - Answer screen updates character count and saves answer
+- Home answer preview collapses long text and expands with `더 보기`
+- Answer edit opens existing answer text and saves the edited body
+- Answer edit keeps partner answer visibility after save
 - Archive tabs filter list
 - Us record renders stats and timeline
 - Balance option selection updates selected state
 - Profile card tab switches card content
 - Wishlist filter shows mutual wishes
+- Reaction buttons update one visible reaction state
+- Wishlist edit/done flows update cards without leaving the screen
 
 ### Visual/Manual Checks
 
@@ -1069,9 +1360,11 @@ class AlagagiState {
 - Desktop constrained mobile layout
 - Bottom navigation does not cover content
 - Long Korean text wraps without overflow
+- Long answer preview does not push the home card into an unreadable wall of text
 - Disabled/locked states are readable
 - No page feels like a public landing page
 - Login screen follows `invite.html` visual mood and does not feel like a generic admin form
+- Firestore Usage tab remains comfortably below free plan limits after manual smoke usage
 
 ## 17. Implementation Plan
 
@@ -1135,6 +1428,44 @@ class AlagagiState {
 - Add empty states for archive, records, balance, profile card, and wishlist.
 - Keep local demo fixtures isolated from Firebase mode.
 
+### Step 9: Firestore Free Plan Guardrails
+
+- Add this spec section before implementing new Firebase-backed features.
+- Keep all new feature reads scoped to one `spaceId`.
+- Estimate reads/writes/deletes for every new collection.
+- Reject features that require Storage, Cloud Functions, TTL, PITR, backup, restore, clone, or public multi-user growth.
+- Add tests proving draft updates do not call repository writes.
+- Replace swallowed persistence failures with visible pending/saved/failed states for user-triggered saves.
+- Add manual retry actions; do not add automatic retry loops.
+
+### Step 10: Answer Experience
+
+- Update tests first for answer edit, long preview expansion, and save feedback.
+- Extend `Answer` with `edited`/`updatedAt` semantics.
+- Add controller actions for edit start/cancel/submit.
+- Add home preview collapse/expand state.
+- Reuse the existing answer Firestore document ID for edits.
+- Verify that partner answer visibility remains open after my answer edit.
+
+### Step 11: Daily Question Progress
+
+- Add bounded `progress/daily` load to session data.
+- Keep question catalog local.
+- Add deterministic date-key/day selection tests.
+- Avoid Cloud Functions; client computes the next question from progress and catalog.
+
+### Step 12: Lightweight Reactions
+
+- Add a small reaction catalog.
+- Add one reaction document per answer owner/reactor/question.
+- Keep reactions visible but quiet; do not introduce chat.
+
+### Step 13: Wishlist Polish And Personalization
+
+- Add wish edit/hide/done metadata.
+- Add text/emoji personalization settings.
+- Avoid photos and file uploads.
+
 ## 18. Migration Notes From Current App
 
 Current app:
@@ -1173,4 +1504,7 @@ Migration decision:
 - bottom navigation을 `홈/질문함/기록/마이`로 유지할지, plus features 때문에 `홈/질문함/카드/위시`로 바꿀지.
 - Firebase Console에서 두 계정의 최종 비밀번호를 무엇으로 둘지.
 - 질문 카탈로그 v1을 28일로 고정할지, 14일 MVP로 줄여 먼저 배포할지.
-- 질문 카탈로그를 앱 코드에 둘지, Firestore `content/questions`로 옮길지.
+- 질문 카탈로그는 Spark/free-plan MVP에서는 앱 코드에 둔다. Firestore CMS 이전은 관리자 기능이 필요해질 때 다시 논의한다.
+- 답변 최대 길이를 300자로 유지할지, 500-800자 사이로 늘릴지.
+- 답변 수정 후 `수정됨` 표시를 홈과 질문함 양쪽에 보여줄지.
+- 반응 기능을 v0.7에 바로 넣을지, 답변 수정 UX가 안정된 뒤 넣을지.

@@ -41,6 +41,54 @@ void main() {
       expect(controller.todayPartnerAnswer?.body, contains('조용해지는 시간'));
     });
 
+    test('edits today answer with existing body preloaded', () {
+      final controller = AlagagiController()..enterSpace('영우');
+
+      controller.updateDraftAnswer('처음 답변이에요.');
+      controller.submitTodayAnswer();
+      controller.editTodayAnswer();
+
+      expect(controller.state.route, AlagagiRoute.answer);
+      expect(controller.state.editingAnswer, isTrue);
+      expect(controller.state.draftAnswer, '처음 답변이에요.');
+
+      controller.updateDraftAnswer('수정한 답변이에요.');
+      controller.submitTodayAnswer();
+
+      expect(controller.state.route, AlagagiRoute.home);
+      expect(controller.state.editingAnswer, isFalse);
+      expect(controller.todayMyAnswer?.body, '수정한 답변이에요.');
+      expect(controller.todayPartnerAnswer?.body, contains('조용해지는 시간'));
+    });
+
+    test('answers again after skipping today', () {
+      final controller = AlagagiController()..enterSpace('영우');
+
+      controller.skipToday();
+      expect(controller.todayMyAnswer?.skipped, isTrue);
+
+      controller.answerTodayAfterSkip();
+      controller.updateDraftAnswer('다시 남기는 답이에요.');
+      controller.submitTodayAnswer();
+
+      expect(controller.todayMyAnswer?.skipped, isFalse);
+      expect(controller.todayMyAnswer?.body, '다시 남기는 답이에요.');
+    });
+
+    test('toggles long answer expansion by answer key', () {
+      final controller = AlagagiController()..enterSpace('영우');
+      const questionId = 'q12';
+      const profileId = 'me';
+
+      expect(controller.isAnswerExpanded(questionId, profileId), isFalse);
+
+      controller.toggleAnswerExpanded(questionId, profileId);
+      expect(controller.isAnswerExpanded(questionId, profileId), isTrue);
+
+      controller.toggleAnswerExpanded(questionId, profileId);
+      expect(controller.isAnswerExpanded(questionId, profileId), isFalse);
+    });
+
     test('filters archive by both answered and similar answers', () {
       final controller = AlagagiController();
 
