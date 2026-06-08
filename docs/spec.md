@@ -201,6 +201,36 @@ If the app grows, bottom navigation may become:
 - 관리자용 데이터 편집 UI
 - 완전한 오프라인 충돌 병합
 
+### MVP v0.4 Real Content & Data Cleanup In Scope
+
+- Firebase 모드에서 기존 샘플 기록 데이터 제거
+- 질문/밸런스/소개 카드 슬롯/위시 템플릿을 실제 콘텐츠 카탈로그로 정리
+- 사용자 생성 데이터는 Firestore를 단일 출처로 사용
+- Firestore 데이터가 없을 때는 샘플을 대신 보여주지 않고 빈 상태를 보여준다.
+- 오늘의 질문은 실제 질문 카탈로그에서 날짜/순번/depth 기준으로 선택한다.
+- 아카이브는 실제 저장된 답변/패스만 보여준다.
+- 우리 기록은 실제 답변 수, 함께 답한 수, 닮은 키워드 기반으로 계산한다.
+- 밸런스 게임은 실제 선택 전에는 상대 선택을 노출하지 않는다.
+- 소개 카드는 실제 작성한 슬롯만 채워진 상태로 보여준다.
+- 위시리스트는 실제 추가/좋아요/완료 데이터만 보여준다.
+
+### MVP v0.4 Real Content & Data Cleanup Out Of Scope
+
+- AI 질문 생성
+- 외부 캘린더/지도/예약 연동
+- 사진 답변 저장
+- 푸시 알림 기반 질문 리마인더
+- 관리자 CMS
+- 다수 커플/다수 공간 운영
+
+### Dummy Data Policy
+
+- `seedMyAnswers`, `seedPartnerAnswers`, `seedInsight`, `seedWishes`처럼 실제 두 사람이 만들지 않은 기록은 Firebase 모드에서 노출하지 않는다.
+- 질문 카탈로그, 밸런스 질문, 소개 카드 슬롯 정의, 위시 추천 문구는 제품 콘텐츠이므로 로컬 정적 카탈로그로 유지할 수 있다.
+- 테스트 fixture는 test 디렉터리 안에서만 사용하고, 운영 UI에 흘러들어오면 안 된다.
+- Firebase dart-define이 없는 로컬 데모 모드는 개발 확인용 fixture를 사용할 수 있지만, 화면이나 문서에서 demo/local 모드임을 구분해야 한다.
+- 배포 빌드는 Firebase 설정이 존재하면 반드시 real-data mode로 동작해야 한다.
+
 ## 9. Core User Flow
 
 ```mermaid
@@ -605,7 +635,161 @@ Acceptance Criteria:
 - 완료된 wish는 흐리게 처리되고 취소선이 보인다.
 - Add CTA는 새 wish draft flow로 이어진다.
 
-## 11. Future Feature Board
+## 11. Real Data Source Policy
+
+### Static Product Content
+
+아래 데이터는 두 사람이 작성한 기록이 아니라 앱이 제공하는 제품 콘텐츠다.
+
+- Daily question catalog
+- Balance question catalog
+- Profile card slot catalog
+- Wishlist starter templates
+- Empty state copy
+- Locked/waiting state copy
+
+Static product content can live in code for MVP, but it must be named as catalog data, not seed history.
+
+### User Generated Data
+
+아래 데이터는 반드시 Firestore에서 읽고 쓴다.
+
+- Answers
+- Skipped answers
+- Balance selections
+- Profile card slot values
+- Wishlist items
+- Wish likes
+- Wish done state
+
+Firebase mode must never fabricate these records.
+
+### Empty States
+
+- 오늘의 답변 없음: `아직 오늘 답을 남기지 않았어요.`
+- 상대 답변 없음: `{partnerName}님이 답하면 함께 열려요.`
+- 질문함 비어 있음: `아직 쌓인 질문이 없어요. 오늘의 질문부터 천천히 시작해요.`
+- 우리 기록 비어 있음: `기록은 답이 쌓이면 자연스럽게 만들어져요.`
+- 밸런스 선택 없음: `둘 중 끌리는 쪽을 골라볼까요?`
+- 소개 카드 비어 있음: `오늘 한 칸만 채워도 충분해요.`
+- 위시리스트 비어 있음: `같이 해보고 싶은 걸 하나만 담아볼까요?`
+
+Acceptance Criteria:
+
+- Firebase mode에서 Firestore answer 문서가 없으면 샘플 답변이 보이지 않는다.
+- Firebase mode에서 Firestore wish 문서가 없으면 샘플 wish card가 보이지 않는다.
+- Firebase mode에서 상대가 아직 답하지 않았으면 샘플 상대 답변이 보이지 않는다.
+- Firebase mode에서 실제 데이터가 없어도 홈, 질문함, 기록, 밸런스, 카드, 위시는 모두 빈 상태로 자연스럽게 렌더링된다.
+
+## 12. Real Content Catalog
+
+### 12.1 Daily Question Catalog v1
+
+Question IDs are stable and must not be reused for different text.
+
+| ID | Day | Depth | Question | Intent |
+| --- | ---: | --- | --- | --- |
+| q001 | 1 | light | 하루 중 가장 좋아하는 시간은 언제예요? | 부담 없는 취향 |
+| q002 | 2 | light | 요즘 자주 듣는 노래가 있나요? | 음악 취향 |
+| q003 | 3 | light | 쉬는 날 혼자 시간이 생기면 제일 먼저 뭘 하고 싶어요? | 휴식 방식 |
+| q004 | 4 | light | 카페를 고를 때 제일 먼저 보는 건 뭐예요? | 공간 취향 |
+| q005 | 5 | light | 산책한다면 어떤 분위기의 길이 좋아요? | 산책 취향 |
+| q006 | 6 | light | 요즘 유난히 먹고 싶은 음식이 있어요? | 음식 취향 |
+| q007 | 7 | light | 갑자기 하루가 비면 어디에 가보고 싶어요? | 즉흥 취향 |
+| q008 | 8 | daily | 오늘 하루가 괜찮았다고 느끼는 순간은 언제예요? | 일상 감각 |
+| q009 | 9 | daily | 기분 전환이 필요할 때 보통 뭘 해요? | 회복 루틴 |
+| q010 | 10 | daily | 최근에 나를 웃게 한 작은 일이 있었나요? | 긍정 기억 |
+| q011 | 11 | daily | 완벽한 주말 아침을 그려본다면 어떤 모습이에요? | 생활 리듬 |
+| q012 | 12 | daily | 일이 끝난 뒤 제일 편해지는 루틴은 뭐예요? | 퇴근 이후 |
+| q013 | 13 | daily | 요즘 새롭게 관심이 생긴 게 있나요? | 현재 관심사 |
+| q014 | 14 | daily | 나를 편하게 해주는 말이나 행동은 뭐예요? | 편안함 |
+| q015 | 15 | beliefs | 어떤 사람과 있을 때 마음이 편해져요? | 관계 기준 |
+| q016 | 16 | beliefs | 약속에서 은근히 중요하게 생각하는 게 있다면요? | 만남 기준 |
+| q017 | 17 | beliefs | 처음엔 잘 안 보이지만 가까워지면 드러나는 내 모습은? | 자기 이해 |
+| q018 | 18 | beliefs | 마음에 드는 공간들은 어떤 공통점이 있어요? | 감각의 이유 |
+| q019 | 19 | beliefs | 오래 기억에 남는 다정함은 어떤 종류예요? | 다정함의 기준 |
+| q020 | 20 | beliefs | 요즘 나에게 필요한 속도는 어느 정도인 것 같아요? | 관계 속도 |
+| q021 | 21 | beliefs | 관계에서 서두르고 싶지 않은 부분이 있다면요? | 안전한 경계 |
+| q022 | 22 | inner | 힘든 날에는 티가 나는 편이에요, 조용해지는 편이에요? | 감정 표현 |
+| q023 | 23 | inner | 마음이 놓인다고 느끼는 순간은 언제예요? | 안정감 |
+| q024 | 24 | inner | 내가 좋아하는 애정 표현은 어떤 쪽에 가까워요? | 애정 언어 |
+| q025 | 25 | inner | 요즘 나를 가장 많이 움직이게 하는 건 뭐예요? | 동기 |
+| q026 | 26 | inner | 천천히 가까워지면 알려주고 싶은 내 모습이 있나요? | 자기 개방 |
+| q027 | 27 | inner | 언젠가 같이 해보고 싶은 작은 장면이 있다면요? | 다음 만남 |
+| q028 | 28 | inner | 지금 우리 사이에서 고마운 점을 하나만 적는다면요? | 상호 감사 |
+
+Question rules:
+
+- Day 1-7은 light만 노출한다.
+- Day 8-14는 daily까지 허용한다.
+- Day 15-21은 beliefs까지 허용한다.
+- Day 22 이후 inner를 허용한다.
+- 사용자가 패스한 질문은 archive에 skipped 상태로 남기되, 다음 날 질문 진행을 막지 않는다.
+- 같은 질문은 같은 space에서 한 번만 오늘의 질문으로 배정한다.
+
+### 12.2 Balance Question Catalog v1
+
+| ID | Prompt | Left | Right | Intent |
+| --- | --- | --- | --- | --- |
+| b001 | 여행을 떠난다면? | 조용한 바다 | 푸른 숲길 | 여행 취향 |
+| b002 | 쉬는 날엔? | 집에서 충전 | 밖에서 산책 | 휴식 방식 |
+| b003 | 카페를 고른다면? | 조용한 분위기 | 디저트 맛집 | 공간 선택 |
+| b004 | 영화를 본다면? | 잔잔한 영화 | 많이 웃는 영화 | 콘텐츠 취향 |
+| b005 | 만나기 좋은 시간은? | 낮 브런치 | 저녁 산책 | 만남 시간 |
+| b006 | 데이트 계획은? | 미리 예약 | 즉흥 발견 | 계획 성향 |
+| b007 | 대화 분위기는? | 깊은 이야기 | 가벼운 수다 | 대화 리듬 |
+| b008 | 메뉴를 고른다면? | 익숙한 맛집 | 새로운 곳 | 음식 모험도 |
+
+Rules:
+
+- 상대 선택은 내가 선택한 뒤에만 보여준다.
+- 둘 다 선택하기 전에는 결과 문장을 만들지 않는다.
+- 같은 선택이면 `닮은 취향`, 다르면 `서로 다른 취향`으로만 표현하고 점수화하지 않는다.
+
+### 12.3 Profile Card Slot Catalog v1
+
+| Slot ID | Label | Unlock | Input Hint |
+| --- | --- | --- | --- |
+| song | 요즘 노래 | Day 2 | 요즘 자주 듣는 노래 |
+| food | 먹고 싶은 음식 | Day 6 | 요즘 먹고 싶은 음식 |
+| rest | 쉬는 방식 | Day 9 | 쉬고 싶을 때 하는 일 |
+| cafe | 카페 취향 | Day 10 | 좋아하는 카페 분위기 |
+| walk | 산책 취향 | Day 12 | 걷고 싶은 길 |
+| comfort | 편해지는 순간 | Day 14 | 나를 편하게 하는 것 |
+| promise | 약속에서 중요한 것 | Day 16 | 은근히 중요하게 보는 것 |
+| kindness | 기억나는 다정함 | Day 19 | 오래 남는 다정함 |
+| pace | 나에게 맞는 속도 | Day 20 | 요즘 필요한 속도 |
+| wish_scene | 같이 해보고 싶은 장면 | Day 27 | 언젠가 같이 하고 싶은 것 |
+
+Rules:
+
+- 민감정보를 강제로 묻지 않는다.
+- 나이, 연락처, 주소, 회사, 학교, 실명 추가 정보는 MVP 슬롯에 포함하지 않는다.
+- 슬롯은 하루에 하나만 채우는 느낌을 유지한다.
+- 잠긴 슬롯은 내용 대신 unlock hint를 보여준다.
+
+### 12.4 Wishlist Starter Templates v1
+
+Templates are suggestions, not saved wishes.
+
+| Template ID | Kind | Title |
+| --- | --- | --- |
+| wt001 | cafe | 조용한 카페에서 커피 마시기 |
+| wt002 | food | 서로 좋아하는 음식 하나씩 먹어보기 |
+| wt003 | walk | 해 질 때 가볍게 산책하기 |
+| wt004 | culture | 작은 전시 보러 가기 |
+| wt005 | activity | 영화 보고 천천히 이야기하기 |
+| wt006 | place | 한 번도 안 가본 동네 걸어보기 |
+| wt007 | food | 늦은 저녁 따뜻한 국물 먹기 |
+| wt008 | activity | 필름 사진 서로 찍어주기 |
+
+Rules:
+
+- 템플릿은 사용자가 누르기 전까지 Firestore wish가 아니다.
+- wish는 `createdByProfileId`, `likedByProfileIds`, `done`, `createdAt`, `updatedAt`을 가진다.
+- 둘 다 좋아요한 wish만 mutual group에 들어간다.
+
+## 13. Future Feature Board
 
 Reference: `features.html`
 
@@ -641,7 +825,7 @@ Acceptance Criteria:
 - 홈은 현재 day/week에 맞는 질문을 보여준다.
 - 깊은 질문은 초반 day에는 노출하지 않는다.
 
-## 12. Domain Model Draft
+## 14. Domain Model Draft
 
 ```dart
 class AuthUser {
@@ -711,6 +895,7 @@ class WishItem {
   final String id;
   final String title;
   final WishKind kind;
+  final String createdByProfileId;
   final Set<String> likedByProfileIds;
   final bool done;
 }
@@ -722,7 +907,7 @@ class AlagagiSession {
 }
 ```
 
-## 12.1 Firebase Data Model
+## 14.1 Firebase Data Model
 
 ### Authentication
 
@@ -767,12 +952,37 @@ class AlagagiSession {
 }
 ```
 
+`spaces/{spaceId}/balanceSelections/{questionId_uid}`
+
+```json
+{
+  "questionId": "b001",
+  "profileId": "{uid}",
+  "optionId": "sea",
+  "updatedAt": "serverTimestamp"
+}
+```
+
+`spaces/{spaceId}/profileCards/{profileId}/slots/{slotId}`
+
+```json
+{
+  "id": "song",
+  "label": "요즘 노래",
+  "icon": "🎧",
+  "value": "요즘 자주 듣는 노래",
+  "locked": false,
+  "updatedAt": "serverTimestamp"
+}
+```
+
 `spaces/{spaceId}/wishes/{wishId}`
 
 ```json
 {
   "title": "조용한 영화관 가기",
   "kind": "activity",
+  "createdByProfileId": "{uid}",
   "likedByProfileIds": ["{uid}"],
   "done": false,
   "updatedAt": "serverTimestamp"
@@ -786,7 +996,7 @@ class AlagagiSession {
 - `AlagagiController` owns screen state and domain transitions, but delegates persistence writes to the repository when present.
 - Widget tests use fake repositories; Firebase SDK is not required for ordinary test execution.
 
-## 13. App State Draft
+## 15. App State Draft
 
 ```dart
 class AlagagiState {
@@ -802,13 +1012,17 @@ class AlagagiState {
 }
 ```
 
-## 14. Test Strategy
+## 16. Test Strategy
 
 ### Unit Tests
 
 - Login id to Firebase email mapping
 - Auth repository success/failure state with fake auth
 - Session construction from Firestore-style profile data
+- Firebase mode maps empty Firestore snapshots to empty UI state, not seed history
+- Question catalog day/depth selection
+- Balance result visibility waits for both real selections
+- Relationship insight is computed from real answers only
 - Invite nickname validation
 - Daily question selection by day/depth
 - Answer submit and skip state
@@ -826,6 +1040,9 @@ class AlagagiState {
 - Existing fake auth session skips login and enters home
 - Missing profile document shows setup required state with UID
 - Logout returns to login
+- Firebase mode with no answers shows empty archive and no sample partner answer
+- Firebase mode with no wishes shows empty wishlist and no sample wish cards
+- Firebase mode with no profile slot values shows locked/empty profile card slots
 - Invite shows headline and enters home after nickname submit
 - Home shows today question and record summary
 - Answer screen updates character count and saves answer
@@ -845,7 +1062,7 @@ class AlagagiState {
 - No page feels like a public landing page
 - Login screen follows `invite.html` visual mood and does not feel like a generic admin form
 
-## 15. Implementation Plan
+## 17. Implementation Plan
 
 ### Step 1: Spec Lock
 
@@ -898,7 +1115,16 @@ class AlagagiState {
 - Document Firebase Console setup in `docs/firebase_setup.md`.
 - Verify `flutter test`, `flutter analyze`, and release web build.
 
-## 16. Migration Notes From Current App
+### Step 8: Real Data Cleanup
+
+- Update this spec first with real data policy and content catalog.
+- Write tests proving Firebase mode does not show sample answers, sample insights, sample wishes, or fake partner selections.
+- Rename seed content that remains valid product content to catalog content.
+- Move user-generated state reads to Firestore repository.
+- Add empty states for archive, records, balance, profile card, and wishlist.
+- Keep local demo fixtures isolated from Firebase mode.
+
+## 18. Migration Notes From Current App
 
 Current app:
 
@@ -924,8 +1150,9 @@ Migration decision:
 - Remove coupon concept from MVP.
 - Preserve mobile-first Flutter Web approach.
 - Preserve SDD/TDD workflow.
+- Remove sample relationship history from Firebase mode before sharing the app with Minyoung.
 
-## 17. Open Questions
+## 19. Open Questions
 
 - 앱 이름을 최종적으로 `알아가기`로 고정할지, `민영 Pick`의 개인화 이름을 일부 남길지.
 - 상대 이름을 `민영`으로 고정할지, 닉네임 입력 기반으로 바꿀지.
@@ -934,3 +1161,5 @@ Migration decision:
 - Flutter에서 폰트 파일을 번들링할지, 시스템 폰트로 시작할지.
 - bottom navigation을 `홈/질문함/기록/마이`로 유지할지, plus features 때문에 `홈/질문함/카드/위시`로 바꿀지.
 - Firebase Console에서 두 계정의 최종 비밀번호를 무엇으로 둘지.
+- 질문 카탈로그 v1을 28일로 고정할지, 14일 MVP로 줄여 먼저 배포할지.
+- 질문 카탈로그를 앱 코드에 둘지, Firestore `content/questions`로 옮길지.

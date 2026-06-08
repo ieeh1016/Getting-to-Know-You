@@ -96,6 +96,11 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         : await users.doc(partnerUid).get();
     final partnerData = partnerSnapshot?.data();
     final spaceId = _readString(meData, 'spaceId') ?? 'main';
+    final spaceData = await _loadSpaceData(
+      spaceId: spaceId,
+      meId: user.uid,
+      partnerId: partnerUid,
+    );
 
     return AlagagiSession(
       spaceId: spaceId,
@@ -113,6 +118,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         fallbackAvatar: '🪻',
         isMe: false,
       ),
+      data: spaceData,
     );
   }
 
@@ -129,6 +135,24 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           'body': answer.body,
           'createdLabel': answer.createdLabel,
           'skipped': answer.skipped,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> saveBalanceSelection(
+    String spaceId,
+    BalanceSelection selection,
+  ) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('balanceSelections')
+        .doc('${selection.questionId}_${selection.profileId}')
+        .set({
+          'questionId': selection.questionId,
+          'profileId': selection.profileId,
+          'optionId': selection.optionId,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
   }
@@ -168,6 +192,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           'id': wish.id,
           'icon': wish.icon,
           'title': wish.title,
+          'createdByProfileId': wish.createdByProfileId,
           'kind': switch (wish.kind) {
             WishKind.place => 'place',
             WishKind.activity => 'activity',
@@ -176,6 +201,122 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           'done': wish.done,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
+  }
+
+  Future<AlagagiSpaceData> _loadSpaceData({
+    required String spaceId,
+    required String meId,
+    required String? partnerId,
+  }) async {
+    final space = _firestore.collection('spaces').doc(spaceId);
+    final answersSnapshot = await space.collection('answers').get();
+    final balanceSnapshot = await space.collection('balanceSelections').get();
+    final wishesSnapshot = await space.collection('wishes').get();
+
+    final profileSlots = <ProfileSlotValue>[];
+    for (final profileId in {meId, ?partnerId}) {
+      final slotsSnapshot = await space
+          .collection('profileCards')
+          .doc(profileId)
+          .collection('slots')
+          .get();
+      for (final doc in slotsSnapshot.docs) {
+        final slot = _profileSlotFromData(doc.data(), fallbackId: doc.id);
+        if (slot != null) {
+          profileSlots.add(ProfileSlotValue(profileId: profileId, slot: slot));
+        }
+      }
+    }
+
+    return AlagagiSpaceData(
+      answers: answersSnapshot.docs
+          .map((doc) => _answerFromData(doc.data()))
+          .nonNulls
+          .toList(),
+      balanceSelections: balanceSnapshot.docs
+          .map((doc) => _balanceSelectionFromData(doc.data()))
+          .nonNulls
+          .toList(),
+      profileSlots: profileSlots,
+      wishes: wishesSnapshot.docs
+          .map((doc) => _wishFromData(doc.id, doc.data()))
+          .nonNulls
+          .toList(),
+    );
+  }
+
+  Answer? _answerFromData(Map<String, dynamic> data) {
+    final questionId = _readString(data, 'questionId');
+    final profileId = _readString(data, 'profileId');
+    if (questionId == null || profileId == null) {
+      return null;
+    }
+    return Answer(
+      questionId: questionId,
+      profileId: profileId,
+      body: _readString(data, 'body') ?? '',
+      createdLabel: _readString(data, 'createdLabel') ?? '오늘',
+      skipped: data['skipped'] == true,
+    );
+  }
+
+  BalanceSelection? _balanceSelectionFromData(Map<String, dynamic> data) {
+    final questionId = _readString(data, 'questionId');
+    final profileId = _readString(data, 'profileId');
+    final optionId = _readString(data, 'optionId');
+    if (questionId == null || profileId == null || optionId == null) {
+      return null;
+    }
+    return BalanceSelection(
+      questionId: questionId,
+      profileId: profileId,
+      optionId: optionId,
+    );
+  }
+
+  ProfileSlot? _profileSlotFromData(
+    Map<String, dynamic> data, {
+    required String fallbackId,
+  }) {
+    final label = _readString(data, 'label');
+    if (label == null) {
+      return null;
+    }
+    return ProfileSlot(
+      id: _readString(data, 'id') ?? fallbackId,
+      label: label,
+      icon: _readString(data, 'icon') ?? '🌿',
+      value: _readString(data, 'value'),
+      locked: data['locked'] == true,
+      unlockHint: _readString(data, 'unlockHint'),
+    );
+  }
+
+  WishItem? _wishFromData(String fallbackId, Map<String, dynamic> data) {
+    final title = _readString(data, 'title');
+    if (title == null) {
+      return null;
+    }
+    final likedByRaw = data['likedByProfileIds'];
+    final likedBy = likedByRaw is Iterable
+        ? likedByRaw.whereType<String>().toSet()
+        : <String>{};
+    final kind = switch (_readString(data, 'kind')) {
+      'place' => WishKind.place,
+      'activity' => WishKind.activity,
+      _ => WishKind.activity,
+    };
+    return WishItem(
+      id: _readString(data, 'id') ?? fallbackId,
+      icon: _readString(data, 'icon') ?? '🌿',
+      title: title,
+      kind: kind,
+      createdByProfileId:
+          _readString(data, 'createdByProfileId') ??
+          (likedBy.isEmpty ? '' : likedBy.first),
+      likedByProfileIds: likedBy,
+      done: data['done'] == true,
+    );
   }
 
   AppProfile _profileFromData({

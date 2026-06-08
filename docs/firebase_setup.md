@@ -157,6 +157,15 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      match /balanceSelections/{selectionId} {
+        allow read: if isSpaceMember(spaceId);
+        allow create, update: if isSpaceMember(spaceId)
+          && request.resource.data.profileId == request.auth.uid
+          && request.resource.data.questionId is string
+          && request.resource.data.optionId is string;
+        allow delete: if false;
+      }
+
       match /profileCards/{profileId}/slots/{slotId} {
         allow read: if isSpaceMember(spaceId);
         allow create, update: if isSpaceMember(spaceId)
@@ -173,6 +182,7 @@ service cloud.firestore {
         allow create, update: if isSpaceMember(spaceId)
           && request.resource.data.id == wishId
           && request.resource.data.title is string
+          && request.resource.data.createdByProfileId is string
           && request.resource.data.kind in ['place', 'activity']
           && request.resource.data.likedByProfileIds is list
           && request.auth.uid in request.resource.data.likedByProfileIds

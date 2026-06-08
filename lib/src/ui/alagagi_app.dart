@@ -1013,7 +1013,7 @@ class _ProgressStrip extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'DAY 12 · 서로의 12번째 질문',
+                  'DAY ${controller.todayQuestion.day} · 서로의 ${controller.todayQuestion.number}번째 질문',
                   style: sans(
                     size: 11,
                     color: const Color(0xFFB8B6AD),
@@ -1164,7 +1164,21 @@ class _QuestionCard extends StatelessWidget {
               style: sans(size: 14, color: AlagagiColors.muted, height: 1.6),
             )
           else if (myAnswer == null)
-            _AnswerPrompt(controller: controller)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '아직 오늘 답을 남기지 않았어요.',
+                  style: sans(
+                    size: 14,
+                    color: AlagagiColors.muted,
+                    height: 1.6,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _AnswerPrompt(controller: controller),
+              ],
+            )
           else ...[
             _AnswerLine(
               tag: '나',
@@ -1358,9 +1372,20 @@ class _InsightGrid extends StatelessWidget {
               Wrap(
                 spacing: 6,
                 runSpacing: 8,
-                children: insight.matchedKeywords.take(4).map((keyword) {
-                  return _KeywordChip(label: keyword);
-                }).toList(),
+                children: insight.matchedKeywords.isEmpty
+                    ? [
+                        Text(
+                          '기록은 답이 쌓이면 자연스럽게 만들어져요.',
+                          style: sans(
+                            size: 12.5,
+                            color: AlagagiColors.muted,
+                            height: 1.5,
+                          ),
+                        ),
+                      ]
+                    : insight.matchedKeywords.take(4).map((keyword) {
+                        return _KeywordChip(label: keyword);
+                      }).toList(),
               ),
             ],
           ),
@@ -1776,25 +1801,29 @@ class ArchiveScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final items = controller.archiveItems;
     return _ScreenScroll(
       bottomNavigation: _BottomNav(controller: controller),
       children: [
         Text('질문함', style: serif(context, size: 23, weight: FontWeight.w800)),
         const SizedBox(height: 4),
         Text(
-          '그동안 주고받은 12개의 이야기',
+          '그동안 주고받은 ${controller.insight.questionCount}개의 이야기',
           style: sans(size: 12.5, color: AlagagiColors.muted),
         ),
         const SizedBox(height: 16),
         _ArchiveTabs(controller: controller),
         const SizedBox(height: 16),
-        for (final item in controller.archiveItems) ...[
-          _ArchiveCard(
-            item: item,
-            partnerName: controller.state.partner.nickname,
-          ),
-          const SizedBox(height: 14),
-        ],
+        if (items.isEmpty)
+          const _EmptyStateCard(text: '아직 쌓인 질문이 없어요. 오늘의 질문부터 천천히 시작해요.')
+        else
+          for (final item in items) ...[
+            _ArchiveCard(
+              item: item,
+              partnerName: controller.state.partner.nickname,
+            ),
+            const SizedBox(height: 14),
+          ],
       ],
     );
   }
@@ -1921,6 +1950,7 @@ class RecordsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final insight = controller.insight;
+    final isEmpty = insight.questionCount == 0;
     return _ScreenScroll(
       bottomNavigation: _BottomNav(controller: controller),
       children: [
@@ -1959,7 +1989,7 @@ class RecordsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                '생각보다 결이 잘 맞는 사이예요',
+                isEmpty ? '기록은 답이 쌓이면 자연스럽게 만들어져요.' : '생각보다 결이 잘 맞는 사이예요',
                 style: sans(size: 12, color: const Color(0xFF5A6650)),
               ),
             ],
@@ -1968,13 +1998,16 @@ class RecordsScreen extends StatelessWidget {
         const SizedBox(height: 24),
         const _SectionLabel('우리가 닮은 키워드'),
         const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: insight.matchedKeywords
-              .map((keyword) => _KeywordChip(label: keyword, leaf: true))
-              .toList(),
-        ),
+        if (insight.matchedKeywords.isEmpty)
+          const _EmptyStateCard(text: '아직 닮은 키워드는 없어요. 답이 쌓이면 여기에 보여드릴게요.')
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: insight.matchedKeywords
+                .map((keyword) => _KeywordChip(label: keyword, leaf: true))
+                .toList(),
+          ),
         const SizedBox(height: 24),
         const _SectionLabel('숫자로 보는 우리'),
         const SizedBox(height: 12),
@@ -1982,7 +2015,10 @@ class RecordsScreen extends StatelessWidget {
         const SizedBox(height: 24),
         const _SectionLabel('우리의 발자취'),
         const SizedBox(height: 12),
-        _Timeline(events: insight.timeline),
+        if (insight.timeline.isEmpty)
+          const _EmptyStateCard(text: '아직 남겨진 발자취가 없어요.')
+        else
+          _Timeline(events: insight.timeline),
       ],
     );
   }
@@ -2138,7 +2174,7 @@ class BalanceScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final question = controller.activeBalanceQuestion;
     final selected = controller.activeBalanceSelection;
-    final partnerChoice = question.partnerChoiceId;
+    final partnerChoice = controller.activePartnerBalanceSelection;
 
     return Stack(
       children: [
@@ -2221,7 +2257,7 @@ class BalanceScreen extends StatelessWidget {
               onTap: () => controller.selectBalanceOption(question.right.id),
             ),
             const SizedBox(height: 18),
-            if (selected != null)
+            if (selected != null && partnerChoice != null)
               _BalanceResult(
                 me: selected == question.left.id
                     ? question.left.label
@@ -2230,7 +2266,9 @@ class BalanceScreen extends StatelessWidget {
                     ? question.left.label
                     : question.right.label,
                 partnerName: controller.state.partner.nickname,
-              ),
+              )
+            else if (selected != null)
+              _BalanceWaiting(partnerName: controller.state.partner.nickname),
           ],
         ),
         Positioned(
@@ -2419,6 +2457,28 @@ class _BalanceResult extends StatelessWidget {
             ),
           ],
         ),
+        textAlign: TextAlign.center,
+        style: sans(size: 13, color: const Color(0xFF5A6650), height: 1.5),
+      ),
+    );
+  }
+}
+
+class _BalanceWaiting extends StatelessWidget {
+  const _BalanceWaiting({required this.partnerName});
+
+  final String partnerName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEF1E8),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Text(
+        '$partnerName님이 선택하면 결과가 함께 열려요.',
         textAlign: TextAlign.center,
         style: sans(size: 13, color: const Color(0xFF5A6650), height: 1.5),
       ),
@@ -2633,6 +2693,11 @@ class _TodaySlotCardState extends State<_TodaySlotCard> {
 
   @override
   Widget build(BuildContext context) {
+    final slot = widget.controller.todayFillableProfileSlot;
+    if (slot == null) {
+      return const _EmptyStateCard(text: '오늘 채울 수 있는 칸은 모두 채웠어요.');
+    }
+
     return _PaperCard(
       radius: 20,
       padding: const EdgeInsets.all(20),
@@ -2657,12 +2722,12 @@ class _TodaySlotCardState extends State<_TodaySlotCard> {
           ),
           const SizedBox(height: 12),
           Text(
-            '나의 ‘좌우명’은?',
+            '나의 ‘${slot.label}’은?',
             style: serif(context, size: 17, weight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
           Text(
-            '한 칸 채우면, 민영님의 좌우명도 함께 열려요',
+            '한 칸 채우면, ${widget.controller.state.partner.nickname}님의 ${slot.label}도 함께 열려요',
             style: sans(size: 12.5, color: AlagagiColors.muted),
           ),
           const SizedBox(height: 14),
@@ -2739,15 +2804,19 @@ class WishlistScreen extends StatelessWidget {
                   : '🌱 위시리스트',
             ),
             const SizedBox(height: 12),
-            for (final wish in wishes) ...[
-              _WishCard(
-                wish: wish,
-                meId: controller.state.me.id,
-                partnerName: controller.state.partner.nickname,
-                onHeart: () => controller.toggleWishLike(wish.id),
-              ),
-              const SizedBox(height: 12),
-            ],
+            if (wishes.isEmpty)
+              const _EmptyStateCard(text: '같이 해보고 싶은 걸 하나만 담아볼까요?')
+            else
+              for (final wish in wishes) ...[
+                _WishCard(
+                  wish: wish,
+                  meId: controller.state.me.id,
+                  partnerId: controller.state.partner.id,
+                  partnerName: controller.state.partner.nickname,
+                  onHeart: () => controller.toggleWishLike(wish.id),
+                ),
+                const SizedBox(height: 12),
+              ],
           ],
         ),
         Positioned(
@@ -2806,12 +2875,14 @@ class _WishCard extends StatelessWidget {
   const _WishCard({
     required this.wish,
     required this.meId,
+    required this.partnerId,
     required this.partnerName,
     required this.onHeart,
   });
 
   final WishItem wish;
   final String meId;
+  final String partnerId;
   final String partnerName;
   final VoidCallback onHeart;
 
@@ -2875,7 +2946,7 @@ class _WishCard extends StatelessWidget {
                     Text(
                       wish.isMutual
                           ? '둘 다 마음에 담음'
-                          : wish.likedByProfileIds.contains('partner')
+                          : wish.createdByProfileId == partnerId
                           ? '$partnerName님이 담음'
                           : '내가 담음',
                       style: sans(size: 11, color: AlagagiColors.muted),
@@ -3170,6 +3241,26 @@ class _PaperCard extends StatelessWidget {
       ),
       padding: padding,
       child: child,
+    );
+  }
+}
+
+class _EmptyStateCard extends StatelessWidget {
+  const _EmptyStateCard({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return _PaperCard(
+      radius: 18,
+      padding: const EdgeInsets.all(18),
+      dashed: true,
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: sans(size: 13, color: AlagagiColors.muted, height: 1.6),
+      ),
     );
   }
 }
