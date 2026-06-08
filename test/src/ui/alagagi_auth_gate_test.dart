@@ -195,6 +195,47 @@ void main() {
       expect(find.text('같이 해보고 싶은 걸 하나만 담아볼까요?'), findsOneWidget);
       expect(find.textContaining('노을 예쁜 바닷가'), findsNothing);
     });
+
+    testWidgets('wishlist add CTA creates a new wish card', (tester) async {
+      final auth = FakeAlagagiAuthRepository(
+        initialUser: const AlagagiAuthUser(
+          uid: 'youngwooUid',
+          loginId: 'youngwoo',
+          email: 'youngwoo@gettoknow.local',
+        ),
+      );
+      final data = FakeAlagagiDataRepository(
+        sessionsByUid: {'youngwooUid': testSession},
+      );
+
+      await tester.pumpWidget(
+        AlagagiApp(
+          firebaseEnabled: true,
+          authRepository: auth,
+          dataRepository: data,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.drag(find.byType(Scrollable), const Offset(0, -700));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('언젠가, 같이'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('언젠가, 같이'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('＋ 하고 싶은 것 담기'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(wishTitleFieldKey), '한강에서 같이 산책하기');
+      await tester.ensureVisible(find.byKey(wishSubmitButtonKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('담기'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('한강에서 같이 산책하기'), findsOneWidget);
+      expect(find.text('내가 담음'), findsOneWidget);
+      expect(data.savedWishes.single.title, '한강에서 같이 산책하기');
+    });
   });
 }
 
@@ -253,6 +294,7 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
 
   final Map<String, AlagagiSession> sessionsByUid;
   final List<AlagagiAuthUser> loadedUsers = [];
+  final List<WishItem> savedWishes = [];
 
   @override
   Future<AlagagiSession?> loadSession(AlagagiAuthUser user) async {
@@ -277,5 +319,7 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   ) async {}
 
   @override
-  Future<void> saveWish(String spaceId, WishItem wish) async {}
+  Future<void> saveWish(String spaceId, WishItem wish) async {
+    savedWishes.add(wish);
+  }
 }

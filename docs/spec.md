@@ -530,6 +530,7 @@ Required UI:
 - Result summary
 - Progress dots
 - Next question button
+- Final completion button
 
 State:
 
@@ -538,6 +539,7 @@ State:
 - Partner selected same option
 - Partner selected different option
 - Next balance question
+- Last balance question completion
 
 Acceptance Criteria:
 
@@ -545,6 +547,7 @@ Acceptance Criteria:
 - 하나를 선택하면 선택 상태가 표시된다.
 - 상대 선택이 있으면 결과 문장이 표시된다.
 - 다음 질문을 누르면 다음 밸런스 질문으로 이동한다.
+- 마지막 질문에서 완료를 누르면 첫 질문으로 순환하지 않고 홈으로 돌아간다.
 
 ### 10.7 Profile Card Screen
 
@@ -616,6 +619,11 @@ Required UI:
   - liked/hearted state
   - done state
 - Add button: `하고 싶은 것 담기`
+- Add draft card:
+  - title input
+  - place/activity kind selection
+  - submit button
+  - cancel action
 
 State:
 
@@ -625,6 +633,7 @@ State:
 - Activity wishes
 - Done wishes
 - Add wish draft
+- Add wish validation error
 - Toggle heart
 - Mark as done
 
@@ -634,6 +643,8 @@ Acceptance Criteria:
 - 한 명만 담은 wish는 heart action이 가능하다.
 - 완료된 wish는 흐리게 처리되고 취소선이 보인다.
 - Add CTA는 새 wish draft flow로 이어진다.
+- wish title을 입력하고 담기를 누르면 내가 만든 wish가 생성되고 저장된다.
+- 빈 wish title은 저장하지 않고 부드러운 오류 문구를 보여준다.
 
 ## 11. Real Data Source Policy
 

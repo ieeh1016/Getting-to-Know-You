@@ -8,6 +8,8 @@ const loginIdFieldKey = Key('login-id-field');
 const loginPasswordFieldKey = Key('login-password-field');
 const loginButtonKey = Key('login-button');
 const answerFieldKey = Key('answer-field');
+const wishTitleFieldKey = Key('wish-title-field');
+const wishSubmitButtonKey = Key('wish-submit-button');
 
 class AlagagiApp extends StatelessWidget {
   const AlagagiApp({
@@ -2283,7 +2285,7 @@ class BalanceScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               _PrimaryButton(
-                label: '다음 질문',
+                label: controller.isLastBalanceQuestion ? '완료' : '다음 질문',
                 onPressed: controller.nextBalanceQuestion,
                 color: AlagagiColors.sageDeep,
               ),
@@ -2797,6 +2799,10 @@ class WishlistScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _WishlistFilters(controller: controller),
+            if (controller.state.wishDraftVisible) ...[
+              const SizedBox(height: 16),
+              _WishDraftCard(controller: controller),
+            ],
             const SizedBox(height: 16),
             _SectionLabel(
               controller.state.wishlistFilter == WishlistFilter.mutual
@@ -2819,17 +2825,112 @@ class WishlistScreen extends StatelessWidget {
               ],
           ],
         ),
-        Positioned(
-          left: 28,
-          right: 28,
-          bottom: 84,
-          child: _PrimaryButton(
-            label: '＋ 하고 싶은 것 담기',
-            onPressed: () {},
-            color: AlagagiColors.sageDeep,
+        if (!controller.state.wishDraftVisible)
+          Positioned(
+            left: 28,
+            right: 28,
+            bottom: 84,
+            child: _PrimaryButton(
+              label: '＋ 하고 싶은 것 담기',
+              onPressed: controller.startWishDraft,
+              color: AlagagiColors.sageDeep,
+            ),
           ),
-        ),
       ],
+    );
+  }
+}
+
+class _WishDraftCard extends StatelessWidget {
+  const _WishDraftCard({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return _PaperCard(
+      radius: 18,
+      padding: const EdgeInsets.all(16),
+      highlightedBorder: AlagagiColors.sage,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '새 위시 담기',
+            style: serif(context, size: 17, weight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '언젠가 같이 해보고 싶은 걸 한 줄로 적어봐요.',
+            style: sans(size: 12.5, color: AlagagiColors.muted),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: AlagagiColors.line),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: TextField(
+              key: wishTitleFieldKey,
+              maxLength: 60,
+              onChanged: controller.updateWishDraftTitle,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                counterText: '',
+                hintText: '예: 한강에서 같이 산책하기',
+              ),
+              style: sans(size: 13.5),
+            ),
+          ),
+          if (controller.state.wishDraftError != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              controller.state.wishDraftError!,
+              style: sans(size: 12, color: AlagagiColors.sageDeep),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _FilterPill(
+                label: '가고 싶은 곳',
+                selected: controller.state.wishDraftKind == WishKind.place,
+                onTap: () => controller.setWishDraftKind(WishKind.place),
+              ),
+              _FilterPill(
+                label: '해보고 싶은 것',
+                selected: controller.state.wishDraftKind == WishKind.activity,
+                onTap: () => controller.setWishDraftKind(WishKind.activity),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              TextButton(
+                onPressed: controller.cancelWishDraft,
+                child: Text(
+                  '취소',
+                  style: sans(size: 13, color: AlagagiColors.muted),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _PrimaryButton(
+                  label: '담기',
+                  onPressed: controller.submitWishDraft,
+                  color: AlagagiColors.sageDeep,
+                  buttonKey: wishSubmitButtonKey,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

@@ -384,9 +384,13 @@ class AlagagiState {
     this.profileCardTab = ProfileCardTab.partner,
     this.wishlistFilter = WishlistFilter.all,
     this.activeBalanceIndex = 0,
+    this.wishDraftVisible = false,
+    this.wishDraftTitle = '',
+    this.wishDraftKind = WishKind.activity,
     this.draftAnswer = '',
     this.inviteError,
     this.answerError,
+    this.wishDraftError,
     this.skippedToday = false,
   });
 
@@ -397,9 +401,13 @@ class AlagagiState {
   final ProfileCardTab profileCardTab;
   final WishlistFilter wishlistFilter;
   final int activeBalanceIndex;
+  final bool wishDraftVisible;
+  final String wishDraftTitle;
+  final WishKind wishDraftKind;
   final String draftAnswer;
   final String? inviteError;
   final String? answerError;
+  final String? wishDraftError;
   final bool skippedToday;
 
   AlagagiState copyWith({
@@ -410,11 +418,16 @@ class AlagagiState {
     ProfileCardTab? profileCardTab,
     WishlistFilter? wishlistFilter,
     int? activeBalanceIndex,
+    bool? wishDraftVisible,
+    String? wishDraftTitle,
+    WishKind? wishDraftKind,
     String? draftAnswer,
     String? inviteError,
     bool clearInviteError = false,
     String? answerError,
     bool clearAnswerError = false,
+    String? wishDraftError,
+    bool clearWishDraftError = false,
     bool? skippedToday,
   }) {
     return AlagagiState(
@@ -425,9 +438,15 @@ class AlagagiState {
       profileCardTab: profileCardTab ?? this.profileCardTab,
       wishlistFilter: wishlistFilter ?? this.wishlistFilter,
       activeBalanceIndex: activeBalanceIndex ?? this.activeBalanceIndex,
+      wishDraftVisible: wishDraftVisible ?? this.wishDraftVisible,
+      wishDraftTitle: wishDraftTitle ?? this.wishDraftTitle,
+      wishDraftKind: wishDraftKind ?? this.wishDraftKind,
       draftAnswer: draftAnswer ?? this.draftAnswer,
       inviteError: clearInviteError ? null : inviteError ?? this.inviteError,
       answerError: clearAnswerError ? null : answerError ?? this.answerError,
+      wishDraftError: clearWishDraftError
+          ? null
+          : wishDraftError ?? this.wishDraftError,
       skippedToday: skippedToday ?? this.skippedToday,
     );
   }
@@ -755,6 +774,9 @@ class AlagagiController extends ChangeNotifier {
   BalanceQuestion get activeBalanceQuestion =>
       balanceQuestions[_state.activeBalanceIndex];
 
+  bool get isLastBalanceQuestion =>
+      _state.activeBalanceIndex >= balanceQuestions.length - 1;
+
   String? get activeBalanceSelection =>
       _balanceSelections[activeBalanceQuestion.id];
 
@@ -917,8 +939,13 @@ class AlagagiController extends ChangeNotifier {
   }
 
   void nextBalanceQuestion() {
-    final nextIndex = (_state.activeBalanceIndex + 1) % balanceQuestions.length;
-    _state = _state.copyWith(activeBalanceIndex: nextIndex);
+    if (isLastBalanceQuestion) {
+      _state = _state.copyWith(route: AlagagiRoute.home);
+    } else {
+      _state = _state.copyWith(
+        activeBalanceIndex: _state.activeBalanceIndex + 1,
+      );
+    }
     notifyListeners();
   }
 
@@ -963,6 +990,77 @@ class AlagagiController extends ChangeNotifier {
   void setWishlistFilter(WishlistFilter filter) {
     _state = _state.copyWith(wishlistFilter: filter);
     notifyListeners();
+  }
+
+  void startWishDraft() {
+    _state = _state.copyWith(
+      wishlistFilter: WishlistFilter.all,
+      wishDraftVisible: true,
+      wishDraftTitle: '',
+      wishDraftKind: WishKind.activity,
+      clearWishDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void cancelWishDraft() {
+    _state = _state.copyWith(
+      wishDraftVisible: false,
+      wishDraftTitle: '',
+      wishDraftKind: WishKind.activity,
+      clearWishDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void updateWishDraftTitle(String value) {
+    _state = _state.copyWith(wishDraftTitle: value, clearWishDraftError: true);
+    notifyListeners();
+  }
+
+  void setWishDraftKind(WishKind kind) {
+    _state = _state.copyWith(wishDraftKind: kind, clearWishDraftError: true);
+    notifyListeners();
+  }
+
+  void submitWishDraft() {
+    final title = _state.wishDraftTitle.trim();
+    if (title.isEmpty) {
+      _state = _state.copyWith(wishDraftError: '한 줄만 적어도 괜찮아요.');
+      notifyListeners();
+      return;
+    }
+    if (title.length > 60) {
+      _state = _state.copyWith(wishDraftError: '60자 안으로 담아주세요.');
+      notifyListeners();
+      return;
+    }
+
+    final wish = WishItem(
+      id: 'wish_${_state.me.id}_${DateTime.now().microsecondsSinceEpoch}',
+      icon: _wishIconFor(_state.wishDraftKind),
+      title: title,
+      kind: _state.wishDraftKind,
+      createdByProfileId: _state.me.id,
+      likedByProfileIds: {_state.me.id},
+    );
+    _wishes.insert(0, wish);
+    _persistWish(wish);
+    _state = _state.copyWith(
+      wishlistFilter: WishlistFilter.all,
+      wishDraftVisible: false,
+      wishDraftTitle: '',
+      wishDraftKind: WishKind.activity,
+      clearWishDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  String _wishIconFor(WishKind kind) {
+    return switch (kind) {
+      WishKind.place => '📍',
+      WishKind.activity => '✨',
+    };
   }
 
   void toggleWishLike(String wishId) {

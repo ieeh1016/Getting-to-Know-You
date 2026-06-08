@@ -150,8 +150,70 @@ void main() {
       expect(controller.insight.questionCount, 1);
       expect(controller.insight.matchCount, 1);
     });
+
+    test('last balance question completes instead of looping', () {
+      final controller = AlagagiController.forSession(firebaseTestSession);
+
+      while (!controller.isLastBalanceQuestion) {
+        controller.nextBalanceQuestion();
+      }
+
+      expect(controller.activeBalanceQuestion.id, 'b008');
+
+      controller.nextBalanceQuestion();
+
+      expect(controller.state.route, AlagagiRoute.home);
+      expect(controller.activeBalanceQuestion.id, 'b008');
+    });
+
+    test('wish draft creates and saves my wish', () {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        firebaseTestSession,
+        repository: repository,
+      );
+
+      controller.startWishDraft();
+      controller.setWishDraftKind(WishKind.activity);
+      controller.updateWishDraftTitle('한강에서 같이 산책하기');
+      controller.submitWishDraft();
+
+      expect(controller.state.wishDraftVisible, isFalse);
+      expect(controller.state.wishDraftTitle, isEmpty);
+      expect(controller.visibleWishes.single.title, '한강에서 같이 산책하기');
+      expect(controller.visibleWishes.single.kind, WishKind.activity);
+      expect(controller.visibleWishes.single.createdByProfileId, 'youngwooUid');
+      expect(
+        controller.visibleWishes.single.likedByProfileIds,
+        contains('youngwooUid'),
+      );
+      expect(repository.savedWishes.single.spaceId, 'main');
+      expect(repository.savedWishes.single.wish.title, '한강에서 같이 산책하기');
+    });
+
+    test('empty wish draft stays open with validation error', () {
+      final controller = AlagagiController.forSession(firebaseTestSession);
+
+      controller.startWishDraft();
+      controller.submitWishDraft();
+
+      expect(controller.state.wishDraftVisible, isTrue);
+      expect(controller.state.wishDraftError, contains('한 줄'));
+      expect(controller.visibleWishes, isEmpty);
+    });
   });
 }
+
+const firebaseTestSession = AlagagiSession(
+  spaceId: 'main',
+  me: AppProfile(id: 'youngwooUid', nickname: '영우', avatar: '🌿', isMe: true),
+  partner: AppProfile(
+    id: 'minyoungUid',
+    nickname: '민영',
+    avatar: '🪻',
+    isMe: false,
+  ),
+);
 
 class RecordingAlagagiRepository implements AlagagiDataRepository {
   final List<({String spaceId, Answer answer})> savedAnswers = [];
