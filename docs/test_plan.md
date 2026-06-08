@@ -1,20 +1,37 @@
 # Test Plan
 
+> Current source of truth: [spec.md](spec.md). All new behavior must be added to the spec first, then covered by failing tests before production code changes.
+
 ## Unit Tests
 
-- `MinyoungPickController` 초기 상태를 검증한다.
-- 다음 약속 선택이 상태에 저장되는지 검증한다.
-- 랜덤 아이디어가 순환하는지 검증한다.
-- 취향 선택과 쿠폰 토글이 상태에 반영되는지 검증한다.
+- `AlagagiAuthRepository`가 짧은 로그인 아이디를 Firebase 이메일로 변환한다.
+- fake auth repository가 로그인 성공/실패/로그아웃 상태를 스트림으로 노출한다.
+- Firestore-style user data에서 `AlagagiSession`을 구성한다.
+- `AlagagiController` 기본 로컬 모드는 초대 화면에서 시작한다.
+- session 기반 controller는 로그인된 홈 화면에서 시작한다.
+- 답변 제출/패스가 repository 저장 경계로 전달된다.
+- 아카이브 필터가 전체/둘 다 답함/닮은 답을 구분한다.
+- 밸런스 선택과 다음 질문 이동이 상태에 반영된다.
+- 소개 카드 슬롯 입력이 진행률에 반영된다.
+- 위시리스트 좋아요가 둘 다 필터에 반영된다.
 
 ## Widget Tests
 
-- 첫 화면에 핵심 MVP 콘텐츠가 보이는지 검증한다.
-- 다음 약속 후보를 탭했을 때 선택 상태가 표시되는지 검증한다.
-- `다른 픽 보기` 탭 후 아이디어가 바뀌는지 검증한다.
+- Firebase-enabled app이 signed-out 상태에서 로그인 화면을 보여준다.
+- 아이디/비밀번호를 입력하고 로그인하면 fake session을 로드해 홈으로 이동한다.
+- 기존 auth session이 있으면 로그인 화면을 건너뛰고 홈으로 이동한다.
+- 로그인은 실패 시 입력값을 유지하고 오류 문구를 보여준다.
+- `users/{uid}` 문서가 없으면 setup required 화면에 UID를 보여준다.
+- 로그아웃 버튼을 누르면 로그인 화면으로 돌아온다.
+- 로컬 데모 모드는 초대 화면과 닉네임 진입을 유지한다.
+- 홈은 오늘의 질문과 기록 요약을 보여준다.
+- 답변 화면은 글자 수 갱신과 저장 후 상대 답 공개를 검증한다.
+- 아카이브/기록/밸런스/소개 카드/위시 화면 내비게이션을 검증한다.
 
 ## Manual Checks
 
 - 모바일 폭 390px 기준에서 텍스트가 잘리지 않는다.
 - 웹에서 스크롤, 탭, 상태 표시가 자연스럽다.
 - Android/iOS 네이티브 빌드는 v0.1 이후 별도 확인한다.
+- Firebase dart-define이 없을 때 release web build가 실패하지 않는다.
+- Firebase Console에 계정/Firestore 문서를 만든 뒤 GitHub Pages 배포에서 로그인과 자동 로그인이 동작한다.

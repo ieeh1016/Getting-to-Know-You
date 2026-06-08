@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 enum AlagagiRoute {
@@ -21,6 +23,72 @@ enum WishlistFilter { all, mutual, places, activities }
 enum WishKind { place, activity }
 
 enum QuestionDepth { light, daily, beliefs, inner }
+
+String firebaseEmailForLoginId(String loginId) {
+  final normalized = loginId.trim().toLowerCase();
+  if (normalized.contains('@')) {
+    return normalized;
+  }
+  return '$normalized@gettoknow.local';
+}
+
+class AlagagiAuthUser {
+  const AlagagiAuthUser({
+    required this.uid,
+    required this.loginId,
+    required this.email,
+  });
+
+  final String uid;
+  final String loginId;
+  final String email;
+}
+
+class AlagagiAuthException implements Exception {
+  const AlagagiAuthException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
+abstract class AlagagiAuthRepository {
+  Stream<AlagagiAuthUser?> authStateChanges();
+
+  Future<AlagagiAuthUser> signInWithIdAndPassword({
+    required String loginId,
+    required String password,
+  });
+
+  Future<void> signOut();
+}
+
+class AlagagiSession {
+  const AlagagiSession({
+    required this.spaceId,
+    required this.me,
+    required this.partner,
+  });
+
+  final String spaceId;
+  final AppProfile me;
+  final AppProfile partner;
+}
+
+abstract class AlagagiDataRepository {
+  Future<AlagagiSession?> loadSession(AlagagiAuthUser user);
+
+  Future<void> saveAnswer(String spaceId, Answer answer);
+
+  Future<void> saveProfileSlot(
+    String spaceId,
+    String profileId,
+    ProfileSlot slot,
+  );
+
+  Future<void> saveWish(String spaceId, WishItem wish);
+}
 
 class AppProfile {
   const AppProfile({
@@ -77,6 +145,22 @@ class Answer {
   final String body;
   final String createdLabel;
   final bool skipped;
+
+  Answer copyWith({
+    String? questionId,
+    String? profileId,
+    String? body,
+    String? createdLabel,
+    bool? skipped,
+  }) {
+    return Answer(
+      questionId: questionId ?? this.questionId,
+      profileId: profileId ?? this.profileId,
+      body: body ?? this.body,
+      createdLabel: createdLabel ?? this.createdLabel,
+      skipped: skipped ?? this.skipped,
+    );
+  }
 }
 
 class ArchiveItem {
@@ -306,8 +390,10 @@ class AlagagiState {
 }
 
 class AlagagiController extends ChangeNotifier {
-  AlagagiController()
-    : _state = const AlagagiState(
+  AlagagiController({AlagagiDataRepository? repository})
+    : _repository = repository,
+      _spaceId = null,
+      _state = const AlagagiState(
         me: AppProfile(id: 'me', nickname: '나', avatar: '🌿', isMe: true),
         partner: AppProfile(
           id: 'partner',
@@ -315,9 +401,26 @@ class AlagagiController extends ChangeNotifier {
           avatar: '🪻',
           isMe: false,
         ),
-      );
+      ) {
+    _applyProfilesToSeedData();
+  }
+
+  AlagagiController.forSession(
+    AlagagiSession session, {
+    AlagagiDataRepository? repository,
+  }) : _repository = repository,
+       _spaceId = session.spaceId,
+       _state = AlagagiState(
+         me: session.me,
+         partner: session.partner,
+         route: AlagagiRoute.home,
+       ) {
+    _applyProfilesToSeedData();
+  }
 
   AlagagiState _state;
+  final AlagagiDataRepository? _repository;
+  final String? _spaceId;
 
   final DailyQuestion todayQuestion = seedQuestions.first;
   final List<DailyQuestion> questions = seedQuestions;
@@ -337,6 +440,88 @@ class AlagagiController extends ChangeNotifier {
   final List<WishItem> _wishes = List<WishItem>.from(seedWishes);
 
   AlagagiState get state => _state;
+
+  void _applyProfilesToSeedData() {
+    _myAnswersByQuestionId
+      ..clear()
+      ..addEntries(
+        seedMyAnswers.map((answer) {
+          return MapEntry(
+            answer.questionId,
+            answer.copyWith(profileId: _state.me.id),
+          );
+        }),
+      );
+    _partnerAnswersByQuestionId
+      ..clear()
+      ..addEntries(
+        seedPartnerAnswers.map((answer) {
+          return MapEntry(
+            answer.questionId,
+            answer.copyWith(profileId: _state.partner.id),
+          );
+        }),
+      );
+    _profileCards
+      ..clear()
+      ..addAll(
+        seedProfileCards.map((card) {
+          return card.copyWith(
+            profile: card.profile.isMe ? _state.me : _state.partner,
+          );
+        }),
+      );
+    _wishes
+      ..clear()
+      ..addAll(
+        seedWishes.map((wish) {
+          return wish.copyWith(
+            likedByProfileIds: _mapSeedProfileIds(wish.likedByProfileIds),
+          );
+        }),
+      );
+  }
+
+  Set<String> _mapSeedProfileIds(Set<String> profileIds) {
+    return profileIds.map((profileId) {
+      return switch (profileId) {
+        'me' => _state.me.id,
+        'partner' => _state.partner.id,
+        _ => profileId,
+      };
+    }).toSet();
+  }
+
+  void _persistAnswer(Answer answer) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      return;
+    }
+    unawaited(repository.saveAnswer(spaceId, answer).catchError((_) {}));
+  }
+
+  void _persistProfileSlot(ProfileSlot slot) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      return;
+    }
+    unawaited(
+      repository
+          .saveProfileSlot(spaceId, _state.me.id, slot)
+          .catchError((_) {}),
+    );
+  }
+
+  void _persistWish(WishItem wish) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      return;
+    }
+    unawaited(repository.saveWish(spaceId, wish).catchError((_) {}));
+  }
 
   Answer? get todayMyAnswer => _myAnswersByQuestionId[todayQuestion.id];
 
@@ -430,12 +615,14 @@ class AlagagiController extends ChangeNotifier {
       return;
     }
 
-    _myAnswersByQuestionId[todayQuestion.id] = Answer(
+    final answer = Answer(
       questionId: todayQuestion.id,
       profileId: _state.me.id,
       body: body,
       createdLabel: '오늘',
     );
+    _myAnswersByQuestionId[todayQuestion.id] = answer;
+    _persistAnswer(answer);
     _state = _state.copyWith(
       draftAnswer: '',
       route: AlagagiRoute.home,
@@ -446,13 +633,15 @@ class AlagagiController extends ChangeNotifier {
   }
 
   void skipToday() {
-    _myAnswersByQuestionId[todayQuestion.id] = Answer(
+    final answer = Answer(
       questionId: todayQuestion.id,
       profileId: _state.me.id,
       body: '',
       createdLabel: '오늘',
       skipped: true,
     );
+    _myAnswersByQuestionId[todayQuestion.id] = answer;
+    _persistAnswer(answer);
     _state = _state.copyWith(
       route: AlagagiRoute.home,
       skippedToday: true,
@@ -495,13 +684,22 @@ class AlagagiController extends ChangeNotifier {
 
     final cardIndex = _profileCards.indexWhere((card) => card.profile.isMe);
     final card = _profileCards[cardIndex];
+    ProfileSlot? filledSlot;
     final slots = card.slots.map((slot) {
       if (slot.id == 'motto') {
-        return slot.copyWith(value: trimmed, locked: false, unlockHint: '');
+        filledSlot = slot.copyWith(
+          value: trimmed,
+          locked: false,
+          unlockHint: '',
+        );
+        return filledSlot!;
       }
       return slot;
     }).toList();
     _profileCards[cardIndex] = card.copyWith(slots: slots);
+    if (filledSlot != null) {
+      _persistProfileSlot(filledSlot!);
+    }
     _state = _state.copyWith(profileCardTab: ProfileCardTab.me);
     notifyListeners();
   }
@@ -523,7 +721,9 @@ class AlagagiController extends ChangeNotifier {
     } else {
       likedBy.add(_state.me.id);
     }
-    _wishes[index] = wish.copyWith(likedByProfileIds: likedBy);
+    final updatedWish = wish.copyWith(likedByProfileIds: likedBy);
+    _wishes[index] = updatedWish;
+    _persistWish(updatedWish);
     notifyListeners();
   }
 }

@@ -1,15 +1,37 @@
 import 'package:flutter/material.dart';
 
+import '../data/firebase_alagagi_repositories.dart';
 import '../domain/alagagi_controller.dart';
 
 const inviteNicknameFieldKey = Key('invite-nickname-field');
+const loginIdFieldKey = Key('login-id-field');
+const loginPasswordFieldKey = Key('login-password-field');
+const loginButtonKey = Key('login-button');
 const answerFieldKey = Key('answer-field');
 
 class AlagagiApp extends StatelessWidget {
-  const AlagagiApp({super.key});
+  const AlagagiApp({
+    super.key,
+    this.firebaseEnabled = false,
+    this.authRepository,
+    this.dataRepository,
+  });
+
+  final bool firebaseEnabled;
+  final AlagagiAuthRepository? authRepository;
+  final AlagagiDataRepository? dataRepository;
 
   @override
   Widget build(BuildContext context) {
+    late final Widget home;
+    if (firebaseEnabled) {
+      final auth = authRepository ?? FirebaseAlagagiAuthRepository();
+      final data = dataRepository ?? FirestoreAlagagiDataRepository();
+      home = AlagagiAuthGate(authRepository: auth, dataRepository: data);
+    } else {
+      home = const AlagagiRoot();
+    }
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: '알아가기',
@@ -27,15 +49,16 @@ class AlagagiApp extends StatelessWidget {
           displayColor: AlagagiColors.ink,
         ),
       ),
-      home: const AlagagiRoot(),
+      home: home,
     );
   }
 }
 
 class AlagagiRoot extends StatefulWidget {
-  const AlagagiRoot({super.key, this.controller});
+  const AlagagiRoot({super.key, this.controller, this.onSignOut});
 
   final AlagagiController? controller;
+  final VoidCallback? onSignOut;
 
   @override
   State<AlagagiRoot> createState() => _AlagagiRootState();
@@ -80,7 +103,10 @@ class _AlagagiRootState extends State<AlagagiRoot> {
       AlagagiRoute.balance => BalanceScreen(controller: _controller),
       AlagagiRoute.profileCard => ProfileCardScreen(controller: _controller),
       AlagagiRoute.wishlist => WishlistScreen(controller: _controller),
-      AlagagiRoute.my => MyScreen(controller: _controller),
+      AlagagiRoute.my => MyScreen(
+        controller: _controller,
+        onSignOut: widget.onSignOut,
+      ),
     };
   }
 }
@@ -243,6 +269,399 @@ class _ScreenScroll extends StatelessWidget {
         ),
         if (bottomNavigation != null)
           Positioned(left: 0, right: 0, bottom: 0, child: bottomNavigation!),
+      ],
+    );
+  }
+}
+
+class AlagagiAuthGate extends StatelessWidget {
+  const AlagagiAuthGate({
+    super.key,
+    required this.authRepository,
+    required this.dataRepository,
+  });
+
+  final AlagagiAuthRepository authRepository;
+  final AlagagiDataRepository dataRepository;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<AlagagiAuthUser?>(
+      stream: authRepository.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
+          return const _PhoneShell(child: LoadingScreen());
+        }
+
+        final user = snapshot.data;
+        if (user == null) {
+          return _PhoneShell(
+            child: LoginScreen(authRepository: authRepository),
+          );
+        }
+
+        return _SessionGate(
+          key: ValueKey(user.uid),
+          user: user,
+          authRepository: authRepository,
+          dataRepository: dataRepository,
+        );
+      },
+    );
+  }
+}
+
+class _SessionGate extends StatefulWidget {
+  const _SessionGate({
+    super.key,
+    required this.user,
+    required this.authRepository,
+    required this.dataRepository,
+  });
+
+  final AlagagiAuthUser user;
+  final AlagagiAuthRepository authRepository;
+  final AlagagiDataRepository dataRepository;
+
+  @override
+  State<_SessionGate> createState() => _SessionGateState();
+}
+
+class _SessionGateState extends State<_SessionGate> {
+  late Future<AlagagiSession?> _sessionFuture;
+  AlagagiController? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _sessionFuture = widget.dataRepository.loadSession(widget.user);
+  }
+
+  @override
+  void didUpdateWidget(covariant _SessionGate oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.user.uid != widget.user.uid ||
+        oldWidget.dataRepository != widget.dataRepository) {
+      _controller?.dispose();
+      _controller = null;
+      _sessionFuture = widget.dataRepository.loadSession(widget.user);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<AlagagiSession?>(
+      future: _sessionFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const _PhoneShell(child: LoadingScreen());
+        }
+
+        final session = snapshot.data;
+        if (session == null) {
+          return _PhoneShell(
+            child: FirebaseSetupRequiredScreen(
+              user: widget.user,
+              onSignOut: widget.authRepository.signOut,
+            ),
+          );
+        }
+
+        _controller ??= AlagagiController.forSession(
+          session,
+          repository: widget.dataRepository,
+        );
+        return AlagagiRoot(
+          controller: _controller,
+          onSignOut: widget.authRepository.signOut,
+        );
+      },
+    );
+  }
+}
+
+class LoadingScreen extends StatelessWidget {
+  const LoadingScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: CircularProgressIndicator(color: AlagagiColors.sageDeep),
+    );
+  }
+}
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key, required this.authRepository});
+
+  final AlagagiAuthRepository authRepository;
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController _idController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  String? _errorText;
+  bool _signingIn = false;
+
+  @override
+  void dispose() {
+    _idController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final loginId = _idController.text.trim();
+    final password = _passwordController.text;
+    if (loginId.isEmpty || password.isEmpty) {
+      setState(() {
+        _errorText = '아이디와 비밀번호를 적어주세요.';
+      });
+      return;
+    }
+
+    setState(() {
+      _signingIn = true;
+      _errorText = null;
+    });
+
+    try {
+      await widget.authRepository.signInWithIdAndPassword(
+        loginId: loginId,
+        password: password,
+      );
+    } on AlagagiAuthException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _errorText = error.message;
+        _signingIn = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _errorText = '로그인 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.';
+        _signingIn = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        const _StatusBar(),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(34, 44, 34, 34),
+          child: Column(
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [AlagagiColors.softSage, AlagagiColors.sagePanel],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x47788C64),
+                      blurRadius: 26,
+                      offset: Offset(0, 12),
+                    ),
+                  ],
+                ),
+                alignment: Alignment.center,
+                child: const Text('✉️', style: TextStyle(fontSize: 34)),
+              ),
+              const SizedBox(height: 26),
+              Text(
+                'A L A G A G I',
+                style: sans(
+                  size: 11,
+                  color: AlagagiColors.sageDeep,
+                  letterSpacing: 4,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                '우리, 천천히\n알아가 볼래요?',
+                textAlign: TextAlign.center,
+                style: serif(
+                  context,
+                  size: 27,
+                  weight: FontWeight.w800,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                '민영과 영우만 들어올 수 있어요.',
+                textAlign: TextAlign.center,
+                style: sans(
+                  size: 14,
+                  color: const Color(0xFF5A5A54),
+                  height: 1.7,
+                ),
+              ),
+              const SizedBox(height: 26),
+              const _InviteNotes(),
+              const SizedBox(height: 24),
+              _LoginTextField(
+                key: loginIdFieldKey,
+                controller: _idController,
+                label: '아이디',
+                hintText: 'youngwoo 또는 minyoung',
+              ),
+              const SizedBox(height: 10),
+              _LoginTextField(
+                key: loginPasswordFieldKey,
+                controller: _passwordController,
+                label: '비밀번호',
+                hintText: '비밀번호',
+                obscureText: true,
+                onSubmitted: (_) => _submit(),
+              ),
+              if (_errorText != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  _errorText!,
+                  textAlign: TextAlign.center,
+                  style: sans(size: 12, color: AlagagiColors.sageDeep),
+                ),
+              ],
+              const SizedBox(height: 14),
+              _PrimaryButton(
+                buttonKey: loginButtonKey,
+                label: _signingIn ? '로그인 중...' : '로그인',
+                onPressed: _signingIn ? null : _submit,
+              ),
+              const SizedBox(height: 14),
+              Text(
+                '한 번 로그인하면 다음엔 자동으로 이어서 들어와요',
+                textAlign: TextAlign.center,
+                style: sans(size: 11, color: AlagagiColors.muted, height: 1.6),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LoginTextField extends StatelessWidget {
+  const _LoginTextField({
+    super.key,
+    required this.controller,
+    required this.label,
+    required this.hintText,
+    this.obscureText = false,
+    this.onSubmitted,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final String hintText;
+  final bool obscureText;
+  final ValueChanged<String>? onSubmitted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: TextField(
+        controller: controller,
+        obscureText: obscureText,
+        onSubmitted: onSubmitted,
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          labelText: label,
+          hintText: hintText,
+        ),
+        style: sans(size: 14),
+      ),
+    );
+  }
+}
+
+class FirebaseSetupRequiredScreen extends StatelessWidget {
+  const FirebaseSetupRequiredScreen({
+    super.key,
+    required this.user,
+    required this.onSignOut,
+  });
+
+  final AlagagiAuthUser user;
+  final VoidCallback onSignOut;
+
+  @override
+  Widget build(BuildContext context) {
+    return _ScreenScroll(
+      padding: const EdgeInsets.fromLTRB(28, 34, 28, 34),
+      children: [
+        const SizedBox(height: 30),
+        Text(
+          'Firebase Console 설정이 필요해요',
+          textAlign: TextAlign.center,
+          style: serif(context, size: 24, weight: FontWeight.w800, height: 1.4),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          '로그인은 되었고, 이제 Firestore에 이 계정의 프로필 문서를 만들어주면 돼요.',
+          textAlign: TextAlign.center,
+          style: sans(size: 13, color: AlagagiColors.muted, height: 1.6),
+        ),
+        const SizedBox(height: 20),
+        _PaperCard(
+          radius: 18,
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'users/${user.uid}',
+                style: sans(
+                  size: 13,
+                  weight: FontWeight.w600,
+                  color: AlagagiColors.sageDeep,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'displayName, avatar, spaceId, partnerUid 필드를 추가한 뒤 다시 들어오면 홈으로 이어져요.',
+                style: sans(size: 13, color: AlagagiColors.muted, height: 1.6),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        _PrimaryButton(
+          label: '로그인 화면으로 돌아가기',
+          onPressed: onSignOut,
+          color: AlagagiColors.sageDeep,
+        ),
       ],
     );
   }
@@ -2480,9 +2899,10 @@ class _WishCard extends StatelessWidget {
 }
 
 class MyScreen extends StatelessWidget {
-  const MyScreen({super.key, required this.controller});
+  const MyScreen({super.key, required this.controller, this.onSignOut});
 
   final AlagagiController controller;
+  final VoidCallback? onSignOut;
 
   @override
   Widget build(BuildContext context) {
@@ -2507,9 +2927,19 @@ class MyScreen extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                '지금은 로컬 MVP라 기기 안에서만 상태가 유지돼요. 다음 단계에서 저장과 공유를 붙이면 실제 둘만의 링크가 됩니다.',
+                onSignOut == null
+                    ? '지금은 로컬 MVP라 기기 안에서만 상태가 유지돼요. 다음 단계에서 저장과 공유를 붙이면 실제 둘만의 링크가 됩니다.'
+                    : 'Firebase로 로그인된 둘만의 공간이에요. 이 기기에서 잠시 나가고 싶으면 로그아웃할 수 있어요.',
                 style: sans(size: 13, color: AlagagiColors.muted, height: 1.6),
               ),
+              if (onSignOut != null) ...[
+                const SizedBox(height: 18),
+                _PrimaryButton(
+                  label: '로그아웃',
+                  onPressed: onSignOut,
+                  color: AlagagiColors.sageDeep,
+                ),
+              ],
             ],
           ),
         ),
@@ -2682,17 +3112,20 @@ class _PrimaryButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.color = AlagagiColors.ink,
+    this.buttonKey,
   });
 
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final Color color;
+  final Key? buttonKey;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       child: FilledButton(
+        key: buttonKey,
         onPressed: onPressed,
         style: FilledButton.styleFrom(
           backgroundColor: color,

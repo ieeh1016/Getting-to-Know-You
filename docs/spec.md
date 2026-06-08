@@ -11,7 +11,7 @@
 ## 1. Product Summary
 
 `알아가기`는 소개팅 이후 두 사람이 부담 없이 서로를 알아가도록 돕는 비공개 모바일 웹앱이다.
-사용자는 링크 하나로 들어오고, 가입 없이 닉네임만 입력해 시작한다.
+사용자는 링크 하나로 들어오고, 민영과 영우에게만 발급된 아이디/비밀번호로 로그인해 시작한다.
 앱은 매일 하나의 질문, 가벼운 밸런스 선택, 천천히 채워지는 소개 카드, 함께 해보고 싶은 위시리스트를 통해 관계가 서두르지 않고 자연스럽게 깊어지도록 설계한다.
 
 현재 Flutter 앱 `민영 Pick`은 `알아가기` 컨셉으로 전체 리디자인한다.
@@ -35,7 +35,9 @@
 - 연락 빈도 분석
 - 과한 커플앱/기념일앱 톤
 - App Store 배포 필수 기능
-- 첫 MVP에서 실제 인증/서버 동기화 구현
+- 공개 회원가입
+- 비밀번호 찾기/이메일 인증 자동화
+- 관리자 화면
 
 ## 4. Target Users
 
@@ -175,7 +177,50 @@ If the app grows, bottom navigation may become:
 - 실제 로그인/인증
 - 데이터 암호화/보안 저장소
 
+### MVP v0.3 Firebase Private In Scope
+
+- Firebase Auth 기반 민영/영우 전용 로그인
+- 아이디 입력값을 내부 Firebase 이메일로 매핑
+  - `youngwoo` -> `youngwoo@gettoknow.local`
+  - `minyoung` -> `minyoung@gettoknow.local`
+- Firebase Auth 브라우저 persistence 기반 자동 로그인
+- 로그아웃
+- 로그인 후 Firestore `users/{uid}` 프로필 문서 로드
+- `users/{uid}` 문서가 없으면 UID와 설정 안내를 보여주는 setup required 상태
+- Firestore `spaces/{spaceId}` 멤버 공간 모델
+- 답변, 패스, 소개 카드 슬롯, 위시 좋아요의 repository 저장 경계
+- Firebase dart-define 값이 없을 때 로컬 데모 모드로 빌드/테스트 가능
+
+### MVP v0.3 Firebase Private Out Of Scope
+
+- 앱 안에서 계정 생성
+- 비밀번호 변경/초기화 UI
+- 소셜 로그인
+- 푸시 알림
+- 사진 업로드
+- 관리자용 데이터 편집 UI
+- 완전한 오프라인 충돌 병합
+
 ## 9. Core User Flow
+
+```mermaid
+flowchart TD
+  A["Login: 링크 진입"] --> B{"Firebase Auth 세션 있음?"}
+  B -->|없음| C["민영/영우 전용 로그인"]
+  B -->|있음| D["Firestore 프로필 로드"]
+  C --> D
+  D --> E{"users/{uid} 있음?"}
+  E -->|없음| F["Setup Required: UID와 Console 안내"]
+  E -->|있음| G["Home: 오늘의 질문 확인"]
+  G --> H["Answer: 내 답 작성"]
+  H --> I{"답 제출"}
+  I --> J["상대 답 열림 또는 대기 상태"]
+  G --> K["Archive: 지난 질문 보기"]
+  G --> L["Us: 닮은 키워드와 기록 보기"]
+  G --> M["Plus: 밸런스/카드/위시"]
+```
+
+### v0.2 Legacy Local Flow
 
 ```mermaid
 flowchart TD
@@ -190,6 +235,48 @@ flowchart TD
 ```
 
 ## 10. Screens
+
+### 10.0 Login Screen
+
+Reference: `invite.html`
+
+Purpose:
+
+- Firebase Auth 세션이 없을 때 민영과 영우만 앱에 들어오게 한다.
+- 기존 초대장 디자인의 부드러운 분위기를 유지하되, 닉네임 입력 대신 아이디/비밀번호를 받는다.
+- 로그인 성공 후에는 Firestore 프로필을 불러와 나와 상대 이름을 정확히 보여준다.
+
+Required UI:
+
+- Status row mock or safe top spacing
+- Seal icon area
+- Kicker: `A L A G A G I`
+- Hero headline: `우리, 천천히 알아가 볼래요?`
+- Helper copy: `민영과 영우만 들어올 수 있어요.`
+- Login ID field
+- Password field
+- CTA: `로그인`
+- Soft error copy area
+- Fine print: `한 번 로그인하면 다음엔 자동으로 이어서 들어와요`
+
+State:
+
+- Signed out
+- Signing in
+- Invalid id/password error
+- Signed in but profile document missing
+- Firebase not configured local demo mode
+
+Acceptance Criteria:
+
+- Firebase가 설정된 배포 빌드에서 첫 진입 시 로그인 화면이 보인다.
+- `youngwoo` 또는 `minyoung` 아이디는 내부적으로 `@gettoknow.local` 이메일로 매핑된다.
+- 로그인 성공 후 `users/{uid}` 문서를 로드하고 홈으로 이동한다.
+- 이미 Firebase Auth 세션이 있으면 로그인 화면을 건너뛰고 홈으로 이동한다.
+- `users/{uid}` 문서가 없으면 UID와 Firebase Console 설정 안내를 보여준다.
+- 로그인 실패 시 입력값을 유지하고 부드러운 오류 문구를 보여준다.
+- 비밀번호는 Firestore, app state, local repository에 저장하지 않는다.
+- Firebase dart-define 값이 없으면 로컬 데모 모드로 기존 화면을 볼 수 있다.
 
 ### 10.1 Invite Screen
 
@@ -557,6 +644,12 @@ Acceptance Criteria:
 ## 12. Domain Model Draft
 
 ```dart
+class AuthUser {
+  final String uid;
+  final String loginId;
+  final String email;
+}
+
 class AppProfile {
   final String id;
   final String nickname;
@@ -621,7 +714,77 @@ class WishItem {
   final Set<String> likedByProfileIds;
   final bool done;
 }
+
+class AlagagiSession {
+  final String spaceId;
+  final AppProfile me;
+  final AppProfile partner;
+}
 ```
+
+## 12.1 Firebase Data Model
+
+### Authentication
+
+- Firebase Auth Email/Password provider를 사용한다.
+- 실제 로그인 UI에는 이메일 대신 짧은 아이디를 노출한다.
+- UI 아이디는 repository에서만 이메일로 변환한다.
+- 자동 로그인은 Firebase Auth의 기본 브라우저 persistence를 사용한다.
+
+### Firestore Collections
+
+`users/{uid}`
+
+```json
+{
+  "displayName": "민영",
+  "avatar": "🪻",
+  "role": "guest",
+  "spaceId": "main",
+  "partnerUid": "{youngwooUid}"
+}
+```
+
+`spaces/{spaceId}`
+
+```json
+{
+  "name": "알아가기",
+  "memberIds": ["{youngwooUid}", "{minyoungUid}"]
+}
+```
+
+`spaces/{spaceId}/answers/{questionId_uid}`
+
+```json
+{
+  "questionId": "q12",
+  "profileId": "{uid}",
+  "body": "노을 질 때가 좋아요.",
+  "createdLabel": "오늘",
+  "skipped": false,
+  "updatedAt": "serverTimestamp"
+}
+```
+
+`spaces/{spaceId}/wishes/{wishId}`
+
+```json
+{
+  "title": "조용한 영화관 가기",
+  "kind": "activity",
+  "likedByProfileIds": ["{uid}"],
+  "done": false,
+  "updatedAt": "serverTimestamp"
+}
+```
+
+### Repository Boundaries
+
+- `AuthRepository` owns sign-in, sign-out, current auth stream, and login-id-to-email mapping.
+- `AlagagiDataRepository` owns session/profile load and user-generated writes.
+- `AlagagiController` owns screen state and domain transitions, but delegates persistence writes to the repository when present.
+- Widget tests use fake repositories; Firebase SDK is not required for ordinary test execution.
 
 ## 13. App State Draft
 
@@ -643,6 +806,9 @@ class AlagagiState {
 
 ### Unit Tests
 
+- Login id to Firebase email mapping
+- Auth repository success/failure state with fake auth
+- Session construction from Firestore-style profile data
 - Invite nickname validation
 - Daily question selection by day/depth
 - Answer submit and skip state
@@ -655,6 +821,11 @@ class AlagagiState {
 
 ### Widget Tests
 
+- Firebase-enabled app shows login when signed out
+- Successful login loads a fake session and enters home
+- Existing fake auth session skips login and enters home
+- Missing profile document shows setup required state with UID
+- Logout returns to login
 - Invite shows headline and enters home after nickname submit
 - Home shows today question and record summary
 - Answer screen updates character count and saves answer
@@ -672,6 +843,7 @@ class AlagagiState {
 - Long Korean text wraps without overflow
 - Disabled/locked states are readable
 - No page feels like a public landing page
+- Login screen follows `invite.html` visual mood and does not feel like a generic admin form
 
 ## 15. Implementation Plan
 
@@ -715,6 +887,17 @@ class AlagagiState {
 - `flutter test`
 - `flutter analyze`
 
+### Step 7: Firebase Private Login
+
+- Update spec first with auth/session/data model.
+- Write fake-auth unit/widget tests before production code.
+- Add Firebase config through dart-defines.
+- Implement AuthGate, LoginScreen, SetupRequiredScreen.
+- Add repository interfaces and Firebase-backed implementations.
+- Preserve local demo mode when Firebase config is absent.
+- Document Firebase Console setup in `docs/firebase_setup.md`.
+- Verify `flutter test`, `flutter analyze`, and release web build.
+
 ## 16. Migration Notes From Current App
 
 Current app:
@@ -750,3 +933,4 @@ Migration decision:
 - MVP에서 실제 local persistence를 넣을지, 메모리 상태로만 갈지.
 - Flutter에서 폰트 파일을 번들링할지, 시스템 폰트로 시작할지.
 - bottom navigation을 `홈/질문함/기록/마이`로 유지할지, plus features 때문에 `홈/질문함/카드/위시`로 바꿀지.
+- Firebase Console에서 두 계정의 최종 비밀번호를 무엇으로 둘지.
