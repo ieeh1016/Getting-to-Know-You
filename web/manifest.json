@@ -1,0 +1,35 @@
+{
+    "name": "민영 Pick",
+    "short_name": "민영 Pick",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#F7FAFF",
+    "theme_color": "#EF6F6C",
+    "description": "다음 약속을 가볍게 고르는 민영 Pick.",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}
