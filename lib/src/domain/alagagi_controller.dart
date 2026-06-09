@@ -705,6 +705,7 @@ class AlagagiController extends ChangeNotifier {
 
   final Map<String, Answer> _myAnswersByQuestionId = {};
   final Map<String, Answer> _partnerAnswersByQuestionId = {};
+  final Set<String> _persistedMyAnswerQuestionIds = {};
   final Map<String, AnswerComment> _answerCommentsByKey = {};
   final Map<String, String> _balanceSelections = {};
   final Map<String, String> _partnerBalanceSelections = {};
@@ -749,6 +750,9 @@ class AlagagiController extends ChangeNotifier {
           );
         }),
       );
+    _persistedMyAnswerQuestionIds
+      ..clear()
+      ..addAll(_myAnswersByQuestionId.keys);
     _partnerAnswersByQuestionId
       ..clear()
       ..addEntries(
@@ -783,9 +787,11 @@ class AlagagiController extends ChangeNotifier {
   void _applySessionData(AlagagiSpaceData data) {
     _myAnswersByQuestionId.clear();
     _partnerAnswersByQuestionId.clear();
+    _persistedMyAnswerQuestionIds.clear();
     for (final answer in data.answers) {
       if (answer.profileId == _state.me.id) {
         _myAnswersByQuestionId[answer.questionId] = answer;
+        _persistedMyAnswerQuestionIds.add(answer.questionId);
       } else if (answer.profileId == _state.partner.id) {
         _partnerAnswersByQuestionId[answer.questionId] = answer;
       }
@@ -931,7 +937,10 @@ class AlagagiController extends ChangeNotifier {
       ProfileSlot(id: 'cafe', icon: '☕', label: '카페 취향'),
       ProfileSlot(id: 'walk', icon: '🚶', label: '산책 취향'),
       ProfileSlot(id: 'comfort', icon: '🌿', label: '편해지는 순간'),
+      ProfileSlot(id: 'promise', icon: '🗓', label: '약속에서 중요한 것'),
+      ProfileSlot(id: 'kindness', icon: '🤲', label: '기억나는 다정함'),
       ProfileSlot(id: 'pace', icon: '🕰️', label: '나에게 맞는 속도'),
+      ProfileSlot(id: 'wish_scene', icon: '🧭', label: '같이 해보고 싶은 장면'),
     ];
   }
 
@@ -992,6 +1001,7 @@ class AlagagiController extends ChangeNotifier {
     final spaceId = _spaceId;
     if (repository == null || spaceId == null) {
       _lastFailedAnswer = null;
+      _persistedMyAnswerQuestionIds.add(answer.questionId);
       _state = _state.copyWith(
         answerSaveStatus: SaveStatus.saved,
         answerSaveFeedback: '저장됐어요.',
@@ -1005,6 +1015,7 @@ class AlagagiController extends ChangeNotifier {
           .saveAnswer(spaceId, answer)
           .then<void>((_) {
             _lastFailedAnswer = null;
+            _persistedMyAnswerQuestionIds.add(answer.questionId);
             _state = _state.copyWith(
               answerSaveStatus: SaveStatus.saved,
               answerSaveFeedback: '저장됐어요.',
@@ -1014,6 +1025,7 @@ class AlagagiController extends ChangeNotifier {
           })
           .catchError((Object _) {
             _lastFailedAnswer = answer;
+            _persistedMyAnswerQuestionIds.remove(answer.questionId);
             _state = _state.copyWith(
               answerError: '저장하지 못했어요. 다시 시도해 주세요.',
               answerSaveStatus: SaveStatus.failed,
@@ -1107,12 +1119,38 @@ class AlagagiController extends ChangeNotifier {
 
   Answer? get todayMyAnswer => _myAnswersByQuestionId[todayQuestion.id];
 
-  Answer? get todayPartnerAnswer => todayMyAnswer == null
-      ? null
-      : _partnerAnswersByQuestionId[todayQuestion.id];
+  Answer? get todayPartnerAnswer =>
+      _visiblePartnerAnswerForQuestion(todayQuestion.id);
 
   Answer? answerForQuestion(String questionId) {
     return _myAnswersByQuestionId[questionId];
+  }
+
+  Answer? partnerAnswerForQuestion(String questionId) {
+    return _visiblePartnerAnswerForQuestion(questionId);
+  }
+
+  Answer? _visiblePartnerAnswerForQuestion(String questionId) {
+    if (!_hasVisibleMyAnswerForQuestion(questionId)) {
+      return null;
+    }
+    final partnerAnswer = _partnerAnswersByQuestionId[questionId];
+    if (partnerAnswer == null || partnerAnswer.skipped) {
+      return null;
+    }
+    return partnerAnswer;
+  }
+
+  bool _hasVisibleMyAnswerForQuestion(String questionId) {
+    final myAnswer = _myAnswersByQuestionId[questionId];
+    if (myAnswer == null || myAnswer.skipped) {
+      return false;
+    }
+    return _isMyAnswerPersisted(questionId);
+  }
+
+  bool _isMyAnswerPersisted(String questionId) {
+    return _usesDemoData || _persistedMyAnswerQuestionIds.contains(questionId);
   }
 
   List<QuestionCalendarDay> get questionCalendarDays {
@@ -1151,6 +1189,27 @@ class AlagagiController extends ChangeNotifier {
     });
   }
 
+  List<QuestionCalendarDay> get visibleQuestionCalendarDays {
+    final days = questionCalendarDays;
+    if (days.length <= 14) {
+      return days;
+    }
+
+    final anchorDateKey =
+        _state.selectedArchiveDateKey ?? _dailyProgress.openedDateKey;
+    var anchorIndex = days.indexWhere((day) => day.dateKey == anchorDateKey);
+    if (anchorIndex == -1) {
+      anchorIndex = days.indexWhere((day) => day.isToday);
+    }
+    if (anchorIndex == -1) {
+      anchorIndex = days.length - 1;
+    }
+
+    final maxStart = days.length - 14;
+    final start = (anchorIndex - 6).clamp(0, maxStart).toInt();
+    return days.skip(start).take(14).toList();
+  }
+
   QuestionCalendarDay? get selectedQuestionCalendarDay {
     for (final day in questionCalendarDays) {
       if (day.isSelected) {
@@ -1162,7 +1221,17 @@ class AlagagiController extends ChangeNotifier {
 
   int _visibleCalendarDayCount(DateTime startedDate, DateTime todayDate) {
     final elapsedDays = todayDate.difference(startedDate).inDays + 1;
-    final minimumDays = elapsedDays < 14 ? 14 : elapsedDays;
+    var minimumDays = elapsedDays < 14 ? 14 : elapsedDays;
+    final selectedDateKey = _state.selectedArchiveDateKey;
+    if (selectedDateKey != null) {
+      final selectedDate = DateTime.tryParse(selectedDateKey);
+      if (selectedDate != null && !selectedDate.isBefore(startedDate)) {
+        final selectedOffset = selectedDate.difference(startedDate).inDays + 1;
+        if (selectedOffset > minimumDays) {
+          minimumDays = selectedOffset;
+        }
+      }
+    }
     return minimumDays.clamp(1, questions.length).toInt();
   }
 
@@ -1196,10 +1265,12 @@ class AlagagiController extends ChangeNotifier {
     }
     final myAnswer = _myAnswersByQuestionId[question.id];
     final partnerAnswer = _partnerAnswersByQuestionId[question.id];
-    if (myAnswer != null && myAnswer.skipped) {
+    final hasPersistedMyAnswer = _isMyAnswerPersisted(question.id);
+    if (myAnswer != null && myAnswer.skipped && hasPersistedMyAnswer) {
       return QuestionCalendarStatus.skippedByMe;
     }
-    final hasMyAnswer = myAnswer != null && !myAnswer.skipped;
+    final hasMyAnswer =
+        myAnswer != null && !myAnswer.skipped && hasPersistedMyAnswer;
     final hasPartnerAnswer = partnerAnswer != null && !partnerAnswer.skipped;
     if (hasMyAnswer && hasPartnerAnswer) {
       return QuestionCalendarStatus.bothAnswered;
@@ -1287,9 +1358,7 @@ class AlagagiController extends ChangeNotifier {
       return ArchiveItem(
         question: question,
         myAnswer: _myAnswersByQuestionId[question.id],
-        partnerAnswer: _myAnswersByQuestionId[question.id] == null
-            ? null
-            : _partnerAnswersByQuestionId[question.id],
+        partnerAnswer: _visiblePartnerAnswerForQuestion(question.id),
         matchedKeywords: _usesDemoData
             ? seedMatchedKeywordsByQuestionId[question.id] ?? const []
             : const [],
@@ -1414,12 +1483,8 @@ class AlagagiController extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    final myAnswer = _myAnswersByQuestionId[questionId];
-    final partnerAnswer = _partnerAnswersByQuestionId[questionId];
-    if (myAnswer == null ||
-        myAnswer.skipped ||
-        partnerAnswer == null ||
-        partnerAnswer.skipped) {
+    final partnerAnswer = _visiblePartnerAnswerForQuestion(questionId);
+    if (partnerAnswer == null) {
       _state = _state.copyWith(commentError: '상대 답이 열린 뒤에 댓글을 남길 수 있어요.');
       notifyListeners();
       return;
@@ -1534,9 +1599,13 @@ class AlagagiController extends ChangeNotifier {
       profileId: _state.me.id,
       body: body,
       createdLabel: existingAnswer?.createdLabel ?? _createdLabelFor(question),
-      edited: existingAnswer != null && !existingAnswer.skipped,
+      edited:
+          existingAnswer != null &&
+          !existingAnswer.skipped &&
+          _isMyAnswerPersisted(question.id),
     );
     _myAnswersByQuestionId[question.id] = answer;
+    _persistedMyAnswerQuestionIds.remove(question.id);
     _lastFailedAnswer = null;
     _state = _state.copyWith(
       draftAnswer: '',
@@ -1579,6 +1648,7 @@ class AlagagiController extends ChangeNotifier {
       skipped: true,
     );
     _myAnswersByQuestionId[todayQuestion.id] = answer;
+    _persistedMyAnswerQuestionIds.remove(todayQuestion.id);
     _lastFailedAnswer = null;
     _state = _state.copyWith(
       route: AlagagiRoute.home,
@@ -1741,21 +1811,27 @@ class AlagagiController extends ChangeNotifier {
   }
 
   void fillTodayProfileSlot(String value) {
+    final targetSlotId = todayFillableProfileSlot?.id;
+    if (targetSlotId == null) {
+      return;
+    }
+    fillProfileSlot(targetSlotId, value);
+  }
+
+  void fillProfileSlot(String slotId, String value) {
     final trimmed = value.trim();
     if (trimmed.isEmpty) {
       return;
     }
 
-    final targetSlotId = todayFillableProfileSlot?.id;
-    if (targetSlotId == null) {
+    final cardIndex = _profileCards.indexWhere((card) => card.profile.isMe);
+    if (cardIndex == -1) {
       return;
     }
-
-    final cardIndex = _profileCards.indexWhere((card) => card.profile.isMe);
     final card = _profileCards[cardIndex];
     ProfileSlot? filledSlot;
     final slots = card.slots.map((slot) {
-      if (slot.id == targetSlotId) {
+      if (slot.id == slotId) {
         filledSlot = slot.copyWith(
           value: trimmed,
           locked: false,
@@ -1765,12 +1841,17 @@ class AlagagiController extends ChangeNotifier {
       }
       return slot;
     }).toList();
-    _profileCards[cardIndex] = card.copyWith(slots: slots);
-    if (filledSlot != null) {
-      _persistProfileSlot(filledSlot!);
+    if (filledSlot == null) {
+      return;
     }
+    _profileCards[cardIndex] = card.copyWith(slots: slots);
+    _persistProfileSlot(filledSlot!);
     _state = _state.copyWith(profileCardTab: ProfileCardTab.me);
     notifyListeners();
+  }
+
+  void saveProfileSlot(String slotId, String value) {
+    fillProfileSlot(slotId, value);
   }
 
   void setWishlistFilter(WishlistFilter filter) {
@@ -1857,10 +1938,9 @@ class AlagagiController extends ChangeNotifier {
     final wish = _wishes[index];
     final likedBy = Set<String>.from(wish.likedByProfileIds);
     if (likedBy.contains(_state.me.id)) {
-      likedBy.remove(_state.me.id);
-    } else {
-      likedBy.add(_state.me.id);
+      return;
     }
+    likedBy.add(_state.me.id);
     final updatedWish = wish.copyWith(likedByProfileIds: likedBy);
     _wishes[index] = updatedWish;
     _persistWish(updatedWish);
@@ -2292,36 +2372,38 @@ const seedProfileCards = [
     ),
     subtitle: '알아가는 중 · 12일째',
     slots: [
-      ProfileSlot(id: 'age', icon: '🎂', label: '나이대', value: '20대 후반'),
-      ProfileSlot(
-        id: 'mbti',
-        icon: '🧭',
-        label: 'MBTI',
-        value: 'INFJ · 나랑 한 글자 차이',
-      ),
       ProfileSlot(
         id: 'food',
         icon: '🍙',
-        label: '좋아하는 음식',
-        value: '떡볶이, 그리고 떡볶이',
+        label: '먹고 싶은 음식',
+        value: '매콤한 분식이나 따뜻한 국물',
       ),
-      ProfileSlot(id: 'song', icon: '🎧', label: '요즘 노래', value: '어쿠스틱 발라드'),
-      ProfileSlot(id: 'type', icon: '🐾', label: '동물상', value: '고양이상이래요'),
-      ProfileSlot(id: 'motto', icon: '💭', label: '좌우명'),
-      ProfileSlot(id: 'sleep', icon: '🌙', label: '잠드는 시간'),
+      ProfileSlot(id: 'song', icon: '🎧', label: '요즘 노래', value: '잔잔한 어쿠스틱'),
+      ProfileSlot(id: 'rest', icon: '🏡', label: '쉬는 방식'),
+      ProfileSlot(id: 'cafe', icon: '☕', label: '카페 취향', value: '조용하고 햇빛 드는 곳'),
+      ProfileSlot(id: 'walk', icon: '🚶', label: '산책 취향'),
+      ProfileSlot(id: 'comfort', icon: '🌿', label: '편해지는 순간'),
+      ProfileSlot(id: 'promise', icon: '🗓', label: '약속에서 중요한 것'),
+      ProfileSlot(id: 'kindness', icon: '🤲', label: '기억나는 다정함'),
+      ProfileSlot(id: 'pace', icon: '🕰️', label: '나에게 맞는 속도'),
+      ProfileSlot(id: 'wish_scene', icon: '🧭', label: '같이 해보고 싶은 장면'),
     ],
   ),
   ProfileCardData(
     profile: AppProfile(id: 'me', nickname: '나', avatar: '🌿', isMe: true),
     subtitle: '천천히 채우는 중 · 12일째',
     slots: [
-      ProfileSlot(id: 'age', icon: '🎂', label: '나이대', value: '30대 초반'),
-      ProfileSlot(id: 'mbti', icon: '🧭', label: 'MBTI', value: 'INTJ'),
-      ProfileSlot(id: 'food', icon: '🍙', label: '좋아하는 음식', value: '파스타와 커피'),
+      ProfileSlot(id: 'food', icon: '🍙', label: '먹고 싶은 음식', value: '파스타와 커피'),
       ProfileSlot(id: 'song', icon: '🎧', label: '요즘 노래', value: '잔잔한 재즈'),
-      ProfileSlot(id: 'type', icon: '🐾', label: '동물상', value: '차분한 강아지상'),
-      ProfileSlot(id: 'motto', icon: '💭', label: '좌우명'),
-      ProfileSlot(id: 'sleep', icon: '🌙', label: '잠드는 시간'),
+      ProfileSlot(id: 'rest', icon: '🏡', label: '쉬는 방식'),
+      ProfileSlot(id: 'cafe', icon: '☕', label: '카페 취향'),
+      ProfileSlot(id: 'walk', icon: '🚶', label: '산책 취향'),
+      ProfileSlot(id: 'comfort', icon: '🌿', label: '편해지는 순간'),
+      ProfileSlot(id: 'promise', icon: '🗓', label: '약속에서 중요한 것'),
+      ProfileSlot(id: 'kindness', icon: '🤲', label: '기억나는 다정함'),
+      ProfileSlot(id: 'pace', icon: '🕰️', label: '나에게 맞는 속도'),
+      ProfileSlot(id: 'wish_scene', icon: '🧭', label: '같이 해보고 싶은 장면'),
+      ProfileSlot(id: 'motto', icon: '💭', label: '작은 다짐'),
     ],
   ),
 ];

@@ -196,6 +196,110 @@ void main() {
     expect(find.byKey(answerCommentFieldKey), findsNothing);
   });
 
+  testWidgets('renders mobile shell without decorative phone frame', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(const AlagagiApp());
+    await enterSpace(tester);
+
+    final shell = tester.widget<Container>(find.byKey(alagagiShellKey));
+    final decoration = shell.decoration as BoxDecoration?;
+
+    expect(tester.getSize(find.byKey(alagagiShellKey)), const Size(390, 844));
+    expect(shell.margin, EdgeInsets.zero);
+    expect(decoration?.border, isNull);
+    expect(decoration?.borderRadius, isNull);
+  });
+
+  testWidgets('archive calendar shows controls weekdays and selected detail', (
+    tester,
+  ) async {
+    final controller =
+        AlagagiController.forSession(
+            const AlagagiSession(
+              spaceId: 'main',
+              me: AppProfile(
+                id: 'youngwooUid',
+                nickname: '영우',
+                avatar: '🌿',
+                isMe: true,
+              ),
+              partner: AppProfile(
+                id: 'minyoungUid',
+                nickname: '민영',
+                avatar: '🪻',
+                isMe: false,
+              ),
+              data: AlagagiSpaceData(
+                answers: [
+                  Answer(
+                    questionId: 'q019',
+                    profileId: 'youngwooUid',
+                    body: '작은 약속을 기억해줄 때요.',
+                    createdLabel: '6월 7일',
+                  ),
+                  Answer(
+                    questionId: 'q019',
+                    profileId: 'minyoungUid',
+                    body: '말투가 부드러울 때 오래 기억나요.',
+                    createdLabel: '6월 7일',
+                  ),
+                ],
+                answerComments: [
+                  AnswerComment(
+                    questionId: 'q019',
+                    answerOwnerProfileId: 'minyoungUid',
+                    commenterProfileId: 'youngwooUid',
+                    body: '이 답을 읽으니 마음이 편해졌어요.',
+                    createdLabel: '6월 7일',
+                  ),
+                ],
+                dailyProgress: DailyQuestionProgress(
+                  startedDateKey: '2026-05-20',
+                  currentQuestionId: 'q001',
+                  openedDateKey: '2026-06-09',
+                ),
+              ),
+            ),
+            todayDateKey: '2026-06-09',
+          )
+          ..goTo(AlagagiRoute.archive)
+          ..selectArchiveDate('2026-06-07');
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(archiveCalendarKey), findsOneWidget);
+    expect(find.byKey(archiveCalendarPreviousButtonKey), findsOneWidget);
+    expect(find.byKey(archiveCalendarNextButtonKey), findsOneWidget);
+    expect(find.byKey(archiveCalendarTodayButtonKey), findsOneWidget);
+    for (final label in ['월', '화', '수', '목', '금', '토', '일']) {
+      expect(find.text(label), findsOneWidget);
+    }
+
+    expect(find.text('6월 7일 · DAY 19'), findsOneWidget);
+    expect(find.text('내 답'), findsWidgets);
+    expect(find.text('민영님 답'), findsOneWidget);
+    expect(find.text('작은 약속을 기억해줄 때요.'), findsWidgets);
+    expect(find.text('말투가 부드러울 때 오래 기억나요.'), findsWidgets);
+    expect(find.text('내 댓글'), findsWidgets);
+    expect(find.text('이 답을 읽으니 마음이 편해졌어요.'), findsWidgets);
+
+    await tester.tap(find.byKey(archiveCalendarTodayButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('6월 9일 · DAY 21'), findsOneWidget);
+  });
+
   testWidgets('archive calendar opens and saves a late answer', (tester) async {
     final controller = AlagagiController.forSession(
       const AlagagiSession(
@@ -251,6 +355,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('늦게 답하기'), findsOneWidget);
+    expect(find.text('6월 8일 · DAY 2'), findsOneWidget);
     expect(find.text('PAST QUESTION'), findsOneWidget);
 
     await tester.enterText(find.byKey(answerFieldKey), '늦게 남기는 답이에요.');
@@ -291,6 +396,71 @@ void main() {
 
     expect(find.text('민영과 영우'), findsOneWidget);
     expect(find.text('천천히 알아가는 중'), findsOneWidget);
+  });
+
+  testWidgets('profile card inline edit can save and cancel a slot', (
+    tester,
+  ) async {
+    final controller = AlagagiController()
+      ..enterSpace('영우')
+      ..goTo(AlagagiRoute.profileCard)
+      ..setProfileCardTab(ProfileCardTab.me);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(profileSlotEditButtonKey('rest')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(profileSlotEditButtonKey('rest')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(profileSlotFieldKey('rest')),
+      '집에서 차 마시기',
+    );
+    await tester.tap(find.byKey(profileSlotSaveButtonKey('rest')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('집에서 차 마시기'), findsOneWidget);
+
+    await tester.tap(find.byKey(profileSlotEditButtonKey('rest')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(profileSlotFieldKey('rest')), '취소될 문장');
+    await tester.tap(find.byKey(profileSlotCancelButtonKey('rest')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('집에서 차 마시기'), findsOneWidget);
+    expect(find.text('취소될 문장'), findsNothing);
+  });
+
+  testWidgets('my screen hides implementation terms in user copy', (
+    tester,
+  ) async {
+    final localController = AlagagiController()
+      ..enterSpace('영우')
+      ..goTo(AlagagiRoute.my);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: localController)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('로컬 MVP'), findsNothing);
+    expect(find.textContaining('Firebase'), findsNothing);
+
+    final signedInController = AlagagiController()
+      ..enterSpace('영우')
+      ..goTo(AlagagiRoute.my);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AlagagiRoot(controller: signedInController, onSignOut: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('로컬 MVP'), findsNothing);
+    expect(find.textContaining('Firebase'), findsNothing);
   });
 
   testWidgets('uses a low-pressure invite and wishlist tone', (tester) async {

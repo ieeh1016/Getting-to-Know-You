@@ -17,8 +17,24 @@ const answerCommentSubmitButtonKey = Key('answer-comment-submit-button');
 const personalizationAppTitleFieldKey = Key('personalization-app-title-field');
 const personalizationHomeLineFieldKey = Key('personalization-home-line-field');
 const personalizationSubmitButtonKey = Key('personalization-submit-button');
+const alagagiShellKey = Key('alagagi-shell');
 const archiveCalendarKey = Key('archive-question-calendar');
+const archiveCalendarPreviousButtonKey = Key('archive-calendar-previous');
+const archiveCalendarNextButtonKey = Key('archive-calendar-next');
+const archiveCalendarTodayButtonKey = Key('archive-calendar-today');
 const lateAnswerButtonKey = Key('late-answer-button');
+
+Key archiveCalendarDayButtonKey(String dateKey) =>
+    Key('archive-calendar-day-$dateKey');
+
+Key profileSlotEditButtonKey(String slotId) => Key('profile-slot-edit-$slotId');
+
+Key profileSlotFieldKey(String slotId) => Key('profile-slot-field-$slotId');
+
+Key profileSlotSaveButtonKey(String slotId) => Key('profile-slot-save-$slotId');
+
+Key profileSlotCancelButtonKey(String slotId) =>
+    Key('profile-slot-cancel-$slotId');
 
 const _longAnswerPreviewLength = 120;
 
@@ -201,14 +217,29 @@ class _PhoneShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mediaSize = MediaQuery.sizeOf(context);
-    final shellWidth = mediaSize.width < 390 ? mediaSize.width : 390.0;
+    final shouldFrame = mediaSize.width >= 600;
+
+    if (!shouldFrame) {
+      return Scaffold(
+        body: Container(
+          key: alagagiShellKey,
+          width: double.infinity,
+          height: double.infinity,
+          margin: EdgeInsets.zero,
+          decoration: const BoxDecoration(color: AlagagiColors.appBackground),
+          child: SafeArea(child: child),
+        ),
+      );
+    }
+
     final availableHeight = mediaSize.height - 48;
     final shellHeight = availableHeight.clamp(520.0, 840.0);
 
     return Scaffold(
       body: Center(
         child: Container(
-          width: shellWidth,
+          key: alagagiShellKey,
+          width: 390,
           height: shellHeight,
           constraints: const BoxConstraints(maxWidth: 390),
           margin: const EdgeInsets.symmetric(vertical: 24),
@@ -245,6 +276,13 @@ class _ScreenScroll extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = bottomNavigation == null
+        ? padding.bottom
+        : padding.bottom < 132
+        ? 132.0
+        : padding.bottom;
+    final effectivePadding = padding.copyWith(bottom: bottomPadding);
+
     return Stack(
       children: [
         Positioned.fill(
@@ -252,7 +290,7 @@ class _ScreenScroll extends StatelessWidget {
             padding: EdgeInsets.zero,
             children: [
               Padding(
-                padding: padding,
+                padding: effectivePadding,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: children,
@@ -1819,6 +1857,9 @@ class _AnswerScreenState extends State<AnswerScreen> {
     final isSaving = state.answerSaveStatus == SaveStatus.saving;
     final isEditing = state.editingAnswer;
     final isToday = widget.controller.isActiveAnswerToday;
+    final selectedDateContext = isToday
+        ? null
+        : _questionDateContext(state.selectedArchiveDateKey, question);
 
     return Stack(
       children: [
@@ -1832,6 +1873,19 @@ class _AnswerScreenState extends State<AnswerScreen> {
                 isToday ? AlagagiRoute.home : AlagagiRoute.archive,
               ),
             ),
+            if (selectedDateContext != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                selectedDateContext,
+                textAlign: TextAlign.center,
+                style: serif(
+                  context,
+                  size: 14,
+                  weight: FontWeight.w700,
+                  color: AlagagiColors.sageDeep,
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             Text(
               '${question.number}',
@@ -2091,14 +2145,26 @@ class _QuestionCalendar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final days = controller.questionCalendarDays.take(14).toList();
+    final allDays = controller.questionCalendarDays;
+    final days = _visibleWindow(allDays);
     if (days.isEmpty) {
       return const SizedBox.shrink();
     }
-    final firstDate = DateTime.tryParse(days.first.dateKey);
-    final title = firstDate == null
+    final selectedDate = DateTime.tryParse(
+      controller.selectedQuestionCalendarDay?.dateKey ?? days.first.dateKey,
+    );
+    final title = selectedDate == null
         ? '질문 캘린더'
-        : '${firstDate.year}년 ${firstDate.month}월';
+        : '${selectedDate.year}년 ${selectedDate.month}월';
+    final startIndex = allDays.indexWhere(
+      (day) => day.dateKey == days.first.dateKey,
+    );
+    final previousIndex = startIndex > 0
+        ? (startIndex - 14 < 0 ? 0 : startIndex - 14)
+        : null;
+    final nextIndex = startIndex + 14 < allDays.length ? startIndex + 14 : null;
+    final today = _todayDay(allDays);
+
     return _PaperCard(
       key: archiveCalendarKey,
       radius: 22,
@@ -2106,17 +2172,55 @@ class _QuestionCalendar extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(title, style: serif(context, size: 18, weight: FontWeight.w800)),
+          const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: serif(context, size: 18, weight: FontWeight.w800),
+              _CalendarControlButton(
+                buttonKey: archiveCalendarPreviousButtonKey,
+                tooltip: '이전 기간',
+                icon: Icons.chevron_left_rounded,
+                onPressed: previousIndex == null
+                    ? null
+                    : () => controller.selectArchiveDate(
+                        allDays[previousIndex].dateKey,
+                      ),
               ),
-              Text('오늘', style: sans(size: 11, color: AlagagiColors.sageDeep)),
+              TextButton(
+                key: archiveCalendarTodayButtonKey,
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(42, 32),
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                onPressed: today == null
+                    ? null
+                    : () => controller.selectArchiveDate(today.dateKey),
+                child: Text(
+                  '오늘',
+                  style: sans(
+                    size: 11,
+                    color: AlagagiColors.sageDeep,
+                    weight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              _CalendarControlButton(
+                buttonKey: archiveCalendarNextButtonKey,
+                tooltip: '다음 기간',
+                icon: Icons.chevron_right_rounded,
+                onPressed: nextIndex == null
+                    ? null
+                    : () => controller.selectArchiveDate(
+                        allDays[nextIndex].dateKey,
+                      ),
+              ),
             ],
           ),
           const SizedBox(height: 14),
+          _WeekdayLabels(startDateKey: days.first.dateKey),
+          const SizedBox(height: 7),
           GridView.count(
             crossAxisCount: 7,
             shrinkWrap: true,
@@ -2140,6 +2244,111 @@ class _QuestionCalendar extends StatelessWidget {
       ),
     );
   }
+
+  List<QuestionCalendarDay> _visibleWindow(List<QuestionCalendarDay> allDays) {
+    const windowSize = 14;
+    if (allDays.length <= windowSize) {
+      return allDays;
+    }
+    var anchorIndex = allDays.indexWhere((day) => day.isSelected);
+    if (anchorIndex == -1) {
+      anchorIndex = allDays.indexWhere((day) => day.isToday);
+    }
+    if (anchorIndex == -1) {
+      anchorIndex = 0;
+    }
+
+    var startIndex = anchorIndex - (windowSize ~/ 2);
+    if (startIndex < 0) {
+      startIndex = 0;
+    }
+    if (startIndex + windowSize > allDays.length) {
+      startIndex = allDays.length - windowSize;
+    }
+    return allDays.sublist(startIndex, startIndex + windowSize);
+  }
+
+  QuestionCalendarDay? _todayDay(List<QuestionCalendarDay> allDays) {
+    for (final day in allDays) {
+      if (day.isToday) {
+        return day;
+      }
+    }
+    return null;
+  }
+}
+
+class _CalendarControlButton extends StatelessWidget {
+  const _CalendarControlButton({
+    required this.buttonKey,
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final Key buttonKey;
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        key: buttonKey,
+        borderRadius: BorderRadius.circular(14),
+        onTap: onPressed,
+        child: SizedBox(
+          width: 34,
+          height: 32,
+          child: Icon(
+            icon,
+            size: 20,
+            color: onPressed == null
+                ? const Color(0xFFC7C3BA)
+                : AlagagiColors.sageDeep,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WeekdayLabels extends StatelessWidget {
+  const _WeekdayLabels({required this.startDateKey});
+
+  final String startDateKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final startDate = DateTime.tryParse(startDateKey);
+    const weekdayLabels = ['월', '화', '수', '목', '금', '토', '일'];
+    final labels = List<String>.generate(7, (index) {
+      if (startDate == null) {
+        return weekdayLabels[index];
+      }
+      final date = startDate.add(Duration(days: index));
+      return weekdayLabels[date.weekday - 1];
+    });
+
+    return Row(
+      children: [
+        for (final label in labels)
+          Expanded(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: sans(
+                size: 10.5,
+                color: AlagagiColors.muted,
+                weight: FontWeight.w700,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 }
 
 class _CalendarDayButton extends StatelessWidget {
@@ -2154,6 +2363,7 @@ class _CalendarDayButton extends StatelessWidget {
     final selected = day.isSelected;
     final color = _statusColor(day.status);
     return Material(
+      key: archiveCalendarDayButtonKey(day.dateKey),
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
@@ -2239,7 +2449,10 @@ class _CalendarLegend extends StatelessWidget {
       runSpacing: 7,
       children: const [
         _LegendItem(label: '미답', status: QuestionCalendarStatus.unanswered),
-        _LegendItem(label: '내 답', status: QuestionCalendarStatus.myAnswerOnly),
+        _LegendItem(
+          label: '내가 답함',
+          status: QuestionCalendarStatus.myAnswerOnly,
+        ),
         _LegendItem(
           label: '상대 답',
           status: QuestionCalendarStatus.partnerAnswerOnly,
@@ -2290,8 +2503,17 @@ class _SelectedQuestionDetail extends StatelessWidget {
     if (day == null || question == null) {
       return const SizedBox.shrink();
     }
-    final date = DateTime.tryParse(day.dateKey);
     final myAnswer = controller.answerForQuestion(question.id);
+    final partnerAnswer = myAnswer == null || myAnswer.skipped
+        ? null
+        : controller.partnerAnswerForQuestion(question.id);
+    final receivedComment = myAnswer == null
+        ? null
+        : controller.commentForAnswer(
+            question.id,
+            myAnswer.profileId,
+            controller.state.partner.id,
+          );
     final statusLabel = _statusLabel(day.status);
     return _PaperCard(
       radius: 22,
@@ -2303,7 +2525,7 @@ class _SelectedQuestionDetail extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  '${date?.month ?? ''}월 ${date?.day ?? ''}일 · DAY ${question.day}',
+                  _questionDateContext(day.dateKey, question),
                   style: serif(
                     context,
                     size: 13,
@@ -2327,12 +2549,41 @@ class _SelectedQuestionDetail extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           if (myAnswer != null && !myAnswer.skipped)
-            Text(myAnswer.body, style: sans(size: 13, height: 1.55))
+            _SelectedAnswerBlock(
+              label: '내 답',
+              color: AlagagiColors.sageDeep,
+              body: myAnswer.body,
+            )
           else
             Text(
               day.canLateAnswer ? '아직 내 답이 없어요.' : statusLabel,
               style: sans(size: 12.5, color: AlagagiColors.muted),
             ),
+          if (receivedComment != null) ...[
+            const SizedBox(height: 10),
+            _ReadOnlyCommentBlock(label: '받은 댓글', body: receivedComment.body),
+          ],
+          if (partnerAnswer != null) ...[
+            const SizedBox(height: 12),
+            _SelectedAnswerBlock(
+              label: '${controller.state.partner.nickname}님 답',
+              color: AlagagiColors.lavender,
+              body: partnerAnswer.body,
+            ),
+            const SizedBox(height: 10),
+            _AnswerCommentBox(
+              controller: controller,
+              questionId: partnerAnswer.questionId,
+              answerOwnerProfileId: partnerAnswer.profileId,
+              readOnly: true,
+            ),
+          ] else if (myAnswer != null && !myAnswer.skipped) ...[
+            const SizedBox(height: 12),
+            Text(
+              '상대 답은 아직 기다리는 중이에요.',
+              style: sans(size: 12.5, color: AlagagiColors.muted),
+            ),
+          ],
           const SizedBox(height: 16),
           if (day.canLateAnswer)
             _PrimaryButton(
@@ -2347,6 +2598,73 @@ class _SelectedQuestionDetail extends StatelessWidget {
               onPressed: () => controller.goTo(AlagagiRoute.answer),
               color: AlagagiColors.sageDeep,
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SelectedAnswerBlock extends StatelessWidget {
+  const _SelectedAnswerBlock({
+    required this.label,
+    required this.color,
+    required this.body,
+  });
+
+  final String label;
+  final Color color;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: serif(
+              context,
+              size: 13,
+              weight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(body, style: sans(size: 13.5, height: 1.6)),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReadOnlyCommentBlock extends StatelessWidget {
+  const _ReadOnlyCommentBlock({required this.label, required this.body});
+
+  final String label;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: sans(size: 11, color: AlagagiColors.muted)),
+          const SizedBox(height: 4),
+          Text(body, style: sans(size: 13, height: 1.5)),
         ],
       ),
     );
@@ -2396,6 +2714,14 @@ String _statusLabel(QuestionCalendarStatus status) {
     QuestionCalendarStatus.skippedByMe => '패스',
     QuestionCalendarStatus.catalogEnded => '질문 없음',
   };
+}
+
+String _questionDateContext(String? dateKey, DailyQuestion question) {
+  final date = dateKey == null ? null : DateTime.tryParse(dateKey);
+  if (date == null) {
+    return 'DAY ${question.day}';
+  }
+  return '${date.month}월 ${date.day}일 · DAY ${question.day}';
 }
 
 class _ArchiveTabs extends StatelessWidget {
@@ -3088,8 +3414,8 @@ class _BalanceResult extends StatelessWidget {
             ),
             TextSpan(
               text: same
-                  ? '를 골랐어요.\n역시 닮은 구석이 있네요 🌿'
-                  : '를 골랐어요.\n서로 달라서 더 궁금해져요 🌿',
+                  ? '를 골랐어요.\n닮은 구석이 하나 더 보이네요.'
+                  : '를 골랐어요.\n서로 달라서 더 궁금해져요.',
             ),
           ],
         ),
@@ -3122,10 +3448,46 @@ class _BalanceWaiting extends StatelessWidget {
   }
 }
 
-class ProfileCardScreen extends StatelessWidget {
+class ProfileCardScreen extends StatefulWidget {
   const ProfileCardScreen({super.key, required this.controller});
 
   final AlagagiController controller;
+
+  @override
+  State<ProfileCardScreen> createState() => _ProfileCardScreenState();
+}
+
+class _ProfileCardScreenState extends State<ProfileCardScreen> {
+  String? _editingSlotId;
+  String _slotDraft = '';
+
+  AlagagiController get controller => widget.controller;
+
+  void _startEditing(ProfileSlot slot) {
+    setState(() {
+      _editingSlotId = slot.id;
+      _slotDraft = slot.value ?? '';
+    });
+  }
+
+  void _cancelEditing() {
+    setState(() {
+      _editingSlotId = null;
+      _slotDraft = '';
+    });
+  }
+
+  void _saveSlot(ProfileSlot slot) {
+    final value = _slotDraft.trim();
+    if (value.isEmpty) {
+      return;
+    }
+    controller.fillProfileSlot(slot.id, value);
+    setState(() {
+      _editingSlotId = null;
+      _slotDraft = '';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -3151,8 +3513,10 @@ class ProfileCardScreen extends StatelessWidget {
                 label: '${controller.state.partner.nickname}님 카드',
                 selected:
                     controller.state.profileCardTab == ProfileCardTab.partner,
-                onTap: () =>
-                    controller.setProfileCardTab(ProfileCardTab.partner),
+                onTap: () {
+                  _cancelEditing();
+                  controller.setProfileCardTab(ProfileCardTab.partner);
+                },
               ),
             ),
             const SizedBox(width: 8),
@@ -3160,28 +3524,54 @@ class ProfileCardScreen extends StatelessWidget {
               child: _SegmentButton(
                 label: '내 카드',
                 selected: controller.state.profileCardTab == ProfileCardTab.me,
-                onTap: () => controller.setProfileCardTab(ProfileCardTab.me),
+                onTap: () {
+                  _cancelEditing();
+                  controller.setProfileCardTab(ProfileCardTab.me);
+                },
               ),
             ),
           ],
         ),
         const SizedBox(height: 18),
-        _ProfileCardView(card: card),
-        const SizedBox(height: 18),
-        _TodaySlotCard(controller: controller),
+        _ProfileCardView(
+          card: card,
+          editingSlotId: _editingSlotId,
+          slotDraft: _slotDraft,
+          onEdit: _startEditing,
+          onDraftChanged: (value) => setState(() => _slotDraft = value),
+          onSave: _saveSlot,
+          onCancel: _cancelEditing,
+        ),
       ],
     );
   }
 }
 
 class _ProfileCardView extends StatelessWidget {
-  const _ProfileCardView({required this.card});
+  const _ProfileCardView({
+    required this.card,
+    required this.editingSlotId,
+    required this.slotDraft,
+    required this.onEdit,
+    required this.onDraftChanged,
+    required this.onSave,
+    required this.onCancel,
+  });
 
   final ProfileCardData card;
+  final String? editingSlotId;
+  final String slotDraft;
+  final ValueChanged<ProfileSlot> onEdit;
+  final ValueChanged<String> onDraftChanged;
+  final ValueChanged<ProfileSlot> onSave;
+  final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) {
     final progress = card.filledCount / card.totalCount;
+    final visibleSlots = card.profile.isMe
+        ? card.slots
+        : card.slots.where((slot) => slot.value != null).toList();
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -3255,17 +3645,69 @@ class _ProfileCardView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
-          for (final slot in card.slots) _ProfileSlotRow(slot: slot),
+          if (!card.profile.isMe && visibleSlots.isEmpty)
+            const _InlineEmptyState(text: '아직 채워진 칸이 없어요. 천천히 기다려도 괜찮아요.')
+          else
+            for (final slot in visibleSlots)
+              _ProfileSlotRow(
+                slot: slot,
+                editable: card.profile.isMe,
+                editing: editingSlotId == slot.id,
+                draft: editingSlotId == slot.id ? slotDraft : slot.value ?? '',
+                onEdit: () => onEdit(slot),
+                onDraftChanged: onDraftChanged,
+                onSave: () => onSave(slot),
+                onCancel: onCancel,
+              ),
         ],
       ),
     );
   }
 }
 
+class _InlineEmptyState extends StatelessWidget {
+  const _InlineEmptyState({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.5),
+      ),
+    );
+  }
+}
+
 class _ProfileSlotRow extends StatelessWidget {
-  const _ProfileSlotRow({required this.slot});
+  const _ProfileSlotRow({
+    required this.slot,
+    required this.editable,
+    required this.editing,
+    required this.draft,
+    required this.onEdit,
+    required this.onDraftChanged,
+    required this.onSave,
+    required this.onCancel,
+  });
 
   final ProfileSlot slot;
+  final bool editable;
+  final bool editing;
+  final String draft;
+  final VoidCallback onEdit;
+  final ValueChanged<String> onDraftChanged;
+  final VoidCallback onSave;
+  final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -3292,7 +3734,25 @@ class _ProfileSlotRow extends StatelessWidget {
               ],
             ),
           ),
-          Expanded(child: _ProfileSlotValue(slot: slot)),
+          Expanded(
+            child: editing
+                ? _ProfileSlotEditor(
+                    slot: slot,
+                    draft: draft,
+                    onChanged: onDraftChanged,
+                    onSave: onSave,
+                    onCancel: onCancel,
+                  )
+                : _ProfileSlotValue(slot: slot),
+          ),
+          if (editable && !editing) ...[
+            const SizedBox(width: 8),
+            _InlineTextAction(
+              key: profileSlotEditButtonKey(slot.id),
+              label: slot.value == null ? '작성' : '수정',
+              onPressed: onEdit,
+            ),
+          ],
         ],
       ),
     );
@@ -3311,15 +3771,91 @@ class _ProfileSlotIcon extends StatelessWidget {
 
   IconData _iconForSlot(String id) {
     return switch (id) {
-      'age' => Icons.cake_outlined,
-      'mbti' => Icons.explore_outlined,
       'food' => Icons.restaurant_outlined,
       'song' => Icons.music_note_outlined,
-      'type' => Icons.person_outline_rounded,
-      'talk' => Icons.chat_bubble_outline_rounded,
-      'night' => Icons.nights_stay_outlined,
+      'rest' => Icons.weekend_outlined,
+      'cafe' => Icons.local_cafe_outlined,
+      'walk' => Icons.directions_walk_rounded,
+      'comfort' => Icons.eco_outlined,
+      'promise' => Icons.event_available_outlined,
+      'kindness' => Icons.volunteer_activism_outlined,
+      'pace' => Icons.schedule_rounded,
+      'wish_scene' => Icons.near_me_outlined,
+      'motto' => Icons.lightbulb_outline,
       _ => Icons.notes_outlined,
     };
+  }
+}
+
+class _ProfileSlotEditor extends StatelessWidget {
+  const _ProfileSlotEditor({
+    required this.slot,
+    required this.draft,
+    required this.onChanged,
+    required this.onSave,
+    required this.onCancel,
+  });
+
+  final ProfileSlot slot;
+  final String draft;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onSave;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: AlagagiColors.line),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: TextFormField(
+            key: profileSlotFieldKey(slot.id),
+            initialValue: draft,
+            maxLength: 80,
+            onChanged: onChanged,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              counterText: '',
+              hintText: '편한 만큼 적어두기',
+            ),
+            style: sans(size: 13.5, height: 1.5),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            TextButton(
+              key: profileSlotCancelButtonKey(slot.id),
+              onPressed: onCancel,
+              child: Text(
+                '취소',
+                style: sans(size: 12.5, color: AlagagiColors.muted),
+              ),
+            ),
+            const SizedBox(width: 6),
+            TextButton(
+              key: profileSlotSaveButtonKey(slot.id),
+              onPressed: onSave,
+              style: TextButton.styleFrom(
+                backgroundColor: AlagagiColors.sageDeep,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text('저장'),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }
 
@@ -3722,7 +4258,7 @@ class _WishCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       wish.isMutual
-                          ? '서로 관심 표시'
+                          ? '둘 다 표시함'
                           : wish.createdByProfileId == partnerId
                           ? '$partnerName님이 담음'
                           : '내가 담음',
@@ -3735,8 +4271,8 @@ class _WishCard extends StatelessWidget {
                 label: wish.done
                     ? '완료'
                     : likedByMe
-                    ? '관심'
-                    : '표시',
+                    ? '표시됨'
+                    : '관심 표시',
                 selected: likedByMe || wish.done,
               ),
             ],
@@ -3826,8 +4362,8 @@ class MyScreen extends StatelessWidget {
               const SizedBox(height: 10),
               Text(
                 onSignOut == null
-                    ? '지금은 로컬 MVP라 기기 안에서만 상태가 유지돼요. 다음 단계에서 저장과 공유를 붙이면 비공개 링크로 이어져요.'
-                    : 'Firebase로 로그인된 비공개 공간이에요. 이 기기에서 잠시 나가고 싶으면 로그아웃할 수 있어요.',
+                    ? '이 기기에서 잠시 저장되는 조용한 공간이에요. 나중에 둘만의 링크로 이어갈 수 있어요.'
+                    : '로그인된 비공개 공간이에요. 이 기기에서 잠시 나가고 싶으면 로그아웃할 수 있어요.',
                 style: sans(size: 13, color: AlagagiColors.muted, height: 1.6),
               ),
               if (onSignOut != null) ...[
@@ -4261,7 +4797,7 @@ class _KeywordChip extends StatelessWidget {
       ),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       child: Text(
-        leaf ? '🌿 $label' : label,
+        label,
         style: sans(size: 11.5, color: const Color(0xFF5A5A54)),
       ),
     );
@@ -4282,7 +4818,7 @@ class _SimilarityBadge extends StatelessWidget {
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       child: Text(
-        '🌿 둘 다 ‘$keyword’ 취향',
+        '둘 다 ‘$keyword’ 취향',
         style: sans(size: 11, color: AlagagiColors.sageDeep),
       ),
     );

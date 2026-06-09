@@ -303,6 +303,41 @@ If the app grows, bottom navigation may become:
 - 캘린더 상태 계산을 위한 별도 Firestore calendar collection은 만들지 않는다.
 - 질문 상태는 정적 질문 카탈로그, `progress/daily.startedDateKey`, `answers` 문서만으로 계산한다.
 
+### MVP v0.9 Stabilization Batch
+
+This batch fixes the highest-risk gaps found after the v0.6 calendar/design audit. It must be implemented in SDD/TDD order.
+
+- Partner answer reveal:
+  - In Firebase-backed mode, a partner answer is visible only after my non-skipped answer has been persisted successfully.
+  - While my answer save is pending or failed, partner answer and comment UI remain locked.
+  - Skipped answers do not unlock partner answer or comment UI.
+  - Local demo mode may keep immediate optimistic reveal for preview convenience.
+- Save feedback:
+  - Explicit user actions that write to Firestore expose at least a visible failed state or non-destructive no-op.
+  - Answer save failure preserves retry state and must not make the answer look fully synchronized.
+  - Wishlist interest is additive in this MVP: tapping an already-interested wish is a no-op and creates no write.
+- Calendar:
+  - The calendar may remain a 2-week strip for MVP, but it must not permanently show only the first 14 days from `startedDateKey`.
+  - The visible window is centered around the selected date or today when possible.
+  - Previous/next/today controls change only local UI state and never write to Firestore.
+  - Weekday labels are shown so the strip reads as a date navigation surface instead of sparse decorative buttons.
+- Selected question detail:
+  - Shows the selected date, day number, question, my answer/read-only state, partner answer when unlocked, and existing comments in read-only form.
+  - For past unanswered questions, `늦게 답하기` opens the answer screen with the selected date context.
+  - Long answers wrap naturally and do not overlap fixed bottom navigation.
+- Mobile shell:
+  - Real mobile viewport uses full available height with SafeArea.
+  - The decorative 390px phone frame is desktop/tablet-only.
+  - Fixed bottom navigation does not cover scroll content.
+- Profile card:
+  - My card exposes edit action for every slot from day one.
+  - Filled own slots can be edited in the same screen with save/cancel controls.
+  - Partner card is read-only and shows only partner-saved values plus a quiet empty state when none exist.
+  - Slot catalog and demo seed values avoid age/MBTI/animal-face fields that feel too personal or off-tone for this stage.
+- Copy and visual tone:
+  - User-facing screens avoid implementation terms such as `로컬 MVP` and `Firebase`.
+  - Decorative emoji repetition is reduced in favor of small line icons, text labels, or subtle color marks.
+
 ### MVP v0.7 Answer Comments In Scope
 
 - 상대 답변에 직접 입력한 짧은 댓글을 남길 수 있다.
@@ -1469,11 +1504,14 @@ class AlagagiState {
 - Answer persistence writes only on submit/edit submit, not on draft updates
 - Firestore free-plan budget estimate for new repository reads/writes
 - Partner answer visibility rule
+- Partner answer stays locked while my answer save is pending or failed
+- Wishlist interest on an already-interested item is a no-op and does not call repository write
 - Archive filtering
 - Daily question resolver maps `startedDateKey` and Asia/Seoul today to the expected catalog question
 - Daily question progress migrates missing `startedDateKey` from `openedDateKey`
 - Same-date refresh/route/tab changes do not write progress again
 - Question calendar day status derives future/unanswered/my-only/partner-only/both/skipped states from progress and answers
+- Question calendar visible window follows today/selected date beyond the first 14 days
 - Past unanswered question exposes late-answer availability
 - Past already-answered question remains read-only in MVP
 - Late-answer submit overwrites the existing `{questionId}_{uid}` answer key with one write
@@ -1507,6 +1545,7 @@ class AlagagiState {
 - My screen saves app title and home line, and Home reflects the saved copy
 - Archive tabs filter list
 - Archive renders the question calendar header, status legend, and selected question detail
+- Archive calendar renders previous, next, today controls and weekday labels without Firestore writes
 - Selecting a past unanswered date shows `늦게 답하기`
 - Selecting a future date shows disabled state without an answer CTA
 - Selecting a past answered date shows read-only answer content without edit CTA
@@ -1514,7 +1553,9 @@ class AlagagiState {
 - Balance option selection updates selected state
 - Profile card tab switches card content
 - Profile card shows all own slots as editable from day one and hides date-unlock copy
+- Profile card inline edit saves and cancels a chosen own slot without touching other slots
 - Wishlist filter shows mutual wishes
+- Mobile viewport renders without the decorative phone frame and keeps bottom navigation clear of content
 - Existing answer comments render in archive read-only surfaces
 
 ### Visual/Manual Checks

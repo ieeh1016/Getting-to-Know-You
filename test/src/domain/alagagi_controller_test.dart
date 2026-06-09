@@ -112,7 +112,7 @@ void main() {
       expect(controller.activeBalanceQuestion.prompt, '쉬는 날엔?');
     });
 
-    test('fills my profile card motto slot', () {
+    test('fills my first empty profile card slot', () {
       final controller = AlagagiController();
 
       controller.fillTodayProfileSlot('천천히, 하지만 꾸준히');
@@ -120,7 +120,7 @@ void main() {
       expect(controller.state.profileCardTab, ProfileCardTab.me);
       expect(
         controller.activeProfileCard.slots
-            .firstWhere((slot) => slot.id == 'motto')
+            .firstWhere((slot) => slot.id == 'rest')
             .value,
         '천천히, 하지만 꾸준히',
       );

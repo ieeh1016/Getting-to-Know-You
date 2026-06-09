@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:minyoung_pick/src/domain/alagagi_controller.dart';
 
@@ -371,6 +373,44 @@ void main() {
       expect(today.isToday, isTrue);
     });
 
+    test('question calendar window follows day 15 and selected day', () {
+      final controller = AlagagiController.forSession(
+        firebaseSessionWithData(
+          const AlagagiSpaceData(
+            dailyProgress: DailyQuestionProgress(
+              startedDateKey: '2026-06-08',
+              currentQuestionId: 'q015',
+              openedDateKey: '2026-06-22',
+            ),
+          ),
+        ),
+        todayDateKey: '2026-06-22',
+      );
+
+      final todayWindow = controller.visibleQuestionCalendarDays;
+
+      expect(todayWindow, hasLength(14));
+      expect(todayWindow.first.question?.number, greaterThan(1));
+      expect(todayWindow.map((day) => day.question?.number), contains(15));
+      expect(
+        todayWindow.any((day) => day.isToday && day.question?.number == 15),
+        isTrue,
+      );
+
+      controller.selectArchiveDate('2026-06-25');
+      final selectedWindow = controller.visibleQuestionCalendarDays;
+
+      expect(selectedWindow, hasLength(14));
+      expect(selectedWindow.first.question?.number, greaterThan(1));
+      expect(selectedWindow.map((day) => day.question?.number), contains(18));
+      expect(
+        selectedWindow.any(
+          (day) => day.isSelected && day.question?.number == 18,
+        ),
+        isTrue,
+      );
+    });
+
     test(
       'late answer saves the selected past question with one answer key',
       () {
@@ -557,6 +597,195 @@ void main() {
 
       expect(controller.state.answerSaveStatus, SaveStatus.saved);
       expect(repository.savedAnswers.single.answer.body, '저장 실패를 확인하는 답변');
+    });
+
+    test('partner answer stays locked until my answer save succeeds', () async {
+      final saveCompleter = Completer<void>();
+      final repository = RecordingAlagagiRepository()
+        ..answerSaveCompleter = saveCompleter;
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            answers: [
+              Answer(
+                questionId: 'q001',
+                profileId: 'minyoungUid',
+                body: '민영이의 답변',
+                createdLabel: '오늘',
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+        todayDateKey: '2026-06-08',
+      );
+
+      controller.updateDraftAnswer('저장 중인 내 답변');
+      controller.submitTodayAnswer();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.state.answerSaveStatus, SaveStatus.saving);
+      expect(controller.todayMyAnswer?.body, '저장 중인 내 답변');
+      expect(controller.todayPartnerAnswer, isNull);
+
+      controller.updateAnswerCommentDraft(
+        questionId: 'q001',
+        answerOwnerProfileId: 'minyoungUid',
+        value: '저장되기 전에는 댓글도 잠겨야 해요.',
+      );
+      controller.submitAnswerComment(
+        questionId: 'q001',
+        answerOwnerProfileId: 'minyoungUid',
+      );
+
+      expect(repository.savedAnswerComments, isEmpty);
+      expect(controller.state.commentError, contains('상대 답이 열린 뒤'));
+
+      saveCompleter.complete();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.state.answerSaveStatus, SaveStatus.saved);
+      expect(controller.todayPartnerAnswer?.body, '민영이의 답변');
+    });
+
+    test(
+      'failed answer save keeps partner answer locked until retry succeeds',
+      () async {
+        final repository = RecordingAlagagiRepository()..failAnswerSaves = true;
+        final controller = AlagagiController.forSession(
+          const AlagagiSession(
+            spaceId: 'main',
+            me: AppProfile(
+              id: 'youngwooUid',
+              nickname: '영우',
+              avatar: '🌿',
+              isMe: true,
+            ),
+            partner: AppProfile(
+              id: 'minyoungUid',
+              nickname: '민영',
+              avatar: '🪻',
+              isMe: false,
+            ),
+            data: AlagagiSpaceData(
+              answers: [
+                Answer(
+                  questionId: 'q001',
+                  profileId: 'minyoungUid',
+                  body: '민영이의 답변',
+                  createdLabel: '오늘',
+                ),
+              ],
+            ),
+          ),
+          repository: repository,
+          todayDateKey: '2026-06-08',
+        );
+
+        controller.updateDraftAnswer('실패할 답변');
+        controller.submitTodayAnswer();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(controller.state.answerSaveStatus, SaveStatus.failed);
+        expect(controller.todayPartnerAnswer, isNull);
+
+        repository.failAnswerSaves = false;
+        controller.retryAnswerSave();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(controller.state.answerSaveStatus, SaveStatus.saved);
+        expect(controller.todayPartnerAnswer?.body, '민영이의 답변');
+      },
+    );
+
+    test('already liked wish interest tap is no-op in Firebase mode', () {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            wishes: [
+              WishItem(
+                id: 'wish_1',
+                icon: '☕',
+                title: '조용한 카페 가기',
+                kind: WishKind.place,
+                createdByProfileId: 'minyoungUid',
+                likedByProfileIds: {'youngwooUid'},
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+      );
+
+      controller.toggleWishLike('wish_1');
+
+      expect(controller.visibleWishes.single.likedByProfileIds, {
+        'youngwooUid',
+      });
+      expect(repository.savedWishes, isEmpty);
+    });
+
+    test('calendar visible window includes today beyond the first 14 days', () {
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            dailyProgress: DailyQuestionProgress(
+              startedDateKey: '2026-06-01',
+              currentQuestionId: 'q020',
+              openedDateKey: '2026-06-20',
+            ),
+          ),
+        ),
+        todayDateKey: '2026-06-20',
+      );
+
+      final visibleDateKeys = controller.visibleQuestionCalendarDays
+          .map((day) => day.dateKey)
+          .toList();
+
+      expect(visibleDateKeys, hasLength(14));
+      expect(visibleDateKeys, contains('2026-06-20'));
+      expect(visibleDateKeys, isNot(contains('2026-06-01')));
     });
 
     test('answer comment draft does not write until submit', () {
@@ -779,8 +1008,18 @@ const firebaseTestSession = AlagagiSession(
   ),
 );
 
+AlagagiSession firebaseSessionWithData(AlagagiSpaceData data) {
+  return AlagagiSession(
+    spaceId: firebaseTestSession.spaceId,
+    me: firebaseTestSession.me,
+    partner: firebaseTestSession.partner,
+    data: data,
+  );
+}
+
 class RecordingAlagagiRepository implements AlagagiDataRepository {
   bool failAnswerSaves = false;
+  Completer<void>? answerSaveCompleter;
   final List<({String spaceId, Answer answer})> savedAnswers = [];
   final List<({String spaceId, BalanceSelection selection})>
   savedBalanceSelections = [];
@@ -801,6 +1040,10 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveAnswer(String spaceId, Answer answer) async {
+    final completer = answerSaveCompleter;
+    if (completer != null) {
+      await completer.future;
+    }
     if (failAnswerSaves) {
       throw StateError('save failed');
     }
