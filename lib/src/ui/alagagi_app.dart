@@ -4643,13 +4643,29 @@ class _TopBar extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _CircleButton(label: '←', onTap: onBack),
-        Text(
-          title,
-          style: sans(size: 13, color: AlagagiColors.muted, letterSpacing: 2),
+        SizedBox(
+          width: 68,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: _BackButton(onTap: onBack),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: serif(
+              context,
+              size: 20,
+              weight: FontWeight.w800,
+              color: AlagagiColors.ink,
+            ),
+          ),
         ),
         SizedBox(
-          width: 72,
+          width: 68,
           child: Text(
             trailing,
             textAlign: TextAlign.right,
@@ -4666,29 +4682,35 @@ class _TopBar extends StatelessWidget {
   }
 }
 
-class _CircleButton extends StatelessWidget {
-  const _CircleButton({required this.label, required this.onTap});
+class _BackButton extends StatelessWidget {
+  const _BackButton({required this.onTap});
 
-  final String label;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: AlagagiColors.line),
+    return Tooltip(
+      message: '뒤로',
+      child: Material(
+        color: const Color(0xFFF8F8F4),
+        borderRadius: BorderRadius.circular(15),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(15),
+          onTap: onTap,
+          child: Container(
+            width: 42,
+            height: 38,
+            decoration: BoxDecoration(
+              border: Border.all(color: AlagagiColors.line),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.chevron_left_rounded,
+              size: 24,
+              color: AlagagiColors.sageDeep,
+            ),
           ),
-          alignment: Alignment.center,
-          child: Text(label, style: sans(size: 16)),
         ),
       ),
     );

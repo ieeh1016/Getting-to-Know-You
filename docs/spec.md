@@ -391,6 +391,13 @@ This batch focuses only on the HOME today's question card. It follows the `docs/
   - CTA는 단독 row로 배치해 텍스트와 버튼이 같은 줄에서 높이 충돌을 만들지 않는다.
   - 카드의 첫 화면 높이는 요약 카드 접근을 과도하게 밀어내지 않도록 기존 카드보다 compact하게 유지한다.
 
+### MVP v0.12 Sub Screen Header Polish
+
+- 마이/답변/밸런스/소개 카드/위시 등 sub screen header의 back action은 텍스트 화살표가 아니라 line icon 기반 버튼으로 렌더링한다.
+- Back button은 paper tone, subtle border, compact rounded shape을 사용해 앱의 세이지 미니멀 톤과 맞춘다.
+- Sub screen title은 작은 letter-spaced label이 아니라 화면 제목으로 읽히는 serif heading hierarchy를 사용한다.
+- Header title, back button, trailing metadata는 390px 모바일 viewport에서 서로 겹치지 않는다.
+
 ### MVP v0.7 Answer Comments In Scope
 
 - 상대 답변에 직접 입력한 짧은 댓글을 남길 수 있다.
