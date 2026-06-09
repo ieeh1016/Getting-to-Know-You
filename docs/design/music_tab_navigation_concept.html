@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>알아가기 · 음악 탭 구조 시안</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --outer:#e9e8e2;
+    --bg:#f4f3ef;
+    --paper:#fcfcfa;
+    --ink:#2e2e2c;
+    --text:#45443f;
+    --muted:#8f8b82;
+    --sage:#8a9a7e;
+    --sage-deep:#6f7f63;
+    --sage-soft:#f0f2eb;
+    --line:#e8e6df;
+    --warm:#f8f8f4;
+    --lav:#b9a8c9;
+    --clay:#b18472;
+    --gold:#c8ad6d;
+  }
+  body{
+    min-height:100vh;
+    background:var(--outer);
+    color:var(--ink);
+    font-family:'Noto Sans KR',sans-serif;
+    font-weight:300;
+    padding:36px 18px 48px;
+  }
+  svg{display:block}
+  button{font:inherit}
+  .wrap{max-width:1260px;margin:0 auto}
+  .page-title{text-align:center;margin-bottom:28px}
+  .page-title .eyebrow{
+    margin-bottom:8px;
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:3px;
+  }
+  .page-title h1{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:30px;
+    line-height:1.35;
+    font-weight:800;
+  }
+  .page-title p{
+    max-width:720px;
+    margin:10px auto 0;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.75;
+  }
+  .decision{
+    max-width:940px;
+    margin:0 auto 30px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  .decision-card{
+    padding:19px 20px;
+    border:1px solid rgba(232,230,223,.9);
+    border-radius:22px;
+    background:rgba(252,252,250,.74);
+  }
+  .decision-card small{
+    display:block;
+    margin-bottom:8px;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:2px;
+  }
+  .decision-card h2{
+    margin-bottom:8px;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:20px;
+    font-weight:800;
+  }
+  .decision-card p,.decision-card li{
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.75;
+  }
+  .decision-card ul{margin-left:17px}
+  .stage{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(300px,390px));
+    gap:24px;
+    justify-content:center;
+    align-items:start;
+  }
+  .caption{margin:0 0 12px 2px}
+  .caption .tag{
+    display:inline-flex;
+    align-items:center;
+    height:24px;
+    padding:0 9px;
+    border:1px solid rgba(111,127,99,.22);
+    border-radius:999px;
+    background:rgba(252,252,250,.74);
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+  }
+  .caption h2{
+    margin-top:8px;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:19px;
+    font-weight:800;
+  }
+  .caption p{
+    margin-top:5px;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.65;
+  }
+  .phone{
+    width:390px;
+    max-width:100%;
+    min-height:844px;
+    position:relative;
+    overflow:hidden;
+    border:8px solid #fff;
+    border-radius:40px;
+    background:var(--bg);
+    box-shadow:0 28px 70px rgba(60,60,50,.18);
+  }
+  .screen{padding:27px 24px 110px}
+  .home-head{margin:5px 0 20px}
+  .home-head small,.label{
+    display:block;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:2.4px;
+  }
+  .home-head h3{
+    margin-top:8px;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:25px;
+    line-height:1.42;
+    font-weight:800;
+  }
+  .home-head p{
+    margin-top:9px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.65;
+  }
+  .topbar{
+    min-height:42px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:20px;
+  }
+  .side{
+    width:56px;
+    min-width:56px;
+    display:flex;
+    align-items:center;
+  }
+  .side.right{justify-content:flex-end}
+  .paper-btn{
+    width:38px;
+    height:38px;
+    border:1px solid rgba(232,230,223,.92);
+    border-radius:50%;
+    background:rgba(252,252,250,.88);
+    color:#656d5e;
+    display:grid;
+    place-items:center;
+    box-shadow:0 8px 18px rgba(80,80,70,.035);
+  }
+  .paper-btn svg{width:18px;height:18px}
+  .title-serif{
+    flex:1;
+    min-width:0;
+    text-align:center;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:18px;
+    line-height:1.25;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .question-card{
+    padding:23px 21px 20px;
+    border:1px solid var(--line);
+    border-radius:24px;
+    background:var(--paper);
+    box-shadow:0 14px 34px rgba(80,80,70,.045);
+  }
+  .question-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:18px;
+  }
+  .day-chip{
+    height:28px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:0 11px;
+    border-radius:999px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:700;
+  }
+  .question-card h4{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:23px;
+    line-height:1.5;
+    font-weight:800;
+  }
+  .support{
+    margin-top:17px;
+    padding:14px;
+    border:1px solid var(--line);
+    border-radius:17px;
+    background:var(--warm);
+  }
+  .support strong{
+    display:block;
+    margin-bottom:5px;
+    color:var(--sage-deep);
+    font-family:'Nanum Myeongjo',serif;
+    font-size:13px;
+  }
+  .support p{
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.6;
+  }
+  .primary{
+    width:100%;
+    height:50px;
+    margin-top:18px;
+    border:0;
+    border-radius:16px;
+    background:var(--sage-deep);
+    color:#fff;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:14.5px;
+    font-weight:700;
+    box-shadow:0 10px 22px rgba(111,127,99,.22);
+  }
+  .section-label{
+    margin:22px 0 10px;
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:1.8px;
+  }
+  .quick-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .quick-card{
+    min-height:118px;
+    padding:15px;
+    border:1px solid var(--line);
+    border-radius:20px;
+    background:var(--paper);
+  }
+  .quick-card .icon{
+    width:30px;
+    height:30px;
+    display:grid;
+    place-items:center;
+    margin-bottom:12px;
+    border-radius:11px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+  }
+  .quick-card .icon svg{width:16px;height:16px}
+  .quick-card strong{
+    display:block;
+    margin-bottom:5px;
+    font-size:13.5px;
+    font-weight:700;
+  }
+  .quick-card p{
+    color:var(--muted);
+    font-size:11.5px;
+    line-height:1.55;
+  }
+  .tab-note{
+    margin-top:14px;
+    padding:14px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:var(--warm);
+  }
+  .tab-note small{
+    display:block;
+    margin-bottom:5px;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:1.6px;
+  }
+  .tab-note p{
+    color:var(--muted);
+    font-size:11.8px;
+    line-height:1.6;
+  }
+  .segment{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:6px;
+    padding:5px;
+    border:1px solid var(--line);
+    border-radius:17px;
+    background:rgba(252,252,250,.72);
+    margin-bottom:14px;
+  }
+  .segment button{
+    height:36px;
+    border:0;
+    border-radius:13px;
+    background:transparent;
+    color:var(--muted);
+    font-size:12.5px;
+    font-weight:700;
+  }
+  .segment .on{
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+  }
+  .calendar{
+    padding:16px;
+    border:1px solid var(--line);
+    border-radius:22px;
+    background:var(--paper);
+  }
+  .cal-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .cal-head strong{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:17px;
+  }
+  .mini-actions{display:flex;gap:6px}
+  .mini-actions span{
+    width:28px;
+    height:28px;
+    display:grid;
+    place-items:center;
+    border:1px solid var(--line);
+    border-radius:50%;
+    color:var(--muted);
+    background:#fff;
+    font-size:13px;
+  }
+  .week,.days{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:6px;
+  }
+  .week span{
+    text-align:center;
+    color:var(--muted);
+    font-size:10px;
+    padding-bottom:4px;
+  }
+  .day{
+    aspect-ratio:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    border:1px solid transparent;
+    border-radius:13px;
+    background:#fff;
+    color:var(--text);
+    font-size:11.5px;
+  }
+  .day .dot{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:var(--line);
+  }
+  .day.me .dot{background:var(--sage)}
+  .day.both .dot{background:var(--sage-deep)}
+  .day.partner .dot{background:var(--lav)}
+  .day.selected{
+    border-color:#cfd8c5;
+    background:var(--sage-soft);
+    font-weight:700;
+  }
+  .record-card{
+    margin-top:13px;
+    padding:17px;
+    border:1px solid var(--line);
+    border-radius:22px;
+    background:var(--paper);
+  }
+  .record-card small{
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:1.7px;
+  }
+  .record-card h4{
+    margin-top:7px;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:19px;
+    line-height:1.45;
+    font-weight:800;
+  }
+  .record-card p{
+    margin-top:8px;
+    color:var(--muted);
+    font-size:12.4px;
+    line-height:1.62;
+  }
+  .playlist-hero{
+    padding:20px;
+    border:1px solid var(--line);
+    border-radius:24px;
+    background:#2f2f2b;
+    color:#fff;
+  }
+  .playlist-hero small{
+    display:block;
+    margin-bottom:8px;
+    color:#c9c9c2;
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:2px;
+  }
+  .playlist-hero h3{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:23px;
+    line-height:1.35;
+    font-weight:800;
+  }
+  .playlist-hero p{
+    margin-top:9px;
+    color:#d8d8d1;
+    font-size:12.5px;
+    line-height:1.6;
+  }
+  .cover-row{
+    display:flex;
+    align-items:center;
+    margin-top:18px;
+  }
+  .cover{
+    width:54px;
+    height:54px;
+    position:relative;
+    flex:0 0 54px;
+    margin-right:-9px;
+    overflow:hidden;
+    border:2px solid #2f2f2b;
+    border-radius:16px;
+    background:var(--sage-soft);
+    box-shadow:0 10px 22px rgba(0,0,0,.12);
+  }
+  .cover:before{
+    content:"";
+    position:absolute;
+    inset:9px;
+    border:1.5px solid rgba(252,252,250,.9);
+    border-radius:10px;
+  }
+  .cover:after{
+    content:"";
+    position:absolute;
+    left:12px;
+    right:12px;
+    bottom:13px;
+    height:2px;
+    border-radius:99px;
+    background:rgba(252,252,250,.95);
+    box-shadow:0 -7px 0 rgba(252,252,250,.68);
+  }
+  .cover.sage{background:linear-gradient(135deg,#8a9a7e,#cdd6c2)}
+  .cover.lav{background:linear-gradient(135deg,#b9a8c9,#ebe6ef)}
+  .cover.clay{background:linear-gradient(135deg,#b18472,#ead7cf)}
+  .cover.gold{background:linear-gradient(135deg,#c8ad6d,#efe5c7)}
+  .music-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:9px;
+    margin:14px 0;
+  }
+  .music-actions button{
+    height:42px;
+    border-radius:15px;
+    font-size:12.5px;
+    font-weight:700;
+  }
+  .music-actions .fill{
+    border:0;
+    background:var(--sage-deep);
+    color:#fff;
+  }
+  .music-actions .ghost{
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--text);
+  }
+  .track-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .track{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px;
+    border:1px solid var(--line);
+    border-radius:19px;
+    background:var(--paper);
+  }
+  .track .cover{
+    width:48px;
+    height:48px;
+    flex-basis:48px;
+    margin-right:0;
+    border:1px solid rgba(46,46,44,.05);
+    border-radius:14px;
+    box-shadow:none;
+  }
+  .track-main{flex:1;min-width:0}
+  .track-main strong{
+    display:block;
+    color:var(--text);
+    font-size:13.8px;
+    font-weight:700;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .track-main span{
+    display:block;
+    margin-top:3px;
+    color:var(--muted);
+    font-size:11.6px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .track-main p{
+    margin-top:7px;
+    color:#6f6c65;
+    font-size:11.8px;
+    line-height:1.45;
+  }
+  .from{
+    display:inline-flex;
+    align-items:center;
+    height:22px;
+    padding:0 7px;
+    border-radius:999px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+  }
+  .bottom-nav{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    display:flex;
+    justify-content:space-around;
+    padding:14px 18px 22px;
+    border-top:1px solid var(--line);
+    background:rgba(252,252,250,.95);
+    backdrop-filter:blur(8px);
+  }
+  .bottom-nav a{
+    min-width:56px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    color:var(--muted);
+    text-decoration:none;
+    font-size:10px;
+    letter-spacing:0;
+  }
+  .bottom-nav svg{
+    width:19px;
+    height:19px;
+    stroke-width:1.9;
+  }
+  .bottom-nav a.on{
+    color:var(--ink);
+    font-weight:700;
+  }
+  .bottom-nav a.on:after{
+    content:"";
+    width:4px;
+    height:4px;
+    border-radius:50%;
+    background:var(--sage-deep);
+  }
+  @media (max-width:1180px){
+    .stage{grid-template-columns:repeat(2,minmax(300px,390px))}
+    .decision{grid-template-columns:1fr}
+  }
+  @media (max-width:780px){
+    body{padding:22px 12px 34px}
+    .page-title h1{font-size:25px}
+    .stage{grid-template-columns:1fr}
+    .caption,.phone{margin-left:auto;margin-right:auto}
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <section class="page-title">
+    <div class="eyebrow">BOTTOM TAB PROPOSAL</div>
+    <h1>음악은 홈 카드가 아니라 독립 탭으로</h1>
+    <p>홈은 오늘의 질문에 집중시키고, 음악은 반복해서 들어가기 좋은 별도 탭으로 분리한 구조입니다. 기존 기록은 질문 탭 안의 보조 뷰로 흡수합니다.</p>
+  </section>
+
+  <section class="decision">
+    <div class="decision-card">
+      <small>RECOMMENDED IA</small>
+      <h2>홈 / 질문 / 음악 / 마이</h2>
+      <p>하단 탭은 4개를 유지합니다. 음악이 독립 탭으로 들어가면 홈은 덜 붐비고, 질문과 음악이 각각 하나의 루틴처럼 보입니다.</p>
+    </div>
+    <div class="decision-card">
+      <small>WHERE RECORDS GO</small>
+      <ul>
+        <li>`기록`은 하단 탭에서 빼고 `질문` 안의 `달력 / 기록` 전환으로 합칩니다.</li>
+        <li>음악은 새 탭에서 목록, 곡 추가, 링크 열기, 짧은 감상까지 처리합니다.</li>
+        <li>홈에는 새 음악을 크게 노출하지 않고, 필요할 때만 작은 힌트 정도로 남깁니다.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="stage">
+    <article>
+      <div class="caption">
+        <span class="tag">HOME</span>
+        <h2>홈은 질문 중심으로 유지</h2>
+        <p>음악 기능을 홈에 크게 넣지 않은 상태입니다. 오늘의 질문이 첫 화면의 주인공으로 남아서 훨씬 조용합니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="home-head">
+            <small>PRIVATE SPACE</small>
+            <h3>오늘도 천천히<br>알아가는 중이에요</h3>
+            <p>홈은 오늘의 질문과 가벼운 다음 행동만 보여주는 작은 시작점으로 둡니다.</p>
+          </div>
+
+          <section class="question-card">
+            <div class="question-top">
+              <span class="label">TODAY'S QUESTION</span>
+              <span class="day-chip">DAY 12</span>
+            </div>
+            <h4>요즘 가장 자주 떠오르는 장소는 어디예요?</h4>
+            <div class="support">
+              <strong>아직 내 답을 남기지 않았어요.</strong>
+              <p>답을 남기면 민영님의 답도 함께 열려요.</p>
+            </div>
+            <button class="primary">답 남기기</button>
+          </section>
+
+          <h4 class="section-label">NEXT</h4>
+          <div class="quick-grid">
+            <div class="quick-card">
+              <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 19.5V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14.5"/>
+                  <path d="M8 7h8M8 11h8M8 15h5"/>
+                </svg>
+              </div>
+              <strong>소개 카드</strong>
+              <p>편하게 고쳐 쓸 수 있는 작은 자기소개.</p>
+            </div>
+            <div class="quick-card">
+              <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12h14"/>
+                  <path d="M12 5v14"/>
+                </svg>
+              </div>
+              <strong>언젠가 같이</strong>
+              <p>나중에 해보고 싶은 걸 조용히 담아요.</p>
+            </div>
+          </div>
+
+          <div class="tab-note">
+            <small>HOME RULE</small>
+            <p>음악은 홈 카드로 밀어 넣지 않고, 하단 `음악` 탭에서 제대로 다룹니다.</p>
+          </div>
+        </div>
+        <nav class="bottom-nav">
+          <a class="on">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V20h14v-9.5"/></svg>
+            홈
+          </a>
+          <a>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21z"/><path d="M8 7h8M8 11h6"/></svg>
+            질문
+          </a>
+          <a>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            음악
+          </a>
+          <a>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+            마이
+          </a>
+        </nav>
+      </div>
+    </article>
+
+    <article>
+      <div class="caption">
+        <span class="tag">QUESTION</span>
+        <h2>질문 안에 기록을 합치기</h2>
+        <p>`기록`은 사라지는 게 아니라 질문 탭 안으로 들어갑니다. 달력과 기록을 전환하면 하단 탭을 늘리지 않아도 됩니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <header class="topbar">
+            <div class="side"></div>
+            <h3 class="title-serif">질문</h3>
+            <div class="side right"></div>
+          </header>
+
+          <div class="segment">
+            <button class="on">달력</button>
+            <button>기록</button>
+          </div>
+
+          <section class="calendar">
+            <div class="cal-head">
+              <strong>2026년 6월</strong>
+              <div class="mini-actions"><span>‹</span><span>›</span></div>
+            </div>
+            <div class="week">
+              <span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span>
+            </div>
+            <div class="days">
+              <div class="day both">1<span class="dot"></span></div>
+              <div class="day me">2<span class="dot"></span></div>
+              <div class="day partner">3<span class="dot"></span></div>
+              <div class="day both">4<span class="dot"></span></div>
+              <div class="day">5<span class="dot"></span></div>
+              <div class="day me">6<span class="dot"></span></div>
+              <div class="day">7<span class="dot"></span></div>
+              <div class="day both">8<span class="dot"></span></div>
+              <div class="day selected">9<span class="dot"></span></div>
+              <div class="day">10<span class="dot"></span></div>
+              <div class="day partner">11<span class="dot"></span></div>
+              <div class="day both">12<span class="dot"></span></div>
+              <div class="day">13<span class="dot"></span></div>
+              <div class="day">14<span class="dot"></span></div>
+              <div class="day">15<span class="dot"></span></div>
+              <div class="day">16<span class="dot"></span></div>
+              <div class="day">17<span class="dot"></span></div>
+              <div class="day">18<span class="dot"></span></div>
+              <div class="day">19<span class="dot"></span></div>
+              <div class="day">20<span class="dot"></span></div>
+              <div class="day">21<span class="dot"></span></div>
+            </div>
+          </section>
+
+          <section class="record-card">
+            <small>SELECTED QUESTION</small>
+            <h4>6월 9일의 질문</h4>
+            <p>이 날짜에 답하지 않았어도, 나중에 천천히 답할 수 있어요. 기록 탭에서는 쌓인 답변의 공통 키워드를 봅니다.</p>
+          </section>
+
+          <div class="tab-note">
+            <small>WHY</small>
+            <p>질문함과 기록은 같은 맥락이라 한 탭에 묶어도 사용자가 길을 잃지 않습니다.</p>
+          </div>
+        </div>
+        <nav class="bottom-nav">
+          <a>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V20h14v-9.5"/></svg>
+            홈
+          </a>
+          <a class="on">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21z"/><path d="M8 7h8M8 11h6"/></svg>
+            질문
+          </a>
+          <a>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            음악
+          </a>
+          <a>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+            마이
+          </a>
+        </nav>
+      </div>
+    </article>
+
+    <article>
+      <div class="caption">
+        <span class="tag">MUSIC</span>
+        <h2>음악은 독립 탭으로</h2>
+        <p>음악 탭은 하나의 작은 루틴으로 보이게 합니다. 노래 목록, 한 곡 남기기, 링크로 듣기를 이 안에서 처리합니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <header class="topbar">
+            <div class="side"></div>
+            <h3 class="title-serif">음악 노트</h3>
+            <div class="side right"></div>
+          </header>
+
+          <section class="playlist-hero">
+            <small>MUSIC NOTE</small>
+            <h3>각자의 요즘을<br>노래로 조금씩 남겨요.</h3>
+            <p>많이 설명하지 않아도, 한 곡이면 분위기가 전해질 때가 있어요.</p>
+            <div class="cover-row">
+              <div class="cover sage"></div>
+              <div class="cover lav"></div>
+              <div class="cover clay"></div>
+              <div class="cover gold"></div>
+            </div>
+          </section>
+
+          <div class="music-actions">
+            <button class="fill">한 곡 남기기</button>
+            <button class="ghost">들어볼 곡</button>
+          </div>
+
+          <div class="track-list">
+            <article class="track">
+              <div class="cover lav"></div>
+              <div class="track-main">
+                <strong>밤 산책</strong>
+                <span>민영 · 퇴근길에 어울리는 곡</span>
+                <p>집에 돌아오는 길에 들으면 마음이 조금 차분해져요.</p>
+              </div>
+              <span class="from">민영</span>
+            </article>
+            <article class="track">
+              <div class="cover sage"></div>
+              <div class="track-main">
+                <strong>오후의 문장</strong>
+                <span>영우 · 가볍게 듣는 재즈</span>
+                <p>카페에서 이야기할 때 배경에 있으면 좋을 것 같아서요.</p>
+              </div>
+              <span class="from">영우</span>
+            </article>
+            <article class="track">
+              <div class="cover clay"></div>
+              <div class="track-main">
+                <strong>느린 주말</strong>
+                <span>민영 · 산책할 때 좋은 곡</span>
+                <p>말이 많지 않아도 같이 걷는 느낌이 들어요.</p>
+              </div>
+              <span class="from">민영</span>
+            </article>
+          </div>
+        </div>
+        <nav class="bottom-nav">
+          <a>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V20h14v-9.5"/></svg>
+            홈
+          </a>
+          <a>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21z"/><path d="M8 7h8M8 11h6"/></svg>
+            질문
+          </a>
+          <a class="on">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            음악
+          </a>
+          <a>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+            마이
+          </a>
+        </nav>
+      </div>
+    </article>
+  </section>
+</main>
+</body>
+</html>

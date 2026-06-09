@@ -10,6 +10,11 @@ const loginButtonKey = Key('login-button');
 const answerFieldKey = Key('answer-field');
 const wishTitleFieldKey = Key('wish-title-field');
 const wishSubmitButtonKey = Key('wish-submit-button');
+const musicTitleFieldKey = Key('music-title-field');
+const musicArtistFieldKey = Key('music-artist-field');
+const musicLinkFieldKey = Key('music-link-field');
+const musicNoteFieldKey = Key('music-note-field');
+const musicSubmitButtonKey = Key('music-submit-button');
 const editAnswerButtonKey = Key('edit-answer-button');
 const homeQuestionCardKey = Key('home-question-card');
 const homeQuestionAnswerButtonKey = Key('home-question-answer-button');
@@ -132,6 +137,7 @@ class _AlagagiRootState extends State<AlagagiRoot> {
       AlagagiRoute.answer => AnswerScreen(controller: _controller),
       AlagagiRoute.archive => ArchiveScreen(controller: _controller),
       AlagagiRoute.records => RecordsScreen(controller: _controller),
+      AlagagiRoute.music => MusicScreen(controller: _controller),
       AlagagiRoute.balance => BalanceScreen(controller: _controller),
       AlagagiRoute.profileCard => ProfileCardScreen(controller: _controller),
       AlagagiRoute.wishlist => WishlistScreen(controller: _controller),
@@ -2166,12 +2172,14 @@ class ArchiveScreen extends StatelessWidget {
     return _ScreenScroll(
       bottomNavigation: _BottomNav(controller: controller),
       children: [
-        Text('질문함', style: serif(context, size: 23, weight: FontWeight.w800)),
+        Text('질문', style: serif(context, size: 23, weight: FontWeight.w800)),
         const SizedBox(height: 4),
         Text(
           '그동안 주고받은 ${controller.insight.questionCount}개의 이야기',
           style: sans(size: 12.5, color: AlagagiColors.muted),
         ),
+        const SizedBox(height: 16),
+        _QuestionViewSwitch(controller: controller),
         const SizedBox(height: 16),
         _QuestionCalendar(controller: controller),
         const SizedBox(height: 14),
@@ -2946,16 +2954,15 @@ class RecordsScreen extends StatelessWidget {
     return _ScreenScroll(
       bottomNavigation: _BottomNav(controller: controller),
       children: [
-        Text(
-          '알아간 기록',
-          style: serif(context, size: 23, weight: FontWeight.w800),
-        ),
+        Text('질문', style: serif(context, size: 23, weight: FontWeight.w800)),
         const SizedBox(height: 4),
         Text(
           '답변에서 보이는 작은 공통점',
           style: sans(size: 12.5, color: AlagagiColors.muted),
         ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 16),
+        _QuestionViewSwitch(controller: controller),
+        const SizedBox(height: 18),
         Container(
           decoration: BoxDecoration(
             gradient: const LinearGradient(
@@ -3014,6 +3021,36 @@ class RecordsScreen extends StatelessWidget {
           const _EmptyStateCard(text: '아직 남겨진 발자취가 없어요.')
         else
           _Timeline(events: insight.timeline),
+      ],
+    );
+  }
+}
+
+class _QuestionViewSwitch extends StatelessWidget {
+  const _QuestionViewSwitch({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final route = controller.state.route;
+    return Row(
+      children: [
+        Expanded(
+          child: _SegmentButton(
+            label: '달력',
+            selected: route == AlagagiRoute.archive,
+            onTap: () => controller.goTo(AlagagiRoute.archive),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _SegmentButton(
+            label: '기록',
+            selected: route == AlagagiRoute.records,
+            onTap: () => controller.goTo(AlagagiRoute.records),
+          ),
+        ),
       ],
     );
   }
@@ -4401,6 +4438,401 @@ class _InterestBadge extends StatelessWidget {
   }
 }
 
+class MusicScreen extends StatelessWidget {
+  const MusicScreen({super.key, required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final notes = controller.musicNotes;
+    return Stack(
+      children: [
+        _ScreenScroll(
+          bottomNavigation: _BottomNav(controller: controller),
+          padding: const EdgeInsets.fromLTRB(28, 34, 28, 170),
+          children: [
+            Text(
+              '음악 노트',
+              style: serif(context, size: 23, weight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '각자의 요즘을 한 곡씩 조용히 남겨요',
+              style: sans(size: 12.5, color: AlagagiColors.muted),
+            ),
+            const SizedBox(height: 18),
+            const _MusicHeroCard(),
+            if (controller.state.musicDraftVisible) ...[
+              const SizedBox(height: 16),
+              _MusicDraftCard(controller: controller),
+            ],
+            const SizedBox(height: 18),
+            const _SectionLabel('들어볼 곡'),
+            const SizedBox(height: 12),
+            if (notes.isEmpty)
+              const _EmptyStateCard(text: '요즘 듣는 노래를 한 곡만 가볍게 남겨볼까요?')
+            else
+              for (final note in notes) ...[
+                _MusicNoteCard(controller: controller, note: note),
+                const SizedBox(height: 12),
+              ],
+          ],
+        ),
+        if (!controller.state.musicDraftVisible)
+          Positioned(
+            left: 28,
+            right: 28,
+            bottom: 84,
+            child: _PrimaryButton(
+              label: '한 곡 남기기',
+              onPressed: controller.startMusicDraft,
+              color: AlagagiColors.sageDeep,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _MusicHeroCard extends StatelessWidget {
+  const _MusicHeroCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF2F2F2B),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'MUSIC NOTE',
+            style: sans(
+              size: 10.5,
+              weight: FontWeight.w700,
+              color: const Color(0xFFC9C9C2),
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '각자의 요즘을\n노래로 조금씩 남겨요.',
+            style: serif(
+              context,
+              size: 22,
+              weight: FontWeight.w800,
+              color: Colors.white,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 9),
+          Text(
+            '많이 설명하지 않아도, 한 곡이면 분위기가 전해질 때가 있어요.',
+            style: sans(
+              size: 12.5,
+              color: const Color(0xFFD8D8D1),
+              height: 1.6,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: const [
+              _MusicCover(color: AlagagiColors.sage, darkBorder: true),
+              _OverlapCover(color: AlagagiColors.lavender),
+              _OverlapCover(color: Color(0xFFB18472)),
+              _OverlapCover(color: Color(0xFFC8AD6D)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OverlapCover extends StatelessWidget {
+  const _OverlapCover({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.translate(
+      offset: const Offset(-10, 0),
+      child: _MusicCover(color: color, darkBorder: true),
+    );
+  }
+}
+
+class _MusicDraftCard extends StatelessWidget {
+  const _MusicDraftCard({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return _PaperCard(
+      radius: 22,
+      padding: const EdgeInsets.all(18),
+      highlightedBorder: AlagagiColors.sage,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '요즘의 한 곡을\n가볍게 건네요.',
+            style: serif(
+              context,
+              size: 20,
+              weight: FontWeight.w800,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            '정성스러운 소개보다, 떠오른 이유 한 줄이면 충분해요.',
+            style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
+          ),
+          const SizedBox(height: 16),
+          _MusicTextField(
+            fieldKey: musicTitleFieldKey,
+            label: 'SONG',
+            hint: '예: 밤 산책',
+            maxLength: 60,
+            onChanged: (value) => controller.updateMusicDraft(title: value),
+          ),
+          const SizedBox(height: 10),
+          _MusicTextField(
+            fieldKey: musicArtistFieldKey,
+            label: 'ARTIST',
+            hint: '아티스트 이름',
+            maxLength: 60,
+            onChanged: (value) => controller.updateMusicDraft(artist: value),
+          ),
+          const SizedBox(height: 10),
+          _MusicTextField(
+            fieldKey: musicLinkFieldKey,
+            label: 'LINK',
+            hint: 'https://...',
+            maxLength: 180,
+            onChanged: (value) => controller.updateMusicDraft(link: value),
+          ),
+          const SizedBox(height: 10),
+          _MusicTextField(
+            fieldKey: musicNoteFieldKey,
+            label: 'SHORT NOTE',
+            hint: '왜 건네고 싶은 곡인지 한 줄로',
+            maxLength: 80,
+            minLines: 2,
+            maxLines: 3,
+            onChanged: (value) => controller.updateMusicDraft(note: value),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final mood in musicMoodOptions)
+                _FilterPill(
+                  label: mood,
+                  selected: controller.state.musicDraftMood == mood,
+                  onTap: () => controller.setMusicDraftMood(mood),
+                ),
+            ],
+          ),
+          if (controller.state.musicDraftError != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              controller.state.musicDraftError!,
+              style: sans(size: 12, color: AlagagiColors.sageDeep),
+            ),
+          ],
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              TextButton(
+                onPressed: controller.cancelMusicDraft,
+                child: Text(
+                  '취소',
+                  style: sans(size: 13, color: AlagagiColors.muted),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _PrimaryButton(
+                  label: '노래 남기기',
+                  onPressed: controller.submitMusicDraft,
+                  color: AlagagiColors.sageDeep,
+                  buttonKey: musicSubmitButtonKey,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MusicTextField extends StatelessWidget {
+  const _MusicTextField({
+    required this.fieldKey,
+    required this.label,
+    required this.hint,
+    required this.maxLength,
+    required this.onChanged,
+    this.minLines = 1,
+    this.maxLines = 1,
+  });
+
+  final Key fieldKey;
+  final String label;
+  final String hint;
+  final int maxLength;
+  final ValueChanged<String> onChanged;
+  final int minLines;
+  final int maxLines;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 7, 14, 7),
+      child: TextField(
+        key: fieldKey,
+        maxLength: maxLength,
+        minLines: minLines,
+        maxLines: maxLines,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          counterText: '',
+          border: InputBorder.none,
+        ),
+        style: sans(size: 13.5, height: 1.5),
+      ),
+    );
+  }
+}
+
+class _MusicNoteCard extends StatelessWidget {
+  const _MusicNoteCard({required this.controller, required this.note});
+
+  final AlagagiController controller;
+  final MusicNote note;
+
+  @override
+  Widget build(BuildContext context) {
+    final isMine = note.createdByProfileId == controller.state.me.id;
+    final creator = isMine
+        ? controller.state.me.nickname
+        : controller.state.partner.nickname;
+    return _PaperCard(
+      radius: 19,
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _MusicCover(
+            color: isMine ? AlagagiColors.sage : AlagagiColors.lavender,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        note.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: sans(
+                          size: 14,
+                          weight: FontWeight.w700,
+                          color: const Color(0xFF33332F),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _SmallBadge(label: note.mood),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$creator · ${note.artist}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: sans(size: 11.6, color: AlagagiColors.muted),
+                ),
+                if (note.note.isNotEmpty) ...[
+                  const SizedBox(height: 7),
+                  Text(
+                    note.note,
+                    style: sans(
+                      size: 12.3,
+                      color: const Color(0xFF6F6C65),
+                      height: 1.45,
+                    ),
+                  ),
+                ],
+                if (note.link.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    '링크가 저장되어 있어요',
+                    style: sans(size: 11, color: AlagagiColors.sageDeep),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MusicCover extends StatelessWidget {
+  const _MusicCover({required this.color, this.darkBorder = false});
+
+  final Color color;
+  final bool darkBorder;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [color, Color.alphaBlend(Colors.white54, color)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(
+          color: darkBorder ? const Color(0xFF2F2F2B) : AlagagiColors.line,
+          width: darkBorder ? 2 : 1,
+        ),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Icon(
+        Icons.music_note_rounded,
+        size: 22,
+        color: darkBorder ? Colors.white : AlagagiColors.sageDeep,
+      ),
+    );
+  }
+}
+
 class MyScreen extends StatelessWidget {
   const MyScreen({super.key, required this.controller, this.onSignOut});
 
@@ -4549,29 +4981,42 @@ class _BottomNav extends StatelessWidget {
         color: AlagagiColors.paper.withValues(alpha: 0.94),
         border: const Border(top: BorderSide(color: AlagagiColors.line)),
       ),
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      padding: const EdgeInsets.fromLTRB(18, 14, 18, 22),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _NavItem(
-            label: '홈',
-            selected: controller.state.route == AlagagiRoute.home,
-            onTap: () => controller.goTo(AlagagiRoute.home),
+          Expanded(
+            child: _NavItem(
+              icon: Icons.home_outlined,
+              label: '홈',
+              selected: controller.state.route == AlagagiRoute.home,
+              onTap: () => controller.goTo(AlagagiRoute.home),
+            ),
           ),
-          _NavItem(
-            label: '질문함',
-            selected: controller.state.route == AlagagiRoute.archive,
-            onTap: () => controller.goTo(AlagagiRoute.archive),
+          Expanded(
+            child: _NavItem(
+              icon: Icons.menu_book_outlined,
+              label: '질문',
+              selected:
+                  controller.state.route == AlagagiRoute.archive ||
+                  controller.state.route == AlagagiRoute.records,
+              onTap: () => controller.goTo(AlagagiRoute.archive),
+            ),
           ),
-          _NavItem(
-            label: '기록',
-            selected: controller.state.route == AlagagiRoute.records,
-            onTap: () => controller.goTo(AlagagiRoute.records),
+          Expanded(
+            child: _NavItem(
+              icon: Icons.music_note_outlined,
+              label: '음악',
+              selected: controller.state.route == AlagagiRoute.music,
+              onTap: () => controller.goTo(AlagagiRoute.music),
+            ),
           ),
-          _NavItem(
-            label: '마이',
-            selected: controller.state.route == AlagagiRoute.my,
-            onTap: () => controller.goTo(AlagagiRoute.my),
+          Expanded(
+            child: _NavItem(
+              icon: Icons.person_outline_rounded,
+              label: '마이',
+              selected: controller.state.route == AlagagiRoute.my,
+              onTap: () => controller.goTo(AlagagiRoute.my),
+            ),
           ),
         ],
       ),
@@ -4581,11 +5026,13 @@ class _BottomNav extends StatelessWidget {
 
 class _NavItem extends StatelessWidget {
   const _NavItem({
+    required this.icon,
     required this.label,
     required this.selected,
     required this.onTap,
   });
 
+  final IconData icon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -4596,29 +5043,32 @@ class _NavItem extends StatelessWidget {
       borderRadius: BorderRadius.circular(14),
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        padding: const EdgeInsets.symmetric(vertical: 3),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              width: selected ? 18 : 7,
-              height: 7,
-              decoration: BoxDecoration(
-                color: selected
-                    ? AlagagiColors.sageDeep
-                    : const Color(0xFFCFCDC4),
-                borderRadius: BorderRadius.circular(7),
-              ),
+            Icon(
+              icon,
+              size: 19,
+              color: selected ? AlagagiColors.ink : AlagagiColors.muted,
             ),
             const SizedBox(height: 5),
             Text(
               label,
               style: sans(
                 size: 10,
-                weight: selected ? FontWeight.w500 : FontWeight.w400,
+                weight: selected ? FontWeight.w700 : FontWeight.w400,
                 color: selected ? AlagagiColors.ink : AlagagiColors.muted,
-                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 5),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              width: selected ? 4 : 0,
+              height: 4,
+              decoration: BoxDecoration(
+                color: selected ? AlagagiColors.sageDeep : Colors.transparent,
+                shape: BoxShape.circle,
               ),
             ),
           ],

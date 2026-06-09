@@ -1067,6 +1067,60 @@ void main() {
       expect(controller.state.personalization.appTitle, '민영과 영우');
       expect(controller.state.personalization.homeLine, '천천히 알아가는 중');
     });
+
+    test(
+      'music notes load from session data and save only on submit',
+      () async {
+        final repository = RecordingAlagagiRepository();
+        final controller = AlagagiController.forSession(
+          firebaseSessionWithData(
+            const AlagagiSpaceData(
+              musicNotes: [
+                MusicNote(
+                  id: 'music_1',
+                  title: '밤 산책',
+                  artist: '민영의 추천',
+                  link: 'https://music.example/night',
+                  note: '퇴근길에 들으면 차분해져요.',
+                  mood: '밤',
+                  createdByProfileId: 'minyoungUid',
+                  createdLabel: '오늘',
+                ),
+              ],
+            ),
+          ),
+          repository: repository,
+        );
+
+        expect(controller.musicNotes.single.title, '밤 산책');
+        expect(controller.musicNotes.single.createdByProfileId, 'minyoungUid');
+
+        controller.startMusicDraft();
+        controller.updateMusicDraft(
+          title: '오후의 문장',
+          artist: 'Unknown Artist',
+          link: 'https://music.example/afternoon',
+          note: '카페에서 이야기할 때 배경에 있으면 좋을 것 같아서요.',
+        );
+        controller.setMusicDraftMood('카페');
+
+        expect(repository.savedMusicNotes, isEmpty);
+
+        controller.submitMusicDraft();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(repository.savedMusicNotes.single.spaceId, 'main');
+        expect(repository.savedMusicNotes.single.note.title, '오후의 문장');
+        expect(repository.savedMusicNotes.single.note.artist, 'Unknown Artist');
+        expect(repository.savedMusicNotes.single.note.mood, '카페');
+        expect(
+          repository.savedMusicNotes.single.note.createdByProfileId,
+          'youngwooUid',
+        );
+        expect(controller.state.musicDraftVisible, isFalse);
+        expect(controller.musicNotes.first.title, '오후의 문장');
+      },
+    );
   });
 }
 
@@ -1099,6 +1153,7 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   final List<({String spaceId, String profileId, ProfileSlot slot})>
   savedProfileSlots = [];
   final List<({String spaceId, WishItem wish})> savedWishes = [];
+  final List<({String spaceId, MusicNote note})> savedMusicNotes = [];
   final List<({String spaceId, AnswerComment comment})> savedAnswerComments =
       [];
   final List<({String spaceId, DailyQuestionProgress progress})>
@@ -1143,6 +1198,11 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   @override
   Future<void> saveWish(String spaceId, WishItem wish) async {
     savedWishes.add((spaceId: spaceId, wish: wish));
+  }
+
+  @override
+  Future<void> saveMusicNote(String spaceId, MusicNote note) async {
+    savedMusicNotes.add((spaceId: spaceId, note: note));
   }
 
   @override

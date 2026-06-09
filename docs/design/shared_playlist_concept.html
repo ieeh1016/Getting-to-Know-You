@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>알아가기 · 둘만의 플레이리스트 시안</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --outer:#e9e8e2;
+    --bg:#f4f3ef;
+    --paper:#fcfcfa;
+    --ink:#2e2e2c;
+    --text:#45443f;
+    --muted:#8f8b82;
+    --sage:#8a9a7e;
+    --sage-deep:#6f7f63;
+    --sage-soft:#f0f2eb;
+    --line:#e8e6df;
+    --warm:#f8f8f4;
+    --lav:#b9a8c9;
+    --clay:#b18472;
+    --gold:#c8ad6d;
+  }
+  body{
+    min-height:100vh;
+    background:var(--outer);
+    color:var(--ink);
+    font-family:'Noto Sans KR',sans-serif;
+    font-weight:300;
+    padding:36px 18px 48px;
+  }
+  svg{display:block}
+  button,input,textarea{font:inherit}
+  .wrap{max-width:1260px;margin:0 auto}
+  .page-title{text-align:center;margin-bottom:30px}
+  .page-title .eyebrow{
+    margin-bottom:8px;
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:3px;
+  }
+  .page-title h1{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:30px;
+    line-height:1.35;
+    font-weight:800;
+  }
+  .page-title p{
+    max-width:720px;
+    margin:10px auto 0;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.75;
+  }
+  .feature-note{
+    max-width:900px;
+    margin:0 auto 30px;
+    display:grid;
+    grid-template-columns:1.15fr .85fr;
+    gap:14px;
+  }
+  .note-card{
+    padding:20px 21px;
+    border:1px solid rgba(232,230,223,.9);
+    border-radius:22px;
+    background:rgba(252,252,250,.74);
+  }
+  .note-card small{
+    display:block;
+    margin-bottom:8px;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:2px;
+  }
+  .note-card h2{
+    margin-bottom:8px;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:20px;
+    font-weight:800;
+  }
+  .note-card p,.note-card li{
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.75;
+  }
+  .note-card ul{margin-left:17px}
+  .stage{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(300px,390px));
+    gap:24px;
+    justify-content:center;
+    align-items:start;
+  }
+  .caption{margin:0 0 12px 2px}
+  .caption .tag{
+    display:inline-flex;
+    align-items:center;
+    height:24px;
+    padding:0 9px;
+    border:1px solid rgba(111,127,99,.22);
+    border-radius:999px;
+    background:rgba(252,252,250,.74);
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+  }
+  .caption h2{
+    margin-top:8px;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:19px;
+    font-weight:800;
+  }
+  .caption p{
+    margin-top:5px;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.65;
+  }
+  .phone{
+    width:390px;
+    max-width:100%;
+    min-height:844px;
+    position:relative;
+    overflow:hidden;
+    border:8px solid #fff;
+    border-radius:40px;
+    background:var(--bg);
+    box-shadow:0 28px 70px rgba(60,60,50,.18);
+  }
+  .screen{padding:27px 24px 110px}
+  .topbar{
+    min-height:42px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:20px;
+  }
+  .side{
+    width:56px;
+    min-width:56px;
+    display:flex;
+    align-items:center;
+  }
+  .side.right{justify-content:flex-end}
+  .paper-btn{
+    width:38px;
+    height:38px;
+    border:1px solid rgba(232,230,223,.92);
+    border-radius:50%;
+    background:rgba(252,252,250,.88);
+    color:#656d5e;
+    display:grid;
+    place-items:center;
+    box-shadow:0 8px 18px rgba(80,80,70,.035);
+  }
+  .paper-btn svg{width:18px;height:18px}
+  .title-serif{
+    flex:1;
+    min-width:0;
+    text-align:center;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:18px;
+    line-height:1.25;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .home-head{margin:4px 0 18px}
+  .home-head small{
+    display:block;
+    margin-bottom:7px;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:2.5px;
+  }
+  .home-head h3{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:25px;
+    line-height:1.4;
+    font-weight:800;
+  }
+  .home-head p{
+    margin-top:8px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.65;
+  }
+  .playlist-entry{
+    position:relative;
+    overflow:hidden;
+    padding:20px;
+    border:1px solid var(--line);
+    border-radius:24px;
+    background:var(--paper);
+    box-shadow:0 14px 34px rgba(80,80,70,.045);
+  }
+  .entry-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    margin-bottom:18px;
+  }
+  .entry-label{
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:2px;
+  }
+  .mini-vinyl{
+    width:44px;
+    height:44px;
+    position:relative;
+    border-radius:50%;
+    background:
+      radial-gradient(circle at center,#f8f8f4 0 13%,#3b3b36 14% 39%,#5f655a 40% 43%,#2f2f2b 44%);
+    box-shadow:0 10px 22px rgba(70,70,62,.13);
+  }
+  .entry-title{
+    margin-bottom:10px;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:23px;
+    line-height:1.45;
+    font-weight:800;
+  }
+  .entry-copy{
+    margin-bottom:17px;
+    color:var(--muted);
+    font-size:12.8px;
+    line-height:1.65;
+  }
+  .song-stack{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    margin-bottom:18px;
+  }
+  .cover{
+    width:48px;
+    height:48px;
+    flex:0 0 48px;
+    position:relative;
+    overflow:hidden;
+    border-radius:15px;
+    border:1px solid rgba(46,46,44,.05);
+    background:var(--sage-soft);
+  }
+  .cover:before{
+    content:"";
+    position:absolute;
+    inset:9px;
+    border:1.6px solid rgba(252,252,250,.88);
+    border-radius:11px;
+  }
+  .cover:after{
+    content:"";
+    position:absolute;
+    left:12px;
+    right:12px;
+    bottom:13px;
+    height:2px;
+    border-radius:99px;
+    background:rgba(252,252,250,.95);
+    box-shadow:0 -7px 0 rgba(252,252,250,.68);
+  }
+  .cover.sage{background:linear-gradient(135deg,#8a9a7e,#cdd6c2)}
+  .cover.lav{background:linear-gradient(135deg,#b9a8c9,#ebe6ef)}
+  .cover.clay{background:linear-gradient(135deg,#b18472,#ead7cf)}
+  .cover.gold{background:linear-gradient(135deg,#c8ad6d,#efe5c7)}
+  .song-info{min-width:0}
+  .song-info strong{
+    display:block;
+    color:var(--text);
+    font-size:14px;
+    font-weight:700;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .song-info span{
+    display:block;
+    margin-top:3px;
+    color:var(--muted);
+    font-size:11.8px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .primary{
+    width:100%;
+    height:50px;
+    border:0;
+    border-radius:16px;
+    background:var(--sage-deep);
+    color:#fff;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:14.5px;
+    font-weight:700;
+    box-shadow:0 10px 22px rgba(111,127,99,.22);
+  }
+  .secondary{
+    height:44px;
+    border:1px solid var(--line);
+    border-radius:15px;
+    background:#fff;
+    color:var(--text);
+    font-size:13px;
+    font-weight:600;
+  }
+  .section-label{
+    margin:22px 0 10px;
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:1.8px;
+  }
+  .small-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .small-card{
+    min-height:118px;
+    padding:15px;
+    border:1px solid var(--line);
+    border-radius:20px;
+    background:var(--paper);
+  }
+  .small-card .icon{
+    width:30px;
+    height:30px;
+    display:grid;
+    place-items:center;
+    margin-bottom:12px;
+    border-radius:11px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+  }
+  .small-card .icon svg{width:16px;height:16px}
+  .small-card strong{
+    display:block;
+    margin-bottom:5px;
+    font-size:13.5px;
+    font-weight:700;
+  }
+  .small-card p{
+    color:var(--muted);
+    font-size:11.5px;
+    line-height:1.55;
+  }
+  .playlist-hero{
+    padding:20px;
+    border:1px solid var(--line);
+    border-radius:24px;
+    background:#2f2f2b;
+    color:#fff;
+  }
+  .playlist-hero small{
+    display:block;
+    margin-bottom:8px;
+    color:#c9c9c2;
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:2px;
+  }
+  .playlist-hero h3{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:23px;
+    line-height:1.35;
+    font-weight:800;
+  }
+  .playlist-hero p{
+    margin-top:9px;
+    color:#d8d8d1;
+    font-size:12.5px;
+    line-height:1.6;
+  }
+  .hero-covers{
+    display:flex;
+    align-items:center;
+    margin:18px 0 2px;
+  }
+  .hero-covers .cover{
+    width:58px;
+    height:58px;
+    flex-basis:58px;
+    margin-right:-10px;
+    border:2px solid #2f2f2b;
+    box-shadow:0 10px 22px rgba(0,0,0,.12);
+  }
+  .chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:7px;
+    margin:14px 0 18px;
+  }
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    height:28px;
+    padding:0 10px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:#fff;
+    color:var(--muted);
+    font-size:11.5px;
+    font-weight:500;
+  }
+  .chip.on{
+    border-color:#ccd7c2;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    font-weight:700;
+  }
+  .track-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .track{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px;
+    border:1px solid var(--line);
+    border-radius:19px;
+    background:var(--paper);
+  }
+  .track .cover{
+    width:48px;
+    height:48px;
+    flex-basis:48px;
+    border-radius:14px;
+  }
+  .track-main{flex:1;min-width:0}
+  .track-main strong{
+    display:block;
+    color:var(--text);
+    font-size:13.8px;
+    font-weight:700;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .track-main span{
+    display:block;
+    margin-top:3px;
+    color:var(--muted);
+    font-size:11.6px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .track-main p{
+    margin-top:7px;
+    color:#6f6c65;
+    font-size:11.8px;
+    line-height:1.45;
+  }
+  .track-side{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:7px;
+  }
+  .from{
+    display:inline-flex;
+    align-items:center;
+    height:22px;
+    padding:0 7px;
+    border-radius:999px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+  }
+  .listen{
+    width:32px;
+    height:32px;
+    border:1px solid var(--line);
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    background:#fff;
+    color:var(--muted);
+  }
+  .listen svg{width:15px;height:15px}
+  .form-card{
+    padding:19px;
+    border:1px solid var(--line);
+    border-radius:24px;
+    background:var(--paper);
+  }
+  .form-card h3{
+    margin-bottom:7px;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:22px;
+    line-height:1.4;
+    font-weight:800;
+  }
+  .form-card > p{
+    margin-bottom:17px;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.65;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+    margin-bottom:13px;
+  }
+  .field label{
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:1.2px;
+  }
+  .field input,.field textarea{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:15px;
+    background:var(--warm);
+    color:var(--text);
+    outline:0;
+  }
+  .field input{height:46px;padding:0 14px;font-size:13.5px}
+  .field textarea{
+    min-height:92px;
+    padding:13px 14px;
+    resize:none;
+    font-size:13.5px;
+    line-height:1.6;
+  }
+  .mood-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+    margin-bottom:16px;
+  }
+  .mood{
+    height:38px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:#fff;
+    color:var(--muted);
+    font-size:12px;
+    font-weight:600;
+  }
+  .mood.on{
+    border-color:#ccd7c2;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+  }
+  .hint{
+    margin-top:13px;
+    padding:14px;
+    border:1px solid var(--line);
+    border-radius:17px;
+    background:var(--warm);
+  }
+  .hint small{
+    display:block;
+    margin-bottom:5px;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:1.4px;
+  }
+  .hint p{
+    color:var(--muted);
+    font-size:11.8px;
+    line-height:1.6;
+  }
+  .bottom-nav{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    display:flex;
+    justify-content:space-around;
+    padding:16px 24px 24px;
+    border-top:1px solid var(--line);
+    background:rgba(252,252,250,.95);
+    backdrop-filter:blur(8px);
+  }
+  .bottom-nav a{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    color:var(--muted);
+    text-decoration:none;
+    font-size:10px;
+    letter-spacing:1px;
+  }
+  .bottom-nav .mark{
+    width:16px;
+    height:16px;
+    border:1.5px solid currentColor;
+    border-radius:5px;
+  }
+  .bottom-nav .circle{border-radius:50%}
+  .bottom-nav .line{
+    border-top:0;
+    border-right:0;
+    border-bottom:0;
+    border-radius:0;
+  }
+  .bottom-nav a.on{color:var(--ink);font-weight:600}
+  @media (max-width:1180px){
+    .stage{grid-template-columns:repeat(2,minmax(300px,390px))}
+    .feature-note{grid-template-columns:1fr}
+  }
+  @media (max-width:780px){
+    body{padding:22px 12px 34px}
+    .page-title h1{font-size:25px}
+    .stage{grid-template-columns:1fr}
+    .caption,.phone{margin-left:auto;margin-right:auto}
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <section class="page-title">
+    <div class="eyebrow">SHARED PLAYLIST CONCEPT</div>
+    <h1>둘만의 플레이리스트보다, 서로에게 건네는 한 곡</h1>
+    <p>소개팅 이후 단계에서는 음악 취향을 과하게 묶기보다, “요즘 이런 노래를 듣고 있어요”를 짧은 메모와 함께 건네는 기능이 가장 자연스럽습니다.</p>
+  </section>
+
+  <section class="feature-note">
+    <div class="note-card">
+      <small>RECOMMENDED FEATURE</small>
+      <h2>음악 노트</h2>
+      <p>각자 노래 링크와 짧은 이유를 남기면 둘만 볼 수 있는 플레이리스트에 쌓입니다. 실제 음악 재생 API 연동은 MVP에서 제외하고, YouTube Music, Spotify, Apple Music 링크를 붙여 넣는 방식으로 시작합니다.</p>
+    </div>
+    <div class="note-card">
+      <small>MVP RULES</small>
+      <ul>
+        <li>곡 제목, 아티스트, 링크, 80자 메모, mood chip만 저장합니다.</li>
+        <li>반응은 `들어봤어요`, `나중에 들을게요`처럼 낮은 압력의 상태만 둡니다.</li>
+        <li>하트, 커플, 사랑 같은 표현은 사용하지 않습니다.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="stage">
+    <article>
+      <div class="caption">
+        <span class="tag">HOME ENTRY</span>
+        <h2>홈에서 가볍게 진입</h2>
+        <p>질문 카드 아래에 작은 기능 카드로 둡니다. 메인 루틴을 방해하지 않고, 노래가 새로 생겼을 때만 부드럽게 시선을 줍니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="home-head">
+            <small>PRIVATE SPACE</small>
+            <h3>오늘도 천천히<br>알아가는 중이에요</h3>
+            <p>답변과 기록 사이에, 요즘 듣는 노래도 가볍게 남겨볼 수 있어요.</p>
+          </div>
+
+          <section class="playlist-entry">
+            <div class="entry-top">
+              <div class="entry-label">MUSIC NOTE</div>
+              <div class="mini-vinyl"></div>
+            </div>
+            <h4 class="entry-title">오늘 건네진 노래가 있어요.</h4>
+            <p class="entry-copy">민영님이 요즘 자주 듣는 곡과 짧은 메모를 남겼어요. 내 노래도 하나만 더해볼 수 있어요.</p>
+
+            <div class="song-stack">
+              <div class="cover lav"></div>
+              <div class="song-info">
+                <strong>밤 산책</strong>
+                <span>민영 · 퇴근길에 어울리는 곡</span>
+              </div>
+            </div>
+
+            <button class="primary">플레이리스트 보기</button>
+          </section>
+
+          <h4 class="section-label">QUIET ACTIONS</h4>
+          <div class="small-grid">
+            <div class="small-card">
+              <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 18V5l12-2v13"/>
+                  <circle cx="6" cy="18" r="3"/>
+                  <circle cx="18" cy="16" r="3"/>
+                </svg>
+              </div>
+              <strong>한 곡 남기기</strong>
+              <p>제목과 링크, 짧은 이유만 적어요.</p>
+            </div>
+            <div class="small-card">
+              <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
+                </svg>
+              </div>
+              <strong>짧은 감상</strong>
+              <p>들어본 뒤 한 줄만 남길 수 있어요.</p>
+            </div>
+          </div>
+        </div>
+        <nav class="bottom-nav">
+          <a class="on"><span class="mark"></span>홈</a>
+          <a><span class="mark circle"></span>질문함</a>
+          <a><span class="mark line"></span>기록</a>
+          <a><span class="mark circle"></span>마이</a>
+        </nav>
+      </div>
+    </article>
+
+    <article>
+      <div class="caption">
+        <span class="tag">PLAYLIST</span>
+        <h2>둘만의 음악 노트</h2>
+        <p>리스트는 앨범 커버형 카드보다 촘촘한 track list가 좋습니다. 실제 사용할 때 훑어보기 쉽고 Firestore 비용도 단순합니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <header class="topbar">
+            <div class="side">
+              <button class="paper-btn" aria-label="뒤로">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m15 18-6-6 6-6"/>
+                </svg>
+              </button>
+            </div>
+            <h3 class="title-serif">음악 노트</h3>
+            <div class="side right"></div>
+          </header>
+
+          <section class="playlist-hero">
+            <small>OUR MUSIC NOTE</small>
+            <h3>각자의 요즘을<br>노래로 조금씩 남겨요.</h3>
+            <p>많이 설명하지 않아도, 한 곡이면 분위기가 전해질 때가 있어요.</p>
+            <div class="hero-covers">
+              <div class="cover sage"></div>
+              <div class="cover lav"></div>
+              <div class="cover clay"></div>
+              <div class="cover gold"></div>
+            </div>
+          </section>
+
+          <div class="chips">
+            <span class="chip on">전체</span>
+            <span class="chip">영우</span>
+            <span class="chip">민영</span>
+            <span class="chip">들어볼 곡</span>
+          </div>
+
+          <div class="track-list">
+            <article class="track">
+              <div class="cover lav"></div>
+              <div class="track-main">
+                <strong>밤 산책</strong>
+                <span>결이 비슷한 인디 팝</span>
+                <p>집에 돌아오는 길에 들으면 마음이 조금 차분해져요.</p>
+              </div>
+              <div class="track-side">
+                <span class="from">민영</span>
+                <button class="listen" aria-label="듣기">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </button>
+              </div>
+            </article>
+
+            <article class="track">
+              <div class="cover sage"></div>
+              <div class="track-main">
+                <strong>오후의 문장</strong>
+                <span>가볍게 듣는 재즈</span>
+                <p>카페에서 이야기할 때 배경에 있으면 좋을 것 같아서요.</p>
+              </div>
+              <div class="track-side">
+                <span class="from">영우</span>
+                <button class="listen" aria-label="듣기">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </button>
+              </div>
+            </article>
+
+            <article class="track">
+              <div class="cover clay"></div>
+              <div class="track-main">
+                <strong>느린 주말</strong>
+                <span>산책할 때 좋은 곡</span>
+                <p>말이 많지 않아도 같이 걷는 느낌이 들어요.</p>
+              </div>
+              <div class="track-side">
+                <span class="from">민영</span>
+                <button class="listen" aria-label="듣기">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </button>
+              </div>
+            </article>
+          </div>
+        </div>
+        <nav class="bottom-nav">
+          <a><span class="mark"></span>홈</a>
+          <a><span class="mark circle"></span>질문함</a>
+          <a class="on"><span class="mark line"></span>기록</a>
+          <a><span class="mark circle"></span>마이</a>
+        </nav>
+      </div>
+    </article>
+
+    <article>
+      <div class="caption">
+        <span class="tag">ADD SONG</span>
+        <h2>곡 추가는 짧고 명확하게</h2>
+        <p>음악 검색 API 없이도 제목, 아티스트, 링크를 직접 넣는 MVP가 가장 안전합니다. 나중에 API 연동을 붙이기 쉽습니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <header class="topbar">
+            <div class="side">
+              <button class="paper-btn" aria-label="뒤로">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m15 18-6-6 6-6"/>
+                </svg>
+              </button>
+            </div>
+            <h3 class="title-serif">한 곡 남기기</h3>
+            <div class="side right"></div>
+          </header>
+
+          <section class="form-card">
+            <h3>요즘의 한 곡을<br>가볍게 건네요.</h3>
+            <p>정성스러운 소개보다, 떠오른 이유 한 줄이면 충분해요.</p>
+
+            <div class="field">
+              <label>SONG</label>
+              <input value="밤 산책">
+            </div>
+            <div class="field">
+              <label>ARTIST</label>
+              <input value="Unknown Artist">
+            </div>
+            <div class="field">
+              <label>LINK</label>
+              <input value="https://music.example/song">
+            </div>
+            <div class="field">
+              <label>SHORT NOTE</label>
+              <textarea>퇴근길에 들으면 조금 차분해지는 곡이에요.</textarea>
+            </div>
+
+            <div class="mood-grid">
+              <button class="mood on">차분한</button>
+              <button class="mood">산책</button>
+              <button class="mood">카페</button>
+              <button class="mood">밤</button>
+              <button class="mood">가벼운</button>
+              <button class="mood">집중</button>
+            </div>
+
+            <button class="primary">노래 남기기</button>
+
+            <div class="hint">
+              <small>LOW PRESSURE</small>
+              <p>상대가 바로 듣지 않아도 괜찮게, 알림성 문구보다 조용한 리스트 업데이트로만 보여줍니다.</p>
+            </div>
+          </section>
+        </div>
+        <nav class="bottom-nav">
+          <a><span class="mark"></span>홈</a>
+          <a><span class="mark circle"></span>질문함</a>
+          <a class="on"><span class="mark line"></span>기록</a>
+          <a><span class="mark circle"></span>마이</a>
+        </nav>
+      </div>
+    </article>
+  </section>
+</main>
+</body>
+</html>

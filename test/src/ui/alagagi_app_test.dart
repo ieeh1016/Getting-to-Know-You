@@ -470,7 +470,7 @@ void main() {
     await tester.tap(find.text('저장하기'));
     await tester.pumpAndSettle();
 
-    expect(find.text('질문함'), findsWidgets);
+    expect(find.text('질문'), findsWidgets);
     expect(find.text('늦게 남기는 답이에요.'), findsOneWidget);
   });
 
@@ -610,7 +610,7 @@ void main() {
     await tester.pumpWidget(const AlagagiApp());
     await enterSpace(tester);
 
-    await tester.tap(find.text('질문함'));
+    await tester.tap(find.text('질문'));
     await tester.pumpAndSettle();
     expect(find.text('그동안 주고받은 12개의 이야기'), findsOneWidget);
 
@@ -679,5 +679,65 @@ void main() {
     expect(titleStyles, isNotEmpty);
     expect(titleStyles.first!.fontWeight, FontWeight.w700);
     expect(titleStyles.first!.fontFamily, 'Nanum Myeongjo');
+  });
+
+  testWidgets('bottom navigation exposes questions music and my tabs', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const AlagagiApp());
+    await enterSpace(tester);
+
+    expect(find.text('홈'), findsOneWidget);
+    expect(find.text('질문'), findsOneWidget);
+    expect(find.text('음악'), findsOneWidget);
+    expect(find.text('마이'), findsOneWidget);
+    expect(find.text('질문함'), findsNothing);
+    expect(find.text('기록'), findsNothing);
+
+    await tester.tap(find.text('질문'));
+    await tester.pumpAndSettle();
+    expect(find.text('질문'), findsWidgets);
+    expect(find.text('달력'), findsOneWidget);
+    expect(find.text('기록'), findsOneWidget);
+    expect(find.byKey(archiveCalendarKey), findsOneWidget);
+
+    await tester.tap(find.text('기록'));
+    await tester.pumpAndSettle();
+    expect(find.text('답변 속 공통점이 조금씩 보여요'), findsOneWidget);
+  });
+
+  testWidgets('music tab adds a lightweight song note', (tester) async {
+    await tester.pumpWidget(const AlagagiApp());
+    await enterSpace(tester);
+
+    await tester.tap(find.text('음악'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('음악 노트'), findsOneWidget);
+    expect(find.text('한 곡 남기기'), findsOneWidget);
+
+    await tester.tap(find.text('한 곡 남기기'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(musicTitleFieldKey), '새벽 산책');
+    await tester.enterText(find.byKey(musicArtistFieldKey), '민영의 추천');
+    await tester.enterText(
+      find.byKey(musicLinkFieldKey),
+      'https://music.example/night',
+    );
+    await tester.enterText(find.byKey(musicNoteFieldKey), '새벽에 들으면 생각이 정리돼요.');
+    await tester.ensureVisible(find.text('집중'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('집중'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(musicSubmitButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(musicSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('새벽 산책'), findsOneWidget);
+    expect(find.textContaining('새벽에 들으면'), findsOneWidget);
+    expect(find.text('노래 남기기'), findsNothing);
+    expect(find.textContaining('커플'), findsNothing);
+    expect(find.textContaining('사랑'), findsNothing);
   });
 }

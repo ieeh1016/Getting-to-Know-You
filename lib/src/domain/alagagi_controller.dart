@@ -8,6 +8,7 @@ enum AlagagiRoute {
   answer,
   archive,
   records,
+  music,
   balance,
   profileCard,
   wishlist,
@@ -21,6 +22,8 @@ enum ProfileCardTab { partner, me }
 enum WishlistFilter { all, mutual, places, activities }
 
 enum WishKind { place, activity }
+
+const musicMoodOptions = ['차분한', '산책', '카페', '밤', '가벼운', '집중'];
 
 enum QuestionDepth { light, daily, beliefs, inner }
 
@@ -97,6 +100,7 @@ class AlagagiSpaceData {
     this.balanceSelections = const [],
     this.profileSlots = const [],
     this.wishes = const [],
+    this.musicNotes = const [],
     this.dailyProgress,
     this.personalization = const SpacePersonalization(),
   });
@@ -106,6 +110,7 @@ class AlagagiSpaceData {
   final List<BalanceSelection> balanceSelections;
   final List<ProfileSlotValue> profileSlots;
   final List<WishItem> wishes;
+  final List<MusicNote> musicNotes;
   final DailyQuestionProgress? dailyProgress;
   final SpacePersonalization personalization;
 }
@@ -155,6 +160,8 @@ abstract class AlagagiDataRepository {
   );
 
   Future<void> saveWish(String spaceId, WishItem wish);
+
+  Future<void> saveMusicNote(String spaceId, MusicNote note);
 }
 
 class AppProfile {
@@ -501,6 +508,41 @@ class WishItem {
   }
 }
 
+class MusicNote {
+  const MusicNote({
+    required this.id,
+    required this.title,
+    required this.artist,
+    required this.link,
+    required this.note,
+    required this.mood,
+    required this.createdByProfileId,
+    required this.createdLabel,
+  });
+
+  final String id;
+  final String title;
+  final String artist;
+  final String link;
+  final String note;
+  final String mood;
+  final String createdByProfileId;
+  final String createdLabel;
+
+  MusicNote copyWith({String? createdByProfileId}) {
+    return MusicNote(
+      id: id,
+      title: title,
+      artist: artist,
+      link: link,
+      note: note,
+      mood: mood,
+      createdByProfileId: createdByProfileId ?? this.createdByProfileId,
+      createdLabel: createdLabel,
+    );
+  }
+}
+
 @immutable
 class AlagagiState {
   const AlagagiState({
@@ -514,6 +556,12 @@ class AlagagiState {
     this.wishDraftVisible = false,
     this.wishDraftTitle = '',
     this.wishDraftKind = WishKind.activity,
+    this.musicDraftVisible = false,
+    this.musicDraftTitle = '',
+    this.musicDraftArtist = '',
+    this.musicDraftLink = '',
+    this.musicDraftNote = '',
+    this.musicDraftMood = '차분한',
     this.draftAnswer = '',
     this.inviteError,
     this.answerError,
@@ -525,6 +573,7 @@ class AlagagiState {
     this.personalizationDraft = const SpacePersonalization(),
     this.personalizationError,
     this.wishDraftError,
+    this.musicDraftError,
     this.skippedToday = false,
     this.editingAnswer = false,
     this.expandedAnswerKeys = const {},
@@ -542,6 +591,12 @@ class AlagagiState {
   final bool wishDraftVisible;
   final String wishDraftTitle;
   final WishKind wishDraftKind;
+  final bool musicDraftVisible;
+  final String musicDraftTitle;
+  final String musicDraftArtist;
+  final String musicDraftLink;
+  final String musicDraftNote;
+  final String musicDraftMood;
   final String draftAnswer;
   final String? inviteError;
   final String? answerError;
@@ -553,6 +608,7 @@ class AlagagiState {
   final SpacePersonalization personalizationDraft;
   final String? personalizationError;
   final String? wishDraftError;
+  final String? musicDraftError;
   final bool skippedToday;
   final bool editingAnswer;
   final Set<String> expandedAnswerKeys;
@@ -570,6 +626,12 @@ class AlagagiState {
     bool? wishDraftVisible,
     String? wishDraftTitle,
     WishKind? wishDraftKind,
+    bool? musicDraftVisible,
+    String? musicDraftTitle,
+    String? musicDraftArtist,
+    String? musicDraftLink,
+    String? musicDraftNote,
+    String? musicDraftMood,
     String? draftAnswer,
     String? inviteError,
     bool clearInviteError = false,
@@ -587,6 +649,8 @@ class AlagagiState {
     bool clearPersonalizationError = false,
     String? wishDraftError,
     bool clearWishDraftError = false,
+    String? musicDraftError,
+    bool clearMusicDraftError = false,
     bool? skippedToday,
     bool? editingAnswer,
     Set<String>? expandedAnswerKeys,
@@ -605,6 +669,12 @@ class AlagagiState {
       wishDraftVisible: wishDraftVisible ?? this.wishDraftVisible,
       wishDraftTitle: wishDraftTitle ?? this.wishDraftTitle,
       wishDraftKind: wishDraftKind ?? this.wishDraftKind,
+      musicDraftVisible: musicDraftVisible ?? this.musicDraftVisible,
+      musicDraftTitle: musicDraftTitle ?? this.musicDraftTitle,
+      musicDraftArtist: musicDraftArtist ?? this.musicDraftArtist,
+      musicDraftLink: musicDraftLink ?? this.musicDraftLink,
+      musicDraftNote: musicDraftNote ?? this.musicDraftNote,
+      musicDraftMood: musicDraftMood ?? this.musicDraftMood,
       draftAnswer: draftAnswer ?? this.draftAnswer,
       inviteError: clearInviteError ? null : inviteError ?? this.inviteError,
       answerError: clearAnswerError ? null : answerError ?? this.answerError,
@@ -625,6 +695,9 @@ class AlagagiState {
       wishDraftError: clearWishDraftError
           ? null
           : wishDraftError ?? this.wishDraftError,
+      musicDraftError: clearMusicDraftError
+          ? null
+          : musicDraftError ?? this.musicDraftError,
       skippedToday: skippedToday ?? this.skippedToday,
       editingAnswer: editingAnswer ?? this.editingAnswer,
       expandedAnswerKeys: expandedAnswerKeys ?? this.expandedAnswerKeys,
@@ -713,6 +786,7 @@ class AlagagiController extends ChangeNotifier {
   final Map<String, String> _partnerBalanceSelections = {};
   final List<ProfileCardData> _profileCards = [];
   final List<WishItem> _wishes = [];
+  final List<MusicNote> _musicNotes = [];
   Answer? _lastFailedAnswer;
 
   AlagagiState get state => _state;
@@ -784,6 +858,15 @@ class AlagagiController extends ChangeNotifier {
           );
         }),
       );
+    _musicNotes
+      ..clear()
+      ..addAll(
+        seedMusicNotes.map((note) {
+          return note.copyWith(
+            createdByProfileId: _mapSeedProfileId(note.createdByProfileId),
+          );
+        }),
+      );
   }
 
   void _applySessionData(AlagagiSpaceData data) {
@@ -847,6 +930,9 @@ class AlagagiController extends ChangeNotifier {
     _wishes
       ..clear()
       ..addAll(data.wishes);
+    _musicNotes
+      ..clear()
+      ..addAll(data.musicNotes);
   }
 
   static DailyQuestionProgress _resolveDailyQuestionProgress(
@@ -1073,6 +1159,15 @@ class AlagagiController extends ChangeNotifier {
       return;
     }
     unawaited(repository.saveWish(spaceId, wish).catchError((_) {}));
+  }
+
+  void _persistMusicNote(MusicNote note) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      return;
+    }
+    unawaited(repository.saveMusicNote(spaceId, note).catchError((_) {}));
   }
 
   void _persistAnswerComment(AnswerComment comment) {
@@ -1385,6 +1480,8 @@ class AlagagiController extends ChangeNotifier {
             .toList(),
     };
   }
+
+  List<MusicNote> get musicNotes => List<MusicNote>.unmodifiable(_musicNotes);
 
   List<ArchiveItem> get archiveItems {
     final visibleQuestions = _usesDemoData
@@ -2028,6 +2125,123 @@ class AlagagiController extends ChangeNotifier {
     _persistWish(updatedWish);
     notifyListeners();
   }
+
+  void startMusicDraft() {
+    _state = _state.copyWith(
+      route: AlagagiRoute.music,
+      musicDraftVisible: true,
+      musicDraftTitle: '',
+      musicDraftArtist: '',
+      musicDraftLink: '',
+      musicDraftNote: '',
+      musicDraftMood: musicMoodOptions.first,
+      clearMusicDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void cancelMusicDraft() {
+    _state = _state.copyWith(
+      musicDraftVisible: false,
+      musicDraftTitle: '',
+      musicDraftArtist: '',
+      musicDraftLink: '',
+      musicDraftNote: '',
+      musicDraftMood: musicMoodOptions.first,
+      clearMusicDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void updateMusicDraft({
+    String? title,
+    String? artist,
+    String? link,
+    String? note,
+  }) {
+    _state = _state.copyWith(
+      musicDraftTitle: title,
+      musicDraftArtist: artist,
+      musicDraftLink: link,
+      musicDraftNote: note,
+      clearMusicDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void setMusicDraftMood(String mood) {
+    if (!musicMoodOptions.contains(mood)) {
+      return;
+    }
+    _state = _state.copyWith(musicDraftMood: mood, clearMusicDraftError: true);
+    notifyListeners();
+  }
+
+  void submitMusicDraft() {
+    final title = _state.musicDraftTitle.trim();
+    final artist = _state.musicDraftArtist.trim();
+    final link = _state.musicDraftLink.trim();
+    final noteBody = _state.musicDraftNote.trim();
+    final mood = _state.musicDraftMood;
+    if (title.isEmpty) {
+      _state = _state.copyWith(musicDraftError: '곡 제목을 한 줄로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    if (title.length > 60) {
+      _state = _state.copyWith(musicDraftError: '곡 제목은 60자 안으로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    if (artist.isEmpty) {
+      _state = _state.copyWith(musicDraftError: '아티스트 이름을 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    if (artist.length > 60) {
+      _state = _state.copyWith(musicDraftError: '아티스트는 60자 안으로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    if (link.length > 180) {
+      _state = _state.copyWith(musicDraftError: '링크는 180자 안으로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    if (noteBody.length > 80) {
+      _state = _state.copyWith(musicDraftError: '메모는 80자 안으로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    if (!musicMoodOptions.contains(mood)) {
+      _state = _state.copyWith(musicDraftError: '분위기를 다시 골라주세요.');
+      notifyListeners();
+      return;
+    }
+
+    final note = MusicNote(
+      id: 'music_${_state.me.id}_${DateTime.now().microsecondsSinceEpoch}',
+      title: title,
+      artist: artist,
+      link: link,
+      note: noteBody,
+      mood: mood,
+      createdByProfileId: _state.me.id,
+      createdLabel: '오늘',
+    );
+    _musicNotes.insert(0, note);
+    _persistMusicNote(note);
+    _state = _state.copyWith(
+      musicDraftVisible: false,
+      musicDraftTitle: '',
+      musicDraftArtist: '',
+      musicDraftLink: '',
+      musicDraftNote: '',
+      musicDraftMood: musicMoodOptions.first,
+      clearMusicDraftError: true,
+    );
+    notifyListeners();
+  }
 }
 
 const seedQuestions = [
@@ -2533,5 +2747,28 @@ const seedWishes = [
     kind: WishKind.place,
     likedByProfileIds: {'me', 'partner'},
     done: true,
+  ),
+];
+
+const seedMusicNotes = [
+  MusicNote(
+    id: 'music_1',
+    title: '밤 산책',
+    artist: '민영의 추천',
+    link: 'https://music.example/night-walk',
+    note: '퇴근길에 들으면 마음이 조금 차분해져요.',
+    mood: '밤',
+    createdByProfileId: 'partner',
+    createdLabel: '오늘',
+  ),
+  MusicNote(
+    id: 'music_2',
+    title: '오후의 문장',
+    artist: '영우의 추천',
+    link: 'https://music.example/afternoon',
+    note: '카페에서 이야기할 때 배경에 있으면 좋을 것 같아서요.',
+    mood: '카페',
+    createdByProfileId: 'me',
+    createdLabel: '오늘',
   ),
 ];

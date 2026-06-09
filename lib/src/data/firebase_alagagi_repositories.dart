@@ -254,6 +254,26 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         }, SetOptions(merge: true));
   }
 
+  @override
+  Future<void> saveMusicNote(String spaceId, MusicNote note) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('musicNotes')
+        .doc(note.id)
+        .set({
+          'id': note.id,
+          'title': note.title,
+          'artist': note.artist,
+          'link': note.link,
+          'note': note.note,
+          'mood': note.mood,
+          'createdByProfileId': note.createdByProfileId,
+          'createdLabel': note.createdLabel,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+  }
+
   Future<AlagagiSpaceData> _loadSpaceData({
     required String spaceId,
     required String meId,
@@ -265,6 +285,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     final commentsSnapshot = await space.collection('answerComments').get();
     final balanceSnapshot = await space.collection('balanceSelections').get();
     final wishesSnapshot = await space.collection('wishes').get();
+    final musicNotesSnapshot = await space.collection('musicNotes').get();
     final progressSnapshot = await space
         .collection('progress')
         .doc('daily')
@@ -301,6 +322,10 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       profileSlots: profileSlots,
       wishes: wishesSnapshot.docs
           .map((doc) => _wishFromData(doc.id, doc.data()))
+          .nonNulls
+          .toList(),
+      musicNotes: musicNotesSnapshot.docs
+          .map((doc) => _musicNoteFromData(doc.id, doc.data()))
           .nonNulls
           .toList(),
       dailyProgress: _dailyProgressFromData(progressSnapshot.data()),
@@ -418,6 +443,24 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           (likedBy.isEmpty ? '' : likedBy.first),
       likedByProfileIds: likedBy,
       done: data['done'] == true,
+    );
+  }
+
+  MusicNote? _musicNoteFromData(String fallbackId, Map<String, dynamic> data) {
+    final title = _readString(data, 'title');
+    final artist = _readString(data, 'artist');
+    if (title == null || artist == null) {
+      return null;
+    }
+    return MusicNote(
+      id: _readString(data, 'id') ?? fallbackId,
+      title: title,
+      artist: artist,
+      link: _readString(data, 'link') ?? '',
+      note: _readString(data, 'note') ?? '',
+      mood: _readString(data, 'mood') ?? musicMoodOptions.first,
+      createdByProfileId: _readString(data, 'createdByProfileId') ?? '',
+      createdLabel: _readString(data, 'createdLabel') ?? '오늘',
     );
   }
 

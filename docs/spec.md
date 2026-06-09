@@ -141,8 +141,8 @@ Reference `design2.html`: Modern Minimal, sage, warm paper, serif title.
 ### Primary Navigation
 
 - 홈
-- 질문함
-- 기록
+- 질문
+- 음악
 - 마이
 
 ### Expanded Navigation For Plus Features
@@ -156,6 +156,14 @@ If the app grows, bottom navigation may become:
 - 위시
 
 `기록` can remain reachable from 홈/질문함 or be a tab depending on implementation complexity.
+
+### MVP v0.13 Navigation Direction
+
+- 하단 탭은 `홈 / 질문 / 음악 / 마이` 4개로 유지한다.
+- 기존 `기록` 하단 탭은 제거하고 `질문` 탭 안의 `달력 / 기록` segmented view로 합친다.
+- 홈은 오늘의 질문과 가벼운 다음 행동 중심으로 유지하며, 음악 기능을 큰 홈 카드로 추가하지 않는다.
+- 음악 기능은 독립 탭으로 제공해 반복 방문 가능한 작은 루틴처럼 보이게 한다.
+- Selected design: `docs/design/music_tab_navigation_concept.html`.
 
 ## 8. MVP Scope
 
@@ -399,6 +407,34 @@ This batch focuses only on the HOME today's question card. It follows the `docs/
 - Back icon은 chevron line icon을 사용하고, 아이콘 크기와 색은 버튼보다 강하게 튀지 않는다.
 - Sub screen title은 작은 letter-spaced label이 아니라 18px serif / 700 heading으로 렌더링한다.
 - Header title, back button, trailing metadata는 390px 모바일 viewport에서 서로 겹치지 않는다.
+
+### MVP v0.13 Music Note Tab
+
+This batch follows `docs/design/music_tab_navigation_concept.html` and `docs/design/shared_playlist_concept.html`. It must be implemented in SDD/TDD order.
+
+- Navigation:
+  - Bottom navigation labels are `홈`, `질문`, `음악`, `마이`.
+  - `질문` tab opens the existing question calendar screen.
+  - Existing records screen remains available through a segmented control inside the `질문` tab.
+  - `음악` tab opens the music note screen and is selected only for the music route.
+- Music note data:
+  - Each music note stores `id`, `title`, `artist`, `link`, `note`, `mood`, `createdByProfileId`, `createdLabel`.
+  - Draft input is local state only; Firestore writes happen only on explicit submit.
+  - MVP does not integrate Spotify, Apple Music, YouTube Music, search APIs, playback SDKs, album image uploads, realtime presence, or push notifications.
+  - Link values are stored as text and may be opened/copied later; missing links are allowed only if title and artist are present.
+  - Note body is limited to 80 characters.
+  - Mood is selected from a small fixed set: `차분한`, `산책`, `카페`, `밤`, `가벼운`, `집중`.
+- Music note UX:
+  - Empty state says that a song can be left lightly, without pressure to listen immediately.
+  - Add form includes title, artist, link, note, and mood chips.
+  - Submit CTA label is `노래 남기기`.
+  - Saved notes show who left the song and the short note.
+  - Copy avoids couple/heart/love language and uses `음악 노트`, `한 곡`, `들어볼 곡` tone.
+- Firestore:
+  - Store notes under `spaces/{spaceId}/musicNotes/{noteId}`.
+  - Write one document only when a user submits a note.
+  - Load all notes with the rest of the space session data.
+  - This scope stays within Firebase free plan assumptions because it does not write on draft changes or playback interactions.
 
 ### MVP v0.7 Answer Comments In Scope
 
@@ -1461,6 +1497,29 @@ Rules:
   "updatedAt": "serverTimestamp"
 }
 ```
+
+`spaces/{spaceId}/musicNotes/{noteId}`
+
+```json
+{
+  "id": "music_{uid}_{timestamp}",
+  "title": "밤 산책",
+  "artist": "Unknown Artist",
+  "link": "https://music.example/song",
+  "note": "퇴근길에 들으면 조금 차분해져요.",
+  "mood": "밤",
+  "createdByProfileId": "{uid}",
+  "createdLabel": "오늘",
+  "updatedAt": "serverTimestamp"
+}
+```
+
+Rules:
+
+- Document ID remains the generated `id` so one submit creates one document.
+- Draft title/artist/link/note/mood are local state only.
+- No playback state, realtime presence, or search API cache is written in MVP v0.13.
+- `note` is limited to 80 characters and `mood` is one of the fixed mood labels.
 
 `spaces/{spaceId}/answerComments/{questionId_answerOwnerUid_commenterUid}`
 

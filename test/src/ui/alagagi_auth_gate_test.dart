@@ -164,7 +164,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('질문함'));
+      await tester.tap(find.text('질문'));
       await tester.pumpAndSettle();
       expect(find.text('아직 쌓인 질문이 없어요. 오늘의 질문부터 천천히 시작해요.'), findsOneWidget);
       expect(find.textContaining('비 오는 날엔'), findsNothing);
@@ -296,6 +296,7 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   final Map<String, AlagagiSession> sessionsByUid;
   final List<AlagagiAuthUser> loadedUsers = [];
   final List<WishItem> savedWishes = [];
+  final List<MusicNote> savedMusicNotes = [];
   final List<AnswerComment> savedAnswerComments = [];
   final List<SpacePersonalization> savedPersonalizations = [];
 
@@ -343,5 +344,10 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   @override
   Future<void> saveWish(String spaceId, WishItem wish) async {
     savedWishes.add(wish);
+  }
+
+  @override
+  Future<void> saveMusicNote(String spaceId, MusicNote note) async {
+    savedMusicNotes.add(note);
   }
 }

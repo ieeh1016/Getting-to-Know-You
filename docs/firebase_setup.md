@@ -195,6 +195,35 @@ service cloud.firestore {
         && request.resource.data.catalogVersion.size() <= 8;
     }
 
+    function validMusicNote(noteId) {
+      return request.resource.data.keys().hasOnly([
+          'id',
+          'title',
+          'artist',
+          'link',
+          'note',
+          'mood',
+          'createdByProfileId',
+          'createdLabel',
+          'updatedAt'
+        ])
+        && request.resource.data.id == noteId
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 60
+        && request.resource.data.artist is string
+        && request.resource.data.artist.size() > 0
+        && request.resource.data.artist.size() <= 60
+        && request.resource.data.link is string
+        && request.resource.data.link.size() <= 180
+        && request.resource.data.note is string
+        && request.resource.data.note.size() <= 80
+        && request.resource.data.mood in ['차분한', '산책', '카페', '밤', '가벼운', '집중']
+        && request.resource.data.createdByProfileId == request.auth.uid
+        && request.resource.data.createdLabel is string
+        && request.resource.data.createdLabel.size() <= 16;
+    }
+
     match /users/{userId} {
       allow read: if signedIn()
         && (
@@ -277,6 +306,13 @@ service cloud.firestore {
           && request.resource.data.done is bool;
         allow delete: if false;
       }
+
+      match /musicNotes/{noteId} {
+        allow read: if isSpaceMember(spaceId);
+        allow create, update: if isSpaceMember(spaceId)
+          && validMusicNote(noteId);
+        allow delete: if false;
+      }
     }
   }
 }
@@ -311,5 +347,5 @@ Secrets를 추가한 뒤 `main` 브랜치에 push하면 GitHub Actions가 Flutte
 
 - Firebase Auth Flutter Email/Password: <https://firebase.google.com/docs/auth/flutter/password-auth>
 - Firebase Auth Flutter 시작하기: <https://firebase.google.com/docs/auth/flutter/start>
-- FlutterFire Auth usage: <https://firebase.flutter.dev/docs/auth/usage>
 - Firestore Security Rules 시작하기: <https://firebase.google.com/docs/firestore/security/get-started>
+- FlutterFire Auth usage: <https://firebase.flutter.dev/docs/auth/usage>
