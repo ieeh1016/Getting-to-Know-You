@@ -644,4 +644,40 @@ void main() {
     expect(find.textContaining('🎧'), findsNothing);
     expect(find.textContaining('🔒'), findsNothing);
   });
+
+  testWidgets('sub screen header follows soft paper option', (tester) async {
+    await tester.pumpWidget(const AlagagiApp());
+    await enterSpace(tester);
+
+    await tester.tap(find.text('마이'));
+    await tester.pumpAndSettle();
+
+    final backButton = tester.widget<InkWell>(
+      find.byKey(subScreenBackButtonKey),
+    );
+    expect(backButton.child, isA<Container>());
+
+    final backContainer = backButton.child! as Container;
+    expect(backContainer.constraints?.minWidth, 38);
+    expect(backContainer.constraints?.maxWidth, 38);
+    expect(backContainer.constraints?.minHeight, 38);
+    expect(backContainer.constraints?.maxHeight, 38);
+
+    final backDecoration = backContainer.decoration! as BoxDecoration;
+    expect(backDecoration.color, AlagagiColors.paper);
+    expect(backDecoration.borderRadius, BorderRadius.circular(19));
+
+    final backIcon = backContainer.child! as Icon;
+    expect(backIcon.icon, Icons.chevron_left_rounded);
+    expect(backIcon.size, 21);
+    expect(backIcon.color, const Color(0xFF656D5E));
+
+    final titleStyles = tester
+        .widgetList<Text>(find.text('마이'))
+        .map((text) => text.style)
+        .where((style) => style?.fontSize == 18);
+    expect(titleStyles, isNotEmpty);
+    expect(titleStyles.first!.fontWeight, FontWeight.w700);
+    expect(titleStyles.first!.fontFamily, 'Nanum Myeongjo');
+  });
 }

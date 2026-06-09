@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>알아가기 · Top bar 개선 시안</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --outer:#e9e8e2;
+    --bg:#f4f3ef;
+    --paper:#fcfcfa;
+    --ink:#2e2e2c;
+    --text:#45443f;
+    --muted:#8f8b82;
+    --sage:#8a9a7e;
+    --sage-deep:#6f7f63;
+    --sage-soft:#f0f2eb;
+    --line:#e8e6df;
+    --warm:#f8f8f4;
+    --lav:#b9a8c9;
+  }
+  body{
+    min-height:100vh;
+    background:var(--outer);
+    color:var(--ink);
+    font-family:'Noto Sans KR',sans-serif;
+    font-weight:300;
+    padding:36px 18px 48px;
+  }
+  .wrap{max-width:1260px;margin:0 auto}
+  .page-title{text-align:center;margin-bottom:30px}
+  .page-title .eyebrow{
+    margin-bottom:8px;
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:3px;
+  }
+  .page-title h1{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:30px;
+    line-height:1.35;
+    font-weight:800;
+  }
+  .page-title p{
+    max-width:680px;
+    margin:10px auto 0;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.75;
+  }
+  .stage{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(300px,390px));
+    gap:24px;
+    justify-content:center;
+    align-items:start;
+  }
+  .caption{margin:0 0 12px 2px}
+  .caption .tag{
+    display:inline-flex;
+    align-items:center;
+    height:24px;
+    padding:0 9px;
+    border:1px solid rgba(111,127,99,.22);
+    border-radius:999px;
+    background:rgba(252,252,250,.74);
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+  }
+  .caption h2{
+    margin-top:8px;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:19px;
+    font-weight:800;
+  }
+  .caption p{
+    margin-top:5px;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.65;
+  }
+  .phone{
+    width:390px;
+    max-width:100%;
+    min-height:844px;
+    position:relative;
+    overflow:hidden;
+    border:8px solid #fff;
+    border-radius:40px;
+    background:var(--bg);
+    box-shadow:0 28px 70px rgba(60,60,50,.18);
+  }
+  .screen{padding:27px 24px 110px}
+  .topbar{
+    min-height:42px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:20px;
+  }
+  .side{
+    width:52px;
+    min-width:52px;
+    display:flex;
+    align-items:center;
+  }
+  .side.right{justify-content:flex-end}
+  .icon-btn{
+    width:36px;
+    height:36px;
+    border:0;
+    border-radius:50%;
+    background:transparent;
+    color:#656d5e;
+    display:grid;
+    place-items:center;
+  }
+  .icon-btn svg{width:18px;height:18px}
+  .ghost-hit{
+    background:transparent;
+  }
+  .ghost-hit:after{
+    content:"";
+    position:absolute;
+    inset:auto;
+  }
+  .paper-btn{
+    width:38px;
+    height:38px;
+    border:1px solid rgba(232,230,223,.92);
+    background:rgba(252,252,250,.88);
+    box-shadow:0 8px 18px rgba(80,80,70,.035);
+  }
+  .text-back{
+    width:auto;
+    min-width:56px;
+    height:36px;
+    display:inline-flex;
+    gap:4px;
+    padding:0 8px 0 2px;
+    color:var(--sage-deep);
+    font-size:13px;
+    font-weight:600;
+    background:transparent;
+  }
+  .title-center{
+    flex:1;
+    min-width:0;
+    text-align:center;
+    color:#3a3a36;
+    font-size:17px;
+    line-height:1.25;
+    font-weight:600;
+    letter-spacing:0;
+  }
+  .title-serif{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:18px;
+    line-height:1.25;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .topbar-left{
+    justify-content:flex-start;
+    gap:8px;
+  }
+  .title-left{
+    color:#383833;
+    font-size:19px;
+    line-height:1.25;
+    font-weight:700;
+    letter-spacing:0;
+  }
+  .subtle-line{
+    height:1px;
+    margin:-6px -24px 18px;
+    background:linear-gradient(90deg,transparent,var(--line),transparent);
+  }
+  .profile-summary{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:17px;
+    border:1px solid var(--line);
+    border-radius:22px;
+    background:var(--paper);
+  }
+  .avatar{
+    width:50px;
+    height:50px;
+    display:grid;
+    place-items:center;
+    border-radius:18px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    font-family:'Nanum Myeongjo',serif;
+    font-size:18px;
+    font-weight:800;
+  }
+  .profile-summary strong{
+    display:block;
+    margin-bottom:3px;
+    font-size:16px;
+    font-weight:700;
+  }
+  .profile-summary p{
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.5;
+  }
+  .section-title{
+    margin:22px 0 10px;
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:1.8px;
+  }
+  .menu{
+    border:1px solid var(--line);
+    border-radius:22px;
+    overflow:hidden;
+    background:var(--paper);
+  }
+  .menu-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    min-height:58px;
+    padding:0 17px;
+    border-bottom:1px solid var(--line);
+  }
+  .menu-row:last-child{border-bottom:0}
+  .menu-row span{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    color:var(--text);
+    font-size:14px;
+    font-weight:500;
+  }
+  .menu-row i{
+    width:24px;
+    height:24px;
+    display:grid;
+    place-items:center;
+    border-radius:9px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    font-style:normal;
+    font-size:12px;
+  }
+  .chev{
+    color:#bbb7ad;
+    font-size:18px;
+  }
+  .mini-card{
+    margin-top:14px;
+    padding:16px 17px;
+    border:1px solid var(--line);
+    border-radius:20px;
+    background:var(--warm);
+  }
+  .mini-card small{
+    display:block;
+    margin-bottom:5px;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:1.5px;
+  }
+  .mini-card p{
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.65;
+  }
+  .bottom-nav{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    display:flex;
+    justify-content:space-around;
+    padding:16px 24px 24px;
+    border-top:1px solid var(--line);
+    background:rgba(252,252,250,.95);
+    backdrop-filter:blur(8px);
+  }
+  .bottom-nav a{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    color:var(--muted);
+    text-decoration:none;
+    font-size:10px;
+    letter-spacing:1px;
+  }
+  .bottom-nav .mark{
+    width:16px;
+    height:16px;
+    border:1.5px solid currentColor;
+    border-radius:5px;
+  }
+  .bottom-nav .circle{border-radius:50%}
+  .bottom-nav .line{
+    border-top:0;
+    border-right:0;
+    border-bottom:0;
+    border-radius:0;
+  }
+  .bottom-nav a.on{color:var(--ink);font-weight:600}
+  .notes{
+    margin:34px auto 0;
+    max-width:840px;
+    padding:20px 22px;
+    border:1px solid rgba(232,230,223,.9);
+    border-radius:22px;
+    background:rgba(252,252,250,.72);
+    color:var(--text);
+  }
+  .notes h3{
+    margin-bottom:9px;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:18px;
+  }
+  .notes li{
+    margin-left:18px;
+    padding-left:2px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.75;
+  }
+  @media (max-width:1180px){
+    .stage{grid-template-columns:repeat(2,minmax(300px,390px))}
+  }
+  @media (max-width:780px){
+    body{padding:22px 12px 34px}
+    .page-title h1{font-size:25px}
+    .stage{grid-template-columns:1fr}
+    .caption,.phone{margin-left:auto;margin-right:auto}
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <section class="page-title">
+    <div class="eyebrow">TOP BAR REDESIGN</div>
+    <h1>백버튼과 Title을 더 조용하고 예쁘게</h1>
+    <p>현재 앱의 세이지 미니멀 톤은 유지하되, 버튼은 덜 무겁게, 제목은 과하게 크거나 굵지 않게 조정한 헤더 시안입니다.</p>
+  </section>
+
+  <section class="stage">
+    <article>
+      <div class="caption">
+        <span class="tag">추천안 A</span>
+        <h2>Native Ghost Header</h2>
+        <p>백버튼은 투명한 터치 영역만 유지하고, Title은 17px sans semi-bold로 정리합니다. 가장 앱답고 부담이 적은 방향입니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <header class="topbar">
+            <div class="side">
+              <button class="icon-btn ghost-hit" aria-label="뒤로">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.35" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m15 18-6-6 6-6"/>
+                </svg>
+              </button>
+            </div>
+            <h3 class="title-center">마이</h3>
+            <div class="side right"></div>
+          </header>
+
+          <section class="profile-summary">
+            <div class="avatar">영</div>
+            <div>
+              <strong>영우</strong>
+              <p>민영과 천천히 알아가는<br>비공개 공간</p>
+            </div>
+          </section>
+
+          <h4 class="section-title">SETTINGS</h4>
+          <div class="menu">
+            <div class="menu-row"><span><i>글</i>맞춤 문구</span><b class="chev">›</b></div>
+            <div class="menu-row"><span><i>질</i>질문 진행</span><b class="chev">›</b></div>
+            <div class="menu-row"><span><i>공</i>공간 정보</span><b class="chev">›</b></div>
+          </div>
+
+          <div class="mini-card">
+            <small>NOTE</small>
+            <p>추천안 A는 sub screen 전체에 쓰기 좋습니다. 뒤로 버튼이 시선을 덜 빼앗고, 화면 제목만 깔끔하게 남습니다.</p>
+          </div>
+        </div>
+        <nav class="bottom-nav">
+          <a><span class="mark"></span>홈</a>
+          <a><span class="mark circle"></span>질문함</a>
+          <a><span class="mark line"></span>기록</a>
+          <a class="on"><span class="mark circle"></span>마이</a>
+        </nav>
+      </div>
+    </article>
+
+    <article>
+      <div class="caption">
+        <span class="tag">대안 B</span>
+        <h2>Soft Paper Header</h2>
+        <p>버튼 배경은 살리되 크기와 그림자를 줄인 버전입니다. 기존 톤과 가장 가깝지만, A보다 버튼 존재감이 있습니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <header class="topbar">
+            <div class="side">
+              <button class="icon-btn paper-btn" aria-label="뒤로">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m15 18-6-6 6-6"/>
+                </svg>
+              </button>
+            </div>
+            <h3 class="title-center title-serif">마이</h3>
+            <div class="side right"></div>
+          </header>
+
+          <section class="profile-summary">
+            <div class="avatar">영</div>
+            <div>
+              <strong>영우</strong>
+              <p>민영과 천천히 알아가는<br>비공개 공간</p>
+            </div>
+          </section>
+
+          <h4 class="section-title">SETTINGS</h4>
+          <div class="menu">
+            <div class="menu-row"><span><i>글</i>맞춤 문구</span><b class="chev">›</b></div>
+            <div class="menu-row"><span><i>질</i>질문 진행</span><b class="chev">›</b></div>
+            <div class="menu-row"><span><i>공</i>공간 정보</span><b class="chev">›</b></div>
+          </div>
+
+          <div class="mini-card">
+            <small>NOTE</small>
+            <p>대안 B는 예쁘지만, 이전에 마음에 들지 않았던 “버튼이 따로 노는 느낌”이 조금 남을 수 있습니다.</p>
+          </div>
+        </div>
+        <nav class="bottom-nav">
+          <a><span class="mark"></span>홈</a>
+          <a><span class="mark circle"></span>질문함</a>
+          <a><span class="mark line"></span>기록</a>
+          <a class="on"><span class="mark circle"></span>마이</a>
+        </nav>
+      </div>
+    </article>
+
+    <article>
+      <div class="caption">
+        <span class="tag">대안 C</span>
+        <h2>Left Aligned Header</h2>
+        <p>뒤로 버튼과 Title을 왼쪽에 묶어 실제 모바일 설정 화면처럼 보이게 합니다. “마이” 화면에는 잘 맞지만 모든 sub screen에는 조금 덜 정돈될 수 있습니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <header class="topbar topbar-left">
+            <button class="icon-btn ghost-hit" aria-label="뒤로">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.35" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m15 18-6-6 6-6"/>
+              </svg>
+            </button>
+            <h3 class="title-left">마이</h3>
+          </header>
+          <div class="subtle-line"></div>
+
+          <section class="profile-summary">
+            <div class="avatar">영</div>
+            <div>
+              <strong>영우</strong>
+              <p>민영과 천천히 알아가는<br>비공개 공간</p>
+            </div>
+          </section>
+
+          <h4 class="section-title">SETTINGS</h4>
+          <div class="menu">
+            <div class="menu-row"><span><i>글</i>맞춤 문구</span><b class="chev">›</b></div>
+            <div class="menu-row"><span><i>질</i>질문 진행</span><b class="chev">›</b></div>
+            <div class="menu-row"><span><i>공</i>공간 정보</span><b class="chev">›</b></div>
+          </div>
+
+          <div class="mini-card">
+            <small>NOTE</small>
+            <p>대안 C는 마이 화면 자체는 안정적이지만, 답변 화면처럼 질문 본문이 중요한 화면에서는 헤더가 조금 강해 보일 수 있습니다.</p>
+          </div>
+        </div>
+        <nav class="bottom-nav">
+          <a><span class="mark"></span>홈</a>
+          <a><span class="mark circle"></span>질문함</a>
+          <a><span class="mark line"></span>기록</a>
+          <a class="on"><span class="mark circle"></span>마이</a>
+        </nav>
+      </div>
+    </article>
+  </section>
+
+  <section class="notes">
+    <h3>내 판단</h3>
+    <ul>
+      <li>추천은 A입니다. 현재 앱의 조용한 분위기와 가장 잘 맞고, “마이” title도 덜 과장되어 보입니다.</li>
+      <li>Title은 serif보다 sans 17px / 600 전후가 낫습니다. “마이”처럼 짧은 제목에서 serif bold는 덩어리가 커 보입니다.</li>
+      <li>Back button은 배경 없는 36px 터치 영역이 좋습니다. 시각 크기는 작지만 실제 터치 영역은 충분히 확보할 수 있습니다.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

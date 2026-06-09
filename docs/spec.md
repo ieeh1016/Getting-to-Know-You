@@ -393,9 +393,11 @@ This batch focuses only on the HOME today's question card. It follows the `docs/
 
 ### MVP v0.12 Sub Screen Header Polish
 
+- Selected design: `docs/design/topbar_header_redesign.html` 대안 B `Soft Paper Header`.
 - 마이/답변/밸런스/소개 카드/위시 등 sub screen header의 back action은 텍스트 화살표가 아니라 line icon 기반 버튼으로 렌더링한다.
-- Back button은 paper tone, subtle border, compact rounded shape을 사용해 앱의 세이지 미니멀 톤과 맞춘다.
-- Sub screen title은 작은 letter-spaced label이 아니라 화면 제목으로 읽히는 serif heading hierarchy를 사용한다.
+- Back button은 38x38px circular paper button, subtle border, 낮은 shadow로 렌더링해 기존보다 덜 무겁게 보인다.
+- Back icon은 chevron line icon을 사용하고, 아이콘 크기와 색은 버튼보다 강하게 튀지 않는다.
+- Sub screen title은 작은 letter-spaced label이 아니라 18px serif / 700 heading으로 렌더링한다.
 - Header title, back button, trailing metadata는 390px 모바일 viewport에서 서로 겹치지 않는다.
 
 ### MVP v0.7 Answer Comments In Scope

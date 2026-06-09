@@ -4645,7 +4645,7 @@ class _TopBar extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         SizedBox(
-          width: 68,
+          width: 56,
           child: Align(
             alignment: Alignment.centerLeft,
             child: _BackButton(onTap: onBack),
@@ -4659,14 +4659,14 @@ class _TopBar extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: serif(
               context,
-              size: 20,
-              weight: FontWeight.w800,
+              size: 18,
+              weight: FontWeight.w700,
               color: AlagagiColors.ink,
             ),
           ),
         ),
         SizedBox(
-          width: 68,
+          width: 56,
           child: Text(
             trailing,
             textAlign: TextAlign.right,
@@ -4693,24 +4693,32 @@ class _BackButton extends StatelessWidget {
     return Tooltip(
       message: '뒤로',
       child: Material(
-        color: const Color(0xFFF8F8F4),
-        borderRadius: BorderRadius.circular(15),
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(19),
         child: InkWell(
           key: subScreenBackButtonKey,
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(19),
           onTap: onTap,
           child: Container(
-            width: 42,
+            width: 38,
             height: 38,
             decoration: BoxDecoration(
+              color: AlagagiColors.paper,
               border: Border.all(color: AlagagiColors.line),
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(19),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x0A505046),
+                  blurRadius: 18,
+                  offset: Offset(0, 8),
+                ),
+              ],
             ),
             alignment: Alignment.center,
             child: const Icon(
               Icons.chevron_left_rounded,
-              size: 24,
-              color: AlagagiColors.sageDeep,
+              size: 21,
+              color: Color(0xFF656D5E),
             ),
           ),
         ),
