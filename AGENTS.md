@@ -1,0 +1,52 @@
+# AI Agent Working Contract
+
+This repository is built with an SDD + TDD workflow. Treat `docs/spec.md` as the product source of truth and keep every behavior change traceable from spec to tests to implementation.
+
+## Required Order
+
+1. Read the relevant section of `docs/spec.md`.
+2. Update `docs/spec.md` before changing production behavior.
+3. Update `docs/test_plan.md` and add or adjust domain/widget tests for the new behavior.
+4. Prefer observing the new or changed test fail before production edits when practical.
+5. Implement the smallest production change that satisfies the spec and tests.
+6. Run verification before finishing.
+
+For purely mechanical, documentation-only, or emergency fixes, explain why a production behavior test is not needed.
+
+## Verification
+
+Use the focused command first while developing, then run the full gate before handoff:
+
+```sh
+dart analyze
+flutter test
+flutter build web
+```
+
+The local one-command gate is:
+
+```sh
+./scripts/verify.sh
+```
+
+## Product Guardrails
+
+- The app is for two people after a blind date who are still getting to know each other. Do not assume they are already a couple.
+- Avoid hearts, couple-app wording, anniversary language, pressure, tracking, or guilt-inducing copy.
+- Keep copy quiet, warm, and low-pressure.
+- Mobile UI comes first. Check 390px-class layouts for text clipping, overlapping, and awkward bottom navigation spacing.
+
+## Firebase Guardrails
+
+- Never commit Firebase service account files, passwords, API secrets, or local password helper scripts.
+- Firestore writes happen only on explicit user actions.
+- Draft typing, scrolling, route changes, tab changes, calendar navigation, and music seen state must not create Firestore writes.
+- Keep new Firebase-backed features inside the Spark/free-plan assumptions documented in `docs/spec.md`.
+
+## Git Hygiene
+
+- Do not revert user changes unless explicitly asked.
+- Keep commits focused and name the user-facing behavior or harness change.
+- Do not include ignored local helper files such as `change-passwords.js`.
+- Before commit, check `git status --short` and staged diff scope.
+

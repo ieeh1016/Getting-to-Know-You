@@ -8,6 +8,35 @@
 - Included plus screens: `balance.html`, `card.html`, `wishlist.html`, `features.html`
 - Alternative visual references: `design1.html`, `design3.html`
 
+## 0.1 AI Harness / Development Contract
+
+This repository is intentionally structured so an AI coding agent can continue the app safely without relying on hidden chat context.
+
+Required harness files:
+
+- `AGENTS.md`: root-level working contract for AI agents and future maintainers.
+- `docs/spec.md`: product source of truth and acceptance criteria.
+- `docs/test_plan.md`: test intent that mirrors new spec behavior before implementation.
+- `scripts/verify.sh`: local one-command verification for dependency install, analysis, tests, and web build.
+- `.github/workflows/deploy.yml`: CI gate that runs analysis, tests, and release web build before GitHub Pages deploy.
+- `.github/pull_request_template.md`: review checklist that keeps SDD/TDD, Firebase budget, UX tone, and verification visible.
+
+AI change workflow:
+
+1. Update `docs/spec.md` before changing production behavior.
+2. Update `docs/test_plan.md` and add/adjust domain or widget tests that express the behavior.
+3. Confirm the test fails or clearly covers the previous gap before implementation when practical.
+4. Implement the smallest production change that satisfies the spec and tests.
+5. Run `dart analyze` and `flutter test`; run `flutter build web` when deployment or visible web UI is affected.
+6. Keep Firebase secrets, password helper scripts, generated builds, and local-only data out of Git.
+
+Acceptance Criteria:
+
+- A new AI agent can open the repository and understand the required development order without reading prior chat history.
+- CI fails when Dart analysis or tests fail.
+- Local verification is available through a single script.
+- PRs expose whether spec, test plan, tests, Firebase budget, and user-facing tone were considered.
+
 ## 1. Product Summary
 
 `알아가기`는 소개팅 이후 두 사람이 부담 없이 서로를 알아가도록 돕는 비공개 모바일 웹앱이다.

@@ -32,6 +32,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Analyze
+        run: dart analyze
+
       - name: Run tests
         run: flutter test
 

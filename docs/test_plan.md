@@ -115,6 +115,11 @@
 
 ## Manual Checks
 
+- AI Harness:
+  - 새 작업자는 `AGENTS.md`만 읽어도 spec -> test_plan/tests -> implementation -> verification 순서를 알 수 있다.
+  - `scripts/verify.sh`는 dependency install, Dart analysis, Flutter tests, web build를 한 번에 실행한다.
+  - CI는 GitHub Pages build 전에 `dart analyze`와 `flutter test`를 모두 실행한다.
+  - PR checklist는 spec/test/Firebase budget/UX tone/verification 항목을 노출한다.
 - 모바일 폭 390px 기준에서 텍스트가 잘리지 않는다.
 - 웹에서 스크롤, 탭, 상태 표시가 자연스럽다.
 - Android/iOS 네이티브 빌드는 v0.1 이후 별도 확인한다.
