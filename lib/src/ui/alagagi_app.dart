@@ -2145,48 +2145,41 @@ class _QuestionCalendar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final allDays = controller.questionCalendarDays;
-    final days = _visibleWindow(allDays);
+    final days = controller.visibleQuestionCalendarDays;
     if (days.isEmpty) {
       return const SizedBox.shrink();
     }
-    final selectedDate = DateTime.tryParse(
-      controller.selectedQuestionCalendarDay?.dateKey ?? days.first.dateKey,
+    final displayedDay = days.firstWhere(
+      (day) => day.isInDisplayedMonth,
+      orElse: () => days.first,
     );
+    final selectedDate = DateTime.tryParse(displayedDay.dateKey);
     final title = selectedDate == null
         ? '질문 캘린더'
         : '${selectedDate.year}년 ${selectedDate.month}월';
-    final startIndex = allDays.indexWhere(
-      (day) => day.dateKey == days.first.dateKey,
-    );
-    final previousIndex = startIndex > 0
-        ? (startIndex - 14 < 0 ? 0 : startIndex - 14)
-        : null;
-    final nextIndex = startIndex + 14 < allDays.length ? startIndex + 14 : null;
-    final today = _todayDay(allDays);
 
     return _PaperCard(
       key: archiveCalendarKey,
-      radius: 22,
-      padding: const EdgeInsets.all(18),
+      radius: 20,
+      padding: const EdgeInsets.fromLTRB(15, 15, 15, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: serif(context, size: 18, weight: FontWeight.w800)),
-          const SizedBox(height: 8),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: serif(context, size: 17, weight: FontWeight.w800),
+                ),
+              ),
               _CalendarControlButton(
                 buttonKey: archiveCalendarPreviousButtonKey,
-                tooltip: '이전 기간',
+                tooltip: '이전 달',
                 icon: Icons.chevron_left_rounded,
-                onPressed: previousIndex == null
-                    ? null
-                    : () => controller.selectArchiveDate(
-                        allDays[previousIndex].dateKey,
-                      ),
+                onPressed: controller.selectPreviousArchiveMonth,
               ),
+              const SizedBox(width: 2),
               TextButton(
                 key: archiveCalendarTodayButtonKey,
                 style: TextButton.styleFrom(
@@ -2194,9 +2187,7 @@ class _QuestionCalendar extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 6),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                onPressed: today == null
-                    ? null
-                    : () => controller.selectArchiveDate(today.dateKey),
+                onPressed: controller.selectTodayArchiveMonth,
                 child: Text(
                   '오늘',
                   style: sans(
@@ -2206,33 +2197,33 @@ class _QuestionCalendar extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(width: 2),
               _CalendarControlButton(
                 buttonKey: archiveCalendarNextButtonKey,
-                tooltip: '다음 기간',
+                tooltip: '다음 달',
                 icon: Icons.chevron_right_rounded,
-                onPressed: nextIndex == null
-                    ? null
-                    : () => controller.selectArchiveDate(
-                        allDays[nextIndex].dateKey,
-                      ),
+                onPressed: controller.selectNextArchiveMonth,
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          _WeekdayLabels(startDateKey: days.first.dateKey),
-          const SizedBox(height: 7),
+          const SizedBox(height: 12),
+          const _WeekdayLabels(),
+          const SizedBox(height: 6),
           GridView.count(
             crossAxisCount: 7,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 7,
-            crossAxisSpacing: 7,
-            childAspectRatio: 1,
+            mainAxisSpacing: 5,
+            crossAxisSpacing: 5,
+            childAspectRatio: 1.05,
             children: [
               for (final day in days)
                 _CalendarDayButton(
                   day: day,
-                  onTap: day.status == QuestionCalendarStatus.future
+                  onTap:
+                      day.question == null ||
+                          day.status == QuestionCalendarStatus.future ||
+                          day.status == QuestionCalendarStatus.catalogEnded
                       ? null
                       : () => controller.selectArchiveDate(day.dateKey),
                 ),
@@ -2243,38 +2234,6 @@ class _QuestionCalendar extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  List<QuestionCalendarDay> _visibleWindow(List<QuestionCalendarDay> allDays) {
-    const windowSize = 14;
-    if (allDays.length <= windowSize) {
-      return allDays;
-    }
-    var anchorIndex = allDays.indexWhere((day) => day.isSelected);
-    if (anchorIndex == -1) {
-      anchorIndex = allDays.indexWhere((day) => day.isToday);
-    }
-    if (anchorIndex == -1) {
-      anchorIndex = 0;
-    }
-
-    var startIndex = anchorIndex - (windowSize ~/ 2);
-    if (startIndex < 0) {
-      startIndex = 0;
-    }
-    if (startIndex + windowSize > allDays.length) {
-      startIndex = allDays.length - windowSize;
-    }
-    return allDays.sublist(startIndex, startIndex + windowSize);
-  }
-
-  QuestionCalendarDay? _todayDay(List<QuestionCalendarDay> allDays) {
-    for (final day in allDays) {
-      if (day.isToday) {
-        return day;
-      }
-    }
-    return null;
   }
 }
 
@@ -2316,25 +2275,15 @@ class _CalendarControlButton extends StatelessWidget {
 }
 
 class _WeekdayLabels extends StatelessWidget {
-  const _WeekdayLabels({required this.startDateKey});
-
-  final String startDateKey;
+  const _WeekdayLabels();
 
   @override
   Widget build(BuildContext context) {
-    final startDate = DateTime.tryParse(startDateKey);
     const weekdayLabels = ['월', '화', '수', '목', '금', '토', '일'];
-    final labels = List<String>.generate(7, (index) {
-      if (startDate == null) {
-        return weekdayLabels[index];
-      }
-      final date = startDate.add(Duration(days: index));
-      return weekdayLabels[date.weekday - 1];
-    });
 
     return Row(
       children: [
-        for (final label in labels)
+        for (final label in weekdayLabels)
           Expanded(
             child: Text(
               label,
@@ -2361,24 +2310,37 @@ class _CalendarDayButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final date = DateTime.tryParse(day.dateKey);
     final selected = day.isSelected;
+    final disabled = onTap == null;
+    final inDisplayedMonth = day.isInDisplayedMonth;
     final color = _statusColor(day.status);
+    final foregroundColor = disabled
+        ? const Color(0xFFC7C3BA)
+        : inDisplayedMonth
+        ? AlagagiColors.ink
+        : AlagagiColors.muted;
     return Material(
       key: archiveCalendarDayButtonKey(day.dateKey),
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Container(
           decoration: BoxDecoration(
-            color: selected ? const Color(0xFFF0F2EB) : Colors.white,
+            color: selected
+                ? const Color(0xFFF0F2EB)
+                : inDisplayedMonth
+                ? Colors.white
+                : const Color(0xFFFAF8F3),
             border: Border.all(
               color: day.isToday
                   ? AlagagiColors.sageDeep
                   : selected
                   ? AlagagiColors.sagePanel
-                  : Colors.transparent,
+                  : inDisplayedMonth
+                  ? Colors.transparent
+                  : AlagagiColors.line,
             ),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -2386,15 +2348,18 @@ class _CalendarDayButton extends StatelessWidget {
               Text(
                 '${date?.day ?? ''}',
                 style: sans(
-                  size: 12,
-                  weight: day.isToday ? FontWeight.w700 : FontWeight.w400,
-                  color: day.status == QuestionCalendarStatus.future
-                      ? const Color(0xFFC7C3BA)
-                      : AlagagiColors.ink,
+                  size: 11.5,
+                  weight: day.isToday || selected
+                      ? FontWeight.w700
+                      : FontWeight.w400,
+                  color: foregroundColor,
                 ),
               ),
-              const SizedBox(height: 5),
-              _StatusDot(status: day.status, color: color),
+              const SizedBox(height: 4),
+              _StatusDot(
+                status: day.status,
+                color: disabled ? const Color(0xFFDCD8CF) : color,
+              ),
             ],
           ),
         ),
@@ -2459,6 +2424,8 @@ class _CalendarLegend extends StatelessWidget {
         ),
         _LegendItem(label: '둘 다', status: QuestionCalendarStatus.bothAnswered),
         _LegendItem(label: '패스', status: QuestionCalendarStatus.skippedByMe),
+        _LegendItem(label: '예정', status: QuestionCalendarStatus.future),
+        _LegendItem(label: '없음', status: QuestionCalendarStatus.catalogEnded),
       ],
     );
   }
@@ -2500,8 +2467,46 @@ class _SelectedQuestionDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     final day = controller.selectedQuestionCalendarDay;
     final question = day?.question;
-    if (day == null || question == null) {
+    if (day == null) {
       return const SizedBox.shrink();
+    }
+    final statusLabel = _statusLabel(day.status);
+    if (question == null || day.status == QuestionCalendarStatus.future) {
+      return _PaperCard(
+        radius: 22,
+        padding: const EdgeInsets.all(19),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _calendarDateLabel(day.dateKey),
+                    style: serif(
+                      context,
+                      size: 13,
+                      weight: FontWeight.w700,
+                      color: AlagagiColors.sageDeep,
+                    ),
+                  ),
+                ),
+                _SmallBadge(label: day.isToday ? '오늘' : statusLabel),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              statusLabel,
+              style: serif(context, size: 18, weight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '이 날짜에는 아직 답할 질문이 없어요.',
+              style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.5),
+            ),
+          ],
+        ),
+      );
     }
     final myAnswer = controller.answerForQuestion(question.id);
     final partnerAnswer = myAnswer == null || myAnswer.skipped
@@ -2514,7 +2519,6 @@ class _SelectedQuestionDetail extends StatelessWidget {
             myAnswer.profileId,
             controller.state.partner.id,
           );
-    final statusLabel = _statusLabel(day.status);
     return _PaperCard(
       radius: 22,
       padding: const EdgeInsets.all(19),
@@ -2722,6 +2726,14 @@ String _questionDateContext(String? dateKey, DailyQuestion question) {
     return 'DAY ${question.day}';
   }
   return '${date.month}월 ${date.day}일 · DAY ${question.day}';
+}
+
+String _calendarDateLabel(String dateKey) {
+  final date = DateTime.tryParse(dateKey);
+  if (date == null) {
+    return '선택한 날짜';
+  }
+  return '${date.month}월 ${date.day}일';
 }
 
 class _ArchiveTabs extends StatelessWidget {

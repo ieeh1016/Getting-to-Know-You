@@ -26,7 +26,9 @@
 - `startedDateKey`와 Asia/Seoul 기준 오늘 날짜로 오늘 질문 id를 계산한다.
 - `startedDateKey`가 없는 기존 progress 문서는 `openedDateKey`를 시작일로 사용해 migration state를 만든다.
 - 같은 날짜의 새로고침/route 이동/tab switch는 progress repository write를 호출하지 않는다.
-- 질문 캘린더는 progress와 answers만으로 future/unanswered/my-only/partner-only/both/skipped 상태를 계산한다.
+- 질문 캘린더는 progress와 answers만으로 future/unanswered/my-only/partner-only/both/skipped/catalog-ended 상태를 계산한다.
+- 질문 캘린더 월간 grid는 선택 날짜가 속한 월을 5~6개의 완전한 주 단위로 만들고 adjacent month cell을 구분한다.
+- 질문 캘린더 월 이동은 선택 날짜를 이전/다음 월의 유효한 anchor date로 바꾸되 repository write를 호출하지 않는다.
 - 과거 미답 질문은 late-answer 가능 상태가 된다.
 - 과거에 이미 답한 질문은 MVP에서 read-only 상태가 된다.
 - 늦게 답하기 저장은 `{questionId}_{uid}` answer key 1개만 저장한다.
@@ -73,9 +75,11 @@
 - Firebase mode에서 내 답 저장이 pending/failed 상태이면 상대 답과 댓글 UI는 잠긴 상태를 유지한다.
 - 이미 `관심 표시`한 위시를 다시 탭하면 MVP에서는 no-op이며 repository write를 만들지 않는다.
 - 아카이브/기록/밸런스/소개 카드/위시 화면 내비게이션을 검증한다.
-- 질문함은 캘린더 header, 월 이동 control, status legend, 선택 질문 detail을 렌더링한다.
-- 질문함 캘린더는 첫 14일에 고정되지 않고 오늘/선택 날짜 기준 2주 window를 보여준다.
+- 질문함은 compact 월간 캘린더 header, 월 이동 control, status legend, 선택 질문 detail을 렌더링한다.
+- 질문함 캘린더는 첫 14일/2주 window가 아니라 선택 날짜가 속한 월의 5~6주 grid를 보여준다.
+- 질문함 월간 캘린더는 adjacent month cell을 흐리게 표시하고 future/start-before/catalog-ended cell은 disabled로 보여준다.
 - 질문함 캘린더의 월 이동, 날짜 선택, 오늘 shortcut은 Firestore write를 만들지 않는다.
+- 질문함에서 월 이동으로 future/catalog-ended 날짜가 선택되면 selected detail은 상태 설명만 보여주고 답변 CTA를 숨긴다.
 - 과거 미답 날짜를 선택하면 `늦게 답하기` CTA가 보인다.
 - 미래 날짜를 선택하면 disabled state가 보이고 답변 CTA는 보이지 않는다.
 - 과거에 이미 답한 날짜를 선택하면 답변은 read-only로 보이고 수정 CTA는 보이지 않는다.
@@ -111,6 +115,7 @@
 - Review/stop threshold: 2,500 reads/day 또는 500 writes/day.
 - Keystroke, scroll, tab switch는 Firestore write를 만들지 않는다.
 - 캘린더 월 이동, 날짜 선택, 오늘 shortcut은 Firestore write를 만들지 않는다.
+- 월간 캘린더 grid 계산은 별도 calendar collection을 읽거나 쓰지 않는다.
 - 늦게 답하기 submit은 기존 answer document 1 write 이하로 저장한다.
 - 답변 submit/edit, answer comment save/edit, personalization save, balance select, profile slot fill/edit, wish add/interest/done은 각각 1 document write 이하.
 - 질문 캘린더는 별도 calendar collection 없이 progress 문서와 bounded answer reads로 렌더링한다.

@@ -282,7 +282,7 @@ If the app grows, bottom navigation may become:
 
 ### MVP v0.6 Question Calendar & Late Answers In Scope
 
-- 질문함 상단에 월간 또는 2주 캘린더형 질문 진행 UI를 제공한다.
+- 질문함 상단에 compact 월간 캘린더형 질문 진행 UI를 제공한다.
 - 캘린더 날짜는 `startedDateKey`와 질문 카탈로그 순서로 질문을 매핑한다.
 - 각 날짜는 답변 상태를 작은 표시로 보여준다:
   - 아직 아무도 답하지 않음
@@ -317,10 +317,12 @@ This batch fixes the highest-risk gaps found after the v0.6 calendar/design audi
   - Answer save failure preserves retry state and must not make the answer look fully synchronized.
   - Wishlist interest is additive in this MVP: tapping an already-interested wish is a no-op and creates no write.
 - Calendar:
-  - The calendar may remain a 2-week strip for MVP, but it must not permanently show only the first 14 days from `startedDateKey`.
-  - The visible window is centered around the selected date or today when possible.
+  - The calendar is promoted from a 2-week strip to a compact monthly grid.
+  - The displayed month follows the selected date, or today when no selected date exists.
   - Previous/next/today controls change only local UI state and never write to Firestore.
-  - Weekday labels are shown so the strip reads as a date navigation surface instead of sparse decorative buttons.
+  - Weekday labels are fixed to Monday-Sunday so the grid reads like a familiar calendar.
+  - Month leading/trailing cells are faded; start-before, future, and catalog-ended cells are disabled and never show answer CTAs.
+  - The grid must render 5 or 6 complete weeks without horizontal overflow on a 390px mobile viewport.
 - Selected question detail:
   - Shows the selected date, day number, question, my answer/read-only state, partner answer when unlocked, and existing comments in read-only form.
   - For past unanswered questions, `늦게 답하기` opens the answer screen with the selected date context.
@@ -337,6 +339,35 @@ This batch fixes the highest-risk gaps found after the v0.6 calendar/design audi
 - Copy and visual tone:
   - User-facing screens avoid implementation terms such as `로컬 MVP` and `Firebase`.
   - Decorative emoji repetition is reduced in favor of small line icons, text labels, or subtle color marks.
+
+### MVP v0.10 Compact Monthly Question Calendar
+
+This batch focuses only on the question archive calendar UI/UX. It keeps the Firestore data model unchanged and must be implemented in SDD/TDD order.
+
+- Default shape:
+  - 질문함 캘린더는 2주 strip이 아니라 compact 월간 calendar grid를 기본으로 사용한다.
+  - 월 header는 `YYYY년 M월`을 표시하고, 이전 월/오늘/다음 월 control을 제공한다.
+  - 요일 row는 `월 화 수 목 금 토 일` 고정 순서로 표시한다.
+  - 날짜 grid는 선택된 날짜가 속한 월을 5~6개의 완전한 주 단위로 보여준다.
+- Date mapping:
+  - `startedDateKey` 이후의 날짜만 질문 카탈로그 순서에 매핑된다.
+  - `startedDateKey` 이전 날짜와 질문 카탈로그를 벗어난 날짜는 질문 없음 상태로 disabled 처리한다.
+  - 오늘 이후 날짜는 future disabled state이며 답변 CTA를 제공하지 않는다.
+  - 월 앞뒤를 채우는 adjacent month cell은 흐리게 표현하고, 유효한 과거/오늘 질문이면 선택 가능하다.
+- State markers:
+  - 각 날짜 cell은 day number, 선택 상태, 오늘 상태, 그리고 작은 상태 marker를 함께 보여준다.
+  - 상태 marker는 미답/내 답/상대 답/둘 다/패스/미래/질문 없음을 구분한다.
+  - 오늘 강조와 선택 강조는 동시에 보이더라도 시각적으로 구분된다.
+- Interaction:
+  - 날짜 선택은 selected question detail만 갱신하며 Firestore write를 만들지 않는다.
+  - 이전/다음 월 control은 선택 날짜를 해당 월의 유효한 anchor date로 이동시키며 Firestore write를 만들지 않는다.
+  - 오늘 control은 오늘 날짜가 속한 월과 오늘 detail로 돌아오며 Firestore write를 만들지 않는다.
+  - 과거 미답 날짜 detail에서만 `늦게 답하기` CTA를 제공한다.
+  - 선택된 날짜가 future/start-before/catalog-ended 상태이면 detail card에 상태 설명만 보여주고 답변 CTA는 제공하지 않는다.
+- Mobile UX:
+  - 390px 모바일 viewport에서 날짜 cell 텍스트, marker, header control이 겹치거나 잘리지 않는다.
+  - 월간 grid는 card 내부에서 지나치게 큰 여백 없이 compact spacing을 사용한다.
+  - selected detail은 grid 아래에 유지해 사용자가 날짜 선택 결과를 바로 확인할 수 있다.
 
 ### MVP v0.7 Answer Comments In Scope
 
@@ -689,11 +720,13 @@ Required UI:
   - month label, e.g. `2026년 6월`
   - previous/next month controls
   - today shortcut
-- Calendar grid or 2-week strip:
+- Compact monthly calendar grid:
   - date number
   - tiny status marker
   - today highlight
   - selected day highlight
+  - faded adjacent month date
+  - start-before/catalog-ended disabled state
   - future disabled state
 - Status legend:
   - 미답
@@ -734,6 +767,9 @@ State:
 Acceptance Criteria:
 
 - 질문함은 `startedDateKey` 기준으로 날짜와 질문을 매핑한 캘린더를 보여준다.
+- 질문함 캘린더는 선택 날짜가 속한 월을 5~6주 complete grid로 보여준다.
+- 월 앞뒤 adjacent 날짜는 흐리게 보이되, 유효한 과거/오늘 질문이면 선택할 수 있다.
+- `startedDateKey` 이전 날짜와 카탈로그 소진 이후 날짜는 질문 없음 disabled state로 보인다.
 - 오늘 날짜는 별도 강조되고, 선택된 날짜는 today highlight와 구분된다.
 - 미래 날짜는 disabled state로 표시되고 답변 CTA를 제공하지 않는다.
 - 과거 미답 날짜를 선택하면 `늦게 답하기` CTA가 보인다.
@@ -1178,6 +1214,7 @@ class QuestionCalendarDay {
   final String dateKey;
   final DailyQuestion? question;
   final QuestionCalendarStatus status;
+  final bool isInDisplayedMonth;
   final bool isToday;
   final bool isSelected;
   final bool canLateAnswer;
@@ -1511,7 +1548,7 @@ class AlagagiState {
 - Daily question progress migrates missing `startedDateKey` from `openedDateKey`
 - Same-date refresh/route/tab changes do not write progress again
 - Question calendar day status derives future/unanswered/my-only/partner-only/both/skipped states from progress and answers
-- Question calendar visible window follows today/selected date beyond the first 14 days
+- Question calendar monthly grid follows the selected date month or today month
 - Past unanswered question exposes late-answer availability
 - Past already-answered question remains read-only in MVP
 - Late-answer submit overwrites the existing `{questionId}_{uid}` answer key with one write

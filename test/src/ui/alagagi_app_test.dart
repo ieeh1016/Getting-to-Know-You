@@ -282,6 +282,15 @@ void main() {
     expect(find.byKey(archiveCalendarPreviousButtonKey), findsOneWidget);
     expect(find.byKey(archiveCalendarNextButtonKey), findsOneWidget);
     expect(find.byKey(archiveCalendarTodayButtonKey), findsOneWidget);
+    expect(find.text('2026년 6월'), findsOneWidget);
+    expect(
+      find.byKey(archiveCalendarDayButtonKey('2026-06-01')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(archiveCalendarDayButtonKey('2026-07-05')),
+      findsOneWidget,
+    );
     for (final label in ['월', '화', '수', '목', '금', '토', '일']) {
       expect(find.text(label), findsOneWidget);
     }
@@ -298,6 +307,73 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('6월 9일 · DAY 21'), findsOneWidget);
+  });
+
+  testWidgets('archive monthly calendar fits a 6-week mobile grid', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          dailyProgress: DailyQuestionProgress(
+            startedDateKey: '2026-08-01',
+            currentQuestionId: 'q028',
+            openedDateKey: '2026-08-28',
+          ),
+        ),
+      ),
+      todayDateKey: '2026-08-28',
+    )..goTo(AlagagiRoute.archive);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('2026년 8월'), findsOneWidget);
+    expect(
+      find.byKey(archiveCalendarDayButtonKey('2026-07-27')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(archiveCalendarDayButtonKey('2026-09-06')),
+      findsOneWidget,
+    );
+    expect(find.text('8월 28일 · DAY 28'), findsOneWidget);
+
+    await tester.tap(find.byKey(archiveCalendarDayButtonKey('2026-09-06')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('8월 28일 · DAY 28'), findsOneWidget);
+
+    await tester.tap(find.byKey(archiveCalendarNextButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('2026년 9월'), findsOneWidget);
+    expect(find.text('9월 28일'), findsOneWidget);
+    expect(find.text('아직 열리지 않았어요'), findsWidgets);
+    expect(find.byKey(lateAnswerButtonKey), findsNothing);
   });
 
   testWidgets('archive calendar opens and saves a late answer', (tester) async {
@@ -347,6 +423,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(archiveCalendarKey), findsOneWidget);
+    expect(find.byKey(lateAnswerButtonKey), findsNothing);
+
+    await tester.tap(find.byKey(archiveCalendarDayButtonKey('2026-06-08')));
+    await tester.pumpAndSettle();
+
     expect(find.byKey(lateAnswerButtonKey), findsOneWidget);
 
     await tester.ensureVisible(find.byKey(lateAnswerButtonKey));

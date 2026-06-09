@@ -373,7 +373,7 @@ void main() {
       expect(today.isToday, isTrue);
     });
 
-    test('question calendar window follows day 15 and selected day', () {
+    test('question calendar month grid follows today and selected month', () {
       final controller = AlagagiController.forSession(
         firebaseSessionWithData(
           const AlagagiSpaceData(
@@ -389,23 +389,35 @@ void main() {
 
       final todayWindow = controller.visibleQuestionCalendarDays;
 
-      expect(todayWindow, hasLength(14));
-      expect(todayWindow.first.question?.number, greaterThan(1));
+      expect(todayWindow.length, inInclusiveRange(35, 42));
+      expect(todayWindow.first.dateKey, '2026-06-01');
+      expect(todayWindow.last.dateKey, '2026-07-05');
       expect(todayWindow.map((day) => day.question?.number), contains(15));
       expect(
         todayWindow.any((day) => day.isToday && day.question?.number == 15),
         isTrue,
       );
+      expect(todayWindow.where((day) => day.isInDisplayedMonth), hasLength(30));
+      expect(
+        todayWindow
+            .where((day) => !day.isInDisplayedMonth)
+            .map((day) => day.dateKey),
+        containsAll(['2026-07-01', '2026-07-05']),
+      );
 
-      controller.selectArchiveDate('2026-06-25');
+      controller.selectArchiveDate('2026-07-02');
       final selectedWindow = controller.visibleQuestionCalendarDays;
 
-      expect(selectedWindow, hasLength(14));
-      expect(selectedWindow.first.question?.number, greaterThan(1));
-      expect(selectedWindow.map((day) => day.question?.number), contains(18));
+      expect(selectedWindow.length, inInclusiveRange(35, 42));
+      expect(selectedWindow.first.dateKey, '2026-06-29');
+      expect(selectedWindow.last.dateKey, '2026-08-02');
+      expect(
+        selectedWindow.where((day) => day.isInDisplayedMonth),
+        hasLength(31),
+      );
       expect(
         selectedWindow.any(
-          (day) => day.isSelected && day.question?.number == 18,
+          (day) => day.isSelected && day.question?.number == 25,
         ),
         isTrue,
       );
@@ -752,7 +764,7 @@ void main() {
       expect(repository.savedWishes, isEmpty);
     });
 
-    test('calendar visible window includes today beyond the first 14 days', () {
+    test('calendar month grid includes today beyond the first 14 days', () {
       final controller = AlagagiController.forSession(
         const AlagagiSession(
           spaceId: 'main',
@@ -783,9 +795,70 @@ void main() {
           .map((day) => day.dateKey)
           .toList();
 
-      expect(visibleDateKeys, hasLength(14));
+      expect(visibleDateKeys.length, inInclusiveRange(35, 42));
+      expect(visibleDateKeys.first, '2026-06-01');
       expect(visibleDateKeys, contains('2026-06-20'));
-      expect(visibleDateKeys, isNot(contains('2026-06-01')));
+      expect(visibleDateKeys, contains('2026-06-30'));
+      expect(
+        controller.visibleQuestionCalendarDays
+            .singleWhere((day) => day.dateKey == '2026-06-20')
+            .isToday,
+        isTrue,
+      );
+    });
+
+    test('calendar month navigation changes only local state', () {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            dailyProgress: DailyQuestionProgress(
+              startedDateKey: '2026-06-01',
+              currentQuestionId: 'q020',
+              openedDateKey: '2026-06-20',
+            ),
+          ),
+        ),
+        repository: repository,
+        todayDateKey: '2026-06-20',
+      );
+
+      controller.selectNextArchiveMonth();
+
+      expect(
+        controller.visibleQuestionCalendarDays.first.dateKey,
+        '2026-06-29',
+      );
+      expect(
+        controller.selectedQuestionCalendarDay?.dateKey.startsWith('2026-07'),
+        isTrue,
+      );
+
+      controller.selectPreviousArchiveMonth();
+
+      expect(
+        controller.visibleQuestionCalendarDays.first.dateKey,
+        '2026-06-01',
+      );
+
+      controller.selectTodayArchiveMonth();
+
+      expect(controller.selectedQuestionCalendarDay?.dateKey, '2026-06-20');
+      expect(repository.savedAnswers, isEmpty);
+      expect(repository.savedDailyQuestionProgress, isEmpty);
     });
 
     test('answer comment draft does not write until submit', () {

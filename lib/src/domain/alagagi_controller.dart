@@ -335,6 +335,7 @@ class QuestionCalendarDay {
     required this.dateKey,
     required this.question,
     required this.status,
+    required this.isInDisplayedMonth,
     required this.isToday,
     required this.isSelected,
     required this.canLateAnswer,
@@ -343,6 +344,7 @@ class QuestionCalendarDay {
   final String dateKey;
   final DailyQuestion? question;
   final QuestionCalendarStatus status;
+  final bool isInDisplayedMonth;
   final bool isToday;
   final bool isSelected;
   final bool canLateAnswer;
@@ -914,6 +916,10 @@ class AlagagiController extends ChangeNotifier {
     return '${date.year}-${twoDigits(date.month)}-${twoDigits(date.day)}';
   }
 
+  static bool _isSameMonth(DateTime first, DateTime second) {
+    return first.year == second.year && first.month == second.month;
+  }
+
   List<ProfileCardData> _emptyProfileCardsForSession() {
     return [
       ProfileCardData(
@@ -1159,69 +1165,65 @@ class AlagagiController extends ChangeNotifier {
     if (startedDate == null || todayDate == null) {
       return const [];
     }
-    final selectedDateKey =
-        _state.selectedArchiveDateKey ??
-        _defaultSelectedArchiveDateKey(startedDate, todayDate);
     final visibleDayCount = _visibleCalendarDayCount(startedDate, todayDate);
     return List<QuestionCalendarDay>.generate(visibleDayCount, (index) {
       final date = startedDate.add(Duration(days: index));
-      final dateKey = _dateKey(date);
-      final question = index < questions.length ? questions[index] : null;
-      final isToday = dateKey == _dailyProgress.openedDateKey;
-      final isFuture = date.isAfter(todayDate);
-      final status = _calendarStatusFor(question, isFuture: isFuture);
-      final myAnswer = question == null
-          ? null
-          : _myAnswersByQuestionId[question.id];
-      final canLateAnswer =
-          question != null &&
-          date.isBefore(todayDate) &&
-          !isFuture &&
-          myAnswer == null;
-      return QuestionCalendarDay(
-        dateKey: dateKey,
-        question: question,
-        status: status,
-        isToday: isToday,
-        isSelected: dateKey == selectedDateKey,
-        canLateAnswer: canLateAnswer,
+      return _calendarDayForDate(
+        date,
+        startedDate: startedDate,
+        todayDate: todayDate,
+        displayedMonth: date,
       );
     });
   }
 
   List<QuestionCalendarDay> get visibleQuestionCalendarDays {
-    final days = questionCalendarDays;
-    if (days.length <= 14) {
-      return days;
+    final startedDate = DateTime.tryParse(_dailyProgress.startedDateKey);
+    final todayDate = DateTime.tryParse(_dailyProgress.openedDateKey);
+    if (startedDate == null || todayDate == null) {
+      return const [];
     }
-
-    final anchorDateKey =
-        _state.selectedArchiveDateKey ?? _dailyProgress.openedDateKey;
-    var anchorIndex = days.indexWhere((day) => day.dateKey == anchorDateKey);
-    if (anchorIndex == -1) {
-      anchorIndex = days.indexWhere((day) => day.isToday);
-    }
-    if (anchorIndex == -1) {
-      anchorIndex = days.length - 1;
-    }
-
-    final maxStart = days.length - 14;
-    final start = (anchorIndex - 6).clamp(0, maxStart).toInt();
-    return days.skip(start).take(14).toList();
+    final anchorDate = _selectedArchiveDate(startedDate, todayDate);
+    final monthStart = DateTime(anchorDate.year, anchorDate.month);
+    final nextMonthStart = DateTime(anchorDate.year, anchorDate.month + 1);
+    final monthEnd = nextMonthStart.subtract(const Duration(days: 1));
+    final gridStart = monthStart.subtract(
+      Duration(days: monthStart.weekday - 1),
+    );
+    final gridEnd = monthEnd.add(Duration(days: 7 - monthEnd.weekday));
+    final gridDayCount = gridEnd.difference(gridStart).inDays + 1;
+    return List<QuestionCalendarDay>.generate(gridDayCount, (index) {
+      final date = gridStart.add(Duration(days: index));
+      return _calendarDayForDate(
+        date,
+        startedDate: startedDate,
+        todayDate: todayDate,
+        displayedMonth: monthStart,
+      );
+    });
   }
 
   QuestionCalendarDay? get selectedQuestionCalendarDay {
-    for (final day in questionCalendarDays) {
-      if (day.isSelected) {
-        return day;
-      }
+    final startedDate = DateTime.tryParse(_dailyProgress.startedDateKey);
+    final todayDate = DateTime.tryParse(_dailyProgress.openedDateKey);
+    if (startedDate == null || todayDate == null) {
+      return null;
     }
-    return questionCalendarDays.isEmpty ? null : questionCalendarDays.first;
+    final selectedDate = _selectedArchiveDate(startedDate, todayDate);
+    return _calendarDayForDate(
+      selectedDate,
+      startedDate: startedDate,
+      todayDate: todayDate,
+      displayedMonth: selectedDate,
+    );
   }
 
   int _visibleCalendarDayCount(DateTime startedDate, DateTime todayDate) {
     final elapsedDays = todayDate.difference(startedDate).inDays + 1;
-    var minimumDays = elapsedDays < 14 ? 14 : elapsedDays;
+    var minimumDays = elapsedDays < 1 ? 1 : elapsedDays;
+    if (questions.length > minimumDays) {
+      minimumDays = questions.length;
+    }
     final selectedDateKey = _state.selectedArchiveDateKey;
     if (selectedDateKey != null) {
       final selectedDate = DateTime.tryParse(selectedDateKey);
@@ -1232,24 +1234,61 @@ class AlagagiController extends ChangeNotifier {
         }
       }
     }
-    return minimumDays.clamp(1, questions.length).toInt();
+    return minimumDays < 1 ? 1 : minimumDays;
+  }
+
+  QuestionCalendarDay _calendarDayForDate(
+    DateTime date, {
+    required DateTime startedDate,
+    required DateTime todayDate,
+    required DateTime displayedMonth,
+  }) {
+    final dateKey = _dateKey(date);
+    final selectedDateKey =
+        _state.selectedArchiveDateKey ??
+        _defaultSelectedArchiveDateKey(startedDate, todayDate);
+    DailyQuestion? question;
+    if (!date.isBefore(startedDate)) {
+      final questionIndex = date.difference(startedDate).inDays;
+      if (questionIndex >= 0 && questionIndex < questions.length) {
+        question = questions[questionIndex];
+      }
+    }
+    final isFuture = date.isAfter(todayDate);
+    final status = _calendarStatusFor(question, isFuture: isFuture);
+    final myAnswer = question == null
+        ? null
+        : _myAnswersByQuestionId[question.id];
+    final canLateAnswer =
+        question != null &&
+        date.isBefore(todayDate) &&
+        !isFuture &&
+        myAnswer == null;
+    return QuestionCalendarDay(
+      dateKey: dateKey,
+      question: question,
+      status: status,
+      isInDisplayedMonth:
+          date.year == displayedMonth.year &&
+          date.month == displayedMonth.month,
+      isToday: dateKey == _dailyProgress.openedDateKey,
+      isSelected: dateKey == selectedDateKey,
+      canLateAnswer: canLateAnswer,
+    );
+  }
+
+  DateTime _selectedArchiveDate(DateTime startedDate, DateTime todayDate) {
+    final selectedDateKey =
+        _state.selectedArchiveDateKey ??
+        _defaultSelectedArchiveDateKey(startedDate, todayDate);
+    return DateTime.tryParse(selectedDateKey) ??
+        (todayDate.isBefore(startedDate) ? startedDate : todayDate);
   }
 
   String _defaultSelectedArchiveDateKey(
     DateTime startedDate,
     DateTime todayDate,
   ) {
-    final visibleDayCount = _visibleCalendarDayCount(startedDate, todayDate);
-    for (var index = 0; index < visibleDayCount; index += 1) {
-      final date = startedDate.add(Duration(days: index));
-      if (!date.isBefore(todayDate)) {
-        continue;
-      }
-      final question = index < questions.length ? questions[index] : null;
-      if (question != null && _myAnswersByQuestionId[question.id] == null) {
-        return _dateKey(date);
-      }
-    }
     return _dateKey(todayDate.isBefore(startedDate) ? startedDate : todayDate);
   }
 
@@ -1700,6 +1739,49 @@ class AlagagiController extends ChangeNotifier {
   void selectArchiveDate(String dateKey) {
     _state = _state.copyWith(selectedArchiveDateKey: dateKey);
     notifyListeners();
+  }
+
+  void selectPreviousArchiveMonth() {
+    _selectArchiveMonthByOffset(-1);
+  }
+
+  void selectNextArchiveMonth() {
+    _selectArchiveMonthByOffset(1);
+  }
+
+  void selectTodayArchiveMonth() {
+    selectArchiveDate(_dailyProgress.openedDateKey);
+  }
+
+  void _selectArchiveMonthByOffset(int monthOffset) {
+    final startedDate = DateTime.tryParse(_dailyProgress.startedDateKey);
+    final todayDate = DateTime.tryParse(_dailyProgress.openedDateKey);
+    if (startedDate == null || todayDate == null) {
+      return;
+    }
+    final currentDate = _selectedArchiveDate(startedDate, todayDate);
+    final targetMonthStart = DateTime(
+      currentDate.year,
+      currentDate.month + monthOffset,
+    );
+    final targetMonthEnd = DateTime(
+      targetMonthStart.year,
+      targetMonthStart.month + 1,
+      0,
+    );
+    final targetDay = currentDate.day > targetMonthEnd.day
+        ? targetMonthEnd.day
+        : currentDate.day;
+    var targetDate = DateTime(
+      targetMonthStart.year,
+      targetMonthStart.month,
+      targetDay,
+    );
+    if (_isSameMonth(targetDate, startedDate) &&
+        targetDate.isBefore(startedDate)) {
+      targetDate = startedDate;
+    }
+    selectArchiveDate(_dateKey(targetDate));
   }
 
   void startLateAnswer(String questionId) {
