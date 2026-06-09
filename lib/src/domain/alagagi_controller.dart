@@ -26,6 +26,16 @@ enum QuestionDepth { light, daily, beliefs, inner }
 
 enum SaveStatus { idle, saving, saved, failed }
 
+enum QuestionCalendarStatus {
+  future,
+  unanswered,
+  myAnswerOnly,
+  partnerAnswerOnly,
+  bothAnswered,
+  skippedByMe,
+  catalogEnded,
+}
+
 String firebaseEmailForLoginId(String loginId) {
   final normalized = loginId.trim().toLowerCase();
   if (normalized.contains('@')) {
@@ -244,14 +254,30 @@ class AnswerComment {
 
 class DailyQuestionProgress {
   const DailyQuestionProgress({
+    String? startedDateKey,
     required this.currentQuestionId,
     required this.openedDateKey,
     this.catalogVersion = 'v1',
-  });
+  }) : startedDateKey = startedDateKey ?? openedDateKey;
 
+  final String startedDateKey;
   final String currentQuestionId;
   final String openedDateKey;
   final String catalogVersion;
+
+  DailyQuestionProgress copyWith({
+    String? startedDateKey,
+    String? currentQuestionId,
+    String? openedDateKey,
+    String? catalogVersion,
+  }) {
+    return DailyQuestionProgress(
+      startedDateKey: startedDateKey ?? this.startedDateKey,
+      currentQuestionId: currentQuestionId ?? this.currentQuestionId,
+      openedDateKey: openedDateKey ?? this.openedDateKey,
+      catalogVersion: catalogVersion ?? this.catalogVersion,
+    );
+  }
 }
 
 class SpacePersonalization {
@@ -302,6 +328,24 @@ class ArchiveItem {
       !partnerAnswer!.skipped;
 
   bool get similar => matchedKeywords.isNotEmpty;
+}
+
+class QuestionCalendarDay {
+  const QuestionCalendarDay({
+    required this.dateKey,
+    required this.question,
+    required this.status,
+    required this.isToday,
+    required this.isSelected,
+    required this.canLateAnswer,
+  });
+
+  final String dateKey;
+  final DailyQuestion? question;
+  final QuestionCalendarStatus status;
+  final bool isToday;
+  final bool isSelected;
+  final bool canLateAnswer;
 }
 
 class TimelineEvent {
@@ -404,8 +448,7 @@ class ProfileCardData {
   final String subtitle;
   final List<ProfileSlot> slots;
 
-  int get filledCount =>
-      slots.where((slot) => slot.value != null && !slot.locked).length;
+  int get filledCount => slots.where((slot) => slot.value != null).length;
 
   int get totalCount => slots.length;
 
@@ -483,6 +526,8 @@ class AlagagiState {
     this.skippedToday = false,
     this.editingAnswer = false,
     this.expandedAnswerKeys = const {},
+    this.activeAnswerQuestionId,
+    this.selectedArchiveDateKey,
   });
 
   final AppProfile me;
@@ -509,6 +554,8 @@ class AlagagiState {
   final bool skippedToday;
   final bool editingAnswer;
   final Set<String> expandedAnswerKeys;
+  final String? activeAnswerQuestionId;
+  final String? selectedArchiveDateKey;
 
   AlagagiState copyWith({
     AppProfile? me,
@@ -541,6 +588,9 @@ class AlagagiState {
     bool? skippedToday,
     bool? editingAnswer,
     Set<String>? expandedAnswerKeys,
+    String? activeAnswerQuestionId,
+    bool clearActiveAnswerQuestion = false,
+    String? selectedArchiveDateKey,
   }) {
     return AlagagiState(
       me: me ?? this.me,
@@ -576,6 +626,11 @@ class AlagagiState {
       skippedToday: skippedToday ?? this.skippedToday,
       editingAnswer: editingAnswer ?? this.editingAnswer,
       expandedAnswerKeys: expandedAnswerKeys ?? this.expandedAnswerKeys,
+      activeAnswerQuestionId: clearActiveAnswerQuestion
+          ? null
+          : activeAnswerQuestionId ?? this.activeAnswerQuestionId,
+      selectedArchiveDateKey:
+          selectedArchiveDateKey ?? this.selectedArchiveDateKey,
     );
   }
 }
@@ -586,6 +641,11 @@ class AlagagiController extends ChangeNotifier {
       _spaceId = null,
       _usesDemoData = true,
       _todayQuestion = seedQuestions.first,
+      _dailyProgress = const DailyQuestionProgress(
+        startedDateKey: '2026-06-08',
+        currentQuestionId: 'q12',
+        openedDateKey: '2026-06-08',
+      ),
       questions = seedQuestions,
       balanceQuestions = seedBalanceQuestions,
       _state = const AlagagiState(
@@ -603,12 +663,22 @@ class AlagagiController extends ChangeNotifier {
   AlagagiController.forSession(
     AlagagiSession session, {
     AlagagiDataRepository? repository,
+    String? todayDateKey,
   }) : _repository = repository,
        _spaceId = session.spaceId,
        _usesDemoData = false,
-       _todayQuestion = _questionForProgress(
+       _dailyProgress = _resolveDailyQuestionProgress(
          questionCatalogV1,
          session.data.dailyProgress,
+         todayDateKey: todayDateKey,
+       ),
+       _todayQuestion = _questionForProgress(
+         questionCatalogV1,
+         _resolveDailyQuestionProgress(
+           questionCatalogV1,
+           session.data.dailyProgress,
+           todayDateKey: todayDateKey,
+         ),
        ),
        questions = questionCatalogV1,
        balanceQuestions = balanceQuestionCatalogV1,
@@ -620,6 +690,7 @@ class AlagagiController extends ChangeNotifier {
          personalizationDraft: session.data.personalization,
        ) {
     _applySessionData(session.data);
+    _persistDailyQuestionProgressIfChanged(session.data.dailyProgress);
   }
 
   AlagagiState _state;
@@ -628,6 +699,7 @@ class AlagagiController extends ChangeNotifier {
   final bool _usesDemoData;
 
   final DailyQuestion _todayQuestion;
+  final DailyQuestionProgress _dailyProgress;
   final List<DailyQuestion> questions;
   final List<BalanceQuestion> balanceQuestions;
 
@@ -643,6 +715,21 @@ class AlagagiController extends ChangeNotifier {
   AlagagiState get state => _state;
 
   DailyQuestion get todayQuestion => _todayQuestion;
+
+  DailyQuestionProgress get dailyProgress => _dailyProgress;
+
+  DailyQuestion get activeAnswerQuestion {
+    final activeQuestionId = _state.activeAnswerQuestionId;
+    if (activeQuestionId == null) {
+      return todayQuestion;
+    }
+    return questions.firstWhere(
+      (question) => question.id == activeQuestionId,
+      orElse: () => todayQuestion,
+    );
+  }
+
+  bool get isActiveAnswerToday => activeAnswerQuestion.id == todayQuestion.id;
 
   RelationshipInsight get insight {
     if (_usesDemoData) {
@@ -754,87 +841,97 @@ class AlagagiController extends ChangeNotifier {
       ..addAll(data.wishes);
   }
 
+  static DailyQuestionProgress _resolveDailyQuestionProgress(
+    List<DailyQuestion> catalog,
+    DailyQuestionProgress? progress, {
+    String? todayDateKey,
+  }) {
+    final resolvedTodayDateKey = todayDateKey ?? _todayDateKey();
+    if (progress == null) {
+      return DailyQuestionProgress(
+        startedDateKey: resolvedTodayDateKey,
+        currentQuestionId: catalog.first.id,
+        openedDateKey: resolvedTodayDateKey,
+      );
+    }
+    final startedDateKey = progress.startedDateKey;
+    final question = _questionForDateKeys(
+      catalog,
+      startedDateKey: startedDateKey,
+      todayDateKey: resolvedTodayDateKey,
+    );
+    return progress.copyWith(
+      startedDateKey: startedDateKey,
+      currentQuestionId: question.id,
+      openedDateKey: resolvedTodayDateKey,
+    );
+  }
+
   static DailyQuestion _questionForProgress(
     List<DailyQuestion> catalog,
-    DailyQuestionProgress? progress,
+    DailyQuestionProgress progress,
   ) {
-    if (progress == null) {
-      return catalog.first;
-    }
     for (final question in catalog) {
       if (question.id == progress.currentQuestionId) {
         return question;
       }
     }
-    return catalog.first;
+    return _questionForDateKeys(
+      catalog,
+      startedDateKey: progress.startedDateKey,
+      todayDateKey: progress.openedDateKey,
+    );
+  }
+
+  static DailyQuestion _questionForDateKeys(
+    List<DailyQuestion> catalog, {
+    required String startedDateKey,
+    required String todayDateKey,
+  }) {
+    final startedDate = DateTime.tryParse(startedDateKey);
+    final todayDate = DateTime.tryParse(todayDateKey);
+    if (startedDate == null || todayDate == null || catalog.isEmpty) {
+      return catalog.first;
+    }
+    final dayOffset = todayDate.difference(startedDate).inDays;
+    final questionIndex = dayOffset.clamp(0, catalog.length - 1);
+    return catalog[questionIndex];
+  }
+
+  static String _todayDateKey() {
+    final koreaNow = DateTime.now().toUtc().add(const Duration(hours: 9));
+    return _dateKey(koreaNow);
+  }
+
+  static String _dateKey(DateTime date) {
+    String twoDigits(int value) => value.toString().padLeft(2, '0');
+    return '${date.year}-${twoDigits(date.month)}-${twoDigits(date.day)}';
   }
 
   List<ProfileCardData> _emptyProfileCardsForSession() {
     return [
       ProfileCardData(
         profile: _state.partner,
-        subtitle: '천천히 채워지는 중',
+        subtitle: '편한 만큼 채워지는 중',
         slots: _profileSlotCatalog(),
       ),
       ProfileCardData(
         profile: _state.me,
-        subtitle: '오늘 한 칸만 채워도 충분해요',
-        slots: _profileSlotCatalog(todayHint: true),
+        subtitle: '편한 만큼 채워두는 내 소개 카드',
+        slots: _profileSlotCatalog(),
       ),
     ];
   }
 
-  List<ProfileSlot> _profileSlotCatalog({bool todayHint = false}) {
-    return [
-      ProfileSlot(
-        id: 'song',
-        icon: '🎧',
-        label: '요즘 노래',
-        locked: true,
-        unlockHint: todayHint ? '오늘 채울 칸' : '아직 비밀',
-      ),
-      const ProfileSlot(
-        id: 'food',
-        icon: '🍙',
-        label: '먹고 싶은 음식',
-        locked: true,
-        unlockHint: 'Day 6',
-      ),
-      const ProfileSlot(
-        id: 'rest',
-        icon: '🏡',
-        label: '쉬는 방식',
-        locked: true,
-        unlockHint: 'Day 9',
-      ),
-      const ProfileSlot(
-        id: 'cafe',
-        icon: '☕',
-        label: '카페 취향',
-        locked: true,
-        unlockHint: 'Day 10',
-      ),
-      const ProfileSlot(
-        id: 'walk',
-        icon: '🚶',
-        label: '산책 취향',
-        locked: true,
-        unlockHint: 'Day 12',
-      ),
-      const ProfileSlot(
-        id: 'comfort',
-        icon: '🌿',
-        label: '편해지는 순간',
-        locked: true,
-        unlockHint: 'Day 14',
-      ),
-      const ProfileSlot(
-        id: 'pace',
-        icon: '🕰️',
-        label: '나에게 맞는 속도',
-        locked: true,
-        unlockHint: 'Day 20',
-      ),
+  List<ProfileSlot> _profileSlotCatalog() {
+    return const [
+      ProfileSlot(id: 'song', icon: '🎧', label: '요즘 노래'),
+      ProfileSlot(id: 'food', icon: '🍙', label: '먹고 싶은 음식'),
+      ProfileSlot(id: 'rest', icon: '🏡', label: '쉬는 방식'),
+      ProfileSlot(id: 'cafe', icon: '☕', label: '카페 취향'),
+      ProfileSlot(id: 'walk', icon: '🚶', label: '산책 취향'),
+      ProfileSlot(id: 'comfort', icon: '🌿', label: '편해지는 순간'),
+      ProfileSlot(id: 'pace', icon: '🕰️', label: '나에게 맞는 속도'),
     ];
   }
 
@@ -984,11 +1081,137 @@ class AlagagiController extends ChangeNotifier {
     );
   }
 
+  void _persistDailyQuestionProgressIfChanged(
+    DailyQuestionProgress? storedProgress,
+  ) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      return;
+    }
+    final shouldWrite =
+        storedProgress == null ||
+        storedProgress.startedDateKey != _dailyProgress.startedDateKey ||
+        storedProgress.currentQuestionId != _dailyProgress.currentQuestionId ||
+        storedProgress.openedDateKey != _dailyProgress.openedDateKey ||
+        storedProgress.catalogVersion != _dailyProgress.catalogVersion;
+    if (!shouldWrite) {
+      return;
+    }
+    unawaited(
+      repository
+          .saveDailyQuestionProgress(spaceId, _dailyProgress)
+          .catchError((_) {}),
+    );
+  }
+
   Answer? get todayMyAnswer => _myAnswersByQuestionId[todayQuestion.id];
 
   Answer? get todayPartnerAnswer => todayMyAnswer == null
       ? null
       : _partnerAnswersByQuestionId[todayQuestion.id];
+
+  Answer? answerForQuestion(String questionId) {
+    return _myAnswersByQuestionId[questionId];
+  }
+
+  List<QuestionCalendarDay> get questionCalendarDays {
+    final startedDate = DateTime.tryParse(_dailyProgress.startedDateKey);
+    final todayDate = DateTime.tryParse(_dailyProgress.openedDateKey);
+    if (startedDate == null || todayDate == null) {
+      return const [];
+    }
+    final selectedDateKey =
+        _state.selectedArchiveDateKey ??
+        _defaultSelectedArchiveDateKey(startedDate, todayDate);
+    final visibleDayCount = _visibleCalendarDayCount(startedDate, todayDate);
+    return List<QuestionCalendarDay>.generate(visibleDayCount, (index) {
+      final date = startedDate.add(Duration(days: index));
+      final dateKey = _dateKey(date);
+      final question = index < questions.length ? questions[index] : null;
+      final isToday = dateKey == _dailyProgress.openedDateKey;
+      final isFuture = date.isAfter(todayDate);
+      final status = _calendarStatusFor(question, isFuture: isFuture);
+      final myAnswer = question == null
+          ? null
+          : _myAnswersByQuestionId[question.id];
+      final canLateAnswer =
+          question != null &&
+          date.isBefore(todayDate) &&
+          !isFuture &&
+          myAnswer == null;
+      return QuestionCalendarDay(
+        dateKey: dateKey,
+        question: question,
+        status: status,
+        isToday: isToday,
+        isSelected: dateKey == selectedDateKey,
+        canLateAnswer: canLateAnswer,
+      );
+    });
+  }
+
+  QuestionCalendarDay? get selectedQuestionCalendarDay {
+    for (final day in questionCalendarDays) {
+      if (day.isSelected) {
+        return day;
+      }
+    }
+    return questionCalendarDays.isEmpty ? null : questionCalendarDays.first;
+  }
+
+  int _visibleCalendarDayCount(DateTime startedDate, DateTime todayDate) {
+    final elapsedDays = todayDate.difference(startedDate).inDays + 1;
+    final minimumDays = elapsedDays < 14 ? 14 : elapsedDays;
+    return minimumDays.clamp(1, questions.length).toInt();
+  }
+
+  String _defaultSelectedArchiveDateKey(
+    DateTime startedDate,
+    DateTime todayDate,
+  ) {
+    final visibleDayCount = _visibleCalendarDayCount(startedDate, todayDate);
+    for (var index = 0; index < visibleDayCount; index += 1) {
+      final date = startedDate.add(Duration(days: index));
+      if (!date.isBefore(todayDate)) {
+        continue;
+      }
+      final question = index < questions.length ? questions[index] : null;
+      if (question != null && _myAnswersByQuestionId[question.id] == null) {
+        return _dateKey(date);
+      }
+    }
+    return _dateKey(todayDate.isBefore(startedDate) ? startedDate : todayDate);
+  }
+
+  QuestionCalendarStatus _calendarStatusFor(
+    DailyQuestion? question, {
+    required bool isFuture,
+  }) {
+    if (isFuture) {
+      return QuestionCalendarStatus.future;
+    }
+    if (question == null) {
+      return QuestionCalendarStatus.catalogEnded;
+    }
+    final myAnswer = _myAnswersByQuestionId[question.id];
+    final partnerAnswer = _partnerAnswersByQuestionId[question.id];
+    if (myAnswer != null && myAnswer.skipped) {
+      return QuestionCalendarStatus.skippedByMe;
+    }
+    final hasMyAnswer = myAnswer != null && !myAnswer.skipped;
+    final hasPartnerAnswer = partnerAnswer != null && !partnerAnswer.skipped;
+    if (hasMyAnswer && hasPartnerAnswer) {
+      return QuestionCalendarStatus.bothAnswered;
+    }
+    if (hasMyAnswer) {
+      return QuestionCalendarStatus.myAnswerOnly;
+    }
+    if (hasPartnerAnswer) {
+      return QuestionCalendarStatus.partnerAnswerOnly;
+    }
+    return QuestionCalendarStatus.unanswered;
+  }
 
   static String _answerExpansionKey(String questionId, String profileId) {
     return '$questionId::$profileId';
@@ -1026,7 +1249,7 @@ class AlagagiController extends ChangeNotifier {
   ProfileSlot? get todayFillableProfileSlot {
     final myCard = _profileCards.firstWhere((card) => card.profile.isMe);
     for (final slot in myCard.slots) {
-      if (slot.locked || slot.value == null) {
+      if (slot.value == null) {
         return slot;
       }
     }
@@ -1101,6 +1324,7 @@ class AlagagiController extends ChangeNotifier {
     _state = _state.copyWith(
       route: route,
       editingAnswer: false,
+      clearActiveAnswerQuestion: route != AlagagiRoute.answer,
       clearAnswerError: true,
       clearAnswerSaveFeedback: route == AlagagiRoute.answer,
     );
@@ -1283,6 +1507,11 @@ class AlagagiController extends ChangeNotifier {
   }
 
   void submitTodayAnswer() {
+    _state = _state.copyWith(activeAnswerQuestionId: todayQuestion.id);
+    submitActiveAnswer();
+  }
+
+  void submitActiveAnswer() {
     if (_state.answerSaveStatus == SaveStatus.saving) {
       return;
     }
@@ -1298,27 +1527,44 @@ class AlagagiController extends ChangeNotifier {
       return;
     }
 
-    final existingAnswer = _myAnswersByQuestionId[todayQuestion.id];
+    final question = activeAnswerQuestion;
+    final existingAnswer = _myAnswersByQuestionId[question.id];
     final answer = Answer(
-      questionId: todayQuestion.id,
+      questionId: question.id,
       profileId: _state.me.id,
       body: body,
-      createdLabel: existingAnswer?.createdLabel ?? '오늘',
+      createdLabel: existingAnswer?.createdLabel ?? _createdLabelFor(question),
       edited: existingAnswer != null && !existingAnswer.skipped,
     );
-    _myAnswersByQuestionId[todayQuestion.id] = answer;
+    _myAnswersByQuestionId[question.id] = answer;
     _lastFailedAnswer = null;
     _state = _state.copyWith(
       draftAnswer: '',
-      route: AlagagiRoute.home,
+      route: isActiveAnswerToday ? AlagagiRoute.home : AlagagiRoute.archive,
       skippedToday: false,
       editingAnswer: false,
+      clearActiveAnswerQuestion: true,
       answerSaveStatus: SaveStatus.saving,
       clearAnswerError: true,
       clearAnswerSaveFeedback: true,
     );
     notifyListeners();
     _persistAnswer(answer);
+  }
+
+  String _createdLabelFor(DailyQuestion question) {
+    if (question.id == todayQuestion.id) {
+      return '오늘';
+    }
+    for (final day in questionCalendarDays) {
+      if (day.question?.id == question.id) {
+        final date = DateTime.tryParse(day.dateKey);
+        if (date != null) {
+          return '${date.month}월 ${date.day}일';
+        }
+      }
+    }
+    return '오늘';
   }
 
   void skipToday() {
@@ -1361,6 +1607,7 @@ class AlagagiController extends ChangeNotifier {
       route: AlagagiRoute.answer,
       draftAnswer: answer.body,
       editingAnswer: true,
+      activeAnswerQuestionId: todayQuestion.id,
       clearAnswerError: true,
       clearAnswerSaveFeedback: true,
     );
@@ -1373,10 +1620,55 @@ class AlagagiController extends ChangeNotifier {
       draftAnswer: '',
       skippedToday: false,
       editingAnswer: true,
+      activeAnswerQuestionId: todayQuestion.id,
       clearAnswerError: true,
       clearAnswerSaveFeedback: true,
     );
     notifyListeners();
+  }
+
+  void selectArchiveDate(String dateKey) {
+    _state = _state.copyWith(selectedArchiveDateKey: dateKey);
+    notifyListeners();
+  }
+
+  void startLateAnswer(String questionId) {
+    final question = _questionById(questionId);
+    if (question == null) {
+      return;
+    }
+    final calendarDay = _calendarDayForQuestion(questionId);
+    if (calendarDay == null || !calendarDay.canLateAnswer) {
+      return;
+    }
+    _state = _state.copyWith(
+      route: AlagagiRoute.answer,
+      activeAnswerQuestionId: questionId,
+      selectedArchiveDateKey: calendarDay.dateKey,
+      draftAnswer: '',
+      editingAnswer: false,
+      clearAnswerError: true,
+      clearAnswerSaveFeedback: true,
+    );
+    notifyListeners();
+  }
+
+  DailyQuestion? _questionById(String questionId) {
+    for (final question in questions) {
+      if (question.id == questionId) {
+        return question;
+      }
+    }
+    return null;
+  }
+
+  QuestionCalendarDay? _calendarDayForQuestion(String questionId) {
+    for (final day in questionCalendarDays) {
+      if (day.question?.id == questionId) {
+        return day;
+      }
+    }
+    return null;
   }
 
   void retryAnswerSave() {
@@ -2015,20 +2307,8 @@ const seedProfileCards = [
       ),
       ProfileSlot(id: 'song', icon: '🎧', label: '요즘 노래', value: '어쿠스틱 발라드'),
       ProfileSlot(id: 'type', icon: '🐾', label: '동물상', value: '고양이상이래요'),
-      ProfileSlot(
-        id: 'motto',
-        icon: '💭',
-        label: '좌우명',
-        locked: true,
-        unlockHint: '내일 열려요',
-      ),
-      ProfileSlot(
-        id: 'sleep',
-        icon: '🌙',
-        label: '잠드는 시간',
-        locked: true,
-        unlockHint: '아직 비밀',
-      ),
+      ProfileSlot(id: 'motto', icon: '💭', label: '좌우명'),
+      ProfileSlot(id: 'sleep', icon: '🌙', label: '잠드는 시간'),
     ],
   ),
   ProfileCardData(
@@ -2040,20 +2320,8 @@ const seedProfileCards = [
       ProfileSlot(id: 'food', icon: '🍙', label: '좋아하는 음식', value: '파스타와 커피'),
       ProfileSlot(id: 'song', icon: '🎧', label: '요즘 노래', value: '잔잔한 재즈'),
       ProfileSlot(id: 'type', icon: '🐾', label: '동물상', value: '차분한 강아지상'),
-      ProfileSlot(
-        id: 'motto',
-        icon: '💭',
-        label: '좌우명',
-        locked: true,
-        unlockHint: '오늘 채울 칸',
-      ),
-      ProfileSlot(
-        id: 'sleep',
-        icon: '🌙',
-        label: '잠드는 시간',
-        locked: true,
-        unlockHint: '아직 비밀',
-      ),
+      ProfileSlot(id: 'motto', icon: '💭', label: '좌우명'),
+      ProfileSlot(id: 'sleep', icon: '🌙', label: '잠드는 시간'),
     ],
   ),
 ];

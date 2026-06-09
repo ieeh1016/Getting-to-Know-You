@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>알아가기 · 질문 캘린더와 늦게 답하기</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --bg:#f4f3ef;
+    --outer:#e9e8e2;
+    --paper:#fcfcfa;
+    --ink:#2e2e2c;
+    --text:#45443f;
+    --muted:#8f8b82;
+    --soft:#f0f2eb;
+    --sage:#8a9a7e;
+    --sage-deep:#6f7f63;
+    --lav:#a99abb;
+    --clay:#b18472;
+    --line:#e8e6df;
+    --disabled:#c7c3ba;
+  }
+  body{
+    font-family:'Noto Sans KR',sans-serif;
+    background:var(--outer);
+    color:var(--ink);
+    min-height:100vh;
+    padding:38px 18px;
+    font-weight:300;
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+  .title{text-align:center;margin-bottom:28px}
+  .title .eyebrow{font-size:11px;letter-spacing:3px;color:var(--sage-deep);margin-bottom:8px}
+  .title h1{font-family:'Nanum Myeongjo',serif;font-size:30px;font-weight:800;line-height:1.35}
+  .title p{font-size:14px;color:var(--muted);line-height:1.75;margin:10px auto 0;max-width:640px}
+  .stage{display:grid;grid-template-columns:repeat(2,minmax(320px,390px));gap:26px;justify-content:center;align-items:start}
+  .caption{margin-bottom:12px}
+  .caption .step{font-family:'Nanum Myeongjo',serif;font-size:12px;letter-spacing:2px;color:var(--sage-deep)}
+  .caption h2{font-family:'Nanum Myeongjo',serif;font-size:19px;font-weight:800;margin-top:3px}
+  .caption p{font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:5px}
+  .phone{
+    width:390px;
+    max-width:100%;
+    min-height:844px;
+    background:var(--bg);
+    border:8px solid #fff;
+    border-radius:40px;
+    overflow:hidden;
+    position:relative;
+    box-shadow:0 30px 70px rgba(60,60,50,.18);
+  }
+  .screen{padding:28px 24px 110px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+  .topbar h3{font-family:'Nanum Myeongjo',serif;font-size:24px;font-weight:800}
+  .topbar p{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .icon-btn{
+    width:38px;
+    height:38px;
+    border:1px solid var(--line);
+    border-radius:50%;
+    background:var(--paper);
+    color:var(--ink);
+    display:grid;
+    place-items:center;
+    font-size:16px;
+    font-weight:500;
+  }
+  .calendar{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:18px;
+  }
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .cal-head strong{font-family:'Nanum Myeongjo',serif;font-size:18px}
+  .cal-actions{display:flex;gap:6px}
+  .cal-actions button{
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--muted);
+    font-size:14px;
+  }
+  .week,.days{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+  .week span{text-align:center;font-size:10.5px;color:var(--muted);padding-bottom:4px}
+  .day{
+    aspect-ratio:1;
+    border:1px solid transparent;
+    border-radius:14px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:5px;
+    font-size:12px;
+    color:var(--text);
+    background:#fff;
+  }
+  .day .num{line-height:1}
+  .day .dot{width:6px;height:6px;border-radius:50%;background:var(--line)}
+  .day.both .dot{background:var(--sage-deep)}
+  .day.me .dot{background:var(--sage)}
+  .day.partner .dot{background:var(--lav)}
+  .day.skip .dot{width:12px;height:2px;border-radius:4px;background:var(--clay)}
+  .day.empty .dot{background:transparent;border:1px solid var(--disabled)}
+  .day.future{color:var(--disabled);background:#f8f7f3}
+  .day.future .dot{background:#ddd9d0}
+  .day.today{border-color:var(--sage-deep);font-weight:700}
+  .day.selected{background:var(--soft);border-color:#cfd8c5}
+  .legend{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+  .legend span{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-size:10.5px;
+    color:var(--muted);
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:999px;
+    padding:5px 8px;
+  }
+  .legend i{display:block;width:6px;height:6px;border-radius:50%;background:var(--line)}
+  .legend .me i{background:var(--sage)}
+  .legend .partner i{background:var(--lav)}
+  .legend .both i{background:var(--sage-deep)}
+  .legend .skip i{width:12px;height:2px;border-radius:4px;background:var(--clay)}
+  .detail,.today-card,.composer,.answer-wait{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:22px;
+  }
+  .detail{margin-top:14px;padding:19px}
+  .meta-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+  .meta-row .day-label{font-family:'Nanum Myeongjo',serif;font-size:13px;color:var(--sage-deep);letter-spacing:1px}
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:999px;
+    background:var(--soft);
+    color:var(--sage-deep);
+    font-size:10.5px;
+    padding:5px 9px;
+    white-space:nowrap;
+  }
+  .detail h4,.question h4{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:20px;
+    line-height:1.48;
+    font-weight:700;
+  }
+  .status-pills{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}
+  .status-pills span{
+    font-size:11px;
+    color:var(--muted);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:6px 9px;
+    background:#fff;
+  }
+  .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px}
+  .btn{
+    border:0;
+    border-radius:15px;
+    padding:14px 12px;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:14px;
+    font-weight:700;
+  }
+  .btn.primary{background:var(--sage-deep);color:#fff;box-shadow:0 10px 22px rgba(111,127,99,.22)}
+  .btn.secondary{background:#fff;color:var(--text);border:1px solid var(--line)}
+  .today-card{margin-top:12px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .today-card small{display:block;color:var(--sage-deep);font-size:10.5px;letter-spacing:1px;margin-bottom:4px}
+  .today-card p{font-size:13px;color:var(--text);line-height:1.45}
+  .mini-arrow{
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    display:grid;
+    place-items:center;
+    background:#fff;
+    color:var(--muted);
+    flex-shrink:0;
+  }
+  .nav{
+    position:absolute;
+    bottom:0;
+    left:0;
+    right:0;
+    display:flex;
+    justify-content:space-around;
+    padding:16px 24px 24px;
+    background:rgba(252,252,250,.95);
+    backdrop-filter:blur(8px);
+    border-top:1px solid var(--line);
+  }
+  .nav a{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:10px;color:var(--muted);text-decoration:none;letter-spacing:1px}
+  .nav .mark{width:16px;height:16px;border:1.5px solid currentColor;border-radius:5px}
+  .nav .circle{border-radius:50%}
+  .nav .line{height:16px;border-radius:0;border-left:1.5px solid currentColor;border-top:0;border-right:0;border-bottom:0}
+  .nav a.on{color:var(--ink);font-weight:500}
+  .answer-screen{padding-bottom:30px}
+  .answer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+  .answer-head .center{text-align:center}
+  .answer-head .center strong{display:block;font-size:13px;letter-spacing:2px;color:var(--muted);font-weight:400}
+  .answer-head .center span{display:block;font-family:'Nanum Myeongjo',serif;font-size:13px;color:var(--sage-deep);margin-top:5px}
+  .question{margin-bottom:18px}
+  .question .idx{font-family:'Nanum Myeongjo',serif;font-size:58px;font-weight:800;color:#e7e5dc;line-height:.9;margin-bottom:8px}
+  .question .date{font-size:11px;letter-spacing:2px;color:var(--sage-deep);margin-bottom:10px}
+  .composer{padding:18px;min-height:218px}
+  .composer label{display:block;font-size:11px;letter-spacing:1px;color:var(--sage-deep);margin-bottom:12px}
+  .textarea{
+    min-height:128px;
+    font-size:15px;
+    line-height:1.75;
+    color:#3b3a36;
+  }
+  .count{font-size:11px;color:var(--muted);text-align:right;margin-top:10px}
+  .answer-wait{margin-top:14px;padding:18px;text-align:center;border-style:dashed;background:transparent}
+  .answer-wait .lock-icon{
+    width:30px;
+    height:30px;
+    border:1.5px solid var(--line);
+    border-radius:50%;
+    margin:0 auto 9px;
+    position:relative;
+  }
+  .answer-wait .lock-icon:before{
+    content:"";
+    position:absolute;
+    left:9px;
+    top:6px;
+    width:10px;
+    height:8px;
+    border:1.5px solid var(--muted);
+    border-bottom:0;
+    border-radius:8px 8px 0 0;
+  }
+  .answer-wait .lock-icon:after{
+    content:"";
+    position:absolute;
+    left:8px;
+    top:14px;
+    width:12px;
+    height:9px;
+    border-radius:3px;
+    background:var(--muted);
+    opacity:.55;
+  }
+  .answer-wait p{font-size:12.5px;color:var(--muted);line-height:1.55}
+  .answer-actions{display:grid;grid-template-columns:108px 1fr;gap:10px;margin-top:20px}
+  @media (max-width:860px){
+    body{padding:28px 12px}
+    .stage{grid-template-columns:minmax(320px,390px)}
+    .title h1{font-size:25px}
+  }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="title">
+      <div class="eyebrow">SDD v0.6 DESIGN MOCK</div>
+      <h1>과거 질문도 늦게 답할 수 있는 질문함</h1>
+      <p>현재 세이지 미니멀 톤을 유지하면서, 질문함 상단에 날짜 흐름을 추가하고 미답 과거 질문은 별도 답변 화면으로 이어지게 한 시안입니다.</p>
+    </section>
+
+    <section class="stage">
+      <article>
+        <div class="caption">
+          <div class="step">SCREEN 01</div>
+          <h2>질문 캘린더</h2>
+          <p>날짜별 답변 상태를 작게 표시하고, 선택한 과거 미답 질문만 늦게 답하기로 이어집니다.</p>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="topbar">
+              <div>
+                <h3>질문함</h3>
+                <p>6월의 질문 흐름</p>
+              </div>
+              <button class="icon-btn" aria-label="오늘로 이동">•</button>
+            </div>
+
+            <section class="calendar" aria-label="질문 캘린더">
+              <div class="cal-head">
+                <strong>2026년 6월</strong>
+                <div class="cal-actions">
+                  <button aria-label="이전 달">&lsaquo;</button>
+                  <button aria-label="다음 달">&rsaquo;</button>
+                </div>
+              </div>
+              <div class="week">
+                <span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span>
+              </div>
+              <div class="days">
+                <button class="day both"><span class="num">1</span><span class="dot"></span></button>
+                <button class="day me"><span class="num">2</span><span class="dot"></span></button>
+                <button class="day partner"><span class="num">3</span><span class="dot"></span></button>
+                <button class="day skip"><span class="num">4</span><span class="dot"></span></button>
+                <button class="day both"><span class="num">5</span><span class="dot"></span></button>
+                <button class="day both"><span class="num">6</span><span class="dot"></span></button>
+                <button class="day empty selected"><span class="num">7</span><span class="dot"></span></button>
+                <button class="day me"><span class="num">8</span><span class="dot"></span></button>
+                <button class="day empty today"><span class="num">9</span><span class="dot"></span></button>
+                <button class="day future"><span class="num">10</span><span class="dot"></span></button>
+                <button class="day future"><span class="num">11</span><span class="dot"></span></button>
+                <button class="day future"><span class="num">12</span><span class="dot"></span></button>
+                <button class="day future"><span class="num">13</span><span class="dot"></span></button>
+                <button class="day future"><span class="num">14</span><span class="dot"></span></button>
+              </div>
+              <div class="legend" aria-label="답변 상태">
+                <span><i></i>미답</span>
+                <span class="me"><i></i>내 답</span>
+                <span class="partner"><i></i>상대 답</span>
+                <span class="both"><i></i>둘 다</span>
+                <span class="skip"><i></i>패스</span>
+              </div>
+            </section>
+
+            <section class="detail">
+              <div class="meta-row">
+                <span class="day-label">6월 7일 · DAY 7</span>
+                <span class="chip">선택됨</span>
+              </div>
+              <h4>편한 대화는 어떤 분위기에서 잘 이어져요?</h4>
+              <div class="status-pills">
+                <span>내 답 없음</span>
+                <span>상대 답 대기</span>
+              </div>
+              <div class="btn-row">
+                <button class="btn primary">늦게 답하기</button>
+                <button class="btn secondary">오늘 질문</button>
+              </div>
+            </section>
+
+            <section class="today-card">
+              <div>
+                <small>TODAY'S QUESTION</small>
+                <p>처음 만난 자리에서 기억에 남은 순간은?</p>
+              </div>
+              <span class="mini-arrow">&rsaquo;</span>
+            </section>
+          </div>
+          <nav class="nav" aria-label="하단 내비게이션">
+            <a><span class="mark circle"></span>홈</a>
+            <a class="on"><span class="mark"></span>질문함</a>
+            <a><span class="mark line"></span>기록</a>
+            <a><span class="mark"></span>마이</a>
+          </nav>
+        </div>
+      </article>
+
+      <article>
+        <div class="caption">
+          <div class="step">SCREEN 02</div>
+          <h2>늦게 답하기</h2>
+          <p>오늘 질문 답변 화면을 재사용하되, 선택한 날짜와 질문 번호를 분명히 보여줍니다.</p>
+        </div>
+        <div class="phone">
+          <div class="screen answer-screen">
+            <div class="answer-head">
+              <button class="icon-btn" aria-label="뒤로 가기">&larr;</button>
+              <div class="center">
+                <strong>늦게 답하기</strong>
+                <span>6월 7일 · DAY 7</span>
+              </div>
+              <button class="icon-btn" aria-label="닫기">×</button>
+            </div>
+
+            <section class="question">
+              <div class="idx">07</div>
+              <div class="date">PAST QUESTION</div>
+              <h4>편한 대화는 어떤 분위기에서 잘 이어져요?</h4>
+            </section>
+
+            <section class="composer">
+              <label>나의 답</label>
+              <div class="textarea">저는 너무 조용해서 긴장되는 곳보다, 적당히 이야기가 흘러가는 공간이 편한 것 같아요. 천천히 말해도 괜찮은 분위기면 더 좋아요.</div>
+              <div class="count">71 / 300자</div>
+            </section>
+
+            <section class="answer-wait">
+              <div class="lock-icon" aria-hidden="true"></div>
+              <p>상대 답은 내 답을 남긴 뒤에 함께 볼 수 있어요.</p>
+            </section>
+
+            <div class="answer-actions">
+              <button class="btn secondary">취소</button>
+              <button class="btn primary">저장하기</button>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

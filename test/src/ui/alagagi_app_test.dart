@@ -196,6 +196,71 @@ void main() {
     expect(find.byKey(answerCommentFieldKey), findsNothing);
   });
 
+  testWidgets('archive calendar opens and saves a late answer', (tester) async {
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          answers: [
+            Answer(
+              questionId: 'q001',
+              profileId: 'youngwooUid',
+              body: '아침이 좋아요.',
+              createdLabel: '6월 7일',
+            ),
+            Answer(
+              questionId: 'q001',
+              profileId: 'minyoungUid',
+              body: '저녁이 좋아요.',
+              createdLabel: '6월 7일',
+            ),
+          ],
+          dailyProgress: DailyQuestionProgress(
+            startedDateKey: '2026-06-07',
+            currentQuestionId: 'q001',
+            openedDateKey: '2026-06-09',
+          ),
+        ),
+      ),
+      todayDateKey: '2026-06-09',
+    )..goTo(AlagagiRoute.archive);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(archiveCalendarKey), findsOneWidget);
+    expect(find.byKey(lateAnswerButtonKey), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(lateAnswerButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(lateAnswerButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('늦게 답하기'), findsOneWidget);
+    expect(find.text('PAST QUESTION'), findsOneWidget);
+
+    await tester.enterText(find.byKey(answerFieldKey), '늦게 남기는 답이에요.');
+    await tester.tap(find.text('저장하기'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('질문함'), findsWidgets);
+    expect(find.text('늦게 남기는 답이에요.'), findsOneWidget);
+  });
+
   testWidgets('customizes app title and home line from my screen', (
     tester,
   ) async {

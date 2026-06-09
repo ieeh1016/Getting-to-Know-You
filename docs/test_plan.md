@@ -9,7 +9,7 @@
 - Firestore-style user data에서 `AlagagiSession`을 구성한다.
 - Firebase mode의 빈 Firestore answers snapshot은 샘플 답변이 아닌 empty state로 변환된다.
 - Firebase mode의 빈 Firestore wishes snapshot은 샘플 위시가 아닌 empty state로 변환된다.
-- Firebase mode의 빈 Firestore profile slots snapshot은 샘플 소개 카드 값이 아닌 locked/empty state로 변환된다.
+- Firebase mode의 빈 Firestore profile slots snapshot은 샘플 소개 카드 값이 아닌 empty state로 변환된다.
 - 질문 카탈로그는 day/depth 규칙에 맞는 질문만 선택한다.
 - 밸런스 결과는 나와 상대의 실제 선택이 모두 있을 때만 계산된다.
 - 알아간 기록 insight는 실제 답변 데이터만 기반으로 계산한다.
@@ -23,6 +23,13 @@
 - retry action은 사용자가 누를 때만 repository write를 다시 호출한다.
 - 긴 답변 preview는 접힘/펼침 상태를 controller state에 반영한다.
 - 아카이브 필터가 전체/둘 다 답함/닮은 답을 구분한다.
+- `startedDateKey`와 Asia/Seoul 기준 오늘 날짜로 오늘 질문 id를 계산한다.
+- `startedDateKey`가 없는 기존 progress 문서는 `openedDateKey`를 시작일로 사용해 migration state를 만든다.
+- 같은 날짜의 새로고침/route 이동/tab switch는 progress repository write를 호출하지 않는다.
+- 질문 캘린더는 progress와 answers만으로 future/unanswered/my-only/partner-only/both/skipped 상태를 계산한다.
+- 과거 미답 질문은 late-answer 가능 상태가 된다.
+- 과거에 이미 답한 질문은 MVP에서 read-only 상태가 된다.
+- 늦게 답하기 저장은 `{questionId}_{uid}` answer key 1개만 저장한다.
 - 밸런스 선택과 다음 질문 이동이 상태에 반영된다.
 - 밸런스 마지막 질문 완료는 첫 질문으로 순환하지 않고 홈으로 돌아간다.
 - 하루 질문 progress는 같은 space의 두 사용자에게 같은 current question을 제공한다.
@@ -31,7 +38,8 @@
 - answer comment draft 변경은 repository write를 호출하지 않는다.
 - answer comment 수정 저장은 같은 comment key를 덮어쓰고 `edited`로 표시한다.
 - 상대 답변이 잠겨 있거나 skipped이면 comment 저장을 거부한다.
-- 소개 카드 슬롯 입력이 진행률에 반영된다.
+- 소개 카드 슬롯은 날짜와 무관하게 바로 입력 가능하고 진행률에 반영된다.
+- 소개 카드 슬롯 catalog는 `Day 6`, `오늘 채울 칸`, `아직 비밀` 같은 날짜 unlock copy를 만들지 않는다.
 - 위시리스트 관심 표시가 `서로 관심` 필터에 반영된다.
 - 위시 추가 draft는 제목/종류를 받아 내가 만든 wish를 저장한다.
 - 위시 추가/관심 표시/완료는 각각 1개 wish 문서 갱신으로 표현된다.
@@ -63,11 +71,16 @@
 - 수정 저장 실패 시 재시도 가능한 오류 문구가 보인다.
 - 답변/위시/밸런스 저장 중에는 중복 저장 버튼 입력이 방지된다.
 - 아카이브/기록/밸런스/소개 카드/위시 화면 내비게이션을 검증한다.
+- 질문함은 캘린더 header, 월 이동 control, status legend, 선택 질문 detail을 렌더링한다.
+- 과거 미답 날짜를 선택하면 `늦게 답하기` CTA가 보인다.
+- 미래 날짜를 선택하면 disabled state가 보이고 답변 CTA는 보이지 않는다.
+- 과거에 이미 답한 날짜를 선택하면 답변은 read-only로 보이고 수정 CTA는 보이지 않는다.
 - 위시 화면의 `하고 싶은 것 담기` CTA는 draft 입력 UI를 열고 새 wish를 카드로 추가한다.
 - 위시 화면은 하트 아이콘/하트 문구 대신 `서로 관심`, `관심 표시` 계열 표현을 사용한다.
 - 위시 카드의 저장 emoji icon은 UI primary icon으로 직접 렌더링하지 않는다.
 - 초대 노트, 홈 기능 카드, 밸런스 선택지, 소개 카드 슬롯, 위시 카드는 큰 텍스트 이모지 장식 대신 일관된 line icon을 사용한다.
 - 앱 shell은 모바일 브라우저와 중복되는 `9:41`, 배터리, 신호 점 mock status row를 렌더링하지 않는다.
+- 소개 카드 내 카드 탭은 모든 슬롯에 작성/수정 action을 보여주고 날짜 잠금 문구를 숨긴다.
 - 마이 화면에서 앱 이름/홈 문구를 저장하면 홈/마이 화면에 반영된다.
 - 개인화 설정 저장 전 draft 입력은 repository write를 호출하지 않는다.
 
@@ -91,7 +104,10 @@
 - Warning threshold: 1,000 reads/day 또는 100 writes/day.
 - Review/stop threshold: 2,500 reads/day 또는 500 writes/day.
 - Keystroke, scroll, tab switch는 Firestore write를 만들지 않는다.
-- 답변 submit/edit, answer comment save/edit, personalization save, balance select, profile slot fill, wish add/interest/done은 각각 1 document write 이하.
+- 캘린더 월 이동, 날짜 선택, 오늘 shortcut은 Firestore write를 만들지 않는다.
+- 늦게 답하기 submit은 기존 answer document 1 write 이하로 저장한다.
+- 답변 submit/edit, answer comment save/edit, personalization save, balance select, profile slot fill/edit, wish add/interest/done은 각각 1 document write 이하.
+- 질문 캘린더는 별도 calendar collection 없이 progress 문서와 bounded answer reads로 렌더링한다.
 - Summary/current 갱신이 필요한 action만 2 writes까지 허용한다.
 - Home은 전체 answer/wish/profile slot subcollection hydration 없이 summary/progress/today docs로 렌더링 가능해야 한다.
 - TTL, backup, PITR, restore, clone, Storage upload, Cloud Functions가 필요한 기능은 Spark/free-plan MVP 테스트 범위에 넣지 않는다.

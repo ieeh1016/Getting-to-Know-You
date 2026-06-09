@@ -17,6 +17,8 @@ const answerCommentSubmitButtonKey = Key('answer-comment-submit-button');
 const personalizationAppTitleFieldKey = Key('personalization-app-title-field');
 const personalizationHomeLineFieldKey = Key('personalization-home-line-field');
 const personalizationSubmitButtonKey = Key('personalization-submit-button');
+const archiveCalendarKey = Key('archive-question-calendar');
+const lateAnswerButtonKey = Key('late-answer-button');
 
 const _longAnswerPreviewLength = 120;
 
@@ -1699,7 +1701,7 @@ class _PlusGrid extends StatelessWidget {
         _PlusTile(
           icon: Icons.person_outline_rounded,
           title: '소개 카드',
-          body: '하루 한 칸씩 서로가 또렷해져요',
+          body: '편한 만큼 내 취향 남기기',
           onTap: () => controller.goTo(AlagagiRoute.profileCard),
         ),
         const SizedBox(height: 10),
@@ -1811,11 +1813,12 @@ class _AnswerScreenState extends State<AnswerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final question = widget.controller.todayQuestion;
+    final question = widget.controller.activeAnswerQuestion;
     final state = widget.controller.state;
     final count = state.draftAnswer.length;
     final isSaving = state.answerSaveStatus == SaveStatus.saving;
     final isEditing = state.editingAnswer;
+    final isToday = widget.controller.isActiveAnswerToday;
 
     return Stack(
       children: [
@@ -1823,9 +1826,11 @@ class _AnswerScreenState extends State<AnswerScreen> {
           padding: const EdgeInsets.fromLTRB(28, 34, 28, 166),
           children: [
             _TopBar(
-              title: '오늘의 질문',
+              title: isToday ? '오늘의 질문' : '늦게 답하기',
               trailing: 'DAY ${question.day}',
-              onBack: () => widget.controller.goTo(AlagagiRoute.home),
+              onBack: () => widget.controller.goTo(
+                isToday ? AlagagiRoute.home : AlagagiRoute.archive,
+              ),
             ),
             const SizedBox(height: 16),
             Text(
@@ -1838,7 +1843,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
               ),
             ),
             Text(
-              'TODAY\'S QUESTION',
+              isToday ? 'TODAY\'S QUESTION' : 'PAST QUESTION',
               style: sans(
                 size: 11,
                 color: AlagagiColors.sageDeep,
@@ -1919,7 +1924,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
             ),
             child: Column(
               children: [
-                if (!isEditing)
+                if (isToday && !isEditing)
                   TextButton(
                     onPressed: isSaving ? null : widget.controller.skipToday,
                     child: Text.rich(
@@ -1944,10 +1949,12 @@ class _AnswerScreenState extends State<AnswerScreen> {
                 _PrimaryButton(
                   label: isEditing
                       ? '수정 저장하기'
-                      : '답 남기고 ${state.partner.nickname}님 답 열어보기',
+                      : isToday
+                      ? '답 남기고 ${state.partner.nickname}님 답 열어보기'
+                      : '저장하기',
                   onPressed: isSaving
                       ? null
-                      : widget.controller.submitTodayAnswer,
+                      : widget.controller.submitActiveAnswer,
                   color: AlagagiColors.sageDeep,
                 ),
               ],
@@ -2055,6 +2062,10 @@ class ArchiveScreen extends StatelessWidget {
           style: sans(size: 12.5, color: AlagagiColors.muted),
         ),
         const SizedBox(height: 16),
+        _QuestionCalendar(controller: controller),
+        const SizedBox(height: 14),
+        _SelectedQuestionDetail(controller: controller),
+        const SizedBox(height: 16),
         _ArchiveTabs(controller: controller),
         const SizedBox(height: 16),
         if (items.isEmpty)
@@ -2071,6 +2082,320 @@ class ArchiveScreen extends StatelessWidget {
       ],
     );
   }
+}
+
+class _QuestionCalendar extends StatelessWidget {
+  const _QuestionCalendar({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final days = controller.questionCalendarDays.take(14).toList();
+    if (days.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final firstDate = DateTime.tryParse(days.first.dateKey);
+    final title = firstDate == null
+        ? '질문 캘린더'
+        : '${firstDate.year}년 ${firstDate.month}월';
+    return _PaperCard(
+      key: archiveCalendarKey,
+      radius: 22,
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: serif(context, size: 18, weight: FontWeight.w800),
+              ),
+              Text('오늘', style: sans(size: 11, color: AlagagiColors.sageDeep)),
+            ],
+          ),
+          const SizedBox(height: 14),
+          GridView.count(
+            crossAxisCount: 7,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 7,
+            crossAxisSpacing: 7,
+            childAspectRatio: 1,
+            children: [
+              for (final day in days)
+                _CalendarDayButton(
+                  day: day,
+                  onTap: day.status == QuestionCalendarStatus.future
+                      ? null
+                      : () => controller.selectArchiveDate(day.dateKey),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const _CalendarLegend(),
+        ],
+      ),
+    );
+  }
+}
+
+class _CalendarDayButton extends StatelessWidget {
+  const _CalendarDayButton({required this.day, required this.onTap});
+
+  final QuestionCalendarDay day;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final date = DateTime.tryParse(day.dateKey);
+    final selected = day.isSelected;
+    final color = _statusColor(day.status);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: selected ? const Color(0xFFF0F2EB) : Colors.white,
+            border: Border.all(
+              color: day.isToday
+                  ? AlagagiColors.sageDeep
+                  : selected
+                  ? AlagagiColors.sagePanel
+                  : Colors.transparent,
+            ),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '${date?.day ?? ''}',
+                style: sans(
+                  size: 12,
+                  weight: day.isToday ? FontWeight.w700 : FontWeight.w400,
+                  color: day.status == QuestionCalendarStatus.future
+                      ? const Color(0xFFC7C3BA)
+                      : AlagagiColors.ink,
+                ),
+              ),
+              const SizedBox(height: 5),
+              _StatusDot(status: day.status, color: color),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusDot extends StatelessWidget {
+  const _StatusDot({required this.status, required this.color});
+
+  final QuestionCalendarStatus status;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    if (status == QuestionCalendarStatus.skippedByMe) {
+      return Container(
+        width: 12,
+        height: 2,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(4),
+        ),
+      );
+    }
+    if (status == QuestionCalendarStatus.unanswered) {
+      return Container(
+        width: 7,
+        height: 7,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: color),
+        ),
+      );
+    }
+    return Container(
+      width: 7,
+      height: 7,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+}
+
+class _CalendarLegend extends StatelessWidget {
+  const _CalendarLegend();
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 7,
+      runSpacing: 7,
+      children: const [
+        _LegendItem(label: '미답', status: QuestionCalendarStatus.unanswered),
+        _LegendItem(label: '내 답', status: QuestionCalendarStatus.myAnswerOnly),
+        _LegendItem(
+          label: '상대 답',
+          status: QuestionCalendarStatus.partnerAnswerOnly,
+        ),
+        _LegendItem(label: '둘 다', status: QuestionCalendarStatus.bothAnswered),
+        _LegendItem(label: '패스', status: QuestionCalendarStatus.skippedByMe),
+      ],
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  const _LegendItem({required this.label, required this.status});
+
+  final String label;
+  final QuestionCalendarStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _StatusDot(status: status, color: _statusColor(status)),
+          const SizedBox(width: 5),
+          Text(label, style: sans(size: 10.5, color: AlagagiColors.muted)),
+        ],
+      ),
+    );
+  }
+}
+
+class _SelectedQuestionDetail extends StatelessWidget {
+  const _SelectedQuestionDetail({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final day = controller.selectedQuestionCalendarDay;
+    final question = day?.question;
+    if (day == null || question == null) {
+      return const SizedBox.shrink();
+    }
+    final date = DateTime.tryParse(day.dateKey);
+    final myAnswer = controller.answerForQuestion(question.id);
+    final statusLabel = _statusLabel(day.status);
+    return _PaperCard(
+      radius: 22,
+      padding: const EdgeInsets.all(19),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${date?.month ?? ''}월 ${date?.day ?? ''}일 · DAY ${question.day}',
+                  style: serif(
+                    context,
+                    size: 13,
+                    weight: FontWeight.w700,
+                    color: AlagagiColors.sageDeep,
+                  ),
+                ),
+              ),
+              _SmallBadge(label: day.isToday ? '오늘' : statusLabel),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            question.text,
+            style: serif(
+              context,
+              size: 19,
+              weight: FontWeight.w700,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (myAnswer != null && !myAnswer.skipped)
+            Text(myAnswer.body, style: sans(size: 13, height: 1.55))
+          else
+            Text(
+              day.canLateAnswer ? '아직 내 답이 없어요.' : statusLabel,
+              style: sans(size: 12.5, color: AlagagiColors.muted),
+            ),
+          const SizedBox(height: 16),
+          if (day.canLateAnswer)
+            _PrimaryButton(
+              buttonKey: lateAnswerButtonKey,
+              label: '늦게 답하기',
+              onPressed: () => controller.startLateAnswer(question.id),
+              color: AlagagiColors.sageDeep,
+            )
+          else if (day.isToday && myAnswer == null)
+            _PrimaryButton(
+              label: '오늘 답하기',
+              onPressed: () => controller.goTo(AlagagiRoute.answer),
+              color: AlagagiColors.sageDeep,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SmallBadge extends StatelessWidget {
+  const _SmallBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F2EB),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      child: Text(
+        label,
+        style: sans(size: 10.5, color: AlagagiColors.sageDeep),
+      ),
+    );
+  }
+}
+
+Color _statusColor(QuestionCalendarStatus status) {
+  return switch (status) {
+    QuestionCalendarStatus.myAnswerOnly => AlagagiColors.sage,
+    QuestionCalendarStatus.partnerAnswerOnly => AlagagiColors.lavender,
+    QuestionCalendarStatus.bothAnswered => AlagagiColors.sageDeep,
+    QuestionCalendarStatus.skippedByMe => const Color(0xFFB18472),
+    QuestionCalendarStatus.future => const Color(0xFFDDD9D0),
+    QuestionCalendarStatus.catalogEnded => const Color(0xFFDDD9D0),
+    QuestionCalendarStatus.unanswered => const Color(0xFFC7C3BA),
+  };
+}
+
+String _statusLabel(QuestionCalendarStatus status) {
+  return switch (status) {
+    QuestionCalendarStatus.future => '아직 열리지 않았어요',
+    QuestionCalendarStatus.unanswered => '미답',
+    QuestionCalendarStatus.myAnswerOnly => '내 답만 있음',
+    QuestionCalendarStatus.partnerAnswerOnly => '상대 답만 있음',
+    QuestionCalendarStatus.bothAnswered => '둘 다 답함',
+    QuestionCalendarStatus.skippedByMe => '패스',
+    QuestionCalendarStatus.catalogEnded => '질문 없음',
+  };
 }
 
 class _ArchiveTabs extends StatelessWidget {
@@ -2815,7 +3140,7 @@ class ProfileCardScreen extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          '하루 한 칸씩, 서로가 또렷해져요',
+          '편한 만큼 채워두는 내 소개 카드',
           style: sans(size: 12.5, color: AlagagiColors.muted),
         ),
         const SizedBox(height: 16),
@@ -3005,41 +3330,24 @@ class _ProfileSlotValue extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = slot.locked
-        ? slot.unlockHint ?? '아직 비밀'
-        : slot.value ?? '비어 있어요';
-    final color = slot.locked
-        ? const Color(0xFFC4C1B8)
+    final text = slot.value ?? '아직 비어 있어요';
+    final color = slot.value == null
+        ? AlagagiColors.muted
         : const Color(0xFF3A3A36);
 
     final valueText = Text(
       text,
-      style: sans(
-        size: slot.locked ? 12.5 : 14,
-        color: color,
-        weight: slot.locked ? FontWeight.w400 : FontWeight.w500,
-      ).copyWith(fontStyle: slot.locked ? FontStyle.italic : FontStyle.normal),
-    );
-
-    if (!slot.locked) {
-      return valueText;
-    }
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.only(top: 1),
-          child: Icon(
-            Icons.lock_outline_rounded,
-            size: 14,
-            color: Color(0xFFC4C1B8),
+      style:
+          sans(
+            size: slot.value == null ? 12.5 : 14,
+            color: color,
+            weight: slot.value == null ? FontWeight.w400 : FontWeight.w500,
+          ).copyWith(
+            fontStyle: slot.value == null ? FontStyle.italic : FontStyle.normal,
           ),
-        ),
-        const SizedBox(width: 5),
-        Expanded(child: valueText),
-      ],
     );
+
+    return valueText;
   }
 }
 
@@ -3065,7 +3373,7 @@ class _TodaySlotCardState extends State<_TodaySlotCard> {
   Widget build(BuildContext context) {
     final slot = widget.controller.todayFillableProfileSlot;
     if (slot == null) {
-      return const _EmptyStateCard(text: '오늘 채울 수 있는 칸은 모두 채웠어요.');
+      return const _EmptyStateCard(text: '소개 카드가 모두 채워졌어요.');
     }
 
     return _PaperCard(
@@ -3082,7 +3390,7 @@ class _TodaySlotCardState extends State<_TodaySlotCard> {
             ),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             child: Text(
-              '오늘 채울 칸 ✶',
+              '비어 있는 칸',
               style: sans(
                 size: 11,
                 color: AlagagiColors.sageDeep,
@@ -3092,12 +3400,12 @@ class _TodaySlotCardState extends State<_TodaySlotCard> {
           ),
           const SizedBox(height: 12),
           Text(
-            '나의 ‘${slot.label}’은?',
+            '나의 ‘${slot.label}’을 적어볼까요?',
             style: serif(context, size: 17, weight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
           Text(
-            '한 칸 채우면, ${widget.controller.state.partner.nickname}님의 ${slot.label}도 함께 열려요',
+            '부담 없는 한 줄이면 충분해요.',
             style: sans(size: 12.5, color: AlagagiColors.muted),
           ),
           const SizedBox(height: 14),
@@ -3849,6 +4157,7 @@ class _PrimaryButton extends StatelessWidget {
 
 class _PaperCard extends StatelessWidget {
   const _PaperCard({
+    super.key,
     required this.child,
     required this.radius,
     required this.padding,

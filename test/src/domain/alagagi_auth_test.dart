@@ -140,6 +140,7 @@ void main() {
             ],
           ),
         ),
+        todayDateKey: '2026-06-08',
       );
 
       expect(controller.todayMyAnswer?.body, '저는 노을 질 때가 좋아요.');
@@ -169,16 +170,252 @@ void main() {
           ),
           data: AlagagiSpaceData(
             dailyProgress: DailyQuestionProgress(
+              startedDateKey: '2026-06-06',
               currentQuestionId: 'q003',
               openedDateKey: '2026-06-08',
             ),
           ),
         ),
+        todayDateKey: '2026-06-08',
       );
 
       expect(controller.todayQuestion.id, 'q003');
       expect(controller.todayQuestion.number, 3);
     });
+
+    test('daily progress derives today question from started date key', () {
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            dailyProgress: DailyQuestionProgress(
+              startedDateKey: '2026-06-07',
+              currentQuestionId: 'q001',
+              openedDateKey: '2026-06-09',
+            ),
+          ),
+        ),
+        todayDateKey: '2026-06-09',
+      );
+
+      expect(controller.todayQuestion.id, 'q003');
+      expect(controller.dailyProgress.startedDateKey, '2026-06-07');
+      expect(controller.dailyProgress.currentQuestionId, 'q003');
+    });
+
+    test('date change writes daily progress at most once', () {
+      final repository = RecordingAlagagiRepository();
+
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            dailyProgress: DailyQuestionProgress(
+              startedDateKey: '2026-06-07',
+              currentQuestionId: 'q002',
+              openedDateKey: '2026-06-08',
+            ),
+          ),
+        ),
+        repository: repository,
+        todayDateKey: '2026-06-09',
+      );
+
+      expect(controller.todayQuestion.id, 'q003');
+      expect(repository.savedDailyQuestionProgress, hasLength(1));
+      expect(
+        repository.savedDailyQuestionProgress.single.progress.currentQuestionId,
+        'q003',
+      );
+      expect(
+        repository.savedDailyQuestionProgress.single.progress.openedDateKey,
+        '2026-06-09',
+      );
+    });
+
+    test('same date daily progress load does not write again', () {
+      final repository = RecordingAlagagiRepository();
+
+      AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            dailyProgress: DailyQuestionProgress(
+              startedDateKey: '2026-06-07',
+              currentQuestionId: 'q003',
+              openedDateKey: '2026-06-09',
+            ),
+          ),
+        ),
+        repository: repository,
+        todayDateKey: '2026-06-09',
+      );
+
+      expect(repository.savedDailyQuestionProgress, isEmpty);
+    });
+
+    test('legacy progress migrates missing started date from opened date', () {
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            dailyProgress: DailyQuestionProgress(
+              currentQuestionId: 'q001',
+              openedDateKey: '2026-06-08',
+            ),
+          ),
+        ),
+        todayDateKey: '2026-06-09',
+      );
+
+      expect(controller.dailyProgress.startedDateKey, '2026-06-08');
+    });
+
+    test('question calendar exposes past unanswered late answer state', () {
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            answers: [
+              Answer(
+                questionId: 'q001',
+                profileId: 'youngwooUid',
+                body: '아침 시간이 좋아요.',
+                createdLabel: '6월 7일',
+              ),
+              Answer(
+                questionId: 'q001',
+                profileId: 'minyoungUid',
+                body: '저녁 산책이 좋아요.',
+                createdLabel: '6월 7일',
+              ),
+            ],
+            dailyProgress: DailyQuestionProgress(
+              startedDateKey: '2026-06-07',
+              currentQuestionId: 'q001',
+              openedDateKey: '2026-06-09',
+            ),
+          ),
+        ),
+        todayDateKey: '2026-06-09',
+      );
+
+      final day1 = controller.questionCalendarDays[0];
+      final day2 = controller.questionCalendarDays[1];
+      final today = controller.questionCalendarDays[2];
+
+      expect(day1.status, QuestionCalendarStatus.bothAnswered);
+      expect(day1.canLateAnswer, isFalse);
+      expect(day2.status, QuestionCalendarStatus.unanswered);
+      expect(day2.canLateAnswer, isTrue);
+      expect(today.isToday, isTrue);
+    });
+
+    test(
+      'late answer saves the selected past question with one answer key',
+      () {
+        final repository = RecordingAlagagiRepository();
+        final controller = AlagagiController.forSession(
+          const AlagagiSession(
+            spaceId: 'main',
+            me: AppProfile(
+              id: 'youngwooUid',
+              nickname: '영우',
+              avatar: '🌿',
+              isMe: true,
+            ),
+            partner: AppProfile(
+              id: 'minyoungUid',
+              nickname: '민영',
+              avatar: '🪻',
+              isMe: false,
+            ),
+            data: AlagagiSpaceData(
+              dailyProgress: DailyQuestionProgress(
+                startedDateKey: '2026-06-07',
+                currentQuestionId: 'q001',
+                openedDateKey: '2026-06-09',
+              ),
+            ),
+          ),
+          repository: repository,
+          todayDateKey: '2026-06-09',
+        );
+
+        controller.startLateAnswer('q002');
+        expect(controller.state.route, AlagagiRoute.answer);
+        expect(controller.activeAnswerQuestion.id, 'q002');
+
+        controller.updateDraftAnswer('늦게 남기는 답이에요.');
+        controller.submitActiveAnswer();
+
+        expect(repository.savedAnswers, hasLength(1));
+        expect(repository.savedAnswers.single.answer.questionId, 'q002');
+        expect(repository.savedAnswers.single.answer.profileId, 'youngwooUid');
+        expect(repository.savedAnswers.single.answer.body, '늦게 남기는 답이에요.');
+        expect(controller.answerForQuestion('q002')?.body, '늦게 남기는 답이에요.');
+      },
+    );
 
     test('invalid daily progress safely falls back to the first question', () {
       final controller = AlagagiController.forSession(
@@ -198,11 +435,13 @@ void main() {
           ),
           data: AlagagiSpaceData(
             dailyProgress: DailyQuestionProgress(
+              startedDateKey: '2026-06-08',
               currentQuestionId: 'missing-question',
               openedDateKey: '2026-06-08',
             ),
           ),
         ),
+        todayDateKey: '2026-06-08',
       );
 
       expect(controller.todayQuestion.id, 'q001');

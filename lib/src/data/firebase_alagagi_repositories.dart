@@ -171,6 +171,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         .collection('progress')
         .doc('daily')
         .set({
+          'startedDateKey': progress.startedDateKey,
           'currentQuestionId': progress.currentQuestionId,
           'openedDateKey': progress.openedDateKey,
           'catalogVersion': progress.catalogVersion,
@@ -354,6 +355,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       return null;
     }
     return DailyQuestionProgress(
+      startedDateKey: _readString(data, 'startedDateKey') ?? openedDateKey,
       currentQuestionId: currentQuestionId,
       openedDateKey: openedDateKey,
       catalogVersion: _readString(data, 'catalogVersion') ?? 'v1',

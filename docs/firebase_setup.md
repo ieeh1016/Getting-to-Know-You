@@ -177,6 +177,7 @@ service cloud.firestore {
     function validDailyProgress(progressId) {
       return progressId == 'daily'
         && request.resource.data.keys().hasOnly([
+          'startedDateKey',
           'currentQuestionId',
           'openedDateKey',
           'catalogVersion',
@@ -185,8 +186,12 @@ service cloud.firestore {
         && request.resource.data.currentQuestionId is string
         && request.resource.data.openedDateKey is string
         && request.resource.data.catalogVersion is string
+        && (!request.resource.data.keys().hasAny(['startedDateKey'])
+          || request.resource.data.startedDateKey is string)
         && request.resource.data.currentQuestionId.size() <= 16
         && request.resource.data.openedDateKey.size() <= 16
+        && (!request.resource.data.keys().hasAny(['startedDateKey'])
+          || request.resource.data.startedDateKey.size() <= 16)
         && request.resource.data.catalogVersion.size() <= 8;
     }
 
@@ -253,7 +258,10 @@ service cloud.firestore {
           && request.resource.data.id == slotId
           && request.resource.data.label is string
           && request.resource.data.icon is string
-          && request.resource.data.locked is bool;
+          && (!request.resource.data.keys().hasAny(['value'])
+            || request.resource.data.value is string)
+          && (!request.resource.data.keys().hasAny(['locked'])
+            || request.resource.data.locked is bool);
         allow delete: if false;
       }
 

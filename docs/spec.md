@@ -268,11 +268,40 @@ If the app grows, bottom navigation may become:
 - 두 사용자 모두 같은 오늘의 질문을 본다.
 - 하루 하나의 질문을 유지하되, 패스/미답변이 다음 날 진행을 막지 않는다.
 - 질문 카탈로그는 무료 플랜 보호를 위해 앱 코드의 static product content로 유지한다.
-- Progress 문서의 `currentQuestionId`가 있으면 앱은 해당 질문을 오늘의 질문으로 사용한다.
-- Progress 문서가 없거나 유효하지 않으면 질문 카탈로그의 첫 질문을 오늘의 질문으로 사용한다.
-- 날짜 변경에 따른 자동 진행은 v0.6에서 도메인 함수와 repository write 경계까지만 둔다.
+- 오늘 질문은 `progress/daily.startedDateKey`와 Asia/Seoul 기준 오늘 날짜로 계산한다.
+- `startedDateKey`는 두 사람 중 첫 사용자가 오늘 질문을 연 날짜로 한 번만 고정한다.
+- `startedDateKey` 기준 1일차는 `q001`, 2일차는 `q002`처럼 카탈로그 순서에 매핑한다.
+- 앱은 계산된 질문을 `currentQuestionId`로 저장해 두 사람이 같은 질문을 보도록 공유한다.
+- Progress 문서가 없으면 오늘 날짜로 `startedDateKey`를 만들고 `q001`부터 시작한다.
+- 기존 progress 문서에 `startedDateKey`가 없으면 `openedDateKey`를 시작일로 간주해 안전하게 마이그레이션한다.
+- 날짜가 바뀌면 앱 첫 진입 시 progress를 새 날짜와 질문으로 최대 1회 갱신한다.
 - 앱 로드, route 이동, scroll, tab switch는 progress write를 만들지 않는다.
-- 오늘 질문 진행 write는 명시적인 daily progress action에서만 발생한다.
+- 같은 날짜 안의 새로고침/route 이동은 progress write를 만들지 않는다.
+- 질문 카탈로그를 모두 소진하면 마지막 질문을 유지하고 future day는 empty/end state로 보여준다.
+- 시작일 재설정은 MVP에서 제외하고, 필요하면 나중에 관리자/설정 기능으로 분리한다.
+
+### MVP v0.6 Question Calendar & Late Answers In Scope
+
+- 질문함 상단에 월간 또는 2주 캘린더형 질문 진행 UI를 제공한다.
+- 캘린더 날짜는 `startedDateKey`와 질문 카탈로그 순서로 질문을 매핑한다.
+- 각 날짜는 답변 상태를 작은 표시로 보여준다:
+  - 아직 아무도 답하지 않음
+  - 나만 답함
+  - 상대만 답함
+  - 둘 다 답함
+  - 내가 패스함
+  - 미래 질문
+  - 오늘 질문
+- 과거 미답 질문은 `늦게 답하기` CTA를 제공한다.
+- 과거에 이미 답한 질문은 읽기 전용으로 보여주고 MVP에서는 수정하지 않는다.
+- 오늘 질문은 기존 답변 작성/패스 흐름을 그대로 사용한다.
+- 미래 날짜는 질문 미리보기 제목만 제한적으로 보여주거나 disabled state로 둔다.
+- 날짜를 선택해도 곧바로 답변을 저장하지 않고, detail 영역에서 사용자가 `늦게 답하기`를 누를 때만 답변 입력 화면으로 이동한다.
+- 늦게 답하기 화면은 오늘 질문 답변 화면과 같은 컴포넌트를 재사용하되, 상단 보조 문구로 선택한 과거 날짜를 보여준다.
+- 캘린더 월 이동, 날짜 선택, tab switch는 Firestore write를 만들지 않는다.
+- 늦게 답하기 저장은 기존 answer document ID `{questionId}_{uid}`에 1 write로 저장한다.
+- 캘린더 상태 계산을 위한 별도 Firestore calendar collection은 만들지 않는다.
+- 질문 상태는 정적 질문 카탈로그, `progress/daily.startedDateKey`, `answers` 문서만으로 계산한다.
 
 ### MVP v0.7 Answer Comments In Scope
 
@@ -614,42 +643,74 @@ Reference: `archive.html`
 Purpose:
 
 - 주고받은 질문과 답변을 다시 볼 수 있게 한다.
-- 필터로 전체, 둘 다 답함, 닮은 답을 나눠 본다.
+- 매일의 질문 진행 상태를 캘린더로 확인한다.
+- 놓친 과거 질문은 부담 없이 늦게 답할 수 있게 한다.
 
 Required UI:
 
 - Header: `질문함`
 - Subtitle: `그동안 주고받은 {count}개의 이야기`
+- Calendar header:
+  - month label, e.g. `2026년 6월`
+  - previous/next month controls
+  - today shortcut
+- Calendar grid or 2-week strip:
+  - date number
+  - tiny status marker
+  - today highlight
+  - selected day highlight
+  - future disabled state
+- Status legend:
+  - 미답
+  - 내 답
+  - 상대 답
+  - 둘 다
+  - 패스
 - Tabs:
   - 전체
   - 둘 다 답함
   - 닮은 답
-- QA list items:
-  - question number
+- Selected question detail:
   - date label
+  - question number
   - status
   - question text
   - my answer
   - partner answer
   - similarity badge when applicable
-- Waiting card for current unanswered partner state
+  - `오늘 답하기` CTA for today unanswered question
+  - `늦게 답하기` CTA for past unanswered question
+  - read-only state for already answered past question
+- Compact QA list remains below the selected detail for archive browsing.
 
 State:
 
+- Calendar month
+- Selected date key
+- Selected question
+- Calendar day status map
 - All
 - Both answered
 - Similar only
 - Waiting partner answer
+- Late answer available
 - Empty archive
 
 Acceptance Criteria:
 
+- 질문함은 `startedDateKey` 기준으로 날짜와 질문을 매핑한 캘린더를 보여준다.
+- 오늘 날짜는 별도 강조되고, 선택된 날짜는 today highlight와 구분된다.
+- 미래 날짜는 disabled state로 표시되고 답변 CTA를 제공하지 않는다.
+- 과거 미답 날짜를 선택하면 `늦게 답하기` CTA가 보인다.
+- `늦게 답하기` CTA를 누르면 선택된 과거 질문의 답변 화면으로 이동하고, 저장 후 질문함의 선택 날짜 상태가 갱신된다.
+- 과거에 이미 답한 질문은 읽기 전용으로 보이며 MVP에서는 수정 CTA를 제공하지 않는다.
+- 캘린더 날짜 선택과 월 이동은 Firestore write를 만들지 않는다.
 - `전체` 탭은 모든 질문을 보여준다.
 - `둘 다 답함` 탭은 양쪽 답이 있는 항목만 보여준다.
 - `닮은 답` 탭은 similarity badge가 있는 항목만 보여준다.
 - 상대 답 대기 항목은 답변 내용을 보여주지 않고 locked/waiting copy를 보여준다.
 - 둘 다 답한 항목은 상대 답변 아래에 기존 댓글을 읽기 좋게 보여준다.
-- 질문함 댓글 입력은 v0.7에서 read-only existing comment 표시까지만 포함하고, 새 댓글 작성은 홈의 오늘 질문부터 시작한다.
+- 질문함 댓글 입력은 v0.7에서 read-only existing comment 표시까지만 포함하고, 새 댓글 작성은 홈 또는 selected question detail의 답변 공개 상태부터 시작한다.
 
 ### 10.5 Record Screen
 
@@ -731,13 +792,13 @@ Reference: `card.html`
 
 Purpose:
 
-- 상대의 정보를 한 번에 묻지 않고 하루 한 칸씩 채워간다.
-- 시간이 지나며 상대가 또렷해지는 느낌을 준다.
+- 상대에게 보여주고 싶은 내 정보를 편한 만큼 채운다.
+- 질문 루틴과 별개로 자기소개를 가볍게 정리한다.
 
 Required UI:
 
 - Header: `소개 카드`
-- Subtitle: `하루 한 칸씩, 서로가 또렷해져요`
+- Subtitle: `편한 만큼 채워두는 내 소개 카드`
 - Segmented control:
   - `{partnerName}님 카드`
   - `내 카드`
@@ -747,23 +808,28 @@ Required UI:
   - days subtitle
   - fill progress
   - slots
-- Locked slots
-- Today fill card
-- Fill input and CTA
+- Empty slot state: `아직 비어 있어요`
+- Slot edit action on my card
+- Slot save/cancel controls
 
 State:
 
 - Partner card
 - My card
 - Filled slot
-- Locked slot
-- Today fill prompt
+- Empty slot
+- Editing slot
+- Saving slot
 
 Acceptance Criteria:
 
 - 채워진 칸 수와 전체 칸 수가 보인다.
-- 잠긴 칸은 내용을 숨기고 열린 날짜/조건을 안내한다.
-- 오늘 채울 칸에 답하면 해당 칸이 채워진다.
+- 내 카드의 모든 슬롯은 날짜와 무관하게 바로 작성할 수 있다.
+- 내 카드의 작성된 슬롯은 같은 화면에서 다시 수정할 수 있다.
+- 상대 카드는 읽기 전용이며 상대가 저장한 슬롯만 보여준다.
+- 빈 슬롯은 잠금 문구가 아니라 `아직 비어 있어요`로 표시한다.
+- `Day 6`, `오늘 채울 칸`, `아직 비밀` 같은 날짜 unlock copy를 노출하지 않는다.
+- 슬롯 저장은 해당 slot document 1개 write 이하로 유지한다.
 - 탭 전환 시 상대 카드와 내 카드가 바뀐다.
 
 ### 10.8 Wishlist Screen
@@ -940,25 +1006,26 @@ Rules:
 
 ### 12.3 Profile Card Slot Catalog v1
 
-| Slot ID | Label | Unlock | Input Hint |
+| Order | Slot ID | Label | Input Hint |
 | --- | --- | --- | --- |
-| song | 요즘 노래 | Day 2 | 요즘 자주 듣는 노래 |
-| food | 먹고 싶은 음식 | Day 6 | 요즘 먹고 싶은 음식 |
-| rest | 쉬는 방식 | Day 9 | 쉬고 싶을 때 하는 일 |
-| cafe | 카페 취향 | Day 10 | 좋아하는 카페 분위기 |
-| walk | 산책 취향 | Day 12 | 걷고 싶은 길 |
-| comfort | 편해지는 순간 | Day 14 | 나를 편하게 하는 것 |
-| promise | 약속에서 중요한 것 | Day 16 | 은근히 중요하게 보는 것 |
-| kindness | 기억나는 다정함 | Day 19 | 오래 남는 다정함 |
-| pace | 나에게 맞는 속도 | Day 20 | 요즘 필요한 속도 |
-| wish_scene | 같이 해보고 싶은 장면 | Day 27 | 언젠가 같이 하고 싶은 것 |
+| 1 | song | 요즘 노래 | 요즘 자주 듣는 노래 |
+| 2 | food | 먹고 싶은 음식 | 요즘 먹고 싶은 음식 |
+| 3 | rest | 쉬는 방식 | 쉬고 싶을 때 하는 일 |
+| 4 | cafe | 카페 취향 | 좋아하는 카페 분위기 |
+| 5 | walk | 산책 취향 | 걷고 싶은 길 |
+| 6 | comfort | 편해지는 순간 | 나를 편하게 하는 것 |
+| 7 | promise | 약속에서 중요한 것 | 은근히 중요하게 보는 것 |
+| 8 | kindness | 기억나는 다정함 | 오래 남는 다정함 |
+| 9 | pace | 나에게 맞는 속도 | 요즘 필요한 속도 |
+| 10 | wish_scene | 같이 해보고 싶은 장면 | 언젠가 같이 해보고 싶은 것 |
 
 Rules:
 
 - 민감정보를 강제로 묻지 않는다.
 - 나이, 연락처, 주소, 회사, 학교, 실명 추가 정보는 MVP 슬롯에 포함하지 않는다.
-- 슬롯은 하루에 하나만 채우는 느낌을 유지한다.
-- 잠긴 슬롯은 내용 대신 unlock hint를 보여준다.
+- 모든 슬롯은 첫날부터 작성 가능하다.
+- 빈 슬롯은 `아직 비어 있어요` 상태로만 보여주고 날짜 unlock hint를 보여주지 않는다.
+- 과거 `locked` 필드가 Firestore에 남아 있어도 UI는 날짜 잠금으로 해석하지 않는다.
 
 ### 12.4 Wishlist Starter Templates v1
 
@@ -1062,6 +1129,25 @@ class ArchiveItem {
   final List<String> matchedKeywords;
 }
 
+enum QuestionCalendarStatus {
+  future,
+  unanswered,
+  myAnswerOnly,
+  partnerAnswerOnly,
+  bothAnswered,
+  skippedByMe,
+  catalogEnded,
+}
+
+class QuestionCalendarDay {
+  final String dateKey;
+  final DailyQuestion? question;
+  final QuestionCalendarStatus status;
+  final bool isToday;
+  final bool isSelected;
+  final bool canLateAnswer;
+}
+
 class RelationshipInsight {
   final int daysTogether;
   final int questionCount;
@@ -1083,9 +1169,8 @@ class BalanceQuestion {
 class ProfileSlot {
   final String id;
   final String label;
+  final String icon;
   final String? value;
-  final bool locked;
-  final String? unlockHint;
 }
 
 class WishItem {
@@ -1117,9 +1202,10 @@ class AnswerComment {
 }
 
 class DailyQuestionProgress {
-  final DateTime startedAt;
+  final String startedDateKey;
   final String currentQuestionId;
   final String openedDateKey;
+  final String catalogVersion;
 }
 
 class SpacePersonalization {
@@ -1245,10 +1331,16 @@ Rules:
   "label": "요즘 노래",
   "icon": "🎧",
   "value": "요즘 자주 듣는 노래",
-  "locked": false,
   "updatedAt": "serverTimestamp"
 }
 ```
+
+Rules:
+
+- Slot documents are keyed by fixed product slot IDs.
+- New writes do not need a `locked` field.
+- If legacy `locked` exists, the UI treats it as deprecated metadata and does not show date-locked copy.
+- Empty or missing `value` renders `아직 비어 있어요`.
 
 `spaces/{spaceId}/wishes/{wishId}`
 
@@ -1292,12 +1384,21 @@ Rules:
 
 ```json
 {
-  "startedAt": "serverTimestamp",
+  "startedDateKey": "2026-06-09",
   "currentQuestionId": "q001",
-  "openedDateKey": "2026-06-08",
+  "openedDateKey": "2026-06-09",
+  "catalogVersion": "v1",
   "updatedAt": "serverTimestamp"
 }
 ```
+
+Rules:
+
+- `startedDateKey` is the fixed start anchor for the shared daily-question sequence.
+- `openedDateKey` is the latest app-open date that caused progress to be checked or advanced.
+- Existing documents without `startedDateKey` may be migrated by using `openedDateKey` as the initial anchor.
+- Question calendar state is never stored in Firestore; it is derived from this progress document, the static catalog, and bounded answer reads.
+- Late answers reuse `spaces/{spaceId}/answers/{questionId_uid}` and do not create a separate late-answer collection.
 
 ### Repository Boundaries
 
@@ -1310,7 +1411,7 @@ Rules:
 - Current broad session hydration over all `answers`, `balanceSelections`, `wishes`, and profile slot subcollections is acceptable only for early private beta data volume.
 - v0.6+ should split reads by screen:
   - Home: me profile, partner profile, space, summary, progress, today answers only.
-  - Archive: answers page with `limit()` and cursor pagination.
+  - Archive: progress, a bounded month-window answer query, and cursor pagination for the compact list.
   - Wishlist: visible wishes page with `limit()` and cursor pagination.
   - Profile card: one bounded profile-card document or capped slot map if the slot count stays fixed.
 - Use cursor pagination, never offset pagination.
@@ -1328,9 +1429,12 @@ class AlagagiState {
   final Map<String, Answer> answersByQuestionAndProfile;
   final Map<String, AnswerComment> commentsByAnswerAndProfile;
   final DailyQuestionProgress dailyProgress;
+  final String selectedArchiveDateKey;
+  final Map<String, QuestionCalendarDay> questionCalendarDaysByDateKey;
   final SpacePersonalization personalization;
   final Set<String> expandedAnswerIds;
   final bool editingAnswer;
+  final DailyQuestion? lateAnswerQuestion;
   final Map<String, String> commentDraftsByAnswerId;
   final String? saveFeedback;
   final ArchiveFilter archiveFilter;
@@ -1366,11 +1470,18 @@ class AlagagiState {
 - Firestore free-plan budget estimate for new repository reads/writes
 - Partner answer visibility rule
 - Archive filtering
+- Daily question resolver maps `startedDateKey` and Asia/Seoul today to the expected catalog question
+- Daily question progress migrates missing `startedDateKey` from `openedDateKey`
+- Same-date refresh/route/tab changes do not write progress again
+- Question calendar day status derives future/unanswered/my-only/partner-only/both/skipped states from progress and answers
+- Past unanswered question exposes late-answer availability
+- Past already-answered question remains read-only in MVP
+- Late-answer submit overwrites the existing `{questionId}_{uid}` answer key with one write
 - Similarity keyword aggregation
 - Balance selection result
 - Daily question progress selection
 - Answer comment create/update
-- Profile card fill progress
+- Profile card free slot editing and fill progress
 - Wishlist filter and mutual matching
 - Wishlist add, like, and done metadata
 - Personalization settings fallback and save
@@ -1384,7 +1495,7 @@ class AlagagiState {
 - Logout returns to login
 - Firebase mode with no answers shows empty archive and no sample partner answer
 - Firebase mode with no wishes shows empty wishlist and no sample wish cards
-- Firebase mode with no profile slot values shows locked/empty profile card slots
+- Firebase mode with no profile slot values shows empty profile card slots without sample values or date locks
 - Invite shows headline and enters home after nickname submit
 - Home shows today question and record summary
 - Answer screen updates character count and saves answer
@@ -1395,9 +1506,14 @@ class AlagagiState {
 - Saving a comment renders it under the partner answer
 - My screen saves app title and home line, and Home reflects the saved copy
 - Archive tabs filter list
+- Archive renders the question calendar header, status legend, and selected question detail
+- Selecting a past unanswered date shows `늦게 답하기`
+- Selecting a future date shows disabled state without an answer CTA
+- Selecting a past answered date shows read-only answer content without edit CTA
 - Us record renders stats and timeline
 - Balance option selection updates selected state
 - Profile card tab switches card content
+- Profile card shows all own slots as editable from day one and hides date-unlock copy
 - Wishlist filter shows mutual wishes
 - Existing answer comments render in archive read-only surfaces
 
@@ -1408,7 +1524,7 @@ class AlagagiState {
 - Bottom navigation does not cover content
 - Long Korean text wraps without overflow
 - Long answer preview does not push the home card into an unreadable wall of text
-- Disabled/locked states are readable
+- Disabled, future, and waiting states are readable
 - No page feels like a public landing page
 - Login screen follows `invite.html` visual mood and does not feel like a generic admin form
 - Firestore Usage tab remains comfortably below free plan limits after manual smoke usage
@@ -1498,8 +1614,13 @@ class AlagagiState {
 
 - Add bounded `progress/daily` load to session data.
 - Keep question catalog local.
-- Add deterministic date-key/day selection tests.
+- Add deterministic `startedDateKey` plus Asia/Seoul date-key selection tests.
+- Add migration tests for legacy progress documents that only have `openedDateKey`.
+- Add archive calendar status derivation tests before building the UI.
+- Add late-answer route/controller tests before wiring the answer screen.
+- Keep past answered questions read-only in MVP.
 - Avoid Cloud Functions; client resolves the current question from progress and catalog.
+- Do not add a Firestore calendar collection.
 
 ### Step 12: Answer Comments
 
