@@ -714,9 +714,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('음악 노트'), findsOneWidget);
+    expect(find.byKey(musicAddButtonKey), findsOneWidget);
     expect(find.text('한 곡 남기기'), findsOneWidget);
+    expect(
+      tester.getCenter(find.byKey(musicAddButtonKey)).dy,
+      closeTo(tester.getCenter(find.text('들어볼 곡')).dy, 24),
+    );
 
-    await tester.tap(find.text('한 곡 남기기'));
+    await tester.tap(find.byKey(musicAddButtonKey));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(musicTitleFieldKey), '새벽 산책');
     await tester.enterText(find.byKey(musicArtistFieldKey), '민영의 추천');

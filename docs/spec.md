@@ -426,6 +426,7 @@ This batch follows `docs/design/music_tab_navigation_concept.html` and `docs/des
   - Mood is selected from a small fixed set: `차분한`, `산책`, `카페`, `밤`, `가벼운`, `집중`.
 - Music note UX:
   - Empty state says that a song can be left lightly, without pressure to listen immediately.
+  - `한 곡 남기기` CTA is placed inside the content flow near the `들어볼 곡` section header, not fixed above or visually attached to the bottom navigation.
   - Add form includes title, artist, link, note, and mood chips.
   - Submit CTA label is `노래 남기기`.
   - Saved notes show who left the song and the short note.
@@ -629,7 +630,7 @@ Reference: `invite.html`
 Purpose:
 
 - Firebase Auth 세션이 없을 때 민영과 영우만 앱에 들어오게 한다.
-- 기존 초대장 디자인의 부드러운 분위기를 유지하되, 닉네임 입력 대신 아이디/비밀번호를 받는다.
+- 기존 초대장 디자인의 부드러운 분위기를 유지하되, 로그인 전 화면은 관계를 전제하는 초대 문구보다 담백한 접속 화면 톤으로 낮춘다.
 - 로그인 성공 후에는 Firestore 프로필을 불러와 나와 상대 이름을 정확히 보여준다.
 
 Required UI:
@@ -637,13 +638,17 @@ Required UI:
 - Safe top spacing without fake OS status row
 - Seal icon area
 - Kicker: `A L A G A G I`
-- Hero headline: `우리, 천천히 알아가 볼래요?`
-- Helper copy: `두 사람만 로그인할 수 있어요.`
+- Hero headline: `알아가기`
+- Helper copy: `아이디가 있으면 조용히 이어서 들어갈 수 있어요.`
+- Login note rows:
+  - `짧게 확인`
+  - `비공개 공간`
+  - `자동 로그인`
 - Login ID field
-- Password field
+- Password field without placeholder/hint copy
 - CTA: `로그인`
 - Soft error copy area
-- Fine print: `한 번 로그인하면 다음엔 자동으로 이어서 들어와요`
+- Fine print: `다음부터는 자동으로 이어질 수 있어요`
 
 State:
 
@@ -662,6 +667,8 @@ Acceptance Criteria:
 - `users/{uid}` 문서가 없으면 UID와 Firebase Console 설정 안내를 보여준다.
 - 로그인 실패 시 입력값을 유지하고 부드러운 오류 문구를 보여준다.
 - 비밀번호는 Firestore, app state, local repository에 저장하지 않는다.
+- 비밀번호 입력칸은 label만 보여주고 hint/placeholder 문구를 노출하지 않는다.
+- 로그인 화면은 `우리, 천천히 알아가 볼래요?`, `두 사람만 로그인할 수 있어요.`처럼 로그인 전 관계를 강하게 전제하는 문구를 노출하지 않는다.
 - Firebase dart-define 값이 없으면 로컬 데모 모드로 기존 화면을 볼 수 있다.
 
 ### 10.1 Invite Screen

@@ -4,6 +4,7 @@
 *.pyc
 *.swp
 .DS_Store
+change-passwords.js
 .atom/
 .build/
 .buildlog/

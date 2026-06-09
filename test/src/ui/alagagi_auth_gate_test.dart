@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:minyoung_pick/src/domain/alagagi_controller.dart';
 import 'package:minyoung_pick/src/ui/alagagi_app.dart';
@@ -20,10 +20,21 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('우리, 천천히\n알아가 볼래요?'), findsOneWidget);
-      expect(find.text('두 사람만 로그인할 수 있어요.'), findsOneWidget);
+      expect(find.text('알아가기'), findsOneWidget);
+      expect(find.text('아이디가 있으면 조용히 이어서 들어갈 수 있어요.'), findsOneWidget);
+      expect(find.text('우리, 천천히\n알아가 볼래요?'), findsNothing);
+      expect(find.text('두 사람만 로그인할 수 있어요.'), findsNothing);
       expect(find.byKey(loginIdFieldKey), findsOneWidget);
       expect(find.byKey(loginPasswordFieldKey), findsOneWidget);
+
+      final passwordField = tester.widget<TextField>(
+        find.descendant(
+          of: find.byKey(loginPasswordFieldKey),
+          matching: find.byType(TextField),
+        ),
+      );
+      expect(passwordField.decoration?.labelText, '비밀번호');
+      expect(passwordField.decoration?.hintText, isNull);
     });
 
     testWidgets('signs in and enters home with fake session', (tester) async {
@@ -138,7 +149,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(loginIdFieldKey), findsOneWidget);
-      expect(find.text('두 사람만 로그인할 수 있어요.'), findsOneWidget);
+      expect(find.text('아이디가 있으면 조용히 이어서 들어갈 수 있어요.'), findsOneWidget);
     });
 
     testWidgets('Firebase session shows empty states instead of sample data', (

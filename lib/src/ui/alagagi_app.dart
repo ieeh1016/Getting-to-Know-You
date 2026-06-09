@@ -16,6 +16,7 @@ const musicArtistFieldKey = Key('music-artist-field');
 const musicLinkFieldKey = Key('music-link-field');
 const musicNoteFieldKey = Key('music-note-field');
 const musicSubmitButtonKey = Key('music-submit-button');
+const musicAddButtonKey = Key('music-add-button');
 const homeProgressSummaryKey = Key('home-progress-summary');
 const homeProgressSummaryCtaKey = Key('home-progress-summary-cta');
 const editAnswerButtonKey = Key('edit-answer-button');
@@ -548,18 +549,18 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 14),
               Text(
-                '우리, 천천히\n알아가 볼래요?',
+                '알아가기',
                 textAlign: TextAlign.center,
                 style: serif(
                   context,
-                  size: 27,
+                  size: 29,
                   weight: FontWeight.w800,
                   height: 1.5,
                 ),
               ),
               const SizedBox(height: 18),
               Text(
-                '두 사람만 로그인할 수 있어요.',
+                '아이디가 있으면 조용히 이어서 들어갈 수 있어요.',
                 textAlign: TextAlign.center,
                 style: sans(
                   size: 14,
@@ -568,7 +569,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 26),
-              const _InviteNotes(),
+              const _LoginNotes(),
               const SizedBox(height: 24),
               _LoginTextField(
                 key: loginIdFieldKey,
@@ -581,7 +582,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 key: loginPasswordFieldKey,
                 controller: _passwordController,
                 label: '비밀번호',
-                hintText: '비밀번호',
                 obscureText: true,
                 onSubmitted: (_) => _submit(),
               ),
@@ -601,7 +601,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 14),
               Text(
-                '한 번 로그인하면 다음엔 자동으로 이어서 들어와요',
+                '다음부터는 자동으로 이어질 수 있어요',
                 textAlign: TextAlign.center,
                 style: sans(size: 11, color: AlagagiColors.muted, height: 1.6),
               ),
@@ -618,14 +618,14 @@ class _LoginTextField extends StatelessWidget {
     super.key,
     required this.controller,
     required this.label,
-    required this.hintText,
+    this.hintText,
     this.obscureText = false,
     this.onSubmitted,
   });
 
   final TextEditingController controller;
   final String label;
-  final String hintText;
+  final String? hintText;
   final bool obscureText;
   final ValueChanged<String>? onSubmitted;
 
@@ -870,6 +870,43 @@ class _InviteNotes extends StatelessWidget {
             icon: Icons.eco_outlined,
             title: '천천히 알아가기',
             body: '답이 없어도 괜찮고, 서두르지 않아도 돼요.',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LoginNotes extends StatelessWidget {
+  const _LoginNotes();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AlagagiColors.paper,
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      child: const Column(
+        children: [
+          _NoteRow(
+            icon: Icons.schedule_outlined,
+            title: '짧게 확인',
+            body: '필요할 때만 들어와도 괜찮아요.',
+          ),
+          _NoteDivider(),
+          _NoteRow(
+            icon: Icons.lock_outline_rounded,
+            title: '비공개 공간',
+            body: '아이디가 있는 사람만 볼 수 있어요.',
+          ),
+          _NoteDivider(),
+          _NoteRow(
+            icon: Icons.refresh_rounded,
+            title: '자동 로그인',
+            body: '다음부터는 이어서 열릴 수 있어요.',
           ),
         ],
       ),
@@ -4641,51 +4678,66 @@ class MusicScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final notes = controller.musicNotes;
-    return Stack(
+    return _ScreenScroll(
+      bottomNavigation: _BottomNav(controller: controller),
       children: [
-        _ScreenScroll(
-          bottomNavigation: _BottomNav(controller: controller),
-          padding: const EdgeInsets.fromLTRB(28, 34, 28, 170),
+        Text('음악 노트', style: serif(context, size: 23, weight: FontWeight.w800)),
+        const SizedBox(height: 4),
+        Text(
+          '각자의 요즘을 한 곡씩 조용히 남겨요',
+          style: sans(size: 12.5, color: AlagagiColors.muted),
+        ),
+        const SizedBox(height: 18),
+        const _MusicHeroCard(),
+        if (controller.state.musicDraftVisible) ...[
+          const SizedBox(height: 16),
+          _MusicDraftCard(controller: controller),
+        ],
+        const SizedBox(height: 18),
+        Row(
           children: [
-            Text(
-              '음악 노트',
-              style: serif(context, size: 23, weight: FontWeight.w800),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '각자의 요즘을 한 곡씩 조용히 남겨요',
-              style: sans(size: 12.5, color: AlagagiColors.muted),
-            ),
-            const SizedBox(height: 18),
-            const _MusicHeroCard(),
-            if (controller.state.musicDraftVisible) ...[
-              const SizedBox(height: 16),
-              _MusicDraftCard(controller: controller),
-            ],
-            const SizedBox(height: 18),
-            const _SectionLabel('들어볼 곡'),
-            const SizedBox(height: 12),
-            if (notes.isEmpty)
-              const _EmptyStateCard(text: '요즘 듣는 노래를 한 곡만 가볍게 남겨볼까요?')
-            else
-              for (final note in notes) ...[
-                _MusicNoteCard(controller: controller, note: note),
-                const SizedBox(height: 12),
-              ],
+            const Expanded(child: _SectionLabel('들어볼 곡')),
+            if (!controller.state.musicDraftVisible)
+              _MusicAddInlineButton(controller: controller),
           ],
         ),
-        if (!controller.state.musicDraftVisible)
-          Positioned(
-            left: 28,
-            right: 28,
-            bottom: 84,
-            child: _PrimaryButton(
-              label: '한 곡 남기기',
-              onPressed: controller.startMusicDraft,
-              color: AlagagiColors.sageDeep,
-            ),
-          ),
+        const SizedBox(height: 12),
+        if (notes.isEmpty)
+          const _EmptyStateCard(text: '요즘 듣는 노래를 한 곡만 가볍게 남겨볼까요?')
+        else
+          for (final note in notes) ...[
+            _MusicNoteCard(controller: controller, note: note),
+            const SizedBox(height: 12),
+          ],
       ],
+    );
+  }
+}
+
+class _MusicAddInlineButton extends StatelessWidget {
+  const _MusicAddInlineButton({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 38,
+      child: OutlinedButton.icon(
+        key: musicAddButtonKey,
+        onPressed: controller.startMusicDraft,
+        icon: const Icon(Icons.add_rounded, size: 16),
+        label: const Text('한 곡 남기기'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AlagagiColors.sageDeep,
+          side: const BorderSide(color: Color(0x338A9A7E)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          textStyle: sans(size: 12, weight: FontWeight.w700),
+        ),
+      ),
     );
   }
 }
