@@ -461,6 +461,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       mood: _readString(data, 'mood') ?? musicMoodOptions.first,
       createdByProfileId: _readString(data, 'createdByProfileId') ?? '',
       createdLabel: _readString(data, 'createdLabel') ?? '오늘',
+      updatedAt: _readDateTime(data, 'updatedAt'),
     );
   }
 
@@ -508,6 +509,20 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     final value = data[key];
     if (value is String && value.trim().isNotEmpty) {
       return value.trim();
+    }
+    return null;
+  }
+
+  DateTime? _readDateTime(Map<String, dynamic> data, String key) {
+    final value = data[key];
+    if (value is Timestamp) {
+      return value.toDate();
+    }
+    if (value is DateTime) {
+      return value;
+    }
+    if (value is String) {
+      return DateTime.tryParse(value);
     }
     return null;
   }

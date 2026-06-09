@@ -47,6 +47,14 @@
 - 위시 추가/관심 표시/완료는 각각 1개 wish 문서 갱신으로 표현된다.
 - 질문/밸런스 카탈로그는 사귀는 사이를 전제하는 `하트`, `애정 표현`, `데이트 계획`, `기념일`, `커플` 문구를 노출하지 않는다.
 - 개인화 설정이 없으면 기본 이름/아바타/초대 문구로 fallback한다.
+- 홈 진행 요약은 summary/progress/today answers/music notes에서 `오늘 질문`, `둘 다 답한 질문`, `음악 노트` 상태를 계산한다.
+- 홈 진행 요약은 localStorage의 마지막 음악 탭 확인 시간 이후 상대가 남긴 music note가 있으면 `새 음악 노트가 있어요`를 계산한다.
+- 홈 진행 요약은 음악 탭을 열 때만 device-local 마지막 확인 시간을 갱신하고 Firestore write를 만들지 않는다.
+- 홈 진행 요약은 내가 직접 남긴 music note를 내 기기의 `새 음악 노트` 판정에 포함하지 않는다.
+- 홈 진행 요약은 music note에 비교 가능한 `updatedAt`이 없으면 `새`로 단정하지 않고 count/latest copy로 fallback한다.
+- 홈 진행 요약 primary action은 `오늘 답하기` > `질문함 보기` > `음악 보기` 우선순위로 하나만 선택한다.
+- 저장 operation state는 idle/saving/saved/failed/offline을 구분하고 failed/offline 상태에서 draft를 유지한다.
+- failed/offline retry는 사용자가 누를 때만 동일 repository write를 다시 호출한다.
 - 새 Firestore-backed 기능은 명시적 user action당 1 write 이하를 유지한다.
 
 ## Widget Tests
@@ -96,6 +104,11 @@
 - 소개 카드 내 카드 탭에서 임의 슬롯을 inline 편집하고 저장/취소할 수 있다.
 - 마이 화면에서 앱 이름/홈 문구를 저장하면 홈/마이 화면에 반영된다.
 - 개인화 설정 저장 전 draft 입력은 repository write를 호출하지 않는다.
+- 홈은 질문 카드 아래에 조용한 진행 요약을 보여주고, 390px 모바일 viewport에서 질문 CTA보다 강하게 보이지 않는다.
+- 홈 진행 요약은 `오늘 질문`, `둘 다 답한 질문`, `음악 노트` 3개 상태를 보여준다.
+- 홈 진행 요약은 primary CTA를 동시에 2개 이상 보여주지 않는다.
+- 저장 실패 상태에서는 `저장 다시 시도` CTA가 보이고 상대 답/댓글/summary 완료 상태가 열리지 않는다.
+- offline 상태에서는 네트워크 안내와 수동 retry CTA가 보이며 자동 반복 저장을 만들지 않는다.
 
 ## Manual Checks
 
@@ -107,6 +120,8 @@
 - 새 Firebase 계정으로 첫 로그인하면 샘플 기록 없이 빈 상태에서 시작한다.
 - Firestore Usage tab에서 수동 smoke test 후 reads/writes가 무료 플랜 예산 안에 있는지 확인한다.
 - 긴 답변, 수정 버튼, 저장 피드백이 390px 모바일 폭에서 겹치지 않는다.
+- 홈 진행 요약이 질문 카드, 하단 내비, 음악 탭 추가 후의 모바일 여백과 겹치지 않는다.
+- 브라우저 offline 모드에서 답변/댓글/음악 저장 실패 안내와 retry 흐름이 자연스럽다.
 
 ## Firestore Free Plan Budget Checks
 
@@ -124,4 +139,7 @@
 - 질문 캘린더는 별도 calendar collection 없이 progress 문서와 bounded answer reads로 렌더링한다.
 - Summary/current 갱신이 필요한 action만 2 writes까지 허용한다.
 - Home은 전체 answer/wish/profile slot subcollection hydration 없이 summary/progress/today docs로 렌더링 가능해야 한다.
+- Home progress summary는 별도 status/events/analytics collection을 읽거나 쓰지 않는다.
+- Save/offline state는 local app state이며 Firestore에 retry history를 저장하지 않는다.
+- Music note seen state는 localStorage에만 저장하며 Firestore read/write 예산에 포함하지 않는다.
 - TTL, backup, PITR, restore, clone, Storage upload, Cloud Functions가 필요한 기능은 Spark/free-plan MVP 테스트 범위에 넣지 않는다.

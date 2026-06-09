@@ -418,7 +418,7 @@ This batch follows `docs/design/music_tab_navigation_concept.html` and `docs/des
   - Existing records screen remains available through a segmented control inside the `질문` tab.
   - `음악` tab opens the music note screen and is selected only for the music route.
 - Music note data:
-  - Each music note stores `id`, `title`, `artist`, `link`, `note`, `mood`, `createdByProfileId`, `createdLabel`.
+  - Each music note stores `id`, `title`, `artist`, `link`, `note`, `mood`, `createdByProfileId`, `createdLabel`, `updatedAt`.
   - Draft input is local state only; Firestore writes happen only on explicit submit.
   - MVP does not integrate Spotify, Apple Music, YouTube Music, search APIs, playback SDKs, album image uploads, realtime presence, or push notifications.
   - Link values are stored as text and may be opened/copied later; missing links are allowed only if title and artist are present.
@@ -435,6 +435,45 @@ This batch follows `docs/design/music_tab_navigation_concept.html` and `docs/des
   - Write one document only when a user submits a note.
   - Load all notes with the rest of the space session data.
   - This scope stays within Firebase free plan assumptions because it does not write on draft changes or playback interactions.
+
+### MVP v0.14 Quiet Home Progress & Save Stability
+
+This batch covers the next two practical improvements: a quiet progress summary on Home and clearer save/offline failure handling. It must be implemented in SDD/TDD order and should not add new Firestore collections.
+
+- Selected Home summary design: `docs/design/home_quiet_progress_summary.html`.
+- Home progress summary:
+  - 홈 질문 카드 아래에 compact summary strip/card를 보여준다.
+  - Summary는 `오늘 질문`, `둘 다 답한 질문`, `음악 노트` 3개 정도의 낮은 압력 항목으로 구성한다.
+  - 각 항목은 short label, current state text, subtle icon 또는 status dot을 가진다.
+  - `둘 다 답한 질문`은 나와 상대가 같은 질문에 모두 답해 서로의 답이 공개된 질문 수를 뜻하며 `summary/current.bothAnsweredQuestionCount`에서 계산한다.
+  - 음악 노트의 `새 음악 노트` 표시는 Firestore seen 문서가 아니라 device-local localStorage 기준으로 판단한다.
+  - localStorage key는 `alagagi:lastSeenMusicNoteAt:{spaceId}:{profileId}` 형태로 저장한다.
+  - `lastSeenMusicNoteAt` 이후에 생성/수정된 상대의 music note가 있으면 홈 요약에 `새 음악 노트가 있어요`를 보여준다.
+  - 앱에 접속만 한 시간은 확인으로 보지 않는다. 사용자가 음악 탭을 열어 목록을 확인했을 때만 최신 music note 시각으로 localStorage를 갱신한다.
+  - localStorage가 비었거나 해당 기기에서 처음 접속한 경우에는 상대 음악 노트가 있으면 새 노트로 볼 수 있다.
+  - 내가 직접 남긴 음악 노트는 내 기기에서 `새 음악 노트` 판정에 포함하지 않는다.
+  - 음악 노트에 비교 가능한 `updatedAt`이 없으면 `새`라고 단정하지 않고 `최근 음악 노트 {count}곡`처럼 count/latest copy로 fallback한다.
+  - Summary는 사용자를 재촉하지 않고 `아직 괜찮아요`, `기다리는 중`, `새 음악 노트`처럼 부드러운 상태만 말한다.
+  - Summary CTA는 많아도 1개만 노출한다. 우선순위는 `오늘 답하기` > `질문함 보기` > `음악 보기` 순서다.
+  - Home 첫 화면에서 오늘 질문 카드가 여전히 주인공이어야 하며, summary가 질문 CTA보다 시각적으로 강해지지 않는다.
+  - Summary는 날짜별 기록 전체를 스캔하지 않고 `summary/current`, `progress/daily`, 오늘 질문의 내/상대 답, 최근 음악 노트 정도의 이미 로드된 데이터로 계산한다.
+  - 데이터가 비어 있으면 `아직 쌓인 기록이 없어요`보다 더 구체적인 3개 empty state를 보여준다.
+- Save/offline stability:
+  - 명시적 저장 액션의 상태를 `idle`, `saving`, `saved`, `failed`, `offline`으로 구분한다.
+  - `saving` 중에는 같은 저장 버튼 중복 입력을 막고, 버튼 label 또는 작은 status row로 저장 중임을 보여준다.
+  - `saved`는 짧게만 보여주고 사용자의 흐름을 방해하는 modal/toast stack을 만들지 않는다.
+  - `failed`는 사용자가 다시 누를 수 있는 `저장 다시 시도` CTA와 짧은 원인 안내를 제공한다.
+  - `offline`은 브라우저 offline signal 또는 네트워크 예외 추론으로 표시하되, 자동 반복 저장 루프를 만들지 않는다.
+  - 실패/오프라인 상태에서는 상대 답 공개, 댓글 입력, summary count 증가처럼 동기화가 완료된 것처럼 보이는 UI를 열지 않는다.
+  - Retry는 사용자가 직접 누를 때만 Firestore write를 다시 호출한다.
+  - Draft text는 local state에 유지해 저장 실패 후에도 사용자가 다시 작성하지 않아도 된다.
+  - Save stability 적용 대상은 답변 저장/수정, 답변 댓글 저장/수정, 위시 추가/관심/완료, 소개 카드 슬롯 저장, 개인화 저장, 음악 노트 저장이다.
+- Firestore/free-plan boundary:
+  - 새 상태 UI를 위해 별도 `status`, `events`, `notifications`, `analytics` collection을 만들지 않는다.
+  - 음악 노트 seen state는 device-local localStorage에만 저장하며 Firestore write를 만들지 않는다.
+  - 정상 저장은 기존 action별 1 document write 원칙을 유지한다.
+  - Summary/current를 같이 갱신해야 하는 액션만 기존 Spark boundary대로 최대 2 writes를 허용한다.
+  - Retry는 원래 실패한 동일 document write를 다시 시도하며 별도 retry history를 쓰지 않는다.
 
 ### MVP v0.7 Answer Comments In Scope
 
@@ -691,6 +730,17 @@ Required UI:
   - 마음의 결 percentage
   - 주고받은 질문 count
   - 닮은 취향 키워드
+- Quiet progress summary:
+  - 오늘 질문 상태
+  - 둘 다 답한 질문 상태
+  - 음악 노트 최근 상태
+  - one prioritized CTA
+- Save status banner or inline row:
+  - 저장 중
+  - 저장 완료
+  - 저장 실패
+  - 오프라인/네트워크 불안정
+  - 저장 다시 시도
 - Bottom navigation
 
 State:
@@ -716,6 +766,13 @@ Acceptance Criteria:
 - 댓글 draft 입력 중에는 Firestore write가 발생하지 않는다.
 - 댓글 저장은 답변당 내 댓글 1개 문서만 create/merge한다.
 - 기록 요약으로 닮음 퍼센트, 질문 수, 키워드가 보인다.
+- 홈 진행 요약은 질문 카드보다 작은 시각 위계로 보인다.
+- 홈 진행 요약은 `오늘 질문`, `둘 다 답한 질문`, `음악 노트` 상태를 한 화면에서 스캔 가능하게 보여준다.
+- 홈 진행 요약은 별도 Firestore write를 만들지 않는다.
+- 홈 진행 요약 CTA는 동시에 2개 이상 노출하지 않는다.
+- 저장 실패 또는 offline 상태에서는 상대 답/댓글/summary 증가가 완료된 것처럼 보이지 않는다.
+- 저장 실패 안내는 사용자가 직접 `저장 다시 시도`를 누를 수 있게 한다.
+- 저장 중에는 같은 액션 버튼의 중복 입력이 방지된다.
 
 ### 10.3 Answer Screen
 
@@ -1325,6 +1382,18 @@ class WishItem {
   final String? doneMemo;
 }
 
+class MusicNote {
+  final String id;
+  final String title;
+  final String artist;
+  final String link;
+  final String note;
+  final String mood;
+  final String createdByProfileId;
+  final String createdLabel;
+  final DateTime? updatedAt;
+}
+
 class AlagagiSession {
   final String spaceId;
   final AppProfile me;
@@ -1367,6 +1436,46 @@ class SpaceSummary {
   final List<String> topMatchedKeywords;
   final String? latestActivityLabel;
   final DateTime? updatedAt;
+}
+
+class HomeProgressSummary {
+  final List<HomeProgressSummaryItem> items;
+  final HomeProgressSummaryAction? primaryAction;
+}
+
+class HomeProgressSummaryItem {
+  final String id;
+  final String label;
+  final String stateText;
+  final HomeProgressSummaryTone tone;
+}
+
+class HomeProgressSummaryAction {
+  final String label;
+  final AppRoute route;
+}
+
+enum HomeProgressSummaryTone {
+  calm,
+  waiting,
+  ready,
+}
+
+enum SaveOperationState {
+  idle,
+  saving,
+  saved,
+  failed,
+  offline,
+}
+
+abstract class MusicNoteSeenStore {
+  DateTime? readLastSeenMusicNoteAt(String spaceId, String profileId);
+  void writeLastSeenMusicNoteAt(
+    String spaceId,
+    String profileId,
+    DateTime timestamp,
+  );
 }
 ```
 
@@ -1429,6 +1538,8 @@ Rules:
 - Summary may be updated opportunistically by the same explicit user action that changes the source data.
 - If summary is missing, UI falls back to lightweight empty/unknown state instead of broad scanning.
 - Updating summary is allowed as a second write only when the source action already writes one user-generated document.
+- Home progress summary must derive from this document plus `progress/daily`, today's answer documents, and the in-memory music note list.
+- Save/offline UI state is local app state and is not persisted to Firestore.
 
 `spaces/{spaceId}/answers/{questionId_uid}`
 

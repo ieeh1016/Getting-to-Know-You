@@ -29,6 +29,8 @@ enum QuestionDepth { light, daily, beliefs, inner }
 
 enum SaveStatus { idle, saving, saved, failed }
 
+enum HomeProgressSummaryTone { calm, waiting, ready }
+
 enum QuestionCalendarStatus {
   future,
   unanswered,
@@ -518,6 +520,7 @@ class MusicNote {
     required this.mood,
     required this.createdByProfileId,
     required this.createdLabel,
+    this.updatedAt,
   });
 
   final String id;
@@ -528,6 +531,7 @@ class MusicNote {
   final String mood;
   final String createdByProfileId;
   final String createdLabel;
+  final DateTime? updatedAt;
 
   MusicNote copyWith({String? createdByProfileId}) {
     return MusicNote(
@@ -539,7 +543,68 @@ class MusicNote {
       mood: mood,
       createdByProfileId: createdByProfileId ?? this.createdByProfileId,
       createdLabel: createdLabel,
+      updatedAt: updatedAt,
     );
+  }
+}
+
+class HomeProgressSummary {
+  const HomeProgressSummary({required this.items, this.primaryAction});
+
+  final List<HomeProgressSummaryItem> items;
+  final HomeProgressSummaryAction? primaryAction;
+}
+
+class HomeProgressSummaryItem {
+  const HomeProgressSummaryItem({
+    required this.id,
+    required this.label,
+    required this.stateText,
+    required this.tone,
+  });
+
+  final String id;
+  final String label;
+  final String stateText;
+  final HomeProgressSummaryTone tone;
+}
+
+class HomeProgressSummaryAction {
+  const HomeProgressSummaryAction({required this.label, required this.route});
+
+  final String label;
+  final AlagagiRoute route;
+}
+
+abstract class MusicNoteSeenStore {
+  DateTime? readLastSeenMusicNoteAt(String spaceId, String profileId);
+
+  void writeLastSeenMusicNoteAt(
+    String spaceId,
+    String profileId,
+    DateTime timestamp,
+  );
+}
+
+class MemoryMusicNoteSeenStore implements MusicNoteSeenStore {
+  final Map<String, DateTime> _values = {};
+
+  @override
+  DateTime? readLastSeenMusicNoteAt(String spaceId, String profileId) {
+    return _values[_key(spaceId, profileId)];
+  }
+
+  @override
+  void writeLastSeenMusicNoteAt(
+    String spaceId,
+    String profileId,
+    DateTime timestamp,
+  ) {
+    _values[_key(spaceId, profileId)] = timestamp;
+  }
+
+  static String _key(String spaceId, String profileId) {
+    return 'alagagi:lastSeenMusicNoteAt:$spaceId:$profileId';
   }
 }
 
@@ -711,35 +776,40 @@ class AlagagiState {
 }
 
 class AlagagiController extends ChangeNotifier {
-  AlagagiController({AlagagiDataRepository? repository})
-    : _repository = repository,
-      _spaceId = null,
-      _usesDemoData = true,
-      _todayQuestion = seedQuestions.first,
-      _dailyProgress = const DailyQuestionProgress(
-        startedDateKey: '2026-06-08',
-        currentQuestionId: 'q12',
-        openedDateKey: '2026-06-08',
-      ),
-      questions = seedQuestions,
-      balanceQuestions = seedBalanceQuestions,
-      _state = const AlagagiState(
-        me: AppProfile(id: 'me', nickname: '나', avatar: '🌿', isMe: true),
-        partner: AppProfile(
-          id: 'partner',
-          nickname: '영우',
-          avatar: '🪻',
-          isMe: false,
-        ),
-      ) {
+  AlagagiController({
+    AlagagiDataRepository? repository,
+    MusicNoteSeenStore? musicNoteSeenStore,
+  }) : _repository = repository,
+       _musicNoteSeenStore = musicNoteSeenStore ?? MemoryMusicNoteSeenStore(),
+       _spaceId = null,
+       _usesDemoData = true,
+       _todayQuestion = seedQuestions.first,
+       _dailyProgress = const DailyQuestionProgress(
+         startedDateKey: '2026-06-08',
+         currentQuestionId: 'q12',
+         openedDateKey: '2026-06-08',
+       ),
+       questions = seedQuestions,
+       balanceQuestions = seedBalanceQuestions,
+       _state = const AlagagiState(
+         me: AppProfile(id: 'me', nickname: '나', avatar: '🌿', isMe: true),
+         partner: AppProfile(
+           id: 'partner',
+           nickname: '영우',
+           avatar: '🪻',
+           isMe: false,
+         ),
+       ) {
     _applyProfilesToSeedData();
   }
 
   AlagagiController.forSession(
     AlagagiSession session, {
     AlagagiDataRepository? repository,
+    MusicNoteSeenStore? musicNoteSeenStore,
     String? todayDateKey,
   }) : _repository = repository,
+       _musicNoteSeenStore = musicNoteSeenStore ?? MemoryMusicNoteSeenStore(),
        _spaceId = session.spaceId,
        _usesDemoData = false,
        _dailyProgress = _resolveDailyQuestionProgress(
@@ -770,6 +840,7 @@ class AlagagiController extends ChangeNotifier {
 
   AlagagiState _state;
   final AlagagiDataRepository? _repository;
+  final MusicNoteSeenStore _musicNoteSeenStore;
   final String? _spaceId;
   final bool _usesDemoData;
 
@@ -813,6 +884,105 @@ class AlagagiController extends ChangeNotifier {
       return seedInsight;
     }
     return _buildRealInsight();
+  }
+
+  HomeProgressSummary get homeProgressSummary {
+    final myAnswer = todayMyAnswer;
+    final partnerAnswer = todayPartnerAnswer;
+    final todayItem = myAnswer == null
+        ? const HomeProgressSummaryItem(
+            id: 'todayQuestion',
+            label: '오늘 질문',
+            stateText: '아직 내 답을 남기지 않았어요',
+            tone: HomeProgressSummaryTone.waiting,
+          )
+        : myAnswer.skipped
+        ? const HomeProgressSummaryItem(
+            id: 'todayQuestion',
+            label: '오늘 질문',
+            stateText: '오늘은 잠시 넘겨뒀어요',
+            tone: HomeProgressSummaryTone.waiting,
+          )
+        : partnerAnswer == null
+        ? HomeProgressSummaryItem(
+            id: 'todayQuestion',
+            label: '오늘 질문',
+            stateText: '${_state.partner.nickname}님 답을 기다리는 중이에요',
+            tone: HomeProgressSummaryTone.waiting,
+          )
+        : const HomeProgressSummaryItem(
+            id: 'todayQuestion',
+            label: '오늘 질문',
+            stateText: '오늘 질문이 함께 열렸어요',
+            tone: HomeProgressSummaryTone.ready,
+          );
+
+    final bothAnsweredCount = insight.matchCount;
+    final bothAnsweredItem = HomeProgressSummaryItem(
+      id: 'bothAnswered',
+      label: '둘 다 답한 질문',
+      stateText: bothAnsweredCount == 0
+          ? '아직 같이 열린 질문은 없어요'
+          : '$bothAnsweredCount개 질문을 같이 열었어요',
+      tone: bothAnsweredCount == 0
+          ? HomeProgressSummaryTone.calm
+          : HomeProgressSummaryTone.ready,
+    );
+
+    final hasNewMusic = hasNewPartnerMusicNotes;
+    final musicItem = HomeProgressSummaryItem(
+      id: 'music',
+      label: '음악 노트',
+      stateText: hasNewMusic
+          ? '새 음악 노트가 있어요'
+          : _musicNotes.isEmpty
+          ? '아직 음악 노트가 없어요'
+          : '최근 음악 노트 ${_musicNotes.length}곡',
+      tone: hasNewMusic
+          ? HomeProgressSummaryTone.ready
+          : HomeProgressSummaryTone.calm,
+    );
+
+    final primaryAction = myAnswer == null || myAnswer.skipped
+        ? const HomeProgressSummaryAction(
+            label: '오늘 답하기',
+            route: AlagagiRoute.answer,
+          )
+        : hasNewMusic
+        ? const HomeProgressSummaryAction(
+            label: '음악 보기',
+            route: AlagagiRoute.music,
+          )
+        : const HomeProgressSummaryAction(
+            label: '질문함 보기',
+            route: AlagagiRoute.archive,
+          );
+
+    return HomeProgressSummary(
+      items: [todayItem, bothAnsweredItem, musicItem],
+      primaryAction: primaryAction,
+    );
+  }
+
+  bool get hasNewPartnerMusicNotes {
+    final spaceId = _spaceId;
+    if (spaceId == null) {
+      return false;
+    }
+    final lastSeen = _musicNoteSeenStore.readLastSeenMusicNoteAt(
+      spaceId,
+      _state.me.id,
+    );
+    return _musicNotes.any((note) {
+      if (note.createdByProfileId != _state.partner.id) {
+        return false;
+      }
+      final updatedAt = note.updatedAt;
+      if (updatedAt == null) {
+        return false;
+      }
+      return lastSeen == null || updatedAt.isAfter(lastSeen);
+    });
   }
 
   void _applyProfilesToSeedData() {
@@ -867,6 +1037,7 @@ class AlagagiController extends ChangeNotifier {
           );
         }),
       );
+    _sortMusicNotesByUpdatedAt();
   }
 
   void _applySessionData(AlagagiSpaceData data) {
@@ -933,6 +1104,7 @@ class AlagagiController extends ChangeNotifier {
     _musicNotes
       ..clear()
       ..addAll(data.musicNotes);
+    _sortMusicNotesByUpdatedAt();
   }
 
   static DailyQuestionProgress _resolveDailyQuestionProgress(
@@ -1526,6 +1698,9 @@ class AlagagiController extends ChangeNotifier {
   }
 
   void goTo(AlagagiRoute route) {
+    if (route == AlagagiRoute.music) {
+      _markMusicNotesSeen();
+    }
     _state = _state.copyWith(
       route: route,
       editingAnswer: false,
@@ -1534,6 +1709,65 @@ class AlagagiController extends ChangeNotifier {
       clearAnswerSaveFeedback: route == AlagagiRoute.answer,
     );
     notifyListeners();
+  }
+
+  void activateHomeProgressSummaryAction() {
+    final action = homeProgressSummary.primaryAction;
+    if (action == null) {
+      return;
+    }
+    if (action.route == AlagagiRoute.answer && todayMyAnswer?.skipped == true) {
+      answerTodayAfterSkip();
+      return;
+    }
+    goTo(action.route);
+  }
+
+  void _markMusicNotesSeen() {
+    final spaceId = _spaceId;
+    if (spaceId == null) {
+      return;
+    }
+    final latestTimestamp = _latestMusicNoteTimestamp();
+    if (latestTimestamp == null) {
+      return;
+    }
+    _musicNoteSeenStore.writeLastSeenMusicNoteAt(
+      spaceId,
+      _state.me.id,
+      latestTimestamp,
+    );
+  }
+
+  DateTime? _latestMusicNoteTimestamp() {
+    DateTime? latest;
+    for (final note in _musicNotes) {
+      final updatedAt = note.updatedAt;
+      if (updatedAt == null) {
+        continue;
+      }
+      if (latest == null || updatedAt.isAfter(latest)) {
+        latest = updatedAt;
+      }
+    }
+    return latest;
+  }
+
+  void _sortMusicNotesByUpdatedAt() {
+    _musicNotes.sort((a, b) {
+      final aUpdatedAt = a.updatedAt;
+      final bUpdatedAt = b.updatedAt;
+      if (aUpdatedAt == null && bUpdatedAt == null) {
+        return 0;
+      }
+      if (aUpdatedAt == null) {
+        return 1;
+      }
+      if (bUpdatedAt == null) {
+        return -1;
+      }
+      return bUpdatedAt.compareTo(aUpdatedAt);
+    });
   }
 
   void updateDraftAnswer(String value) {
@@ -2127,6 +2361,7 @@ class AlagagiController extends ChangeNotifier {
   }
 
   void startMusicDraft() {
+    _markMusicNotesSeen();
     _state = _state.copyWith(
       route: AlagagiRoute.music,
       musicDraftVisible: true,
@@ -2219,8 +2454,9 @@ class AlagagiController extends ChangeNotifier {
       return;
     }
 
+    final now = DateTime.now();
     final note = MusicNote(
-      id: 'music_${_state.me.id}_${DateTime.now().microsecondsSinceEpoch}',
+      id: 'music_${_state.me.id}_${now.microsecondsSinceEpoch}',
       title: title,
       artist: artist,
       link: link,
@@ -2228,8 +2464,10 @@ class AlagagiController extends ChangeNotifier {
       mood: mood,
       createdByProfileId: _state.me.id,
       createdLabel: '오늘',
+      updatedAt: now,
     );
     _musicNotes.insert(0, note);
+    _sortMusicNotesByUpdatedAt();
     _persistMusicNote(note);
     _state = _state.copyWith(
       musicDraftVisible: false,

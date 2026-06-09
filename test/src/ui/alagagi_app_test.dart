@@ -740,4 +740,65 @@ void main() {
     expect(find.textContaining('커플'), findsNothing);
     expect(find.textContaining('사랑'), findsNothing);
   });
+
+  testWidgets('home summary marks new partner music until music tab is seen', (
+    tester,
+  ) async {
+    final seenStore = MemoryMusicNoteSeenStore()
+      ..writeLastSeenMusicNoteAt(
+        'main',
+        'youngwooUid',
+        DateTime.parse('2026-06-09T08:00:00.000Z'),
+      );
+    final controller = AlagagiController.forSession(
+      AlagagiSession(
+        spaceId: 'main',
+        me: const AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: const AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          musicNotes: [
+            MusicNote(
+              id: 'music_partner_new',
+              title: '밤 산책',
+              artist: '민영의 추천',
+              link: 'https://music.example/night',
+              note: '퇴근길에 들으면 차분해져요.',
+              mood: '밤',
+              createdByProfileId: 'minyoungUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-09T10:00:00.000Z'),
+            ),
+          ],
+        ),
+      ),
+      musicNoteSeenStore: seenStore,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(homeProgressSummaryKey), findsOneWidget);
+    expect(find.text('둘 다 답한 질문'), findsOneWidget);
+    expect(find.text('새 음악 노트가 있어요'), findsOneWidget);
+
+    await tester.tap(find.text('음악'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('홈'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('새 음악 노트가 있어요'), findsNothing);
+    expect(find.text('최근 음악 노트 1곡'), findsOneWidget);
+  });
 }

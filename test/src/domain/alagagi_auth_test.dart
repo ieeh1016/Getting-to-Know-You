@@ -1121,6 +1121,72 @@ void main() {
         expect(controller.musicNotes.first.title, '오후의 문장');
       },
     );
+
+    test(
+      'home progress summary uses local seen time for new partner music notes',
+      () {
+        final seenStore = MemoryMusicNoteSeenStore()
+          ..writeLastSeenMusicNoteAt(
+            'main',
+            'youngwooUid',
+            DateTime.parse('2026-06-09T08:00:00.000Z'),
+          );
+        final controller = AlagagiController.forSession(
+          firebaseSessionWithData(
+            AlagagiSpaceData(
+              musicNotes: [
+                MusicNote(
+                  id: 'music_partner_new',
+                  title: '밤 산책',
+                  artist: '민영의 추천',
+                  link: 'https://music.example/night',
+                  note: '퇴근길에 들으면 차분해져요.',
+                  mood: '밤',
+                  createdByProfileId: 'minyoungUid',
+                  createdLabel: '오늘',
+                  updatedAt: DateTime.parse('2026-06-09T10:00:00.000Z'),
+                ),
+                MusicNote(
+                  id: 'music_mine_new',
+                  title: '오후의 문장',
+                  artist: '영우의 추천',
+                  link: 'https://music.example/afternoon',
+                  note: '카페에서 이야기할 때 배경에 있으면 좋을 것 같아서요.',
+                  mood: '카페',
+                  createdByProfileId: 'youngwooUid',
+                  createdLabel: '오늘',
+                  updatedAt: DateTime.parse('2026-06-09T11:00:00.000Z'),
+                ),
+              ],
+            ),
+          ),
+          musicNoteSeenStore: seenStore,
+        );
+
+        final musicItem = controller.homeProgressSummary.items.singleWhere(
+          (item) => item.id == 'music',
+        );
+
+        expect(musicItem.stateText, '새 음악 노트가 있어요');
+        expect(
+          controller.homeProgressSummary.primaryAction?.route,
+          isNot(AlagagiRoute.music),
+        );
+
+        controller.goTo(AlagagiRoute.music);
+
+        expect(
+          seenStore.readLastSeenMusicNoteAt('main', 'youngwooUid'),
+          DateTime.parse('2026-06-09T11:00:00.000Z'),
+        );
+        expect(
+          controller.homeProgressSummary.items
+              .singleWhere((item) => item.id == 'music')
+              .stateText,
+          '최근 음악 노트 2곡',
+        );
+      },
+    );
   });
 }
 

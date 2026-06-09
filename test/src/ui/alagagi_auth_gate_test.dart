@@ -178,6 +178,8 @@ void main() {
       await tester.pumpAndSettle();
       await tester.drag(find.byType(Scrollable), const Offset(0, -700));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('밸런스 게임'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('밸런스 게임'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('조용한 바다'));
