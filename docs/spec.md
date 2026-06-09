@@ -133,6 +133,8 @@ Reference `design2.html`: Modern Minimal, sage, warm paper, serif title.
 - Bottom navigation is fixed at bottom with translucent paper background.
 - Avoid nested cards except where the reference explicitly frames a phone preview or a repeated list item.
 - 초대 노트, 홈 기능 카드, 밸런스 선택지, 소개 카드 슬롯, 위시 카드의 아이콘은 모바일에서 텍스트보다 시각 우선순위가 높아지지 않게 작고 일관된 line icon으로 표시한다.
+- 실제 모바일 브라우저/PWA에서 OS 상태바가 이미 보이므로 앱 내부에는 `9:41`, 배터리, 신호 점 같은 fake status row를 렌더링하지 않는다.
+- 상단 안정감은 fake status row 대신 화면별 safe top spacing과 명확한 header/top bar로 만든다.
 
 ## 7. Information Architecture
 
@@ -431,11 +433,11 @@ Purpose:
 
 Required UI:
 
-- Status row mock or safe top spacing
+- Safe top spacing without fake OS status row
 - Seal icon area
 - Kicker: `A L A G A G I`
 - Hero headline: `우리, 천천히 알아가 볼래요?`
-- Helper copy: `민영과 영우만 들어올 수 있어요.`
+- Helper copy: `두 사람만 로그인할 수 있어요.`
 - Login ID field
 - Password field
 - CTA: `로그인`
@@ -472,11 +474,11 @@ Purpose:
 
 Required UI:
 
-- Status row mock or safe top spacing
+- Safe top spacing without fake OS status row
 - Seal icon area
 - Kicker: `A L A G A G I`
 - Hero headline: `우리, 천천히 알아가 볼래요?`
-- Inviter copy: `{inviterName}님이 당신을 초대했어요.`
+- Inviter copy: `{inviterName}님이 대화 공간을 열어두었어요.`
 - Note rows:
   - 하루에 딱 하나
   - 비공개 기록

@@ -16,11 +16,15 @@ void main() {
     await tester.pumpWidget(const AlagagiApp());
 
     expect(find.text('우리, 천천히\n알아가 볼래요?'), findsOneWidget);
+    expect(find.text('9:41'), findsNothing);
+    expect(find.textContaining('🔋'), findsNothing);
 
     await enterSpace(tester);
 
     expect(find.text('알아가기'), findsOneWidget);
     expect(find.text('오늘의 질문'), findsOneWidget);
+    expect(find.text('9:41'), findsNothing);
+    expect(find.textContaining('🔋'), findsNothing);
   });
 
   testWidgets('submits today answer and reveals partner answer', (

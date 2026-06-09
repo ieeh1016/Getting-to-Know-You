@@ -230,29 +230,11 @@ class _PhoneShell extends StatelessWidget {
   }
 }
 
-class _StatusBar extends StatelessWidget {
-  const _StatusBar();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(28, 16, 28, 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text('9:41', style: sans(size: 13, color: AlagagiColors.muted)),
-          Text('● ● ●  🔋', style: sans(size: 13, color: AlagagiColors.muted)),
-        ],
-      ),
-    );
-  }
-}
-
 class _ScreenScroll extends StatelessWidget {
   const _ScreenScroll({
     required this.children,
     this.bottomNavigation,
-    this.padding = const EdgeInsets.fromLTRB(28, 14, 28, 112),
+    this.padding = const EdgeInsets.fromLTRB(28, 34, 28, 112),
   });
 
   final List<Widget> children;
@@ -267,7 +249,6 @@ class _ScreenScroll extends StatelessWidget {
           child: ListView(
             padding: EdgeInsets.zero,
             children: [
-              const _StatusBar(),
               Padding(
                 padding: padding,
                 child: Column(
@@ -475,7 +456,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return ListView(
       padding: EdgeInsets.zero,
       children: [
-        const _StatusBar(),
         Padding(
           padding: const EdgeInsets.fromLTRB(34, 44, 34, 34),
           child: Column(
@@ -683,7 +663,6 @@ class _InviteScreenState extends State<InviteScreen> {
     return ListView(
       padding: EdgeInsets.zero,
       children: [
-        const _StatusBar(),
         Padding(
           padding: const EdgeInsets.fromLTRB(34, 44, 34, 34),
           child: Column(
@@ -1841,7 +1820,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
     return Stack(
       children: [
         _ScreenScroll(
-          padding: const EdgeInsets.fromLTRB(28, 12, 28, 166),
+          padding: const EdgeInsets.fromLTRB(28, 34, 28, 166),
           children: [
             _TopBar(
               title: '오늘의 질문',
@@ -2475,7 +2454,7 @@ class BalanceScreen extends StatelessWidget {
     return Stack(
       children: [
         _ScreenScroll(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 156),
+          padding: const EdgeInsets.fromLTRB(24, 34, 24, 156),
           children: [
             _TopBar(
               title: '밸런스 게임',
@@ -3174,7 +3153,7 @@ class WishlistScreen extends StatelessWidget {
       children: [
         _ScreenScroll(
           bottomNavigation: _BottomNav(controller: controller),
-          padding: const EdgeInsets.fromLTRB(28, 14, 28, 170),
+          padding: const EdgeInsets.fromLTRB(28, 34, 28, 170),
           children: [
             _TopBar(
               title: '언젠가, 같이',
