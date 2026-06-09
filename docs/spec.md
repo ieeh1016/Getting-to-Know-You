@@ -1020,12 +1020,13 @@ Acceptance Criteria:
 
 ### 10.7 Profile Card Screen
 
-Reference: `card.html`
+Reference: `card.html`, `docs/design/profile_card_redesign.html`
 
 Purpose:
 
 - 상대에게 보여주고 싶은 내 정보를 편한 만큼 채운다.
 - 질문 루틴과 별개로 자기소개를 가볍게 정리한다.
+- 더 다양한 소개 주제를 제공하되, 작성은 한 번에 한 칸만 집중해서 할 수 있게 한다.
 
 Required UI:
 
@@ -1039,10 +1040,35 @@ Required UI:
   - name
   - days subtitle
   - fill progress
-  - slots
+  - filled count / total count
+- Category filter chips:
+  - `전체`
+  - `취향`
+  - `하루`
+  - `대화`
+  - `함께`
+- Recommended prompt card:
+  - Label: `TODAY PICK`
+  - Recommends one empty slot from the selected/available card catalog.
+  - CTA: `이 질문 쓰기`
+- Slot cards:
+  - grid/card layout instead of row-only table layout
+  - slot label
+  - input hint or saved value preview
+  - empty/filled visual state
 - Empty slot state: `아직 비어 있어요`
-- Slot edit action on my card
-- Slot save/cancel controls
+- My card write action opens a focused editor panel.
+- Editor panel:
+  - selected slot category
+  - selected slot label
+  - short helper copy
+  - optional suggestion chips
+  - large text input
+  - save/cancel controls
+- Partner card:
+  - read-only
+  - shows filled slots only
+  - does not list every empty slot
 
 State:
 
@@ -1052,16 +1078,24 @@ State:
 - Empty slot
 - Editing slot
 - Saving slot
+- Category filter selected
+- Recommended slot selected
 
 Acceptance Criteria:
 
 - 채워진 칸 수와 전체 칸 수가 보인다.
+- 전체 슬롯 카탈로그는 24개 내외의 다양한 소개 주제를 제공한다.
+- 소개 슬롯은 `취향`, `하루`, `대화`, `함께` 카테고리로 분류된다.
+- 내 카드 화면은 추천 질문 카드와 카테고리 필터를 보여준다.
+- 내 카드의 빈 슬롯 또는 추천 질문을 누르면 큰 집중 작성 패널이 열린다.
 - 내 카드의 모든 슬롯은 날짜와 무관하게 바로 작성할 수 있다.
 - 내 카드의 작성된 슬롯은 같은 화면에서 다시 수정할 수 있다.
-- 상대 카드는 읽기 전용이며 상대가 저장한 슬롯만 보여준다.
+- 상대 카드는 읽기 전용이며 상대가 저장한 슬롯만 카드형 목록으로 보여준다.
+- 상대 카드에서는 비어 있는 슬롯 전체 목록과 작성 CTA를 보여주지 않는다.
 - 빈 슬롯은 잠금 문구가 아니라 `아직 비어 있어요`로 표시한다.
 - `Day 6`, `오늘 채울 칸`, `아직 비밀` 같은 날짜 unlock copy를 노출하지 않는다.
 - 슬롯 저장은 해당 slot document 1개 write 이하로 유지한다.
+- 슬롯 draft 입력 중에는 Firestore write를 만들지 않는다.
 - 탭 전환 시 상대 카드와 내 카드가 바뀐다.
 
 ### 10.8 Wishlist Screen
@@ -1236,20 +1270,36 @@ Rules:
 - 둘 다 선택하기 전에는 결과 문장을 만들지 않는다.
 - 같은 선택이면 `닮은 취향`, 다르면 `서로 다른 취향`으로만 표현하고 점수화하지 않는다.
 
-### 12.3 Profile Card Slot Catalog v1
+### 12.3 Profile Card Slot Catalog v2
 
-| Order | Slot ID | Label | Input Hint |
-| --- | --- | --- | --- |
-| 1 | song | 요즘 노래 | 요즘 자주 듣는 노래 |
-| 2 | food | 먹고 싶은 음식 | 요즘 먹고 싶은 음식 |
-| 3 | rest | 쉬는 방식 | 쉬고 싶을 때 하는 일 |
-| 4 | cafe | 카페 취향 | 좋아하는 카페 분위기 |
-| 5 | walk | 산책 취향 | 걷고 싶은 길 |
-| 6 | comfort | 편해지는 순간 | 나를 편하게 하는 것 |
-| 7 | promise | 약속에서 중요한 것 | 은근히 중요하게 보는 것 |
-| 8 | kindness | 기억나는 다정함 | 오래 남는 다정함 |
-| 9 | pace | 나에게 맞는 속도 | 요즘 필요한 속도 |
-| 10 | wish_scene | 같이 해보고 싶은 장면 | 언젠가 같이 해보고 싶은 것 |
+Reference: `docs/design/profile_card_redesign.html`
+
+| Order | Category | Slot ID | Label | Input Hint |
+| --- | --- | --- | --- | --- |
+| 1 | 취향 | song | 요즘 노래 | 요즘 자주 듣는 노래 |
+| 2 | 취향 | food | 먹고 싶은 음식 | 요즘 먹고 싶은 음식 |
+| 3 | 취향 | cafe | 카페 취향 | 좋아하는 카페 분위기 |
+| 4 | 취향 | walk | 산책 취향 | 걷고 싶은 길 |
+| 5 | 취향 | small_taste | 요즘 꽂힌 작은 취향 | 노래, 음식, 물건, 장소 무엇이든 |
+| 6 | 취향 | object | 자주 손이 가는 물건 | 요즘 자주 쓰는 작은 물건 |
+| 7 | 하루 | rest | 쉬는 방식 | 쉬고 싶을 때 하는 일 |
+| 8 | 하루 | comfort | 편해지는 순간 | 나를 편하게 하는 것 |
+| 9 | 하루 | morning_night | 아침과 밤 중 편한 쪽 | 더 편한 시간대 |
+| 10 | 하루 | focus_time | 집중이 잘 되는 시간 | 잘 몰입되는 시간 |
+| 11 | 하루 | weekend | 주말의 밀도 | 꽉 찬 주말 또는 느슨한 주말 |
+| 12 | 하루 | recharge | 충전되는 방식 | 에너지가 돌아오는 방식 |
+| 13 | 대화 | promise | 약속에서 중요한 것 | 은근히 중요하게 보는 것 |
+| 14 | 대화 | kindness | 기억나는 다정함 | 오래 남는 다정함 |
+| 15 | 대화 | pace | 나에게 맞는 속도 | 요즘 필요한 속도 |
+| 16 | 대화 | talk_style | 대화할 때 편한 방식 | 편하게 느끼는 대화 흐름 |
+| 17 | 대화 | careful_words | 조심스러운 표현 | 천천히 말하고 싶은 것 |
+| 18 | 대화 | question_style | 좋아하는 질문 방식 | 편하게 답할 수 있는 질문 |
+| 19 | 함께 | wish_scene | 같이 해보고 싶은 장면 | 언젠가 같이 해보고 싶은 것 |
+| 20 | 함께 | neighborhood | 가보고 싶은 동네 | 함께 걸어보고 싶은 동네 |
+| 21 | 함께 | shared_food | 같이 먹고 싶은 것 | 같이 먹으면 좋을 음식 |
+| 22 | 함께 | small_hobby | 가볍게 해보고 싶은 취미 | 부담 없는 작은 활동 |
+| 23 | 함께 | rainy_day | 비 오는 날 하고 싶은 것 | 날씨가 흐릴 때 좋은 장면 |
+| 24 | 함께 | photo_walk | 사진 남기기 좋은 순간 | 가볍게 찍어보고 싶은 장면 |
 
 Rules:
 
@@ -1258,6 +1308,7 @@ Rules:
 - 모든 슬롯은 첫날부터 작성 가능하다.
 - 빈 슬롯은 `아직 비어 있어요` 상태로만 보여주고 날짜 unlock hint를 보여주지 않는다.
 - 과거 `locked` 필드가 Firestore에 남아 있어도 UI는 날짜 잠금으로 해석하지 않는다.
+- 질문 카탈로그는 앱 코드에 두고, Firestore에는 사용자가 명시적으로 저장한 slot value만 쓴다.
 
 ### 12.4 Wishlist Starter Templates v1
 

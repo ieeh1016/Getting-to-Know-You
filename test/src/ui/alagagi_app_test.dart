@@ -506,7 +506,7 @@ void main() {
     expect(find.text('천천히 알아가는 중'), findsOneWidget);
   });
 
-  testWidgets('profile card inline edit can save and cancel a slot', (
+  testWidgets('profile card focused editor can save and cancel a slot', (
     tester,
   ) async {
     final controller = AlagagiController()
@@ -519,27 +519,65 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.byKey(profileSlotEditButtonKey('rest')));
+    expect(find.text('TODAY PICK'), findsOneWidget);
+    expect(find.byKey(profileCategoryChipKey('전체')), findsOneWidget);
+    expect(find.byKey(profileCategoryChipKey('취향')), findsOneWidget);
+    expect(find.byKey(profileCategoryChipKey('하루')), findsOneWidget);
+    expect(find.text('2 / 24'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(profileRecommendedSlotButtonKey));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(profileSlotEditButtonKey('rest')));
+    await tester.tap(find.byKey(profileRecommendedSlotButtonKey));
     await tester.pumpAndSettle();
+
+    expect(find.byKey(profileEditorPanelKey), findsOneWidget);
+    expect(find.text('카드 저장'), findsOneWidget);
+
     await tester.enterText(
       find.byKey(profileSlotFieldKey('rest')),
       '집에서 차 마시기',
     );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(profileSlotSaveButtonKey('rest')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(profileSlotSaveButtonKey('rest')));
     await tester.pumpAndSettle();
 
     expect(find.text('집에서 차 마시기'), findsOneWidget);
 
+    await tester.ensureVisible(find.byKey(profileSlotEditButtonKey('rest')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(profileSlotEditButtonKey('rest')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(profileSlotFieldKey('rest')), '취소될 문장');
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(profileSlotCancelButtonKey('rest')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(profileSlotCancelButtonKey('rest')));
     await tester.pumpAndSettle();
 
     expect(find.text('집에서 차 마시기'), findsOneWidget);
     expect(find.text('취소될 문장'), findsNothing);
+  });
+
+  testWidgets('partner profile card shows only filled read cards', (
+    tester,
+  ) async {
+    final controller = AlagagiController()
+      ..enterSpace('영우')
+      ..goTo(AlagagiRoute.profileCard)
+      ..setProfileCardTab(ProfileCardTab.partner);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('채워진 답만 보여요'), findsOneWidget);
+    expect(find.text('매콤한 분식이나 따뜻한 국물'), findsOneWidget);
+    expect(find.text('아직 비어 있어요'), findsNothing);
+    expect(find.byKey(profileRecommendedSlotButtonKey), findsNothing);
+    expect(find.text('이 질문 쓰기'), findsNothing);
   });
 
   testWidgets('my screen hides implementation terms in user copy', (

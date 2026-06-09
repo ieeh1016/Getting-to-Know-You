@@ -126,6 +126,25 @@ void main() {
       );
     });
 
+    test('profile card catalog provides expanded category packs', () {
+      final controller = AlagagiController()
+        ..enterSpace('영우')
+        ..setProfileCardTab(ProfileCardTab.me);
+
+      final slots = controller.activeProfileCard.slots;
+
+      expect(slots.length, greaterThanOrEqualTo(24));
+      expect(
+        slots.map((slot) => slot.category).toSet(),
+        containsAll(['취향', '하루', '대화', '함께']),
+      );
+      expect(
+        slots.map((slot) => slot.label),
+        containsAll(['요즘 꽂힌 작은 취향', '대화할 때 편한 방식', '비 오는 날 하고 싶은 것']),
+      );
+      expect(slots.every((slot) => slot.inputHint.isNotEmpty), isTrue);
+    });
+
     test('wishlist mutual filter reacts to liking partner wish', () {
       final controller = AlagagiController();
 

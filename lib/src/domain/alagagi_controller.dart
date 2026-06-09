@@ -424,6 +424,8 @@ class ProfileSlot {
     required this.id,
     required this.label,
     required this.icon,
+    this.category = '취향',
+    this.inputHint = '편한 만큼 적어두기',
     this.value,
     this.locked = false,
     this.unlockHint,
@@ -432,15 +434,25 @@ class ProfileSlot {
   final String id;
   final String label;
   final String icon;
+  final String category;
+  final String inputHint;
   final String? value;
   final bool locked;
   final String? unlockHint;
 
-  ProfileSlot copyWith({String? value, bool? locked, String? unlockHint}) {
+  ProfileSlot copyWith({
+    String? value,
+    bool? locked,
+    String? unlockHint,
+    String? category,
+    String? inputHint,
+  }) {
     return ProfileSlot(
       id: id,
       label: label,
       icon: icon,
+      category: category ?? this.category,
+      inputHint: inputHint ?? this.inputHint,
       value: value ?? this.value,
       locked: locked ?? this.locked,
       unlockHint: unlockHint ?? this.unlockHint,
@@ -471,6 +483,177 @@ class ProfileCardData {
     );
   }
 }
+
+const profileSlotCatalogV2 = [
+  ProfileSlot(
+    id: 'song',
+    icon: 'music',
+    label: '요즘 노래',
+    category: '취향',
+    inputHint: '요즘 자주 듣는 노래',
+  ),
+  ProfileSlot(
+    id: 'food',
+    icon: 'food',
+    label: '먹고 싶은 음식',
+    category: '취향',
+    inputHint: '요즘 먹고 싶은 음식',
+  ),
+  ProfileSlot(
+    id: 'rest',
+    icon: 'rest',
+    label: '쉬는 방식',
+    category: '하루',
+    inputHint: '쉬고 싶을 때 하는 일',
+  ),
+  ProfileSlot(
+    id: 'cafe',
+    icon: 'cafe',
+    label: '카페 취향',
+    category: '취향',
+    inputHint: '좋아하는 카페 분위기',
+  ),
+  ProfileSlot(
+    id: 'walk',
+    icon: 'walk',
+    label: '산책 취향',
+    category: '취향',
+    inputHint: '걷고 싶은 길',
+  ),
+  ProfileSlot(
+    id: 'small_taste',
+    icon: 'taste',
+    label: '요즘 꽂힌 작은 취향',
+    category: '취향',
+    inputHint: '노래, 음식, 물건, 장소 무엇이든',
+  ),
+  ProfileSlot(
+    id: 'object',
+    icon: 'object',
+    label: '자주 손이 가는 물건',
+    category: '취향',
+    inputHint: '요즘 자주 쓰는 작은 물건',
+  ),
+  ProfileSlot(
+    id: 'comfort',
+    icon: 'comfort',
+    label: '편해지는 순간',
+    category: '하루',
+    inputHint: '나를 편하게 하는 것',
+  ),
+  ProfileSlot(
+    id: 'morning_night',
+    icon: 'time',
+    label: '아침과 밤 중 편한 쪽',
+    category: '하루',
+    inputHint: '더 편한 시간대',
+  ),
+  ProfileSlot(
+    id: 'focus_time',
+    icon: 'focus',
+    label: '집중이 잘 되는 시간',
+    category: '하루',
+    inputHint: '잘 몰입되는 시간',
+  ),
+  ProfileSlot(
+    id: 'weekend',
+    icon: 'weekend',
+    label: '주말의 밀도',
+    category: '하루',
+    inputHint: '꽉 찬 주말 또는 느슨한 주말',
+  ),
+  ProfileSlot(
+    id: 'recharge',
+    icon: 'recharge',
+    label: '충전되는 방식',
+    category: '하루',
+    inputHint: '에너지가 돌아오는 방식',
+  ),
+  ProfileSlot(
+    id: 'promise',
+    icon: 'promise',
+    label: '약속에서 중요한 것',
+    category: '대화',
+    inputHint: '은근히 중요하게 보는 것',
+  ),
+  ProfileSlot(
+    id: 'kindness',
+    icon: 'kindness',
+    label: '기억나는 다정함',
+    category: '대화',
+    inputHint: '오래 남는 다정함',
+  ),
+  ProfileSlot(
+    id: 'pace',
+    icon: 'pace',
+    label: '나에게 맞는 속도',
+    category: '대화',
+    inputHint: '요즘 필요한 속도',
+  ),
+  ProfileSlot(
+    id: 'talk_style',
+    icon: 'talk',
+    label: '대화할 때 편한 방식',
+    category: '대화',
+    inputHint: '편하게 느끼는 대화 흐름',
+  ),
+  ProfileSlot(
+    id: 'careful_words',
+    icon: 'words',
+    label: '조심스러운 표현',
+    category: '대화',
+    inputHint: '천천히 말하고 싶은 것',
+  ),
+  ProfileSlot(
+    id: 'question_style',
+    icon: 'question',
+    label: '좋아하는 질문 방식',
+    category: '대화',
+    inputHint: '편하게 답할 수 있는 질문',
+  ),
+  ProfileSlot(
+    id: 'wish_scene',
+    icon: 'scene',
+    label: '같이 해보고 싶은 장면',
+    category: '함께',
+    inputHint: '언젠가 같이 해보고 싶은 것',
+  ),
+  ProfileSlot(
+    id: 'neighborhood',
+    icon: 'map',
+    label: '가보고 싶은 동네',
+    category: '함께',
+    inputHint: '함께 걸어보고 싶은 동네',
+  ),
+  ProfileSlot(
+    id: 'shared_food',
+    icon: 'shared_food',
+    label: '같이 먹고 싶은 것',
+    category: '함께',
+    inputHint: '같이 먹으면 좋을 음식',
+  ),
+  ProfileSlot(
+    id: 'small_hobby',
+    icon: 'hobby',
+    label: '가볍게 해보고 싶은 취미',
+    category: '함께',
+    inputHint: '부담 없는 작은 활동',
+  ),
+  ProfileSlot(
+    id: 'rainy_day',
+    icon: 'rain',
+    label: '비 오는 날 하고 싶은 것',
+    category: '함께',
+    inputHint: '날씨가 흐릴 때 좋은 장면',
+  ),
+  ProfileSlot(
+    id: 'photo_walk',
+    icon: 'photo',
+    label: '사진 남기기 좋은 순간',
+    category: '함께',
+    inputHint: '가볍게 찍어보고 싶은 장면',
+  ),
+];
 
 class WishItem {
   const WishItem({
@@ -1015,6 +1198,7 @@ class AlagagiController extends ChangeNotifier {
         seedProfileCards.map((card) {
           return card.copyWith(
             profile: card.profile.isMe ? _state.me : _state.partner,
+            slots: _profileSlotsWithValues(card.slots),
           );
         }),
       );
@@ -1093,7 +1277,11 @@ class AlagagiController extends ChangeNotifier {
         if (slot.id != value.slot.id) {
           return slot;
         }
-        return value.slot.copyWith(locked: false);
+        return slot.copyWith(
+          value: value.slot.value,
+          locked: false,
+          unlockHint: '',
+        );
       }).toList();
       _profileCards[cardIndex] = card.copyWith(slots: slots);
     }
@@ -1194,18 +1382,19 @@ class AlagagiController extends ChangeNotifier {
   }
 
   List<ProfileSlot> _profileSlotCatalog() {
-    return const [
-      ProfileSlot(id: 'song', icon: '🎧', label: '요즘 노래'),
-      ProfileSlot(id: 'food', icon: '🍙', label: '먹고 싶은 음식'),
-      ProfileSlot(id: 'rest', icon: '🏡', label: '쉬는 방식'),
-      ProfileSlot(id: 'cafe', icon: '☕', label: '카페 취향'),
-      ProfileSlot(id: 'walk', icon: '🚶', label: '산책 취향'),
-      ProfileSlot(id: 'comfort', icon: '🌿', label: '편해지는 순간'),
-      ProfileSlot(id: 'promise', icon: '🗓', label: '약속에서 중요한 것'),
-      ProfileSlot(id: 'kindness', icon: '🤲', label: '기억나는 다정함'),
-      ProfileSlot(id: 'pace', icon: '🕰️', label: '나에게 맞는 속도'),
-      ProfileSlot(id: 'wish_scene', icon: '🧭', label: '같이 해보고 싶은 장면'),
-    ];
+    return profileSlotCatalogV2;
+  }
+
+  List<ProfileSlot> _profileSlotsWithValues(Iterable<ProfileSlot> values) {
+    final valuesById = {for (final slot in values) slot.id: slot};
+    return _profileSlotCatalog().map((catalogSlot) {
+      final valueSlot = valuesById[catalogSlot.id];
+      final value = valueSlot?.value;
+      if (value == null || value.trim().isEmpty) {
+        return catalogSlot;
+      }
+      return catalogSlot.copyWith(value: value, locked: false, unlockHint: '');
+    }).toList();
   }
 
   RelationshipInsight _buildRealInsight() {
