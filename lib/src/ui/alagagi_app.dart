@@ -13,6 +13,7 @@ const wishSubmitButtonKey = Key('wish-submit-button');
 const editAnswerButtonKey = Key('edit-answer-button');
 const homeQuestionCardKey = Key('home-question-card');
 const homeQuestionAnswerButtonKey = Key('home-question-answer-button');
+const subScreenBackButtonKey = Key('sub-screen-back-button');
 const answerRetryButtonKey = Key('answer-retry-button');
 const answerCommentFieldKey = Key('answer-comment-field');
 const answerCommentSubmitButtonKey = Key('answer-comment-submit-button');
@@ -4695,6 +4696,7 @@ class _BackButton extends StatelessWidget {
         color: const Color(0xFFF8F8F4),
         borderRadius: BorderRadius.circular(15),
         child: InkWell(
+          key: subScreenBackButtonKey,
           borderRadius: BorderRadius.circular(15),
           onTap: onTap,
           child: Container(

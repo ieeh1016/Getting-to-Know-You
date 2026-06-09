@@ -632,7 +632,7 @@ void main() {
     expect(find.textContaining('🌊'), findsNothing);
     expect(find.textContaining('🌲'), findsNothing);
 
-    await tester.tap(find.text('←'));
+    await tester.tap(find.byKey(subScreenBackButtonKey));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('소개 카드'));
     await tester.pumpAndSettle();

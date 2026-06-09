@@ -185,7 +185,7 @@ void main() {
       expect(find.text('민영님이 선택하면 결과가 함께 열려요.'), findsOneWidget);
       expect(find.textContaining('민영님은'), findsNothing);
 
-      await tester.tap(find.text('←'));
+      await tester.tap(find.byKey(subScreenBackButtonKey));
       await tester.pumpAndSettle();
       await tester.drag(find.byType(Scrollable), const Offset(0, -700));
       await tester.pumpAndSettle();
