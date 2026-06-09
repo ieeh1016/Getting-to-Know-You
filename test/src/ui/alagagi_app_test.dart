@@ -202,9 +202,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.text('댓글 수정하기'));
+    await tester.ensureVisible(find.byKey(answerCommentEditButtonKey));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('댓글 수정하기'));
+    await tester.tap(find.byKey(answerCommentEditButtonKey));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(answerCommentFieldKey), '');
     await tester.tap(find.byKey(answerCommentSubmitButtonKey));
@@ -212,6 +212,126 @@ void main() {
 
     expect(find.byKey(answerCommentFieldKey), findsOneWidget);
     expect(find.text('한 줄만 남겨도 괜찮아요.'), findsOneWidget);
+  });
+
+  testWidgets('shows partner comment under my answer as read-only', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          answers: [
+            Answer(
+              questionId: 'q001',
+              profileId: 'youngwooUid',
+              body: '노을 질 때가 좋아요.',
+              createdLabel: '오늘',
+            ),
+            Answer(
+              questionId: 'q001',
+              profileId: 'minyoungUid',
+              body: '저는 아침 공기가 좋아요.',
+              createdLabel: '오늘',
+            ),
+          ],
+          answerComments: [
+            AnswerComment(
+              questionId: 'q001',
+              answerOwnerProfileId: 'youngwooUid',
+              commenterProfileId: 'minyoungUid',
+              body: '이 답을 보니까 장면이 그려져요.',
+              createdLabel: '오늘',
+            ),
+          ],
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('민영님의 댓글'), findsOneWidget);
+    expect(find.text('이 답을 보니까 장면이 그려져요.'), findsOneWidget);
+    expect(find.byKey(answerCommentEditButtonKey), findsNothing);
+  });
+
+  testWidgets('cancels an existing comment edit without hiding the comment', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          answers: [
+            Answer(
+              questionId: 'q001',
+              profileId: 'youngwooUid',
+              body: '노을 질 때가 좋아요.',
+              createdLabel: '오늘',
+            ),
+            Answer(
+              questionId: 'q001',
+              profileId: 'minyoungUid',
+              body: '저는 아침 공기가 좋아요.',
+              createdLabel: '오늘',
+            ),
+          ],
+          answerComments: [
+            AnswerComment(
+              questionId: 'q001',
+              answerOwnerProfileId: 'minyoungUid',
+              commenterProfileId: 'youngwooUid',
+              body: '이 답 좋다.',
+              createdLabel: '오늘',
+            ),
+          ],
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(answerCommentEditButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(answerCommentEditButtonKey));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(answerCommentFieldKey), '다른 말');
+    await tester.tap(find.byKey(answerCommentCancelButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(answerCommentFieldKey), findsNothing);
+    expect(find.text('이 답 좋다.'), findsOneWidget);
+    expect(find.text('다른 말'), findsNothing);
   });
 
   testWidgets('hides comment composer while partner answer is locked', (

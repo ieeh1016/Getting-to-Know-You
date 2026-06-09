@@ -2022,6 +2022,19 @@ class AlagagiController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void cancelAnswerCommentDraft({
+    required String questionId,
+    required String answerOwnerProfileId,
+  }) {
+    final drafts = Map<String, String>.of(_state.commentDraftsByAnswerKey)
+      ..remove(_answerCommentDraftKey(questionId, answerOwnerProfileId));
+    _state = _state.copyWith(
+      commentDraftsByAnswerKey: Map<String, String>.unmodifiable(drafts),
+      clearCommentError: true,
+    );
+    notifyListeners();
+  }
+
   void submitAnswerComment({
     required String questionId,
     required String answerOwnerProfileId,
