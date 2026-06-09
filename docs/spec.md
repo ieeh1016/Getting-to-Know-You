@@ -190,6 +190,7 @@ If the app grows, bottom navigation may become:
 
 - 하단 탭은 `홈 / 질문 / 음악 / 마이` 4개로 유지한다.
 - 기존 `기록` 하단 탭은 제거하고 `질문` 탭 안의 `달력 / 기록` segmented view로 합친다.
+- 모바일 하단 탭은 콘텐츠를 과하게 가리지 않도록 compact 높이를 유지한다.
 - 홈은 오늘의 질문과 가벼운 다음 행동 중심으로 유지하며, 음악 기능을 큰 홈 카드로 추가하지 않는다.
 - 음악 기능은 독립 탭으로 제공해 반복 방문 가능한 작은 루틴처럼 보이게 한다.
 - Selected design: `docs/design/music_tab_navigation_concept.html`.
@@ -368,6 +369,7 @@ This batch fixes the highest-risk gaps found after the v0.6 calendar/design audi
   - Real mobile viewport uses full available height with SafeArea.
   - The decorative 390px phone frame is desktop/tablet-only.
   - Fixed bottom navigation does not cover scroll content.
+  - Bottom navigation visual height stays compact on 390px mobile viewports.
 - Profile card:
   - My card exposes edit action for every slot from day one.
   - Filled own slots can be edited in the same screen with save/cancel controls.

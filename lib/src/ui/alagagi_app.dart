@@ -35,6 +35,7 @@ const personalizationAppTitleFieldKey = Key('personalization-app-title-field');
 const personalizationHomeLineFieldKey = Key('personalization-home-line-field');
 const personalizationSubmitButtonKey = Key('personalization-submit-button');
 const alagagiShellKey = Key('alagagi-shell');
+const bottomNavigationKey = Key('bottom-navigation');
 const archiveCalendarKey = Key('archive-question-calendar');
 const archiveCalendarPreviousButtonKey = Key('archive-calendar-previous');
 const archiveCalendarNextButtonKey = Key('archive-calendar-next');
@@ -320,8 +321,8 @@ class _ScreenScroll extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottomPadding = bottomNavigation == null
         ? padding.bottom
-        : padding.bottom < 132
-        ? 132.0
+        : padding.bottom < 108
+        ? 108.0
         : padding.bottom;
     final effectivePadding = padding.copyWith(bottom: bottomPadding);
 
@@ -1804,7 +1805,8 @@ class _AnswerCommentBox extends StatelessWidget {
                   Row(
                     children: [
                       if (existingComment != null) ...[
-                        Expanded(
+                        SizedBox(
+                          width: 88,
                           child: _CommentSecondaryButton(
                             key: answerCommentCancelButtonKey,
                             label: '취소',
@@ -1895,7 +1897,7 @@ class _CommentSecondaryButton extends StatelessWidget {
           ),
           textStyle: serif(context, size: 13.5, weight: FontWeight.w800),
         ),
-        child: Text(label),
+        child: Text(label, softWrap: false),
       ),
     );
   }
@@ -6543,11 +6545,12 @@ class _BottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      key: bottomNavigationKey,
       decoration: BoxDecoration(
         color: AlagagiColors.paper.withValues(alpha: 0.94),
         border: const Border(top: BorderSide(color: AlagagiColors.line)),
       ),
-      padding: const EdgeInsets.fromLTRB(18, 14, 18, 22),
+      padding: const EdgeInsets.fromLTRB(18, 10, 18, 12),
       child: Row(
         children: [
           Expanded(
@@ -6612,7 +6615,7 @@ class _NavItem extends StatelessWidget {
       borderRadius: BorderRadius.circular(14),
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
+        padding: const EdgeInsets.symmetric(vertical: 2),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -6643,7 +6646,7 @@ class _NavItem extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 4),
             Text(
               label,
               style: sans(
@@ -6652,14 +6655,14 @@ class _NavItem extends StatelessWidget {
                 color: selected ? AlagagiColors.ink : AlagagiColors.muted,
               ),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 4),
             AnimatedContainer(
               duration: const Duration(milliseconds: 150),
-              width: selected ? 4 : 0,
+              width: selected ? 16 : 0,
               height: 4,
               decoration: BoxDecoration(
                 color: selected ? AlagagiColors.sageDeep : Colors.transparent,
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(999),
               ),
             ),
           ],

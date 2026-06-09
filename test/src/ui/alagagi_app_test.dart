@@ -51,6 +51,10 @@ void main() {
     expect(tester.getSize(find.byKey(alagagiShellKey)), const Size(390, 844));
     expect(find.byKey(homeQuestionCardKey), findsOneWidget);
     expect(find.byKey(homeQuestionAnswerButtonKey), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(bottomNavigationKey)).height,
+      lessThanOrEqualTo(72),
+    );
     expect(find.text('지금의 마음을 한 줄로...'), findsNothing);
   });
 
