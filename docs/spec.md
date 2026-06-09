@@ -612,7 +612,7 @@ Security rules guidance:
 ### Dummy Data Policy
 
 - `seedMyAnswers`, `seedPartnerAnswers`, `seedInsight`, `seedWishes`처럼 실제 두 사람이 만들지 않은 기록은 Firebase 모드에서 노출하지 않는다.
-- 질문 카탈로그, 밸런스 질문, 소개 카드 슬롯 정의, 위시 추천 문구는 제품 콘텐츠이므로 로컬 정적 카탈로그로 유지할 수 있다.
+- 질문 카탈로그, 밸런스 질문, 소개 카드 슬롯 정의, empty state 문구는 제품 콘텐츠이므로 로컬 정적 카탈로그로 유지할 수 있다.
 - 테스트 fixture는 test 디렉터리 안에서만 사용하고, 운영 UI에 흘러들어오면 안 된다.
 - Firebase dart-define이 없는 로컬 데모 모드는 개발 확인용 fixture를 사용할 수 있지만, 화면이나 문서에서 demo/local 모드임을 구분해야 한다.
 - 배포 빌드는 Firebase 설정이 존재하면 반드시 real-data mode로 동작해야 한다.
@@ -980,26 +980,40 @@ Acceptance Criteria:
 
 ### 10.6 Balance Game Screen
 
-Reference: `balance.html`
+Reference: `balance.html`, `docs/design/wishlist_balance_redesign.html`
 
 Purpose:
 
 - 글을 쓰지 않아도 1초 안에 취향을 표현하게 한다.
 - 답 안 하는 날을 줄이는 가벼운 장치다.
+- 지나간 선택을 작은 취향 힌트로 남겨 다음 대화로 이어지게 한다.
 
 Required UI:
 
 - Header: `밸런스 게임`
 - Progress: `{current} / {total}`
-- Question: `둘 중 하나만!`
-- Two option cards
+- Hero copy:
+  - `짧게 고르고, 나중에 이야기로 이어져요`
+  - `정답을 맞히는 게임보다 취향의 방향을 남기는 작은 카드 덱이에요.`
+- Deck card:
+  - `QUESTION {current}`
+  - category chip or short label
+  - question prompt
+  - two option cards in a side-by-side deck layout on mobile
 - VS marker
 - Selected state for me
-- Partner choice indicator
-- Result summary
+- Partner choice indicator only after my selection exists
+- Result panel:
+  - Same choice: quiet shared preference hint
+  - Different choice: conversation hint, not a mismatch score
+  - Waiting: partner answer waiting copy
 - Progress dots
 - Next question button
 - Final completion button
+- Recent balance hint list:
+  - same choice
+  - different choice
+  - waiting
 
 State:
 
@@ -1009,12 +1023,16 @@ State:
 - Partner selected different option
 - Next balance question
 - Last balance question completion
+- Recent history summary
 
 Acceptance Criteria:
 
 - 선택 전에는 두 선택지가 동일한 가중치로 보인다.
 - 하나를 선택하면 선택 상태가 표시된다.
-- 상대 선택이 있으면 결과 문장이 표시된다.
+- 상대 선택은 내 선택이 생긴 뒤에만 결과 문장 안에서 표시된다.
+- 결과 문장은 `궁합`, `%`, `점수`, `완벽` 같은 과한 호환성 표현을 사용하지 않는다.
+- 같은 선택은 가벼운 취향 힌트로, 다른 선택은 대화거리로 설명한다.
+- 밸런스 선택 저장은 기존처럼 해당 question/user selection document 1개 write 이하로 유지한다.
 - 다음 질문을 누르면 다음 밸런스 질문으로 이동한다.
 - 마지막 질문에서 완료를 누르면 첫 질문으로 순환하지 않고 홈으로 돌아간다.
 
@@ -1100,17 +1118,22 @@ Acceptance Criteria:
 
 ### 10.8 Wishlist Screen
 
-Reference: `wishlist.html`
+Reference: `wishlist.html`, `docs/design/wishlist_balance_redesign.html`
 
 Purpose:
 
 - 같이 해보고 싶은 것을 부담 없이 담는다.
 - 실제 만남으로 이어질 자연스러운 다리를 만든다.
+- 약속을 바로 정하라는 압박 없이 `서로 관심`, `조용한 제안`, `함께한 것` 상태를 한눈에 보여준다.
 
 Required UI:
 
 - Header: `언젠가, 같이`
 - Subtitle: `언젠가 해볼 만한 것을 가볍게 적어둬요`
+- Hero summary:
+  - 서로 관심 count
+  - 담아둔 것 count
+  - 함께한 것 count
 - Filters:
   - 전체
   - 서로 관심
@@ -1118,8 +1141,8 @@ Required UI:
   - 해보고 싶은 것
 - Groups:
   - 서로 관심 있어요
-  - 한 명이 담아둔 것
-  - 이미 함께했어요
+  - 조용한 제안
+  - 함께했어요
 - Wish cards:
   - kind-based line icon
   - title
@@ -1132,6 +1155,7 @@ Required UI:
   - place/activity kind selection
   - submit button
   - cancel action
+- No recommendation/template section in MVP v2. The screen starts from saved wishes and a direct add flow only.
 
 State:
 
@@ -1147,6 +1171,9 @@ State:
 
 Acceptance Criteria:
 
+- Wishlist v2는 추천 템플릿/추천 카드 섹션을 노출하지 않는다.
+- Add CTA는 하단 내비 바로 위에 고정하지 않고 콘텐츠 흐름 안에서 보여준다.
+- 화면은 `서로 관심`, `조용한 제안`, `함께했어요` 상태를 분리해 보여준다.
 - 서로 관심 표시한 wish는 별도 강조된다.
 - 한 명만 담은 wish는 관심 표시 action이 가능하다.
 - 완료된 wish는 흐리게 처리되고 취소선이 보인다.
@@ -1154,6 +1181,7 @@ Acceptance Criteria:
 - Add CTA는 새 wish draft flow로 이어진다.
 - wish title을 입력하고 담기를 누르면 내가 만든 wish가 생성되고 저장된다.
 - 빈 wish title은 저장하지 않고 부드러운 오류 문구를 보여준다.
+- 위시 추가 draft 입력 중에는 Firestore write를 만들지 않는다.
 
 ## 11. Real Data Source Policy
 
@@ -1164,7 +1192,6 @@ Acceptance Criteria:
 - Daily question catalog
 - Balance question catalog
 - Profile card slot catalog
-- Wishlist starter templates
 - Empty state copy
 - Locked/waiting state copy
 

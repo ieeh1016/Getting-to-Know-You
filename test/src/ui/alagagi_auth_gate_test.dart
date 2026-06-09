@@ -195,7 +195,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('조용한 바다'));
       await tester.pumpAndSettle();
-      expect(find.text('민영님이 선택하면 결과가 함께 열려요.'), findsOneWidget);
+      expect(
+        find.text('민영님 선택이 생기면 결과가 열려요. 지금은 내 취향만 조용히 저장해둘게요.'),
+        findsOneWidget,
+      );
       expect(find.textContaining('민영님은'), findsNothing);
 
       await tester.tap(find.byKey(subScreenBackButtonKey));
@@ -238,7 +241,7 @@ void main() {
       await tester.tap(find.text('언젠가, 같이'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('＋ 하고 싶은 것 담기'));
+      await tester.tap(find.byKey(wishAddButtonKey));
       await tester.pumpAndSettle();
       await tester.enterText(find.byKey(wishTitleFieldKey), '한강에서 같이 산책하기');
       await tester.ensureVisible(find.byKey(wishSubmitButtonKey));

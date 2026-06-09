@@ -631,7 +631,14 @@ void main() {
     await tester.tap(find.text('언젠가, 같이'));
     await tester.pumpAndSettle();
 
-    expect(find.text('서로 관심'), findsOneWidget);
+    expect(find.text('서로 관심'), findsWidgets);
+    expect(find.byKey(wishlistBoardKey), findsOneWidget);
+    expect(find.text('서로 관심 있어요'), findsOneWidget);
+    expect(find.text('조용한 제안'), findsOneWidget);
+    expect(find.text('함께했어요'), findsOneWidget);
+    expect(find.byKey(wishAddButtonKey), findsOneWidget);
+    expect(tester.getCenter(find.byKey(wishAddButtonKey)).dy, lessThan(620));
+    expect(find.textContaining('추천'), findsNothing);
     expect(find.textContaining('🌱'), findsNothing);
     expect(find.textContaining('🌊'), findsNothing);
     expect(find.textContaining('🍜'), findsNothing);
@@ -665,7 +672,12 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('밸런스 게임'));
     await tester.pumpAndSettle();
-    expect(find.text('둘 중 하나만!'), findsOneWidget);
+    expect(find.byKey(balanceDeckKey), findsOneWidget);
+    expect(find.text('짧게 고르고,\n나중에 이야기로 이어져요'), findsOneWidget);
+    expect(find.textContaining('궁합'), findsNothing);
+    expect(find.textContaining('%'), findsNothing);
+    expect(find.textContaining('점수'), findsNothing);
+    expect(find.textContaining('완벽'), findsNothing);
     expect(find.text('⚖️'), findsNothing);
     expect(find.textContaining('🌊'), findsNothing);
     expect(find.textContaining('🌲'), findsNothing);

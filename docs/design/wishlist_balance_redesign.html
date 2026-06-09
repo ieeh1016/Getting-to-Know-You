@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>알아가기 · 언젠가 같이 & 밸런스 게임 전면 개편 시안</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --outer:#e9e8e2;
+    --bg:#f4f3ef;
+    --paper:#fcfcfa;
+    --ink:#2e2e2c;
+    --text:#45443f;
+    --muted:#8f8b82;
+    --muted2:#aaa69d;
+    --sage:#8a9a7e;
+    --sage-deep:#6f7f63;
+    --sage-soft:#f0f2eb;
+    --sage-panel:#dfe6d4;
+    --line:#e8e6df;
+    --warm:#f8f8f4;
+    --lav:#b9a8c9;
+    --clay:#b18472;
+    --gold:#c8ad6d;
+    --ink-soft:#393934;
+  }
+  body{
+    min-height:100vh;
+    background:var(--outer);
+    color:var(--ink);
+    font-family:'Noto Sans KR',sans-serif;
+    font-weight:300;
+    padding:36px 18px 48px;
+  }
+  svg{display:block}
+  button{font:inherit}
+  .wrap{max-width:1260px;margin:0 auto}
+  .page-title{text-align:center;margin-bottom:28px}
+  .eyebrow{
+    display:block;
+    margin-bottom:8px;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:2.8px;
+  }
+  .page-title h1{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:30px;
+    line-height:1.35;
+    font-weight:800;
+  }
+  .page-title p{
+    max-width:780px;
+    margin:10px auto 0;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.75;
+  }
+  .decision{
+    max-width:1040px;
+    margin:0 auto 30px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+  }
+  .decision-card{
+    padding:18px 19px;
+    border:1px solid rgba(232,230,223,.9);
+    border-radius:22px;
+    background:rgba(252,252,250,.76);
+    box-shadow:0 12px 30px rgba(80,80,70,.035);
+  }
+  .decision-card small{
+    display:block;
+    margin-bottom:8px;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:2px;
+  }
+  .decision-card h2{
+    margin-bottom:8px;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:18px;
+    line-height:1.35;
+    font-weight:800;
+  }
+  .decision-card p{
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.75;
+  }
+  .stage{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(300px,390px));
+    gap:24px;
+    justify-content:center;
+    align-items:start;
+  }
+  .caption{margin:0 0 12px 2px}
+  .caption .tag{
+    display:inline-flex;
+    align-items:center;
+    height:24px;
+    padding:0 9px;
+    border:1px solid rgba(111,127,99,.22);
+    border-radius:999px;
+    background:rgba(252,252,250,.76);
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+  }
+  .caption h2{
+    margin-top:8px;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:19px;
+    line-height:1.35;
+    font-weight:800;
+  }
+  .caption p{
+    margin-top:5px;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.65;
+  }
+  .phone{
+    width:390px;
+    max-width:100%;
+    min-height:844px;
+    position:relative;
+    overflow:hidden;
+    border:8px solid #fff;
+    border-radius:40px;
+    background:var(--bg);
+    box-shadow:0 28px 70px rgba(60,60,50,.18);
+  }
+  .screen{padding:27px 24px 110px}
+  .topbar{
+    min-height:42px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:20px;
+  }
+  .side{
+    width:56px;
+    min-width:56px;
+    display:flex;
+    align-items:center;
+  }
+  .side.right{justify-content:flex-end}
+  .paper-btn{
+    width:38px;
+    height:38px;
+    border:1px solid rgba(232,230,223,.92);
+    border-radius:50%;
+    background:rgba(252,252,250,.88);
+    color:#656d5e;
+    display:grid;
+    place-items:center;
+    box-shadow:0 8px 18px rgba(80,80,70,.035);
+  }
+  .paper-btn svg{width:18px;height:18px}
+  .title-serif{
+    flex:1;
+    min-width:0;
+    text-align:center;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:18px;
+    line-height:1.25;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .hero{
+    margin-bottom:16px;
+    padding:20px;
+    border:1px solid rgba(232,230,223,.9);
+    border-radius:26px;
+    background:linear-gradient(140deg,rgba(252,252,250,.98),rgba(242,245,236,.96));
+    box-shadow:0 14px 34px rgba(80,80,70,.045);
+  }
+  .hero.dark{
+    border-color:#2f2f2b;
+    background:#2f2f2b;
+    color:#fff;
+  }
+  .hero small{
+    display:block;
+    margin-bottom:9px;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:2.2px;
+  }
+  .hero.dark small{color:#c9c9c2}
+  .hero h3{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:22px;
+    line-height:1.45;
+    font-weight:800;
+  }
+  .hero p{
+    margin-top:9px;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.65;
+  }
+  .hero.dark p{color:#e3e2dc}
+  .summary-row{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+    margin-top:17px;
+  }
+  .summary{
+    padding:10px 8px;
+    border-radius:16px;
+    background:rgba(252,252,250,.72);
+    border:1px solid rgba(232,230,223,.78);
+  }
+  .summary strong{
+    display:block;
+    font-size:15px;
+    color:var(--ink);
+    font-weight:800;
+  }
+  .summary span{
+    display:block;
+    margin-top:3px;
+    color:var(--muted);
+    font-size:10.5px;
+    line-height:1.35;
+  }
+  .category-row{
+    display:flex;
+    gap:8px;
+    overflow:hidden;
+    margin-bottom:14px;
+  }
+  .chip{
+    height:32px;
+    flex:none;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:0 12px;
+    border:1px solid rgba(232,230,223,.95);
+    border-radius:999px;
+    background:rgba(252,252,250,.86);
+    color:var(--muted);
+    font-size:12px;
+    font-weight:600;
+  }
+  .chip.active{
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    border-color:rgba(111,127,99,.2);
+  }
+  .chip-dot{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:currentColor;
+    opacity:.72;
+  }
+  .section-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin:18px 0 10px;
+  }
+  .section-head h4{
+    color:var(--ink);
+    font-family:'Nanum Myeongjo',serif;
+    font-size:16px;
+    font-weight:800;
+  }
+  .section-head span{
+    color:var(--muted);
+    font-size:11.5px;
+  }
+  .wish-lane{
+    display:grid;
+    gap:10px;
+  }
+  .wish-card{
+    padding:15px;
+    border:1px solid var(--line);
+    border-radius:20px;
+    background:var(--paper);
+    box-shadow:0 10px 24px rgba(80,80,70,.035);
+  }
+  .wish-card.mutual{
+    border-color:rgba(111,127,99,.32);
+    background:linear-gradient(140deg,#f6f8f1,#eef3e8);
+  }
+  .wish-top{
+    display:flex;
+    align-items:flex-start;
+    gap:11px;
+  }
+  .iconbox{
+    width:34px;
+    height:34px;
+    flex:none;
+    display:grid;
+    place-items:center;
+    border-radius:12px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+  }
+  .wish-main{min-width:0;flex:1}
+  .wish-main h5{
+    font-size:14px;
+    line-height:1.45;
+    font-weight:700;
+    color:var(--text);
+  }
+  .wish-main p{
+    margin-top:5px;
+    color:var(--muted);
+    font-size:11.5px;
+    line-height:1.55;
+  }
+  .state-pill{
+    height:24px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:0 9px;
+    border-radius:999px;
+    background:#f3f1eb;
+    color:var(--muted);
+    font-size:10.5px;
+    font-weight:700;
+    white-space:nowrap;
+  }
+  .state-pill.ready{background:#2f2f2b;color:#fff}
+  .wish-footer{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px solid rgba(232,230,223,.86);
+  }
+  .avatar-line{display:flex;align-items:center;color:var(--muted);font-size:11.5px}
+  .avatar-small{
+    width:22px;
+    height:22px;
+    margin-right:6px;
+    display:grid;
+    place-items:center;
+    border-radius:50%;
+    background:#e3ead8;
+    color:var(--sage-deep);
+  }
+  .mini-btn{
+    height:32px;
+    padding:0 12px;
+    border:1px solid rgba(111,127,99,.2);
+    border-radius:999px;
+    background:var(--paper);
+    color:var(--sage-deep);
+    font-size:11.5px;
+    font-weight:700;
+  }
+  .mini-btn.dark{
+    border-color:var(--sage-deep);
+    background:var(--sage-deep);
+    color:#fff;
+  }
+  .draft-guide-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .draft-guide{
+    min-height:108px;
+    padding:14px;
+    border:1px solid var(--line);
+    border-radius:20px;
+    background:var(--warm);
+  }
+  .draft-guide small{
+    display:block;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:1.5px;
+    margin-bottom:7px;
+  }
+  .draft-guide h5{
+    font-size:13px;
+    line-height:1.5;
+    font-weight:700;
+  }
+  .draft-panel{
+    margin-top:12px;
+    border:1px solid rgba(232,230,223,.95);
+    border-radius:26px;
+    background:var(--paper);
+    overflow:hidden;
+    box-shadow:0 14px 34px rgba(80,80,70,.045);
+  }
+  .draft-head{
+    padding:19px 18px 15px;
+    background:linear-gradient(140deg,#f9faf5,#eef2e8);
+    border-bottom:1px solid var(--line);
+  }
+  .draft-head small{
+    display:block;
+    margin-bottom:8px;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:2px;
+  }
+  .draft-head h4{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:20px;
+    line-height:1.45;
+    font-weight:800;
+  }
+  .field{
+    margin:16px 18px 12px;
+    min-height:104px;
+    padding:15px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:#fff;
+    color:var(--text);
+    font-size:13.5px;
+    line-height:1.7;
+  }
+  .field.placeholder{color:#b6b2aa}
+  .draft-meta{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin:0 18px 12px;
+    color:var(--muted2);
+    font-size:11.5px;
+  }
+  .savebar{
+    display:flex;
+    gap:8px;
+    padding:0 18px 18px;
+  }
+  .secondary-btn,.primary-btn{
+    height:48px;
+    border-radius:16px;
+    font-weight:700;
+    font-size:13.5px;
+  }
+  .secondary-btn{
+    width:92px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    color:var(--muted);
+  }
+  .primary-btn{
+    flex:1;
+    border:0;
+    background:var(--sage-deep);
+    color:#fff;
+  }
+  .balance-deck{
+    padding:18px;
+    border:1px solid var(--line);
+    border-radius:26px;
+    background:var(--paper);
+    box-shadow:0 14px 34px rgba(80,80,70,.045);
+  }
+  .deck-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:16px;
+  }
+  .deck-head small{
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:2px;
+  }
+  .deck-count{
+    height:28px;
+    display:inline-flex;
+    align-items:center;
+    padding:0 10px;
+    border-radius:999px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:700;
+  }
+  .balance-deck h4{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:21px;
+    line-height:1.5;
+    font-weight:800;
+    text-align:center;
+    margin-bottom:18px;
+  }
+  .option-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    position:relative;
+  }
+  .option{
+    min-height:170px;
+    padding:16px 13px;
+    border:1px solid var(--line);
+    border-radius:22px;
+    background:var(--warm);
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    justify-content:space-between;
+  }
+  .option.selected{
+    border-color:var(--sage-deep);
+    background:#eef3e8;
+  }
+  .option .iconbox{
+    width:38px;
+    height:38px;
+  }
+  .option strong{
+    display:block;
+    margin-top:14px;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:18px;
+    line-height:1.35;
+  }
+  .option p{
+    margin-top:7px;
+    color:var(--muted);
+    font-size:11.5px;
+    line-height:1.5;
+  }
+  .pickmark{
+    align-self:flex-end;
+    height:25px;
+    display:inline-flex;
+    align-items:center;
+    padding:0 8px;
+    border-radius:999px;
+    background:#fff;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+  }
+  .versus{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    width:38px;
+    height:38px;
+    display:grid;
+    place-items:center;
+    border-radius:50%;
+    background:#2f2f2b;
+    color:#fff;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:13px;
+    font-weight:800;
+    box-shadow:0 12px 24px rgba(47,47,43,.22);
+  }
+  .result-panel{
+    margin-top:14px;
+    padding:15px;
+    border-radius:20px;
+    background:#2f2f2b;
+    color:#fff;
+  }
+  .result-panel small{
+    display:block;
+    color:#c9c9c2;
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:2px;
+    margin-bottom:7px;
+  }
+  .result-panel p{
+    color:#f2f1eb;
+    font-size:13px;
+    line-height:1.65;
+  }
+  .timeline{
+    display:grid;
+    gap:10px;
+  }
+  .history-card{
+    padding:14px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:var(--paper);
+  }
+  .history-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .history-card h5{
+    font-size:13px;
+    color:var(--text);
+    font-weight:700;
+  }
+  .history-card p{
+    margin-top:7px;
+    color:var(--muted);
+    font-size:11.5px;
+    line-height:1.55;
+  }
+  .dots{
+    display:flex;
+    justify-content:center;
+    gap:7px;
+    margin:15px 0 0;
+  }
+  .dot{
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:#d7d5cc;
+  }
+  .dot.active{width:22px;border-radius:999px;background:var(--sage-deep)}
+  .bottom-nav{
+    position:absolute;
+    left:24px;
+    right:24px;
+    bottom:24px;
+    height:64px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    align-items:center;
+    border:1px solid rgba(232,230,223,.88);
+    border-radius:22px;
+    background:rgba(252,252,250,.94);
+    box-shadow:0 18px 42px rgba(80,80,70,.12);
+  }
+  .nav-item{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:5px;
+    color:var(--muted2);
+    font-size:10.5px;
+    font-weight:600;
+  }
+  .nav-item.active{color:var(--sage-deep)}
+  .nav-item svg{width:18px;height:18px}
+  .catalog-map{
+    max-width:1040px;
+    margin:30px auto 0;
+    padding:22px;
+    border:1px solid rgba(232,230,223,.9);
+    border-radius:26px;
+    background:rgba(252,252,250,.78);
+  }
+  .catalog-map h2{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:21px;
+    font-weight:800;
+    margin-bottom:8px;
+  }
+  .catalog-map > p{
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.75;
+    margin-bottom:16px;
+  }
+  .pack-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+  }
+  .pack{
+    padding:15px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:var(--warm);
+  }
+  .pack strong{
+    display:block;
+    margin-bottom:8px;
+    font-size:13px;
+    color:var(--ink);
+  }
+  .pack span{
+    display:block;
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.7;
+  }
+  @media (max-width:1180px){
+    .stage{grid-template-columns:repeat(2,minmax(300px,390px))}
+    .decision{grid-template-columns:repeat(2,1fr)}
+    .pack-grid{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:760px){
+    body{padding:22px 12px 36px}
+    .stage{grid-template-columns:1fr}
+    .phone{margin:0 auto}
+    .page-title h1{font-size:25px}
+    .decision{grid-template-columns:1fr}
+    .catalog-map{padding:18px}
+    .pack-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page-title">
+    <span class="eyebrow">PLUS FEATURES REDESIGN</span>
+    <h1>언젠가, 같이와 밸런스 게임을<br>더 가볍고 쓰임 있게</h1>
+    <p>
+      두 기능은 둘 다 “말로 꺼내기 전의 작은 신호”를 다룹니다. 위시는 함께 해볼 일을 모으는 보드로,
+      밸런스는 취향을 빠르게 남기고 다음 대화의 힌트로 이어지는 카드 덱으로 개편하는 방향이 좋습니다.
+    </p>
+  </header>
+
+  <section class="decision">
+    <article class="decision-card">
+      <small>WISHLIST</small>
+      <h2>목록보다 보드</h2>
+      <p>전체 목록만 보여주기보다 `서로 관심`, `조용한 제안`, `함께한 것` lane으로 나눠 현재 상태를 한눈에 보이게 합니다.</p>
+    </article>
+    <article class="decision-card">
+      <small>WISH DRAFT</small>
+      <h2>작성은 제안 패널</h2>
+      <p>하단 고정 CTA보다 콘텐츠 흐름 안의 직접 담기 버튼과 큰 작성 패널로 연결하면 더 자연스럽습니다.</p>
+    </article>
+    <article class="decision-card">
+      <small>BALANCE</small>
+      <h2>게임보다 덱</h2>
+      <p>문제 하나만 넘기는 흐름에서 벗어나 카테고리, 진행률, 결과 히스토리를 같이 보여줍니다.</p>
+    </article>
+    <article class="decision-card">
+      <small>FIRESTORE</small>
+      <h2>저장 단위는 유지</h2>
+      <p>위시 추가/관심/완료와 밸런스 선택은 지금처럼 명시적 액션 1회당 문서 1개 갱신을 유지합니다.</p>
+    </article>
+  </section>
+
+  <section class="stage">
+    <div>
+      <div class="caption">
+        <span class="tag">A · 언젠가, 같이 보드</span>
+        <h2>서로 관심이 먼저 보이는 구조</h2>
+        <p>위시를 단순 목록이 아니라 상태별 보드로 보여주면 “무엇이 다음 행동인지”가 훨씬 명확해집니다.</p>
+      </div>
+      <div class="phone">
+        <main class="screen">
+          <div class="topbar">
+            <div class="side">
+              <button class="paper-btn" aria-label="뒤로">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+            </div>
+            <div class="title-serif">언젠가, 같이</div>
+            <div class="side right">
+              <button class="paper-btn" aria-label="제안 추가">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <section class="hero">
+            <small>QUIET BOARD</small>
+            <h3>같이 해볼 일을<br>가볍게 모아둬요</h3>
+            <p>바로 약속을 정하지 않아도 괜찮아요. 서로 관심이 겹치면 다음에 꺼내기 쉬워집니다.</p>
+            <div class="summary-row">
+              <div class="summary"><strong>3</strong><span>서로 관심</span></div>
+              <div class="summary"><strong>8</strong><span>담아둔 것</span></div>
+              <div class="summary"><strong>2</strong><span>함께함</span></div>
+            </div>
+          </section>
+
+          <div class="category-row">
+            <span class="chip active"><span class="chip-dot"></span>전체</span>
+            <span class="chip"><span class="chip-dot"></span>서로 관심</span>
+            <span class="chip"><span class="chip-dot"></span>동네</span>
+            <span class="chip"><span class="chip-dot"></span>활동</span>
+          </div>
+
+          <div class="section-head">
+            <h4>서로 관심 있어요</h4>
+            <span>다음에 꺼내기 좋은 것</span>
+          </div>
+          <section class="wish-lane">
+            <article class="wish-card mutual">
+              <div class="wish-top">
+                <span class="iconbox">
+                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11h18M5 6h14M7 16h10"/><path d="M8 21h8"/></svg>
+                </span>
+                <div class="wish-main">
+                  <h5>조용한 카페에서 커피 마시기</h5>
+                  <p>서두르지 않고 이야기하기 좋은 후보</p>
+                </div>
+                <span class="state-pill ready">서로 관심</span>
+              </div>
+              <div class="wish-footer">
+                <span class="avatar-line"><span class="avatar-small">민</span>민영님이 담음</span>
+                <button class="mini-btn dark">함께했어요</button>
+              </div>
+            </article>
+            <article class="wish-card mutual">
+              <div class="wish-top">
+                <span class="iconbox">
+                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 20c4-3 8-3 12 0"/><path d="M6 4c4 3 8 3 12 0"/><path d="M12 5v14"/></svg>
+                </span>
+                <div class="wish-main">
+                  <h5>작은 전시 보고 근처 걷기</h5>
+                  <p>날씨 좋은 주말에 어울리는 장면</p>
+                </div>
+                <span class="state-pill ready">서로 관심</span>
+              </div>
+              <div class="wish-footer">
+                <span class="avatar-line"><span class="avatar-small">영</span>내가 담음</span>
+                <button class="mini-btn">메모</button>
+              </div>
+            </article>
+          </section>
+
+          <div class="section-head">
+            <h4>조용한 제안</h4>
+            <span>관심 표시 전</span>
+          </div>
+          <section class="wish-lane">
+            <article class="wish-card">
+              <div class="wish-top">
+                <span class="iconbox">
+                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5a2 2 0 0 1 2-2h12v16l-7-3z"/></svg>
+                </span>
+                <div class="wish-main">
+                  <h5>서로 좋아하는 음식 하나씩 먹어보기</h5>
+                  <p>가볍게 시작하기 좋은 후보</p>
+                </div>
+                <span class="state-pill">관심 전</span>
+              </div>
+              <div class="wish-footer">
+                <span class="avatar-line"><span class="avatar-small">민</span>민영님이 담음</span>
+                <button class="mini-btn">관심 표시</button>
+              </div>
+            </article>
+          </section>
+        </main>
+        <nav class="bottom-nav">
+          <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 10.5 12 3l9 7.5V21H3z"/></svg><span>홈</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5h16M4 12h16M4 19h10"/></svg><span>질문함</span></div>
+          <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg><span>음악</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="4"/></svg><span>마이</span></div>
+        </nav>
+      </div>
+    </div>
+
+    <div>
+      <div class="caption">
+        <span class="tag">B · 위시 작성 패널</span>
+        <h2>직접 적고 바로 제안으로</h2>
+        <p>떠오른 일을 큰 작성 패널에서 바로 적고 저장하는 흐름입니다.</p>
+      </div>
+      <div class="phone">
+        <main class="screen">
+          <div class="topbar">
+            <div class="side">
+              <button class="paper-btn" aria-label="닫기">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div class="title-serif">새 제안</div>
+            <div class="side right"></div>
+          </div>
+
+          <section class="hero">
+            <small>DRAFT</small>
+            <h3>처음부터 자세히<br>정하지 않아도 돼요</h3>
+            <p>장소, 활동, 음식 중 하나만 골라도 충분합니다. 저장하기 전까지는 내 화면의 draft입니다.</p>
+          </section>
+
+          <div class="section-head">
+            <h4>제안 내용</h4>
+            <span>직접 담기</span>
+          </div>
+
+          <section class="draft-panel">
+            <div class="draft-head">
+              <small>MY SUGGESTION</small>
+              <h4>언젠가 같이 해보고 싶은 걸 적어두기</h4>
+            </div>
+            <div class="field">해 질 때 한강 근처를 천천히 산책하기</div>
+            <div class="draft-meta">
+              <span>상대가 관심 표시하면 서로 관심으로 이동해요</span>
+              <span>19 / 80</span>
+            </div>
+            <div class="category-row" style="padding:0 18px;margin-bottom:14px">
+              <span class="chip active"><span class="chip-dot"></span>장소</span>
+              <span class="chip"><span class="chip-dot"></span>활동</span>
+              <span class="chip"><span class="chip-dot"></span>음식</span>
+            </div>
+            <div class="savebar">
+              <button class="secondary-btn">취소</button>
+              <button class="primary-btn">제안 담기</button>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <div>
+      <div class="caption">
+        <span class="tag">C · 밸런스 덱</span>
+        <h2>선택 자체를 더 시원하게</h2>
+        <p>두 선택지가 세로로 길게 쌓이는 대신, 모바일에서 한눈에 비교되는 덱 형태가 더 직관적입니다.</p>
+      </div>
+      <div class="phone">
+        <main class="screen">
+          <div class="topbar">
+            <div class="side">
+              <button class="paper-btn" aria-label="뒤로">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+            </div>
+            <div class="title-serif">밸런스 게임</div>
+            <div class="side right"><span class="deck-count">3 / 8</span></div>
+          </div>
+
+          <section class="hero dark">
+            <small>TASTE DECK</small>
+            <h3>짧게 고르고,<br>나중에 이야기로 이어져요</h3>
+            <p>정답을 맞히는 게임보다 취향의 방향을 남기는 작은 카드 덱으로 다룹니다.</p>
+          </section>
+
+          <section class="balance-deck">
+            <div class="deck-head">
+              <small>QUESTION 03</small>
+              <span class="deck-count">카페</span>
+            </div>
+            <h4>카페를 고른다면?</h4>
+            <div class="option-grid">
+              <article class="option selected">
+                <span class="iconbox">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v7a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><path d="M6 2v3M10 2v3M14 2v3"/></svg>
+                </span>
+                <div>
+                  <strong>조용한 분위기</strong>
+                  <p>이야기가 잘 들리는 곳</p>
+                </div>
+                <span class="pickmark">내 선택</span>
+              </article>
+              <article class="option">
+                <span class="iconbox">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c4 4 6 7 6 11a6 6 0 0 1-12 0c0-4 2-7 6-11z"/><path d="M9 15h6"/></svg>
+                </span>
+                <div>
+                  <strong>디저트 맛집</strong>
+                  <p>먹어보는 재미가 있는 곳</p>
+                </div>
+                <span class="pickmark">고르기</span>
+              </article>
+              <div class="versus">VS</div>
+            </div>
+            <div class="result-panel">
+              <small>RESULT</small>
+              <p>나는 조용한 분위기, 민영님도 같은 쪽을 골랐어요. 카페 후보를 고를 때 좋은 힌트가 됩니다.</p>
+            </div>
+            <div class="dots">
+              <span class="dot"></span><span class="dot"></span><span class="dot active"></span><span class="dot"></span><span class="dot"></span>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <div>
+      <div class="caption">
+        <span class="tag">D · 밸런스 히스토리</span>
+        <h2>결과가 사라지지 않는 화면</h2>
+        <p>밸런스 선택은 지나가면 끝나는 게임보다, 나중에 볼 수 있는 취향 힌트가 되어야 합니다.</p>
+      </div>
+      <div class="phone">
+        <main class="screen">
+          <div class="topbar">
+            <div class="side">
+              <button class="paper-btn" aria-label="뒤로">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+            </div>
+            <div class="title-serif">밸런스 기록</div>
+            <div class="side right"></div>
+          </div>
+
+          <section class="hero">
+            <small>QUIET SUMMARY</small>
+            <h3>둘 다 고른 취향을<br>작게 모아둬요</h3>
+            <p>같은 선택은 과하게 축하하지 않고, 다른 선택은 틀림이 아니라 대화거리로 보여줍니다.</p>
+            <div class="summary-row">
+              <div class="summary"><strong>5</strong><span>함께 선택</span></div>
+              <div class="summary"><strong>3</strong><span>다른 선택</span></div>
+              <div class="summary"><strong>8</strong><span>전체 카드</span></div>
+            </div>
+          </section>
+
+          <div class="category-row">
+            <span class="chip active"><span class="chip-dot"></span>전체</span>
+            <span class="chip"><span class="chip-dot"></span>같은 선택</span>
+            <span class="chip"><span class="chip-dot"></span>다른 선택</span>
+            <span class="chip"><span class="chip-dot"></span>아직 대기</span>
+          </div>
+
+          <div class="section-head">
+            <h4>최근 선택</h4>
+            <span>대화 힌트</span>
+          </div>
+          <section class="timeline">
+            <article class="history-card">
+              <div class="history-top">
+                <h5>카페를 고른다면?</h5>
+                <span class="state-pill ready">같은 선택</span>
+              </div>
+              <p>둘 다 조용한 분위기를 골랐어요. 다음 카페 후보를 좁힐 때 좋습니다.</p>
+            </article>
+            <article class="history-card">
+              <div class="history-top">
+                <h5>쉬는 날엔?</h5>
+                <span class="state-pill">다른 선택</span>
+              </div>
+              <p>나는 집에서 충전, 민영님은 밖에서 산책. 서로의 회복 방식을 알 수 있어요.</p>
+            </article>
+            <article class="history-card">
+              <div class="history-top">
+                <h5>약속을 정한다면?</h5>
+                <span class="state-pill">대기 중</span>
+              </div>
+              <p>내 선택은 저장됐고, 상대 선택이 생기면 결과가 열립니다.</p>
+            </article>
+          </section>
+        </main>
+      </div>
+    </div>
+  </section>
+
+  <section class="catalog-map">
+    <h2>구현으로 이어질 때의 제안 범위</h2>
+    <p>
+      두 기능 모두 Firestore 구조를 크게 바꾸지 않고 UI/UX를 먼저 개선할 수 있습니다.
+      위시는 기존 wish 문서에 lane/status 계산을 얹고, 밸런스는 기존 selection 문서를 기반으로 히스토리와 요약을 파생합니다.
+    </p>
+    <div class="pack-grid">
+      <article class="pack">
+        <strong>언젠가, 같이 v2</strong>
+        <span>상태별 lane, 직접 담기 CTA, 큰 제안 패널, 서로 관심 우선 노출</span>
+      </article>
+      <article class="pack">
+        <strong>위시 콘텐츠 확장</strong>
+        <span>카페, 음식, 산책, 전시, 동네, 계절 같은 분류를 직접 작성 flow 안에서 선택</span>
+      </article>
+      <article class="pack">
+        <strong>밸런스 게임 v2</strong>
+        <span>카테고리 덱, 2열 선택 카드, 결과 힌트, 진행 dots, 마지막 완료 흐름</span>
+      </article>
+      <article class="pack">
+        <strong>밸런스 기록</strong>
+        <span>같은 선택, 다른 선택, 대기 중 상태를 요약하되 과한 궁합/점수화는 피함</span>
+      </article>
+    </div>
+  </section>
+</div>
+</body>
+</html>

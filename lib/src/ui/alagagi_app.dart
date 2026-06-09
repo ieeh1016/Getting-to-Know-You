@@ -11,6 +11,9 @@ const loginButtonKey = Key('login-button');
 const answerFieldKey = Key('answer-field');
 const wishTitleFieldKey = Key('wish-title-field');
 const wishSubmitButtonKey = Key('wish-submit-button');
+const wishAddButtonKey = Key('wish-add-button');
+const wishlistBoardKey = Key('wishlist-board');
+const balanceDeckKey = Key('balance-deck');
 const musicTitleFieldKey = Key('music-title-field');
 const musicArtistFieldKey = Key('music-artist-field');
 const musicLinkFieldKey = Key('music-link-field');
@@ -3447,127 +3450,250 @@ class BalanceScreen extends StatelessWidget {
     final selected = controller.activeBalanceSelection;
     final partnerChoice = controller.activePartnerBalanceSelection;
 
-    return Stack(
+    return _ScreenScroll(
+      padding: const EdgeInsets.fromLTRB(24, 34, 24, 44),
       children: [
-        _ScreenScroll(
-          padding: const EdgeInsets.fromLTRB(24, 34, 24, 156),
-          children: [
-            _TopBar(
-              title: '밸런스 게임',
-              trailing:
-                  '${controller.state.activeBalanceIndex + 1} / ${controller.balanceQuestions.length}',
-              onBack: () => controller.goTo(AlagagiRoute.home),
-            ),
-            const SizedBox(height: 20),
-            const Icon(
-              Icons.swap_horiz_rounded,
-              size: 32,
-              color: AlagagiColors.sageDeep,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '둘 중 하나만!',
-              textAlign: TextAlign.center,
-              style: serif(context, size: 22, weight: FontWeight.w800),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '고민하지 말고 끌리는 쪽으로 톡',
-              textAlign: TextAlign.center,
-              style: sans(size: 12.5, color: AlagagiColors.muted),
-            ),
-            const SizedBox(height: 28),
-            Text(
-              'QUESTION ${controller.state.activeBalanceIndex + 1}',
-              textAlign: TextAlign.center,
-              style: sans(
-                size: 11,
-                color: AlagagiColors.sageDeep,
-                letterSpacing: 2,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              question.prompt,
-              textAlign: TextAlign.center,
-              style: serif(context, size: 18, weight: FontWeight.w700),
-            ),
-            const SizedBox(height: 18),
-            _BalanceOptionCard(
-              option: question.left,
-              selectedByMe: selected == question.left.id,
-              selectedByPartner: partnerChoice == question.left.id,
-              onTap: () => controller.selectBalanceOption(question.left.id),
-            ),
-            const SizedBox(height: 14),
-            Center(
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: const BoxDecoration(
-                  color: AlagagiColors.ink,
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  'VS',
-                  style: serif(
-                    context,
-                    size: 14,
-                    weight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            _BalanceOptionCard(
-              option: question.right,
-              selectedByMe: selected == question.right.id,
-              selectedByPartner: partnerChoice == question.right.id,
-              onTap: () => controller.selectBalanceOption(question.right.id),
-            ),
-            const SizedBox(height: 18),
-            if (selected != null && partnerChoice != null)
-              _BalanceResult(
-                me: selected == question.left.id
-                    ? question.left.label
-                    : question.right.label,
-                partner: partnerChoice == question.left.id
-                    ? question.left.label
-                    : question.right.label,
-                partnerName: controller.state.partner.nickname,
-              )
-            else if (selected != null)
-              _BalanceWaiting(partnerName: controller.state.partner.nickname),
-          ],
+        _TopBar(
+          title: '밸런스 게임',
+          trailing:
+              '${controller.state.activeBalanceIndex + 1} / ${controller.balanceQuestions.length}',
+          onBack: () => controller.goTo(AlagagiRoute.home),
         ),
-        Positioned(
-          left: 28,
-          right: 28,
-          bottom: 26,
-          child: Column(
-            children: [
-              _ProgressDots(
-                activeIndex: controller.state.activeBalanceIndex,
-                count: controller.balanceQuestions.length,
-              ),
-              const SizedBox(height: 16),
-              _PrimaryButton(
-                label: controller.isLastBalanceQuestion ? '완료' : '다음 질문',
-                onPressed: controller.nextBalanceQuestion,
-                color: AlagagiColors.sageDeep,
-              ),
-            ],
-          ),
+        const SizedBox(height: 16),
+        const _BalanceHeroCard(),
+        const SizedBox(height: 16),
+        _BalanceDeckCard(
+          question: question,
+          selected: selected,
+          partnerChoice: partnerChoice,
+          activeIndex: controller.state.activeBalanceIndex,
+          count: controller.balanceQuestions.length,
+          partnerName: controller.state.partner.nickname,
+          onSelect: controller.selectBalanceOption,
+        ),
+        const SizedBox(height: 18),
+        _BalanceHistoryPreview(
+          selected: selected,
+          partnerChoice: partnerChoice,
+          question: question,
+          partnerName: controller.state.partner.nickname,
+        ),
+        const SizedBox(height: 18),
+        _ProgressDots(
+          activeIndex: controller.state.activeBalanceIndex,
+          count: controller.balanceQuestions.length,
+        ),
+        const SizedBox(height: 16),
+        _PrimaryButton(
+          label: controller.isLastBalanceQuestion ? '완료' : '다음 질문',
+          onPressed: controller.nextBalanceQuestion,
+          color: AlagagiColors.sageDeep,
         ),
       ],
     );
   }
 }
 
-class _BalanceOptionCard extends StatelessWidget {
-  const _BalanceOptionCard({
+class _BalanceHeroCard extends StatelessWidget {
+  const _BalanceHeroCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF2F2F2B),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'TASTE DECK',
+            style: sans(
+              size: 10.5,
+              color: const Color(0xFFC9C9C2),
+              weight: FontWeight.w700,
+              letterSpacing: 2.2,
+            ),
+          ),
+          const SizedBox(height: 9),
+          Text(
+            '짧게 고르고,\n나중에 이야기로 이어져요',
+            style: serif(
+              context,
+              size: 22,
+              weight: FontWeight.w800,
+              height: 1.45,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 9),
+          Text(
+            '정답을 맞히는 게임보다 취향의 방향을 남기는 작은 카드 덱이에요.',
+            style: sans(
+              size: 12.5,
+              color: const Color(0xFFE3E2DC),
+              height: 1.65,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BalanceDeckCard extends StatelessWidget {
+  const _BalanceDeckCard({
+    required this.question,
+    required this.selected,
+    required this.partnerChoice,
+    required this.activeIndex,
+    required this.count,
+    required this.partnerName,
+    required this.onSelect,
+  });
+
+  final BalanceQuestion question;
+  final String? selected;
+  final String? partnerChoice;
+  final int activeIndex;
+  final int count;
+  final String partnerName;
+  final ValueChanged<String> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: balanceDeckKey,
+      decoration: BoxDecoration(
+        color: AlagagiColors.paper,
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 28,
+            offset: Offset(0, 14),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Text(
+                'QUESTION ${activeIndex + 1}',
+                style: sans(
+                  size: 10.5,
+                  color: AlagagiColors.sageDeep,
+                  weight: FontWeight.w700,
+                  letterSpacing: 2,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                height: 28,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AlagagiColors.softSage,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Text(
+                  '${activeIndex + 1} / $count',
+                  style: sans(
+                    size: 11,
+                    color: AlagagiColors.sageDeep,
+                    weight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            question.prompt,
+            textAlign: TextAlign.center,
+            style: serif(
+              context,
+              size: 21,
+              weight: FontWeight.w800,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            height: 186,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: _BalanceDeckOption(
+                        option: question.left,
+                        selectedByMe: selected == question.left.id,
+                        selectedByPartner:
+                            selected != null &&
+                            partnerChoice == question.left.id,
+                        onTap: () => onSelect(question.left.id),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _BalanceDeckOption(
+                        option: question.right,
+                        selectedByMe: selected == question.right.id,
+                        selectedByPartner:
+                            selected != null &&
+                            partnerChoice == question.right.id,
+                        onTap: () => onSelect(question.right.id),
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF2F2F2B),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    'VS',
+                    style: serif(
+                      context,
+                      size: 13,
+                      weight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (selected != null) ...[
+            const SizedBox(height: 14),
+            _BalanceHintPanel(
+              selected: selected!,
+              partnerChoice: partnerChoice,
+              question: question,
+              partnerName: partnerName,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _BalanceDeckOption extends StatelessWidget {
+  const _BalanceDeckOption({
     required this.option,
     required this.selectedByMe,
     required this.selectedByPartner,
@@ -3584,70 +3710,252 @@ class _BalanceOptionCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         onTap: onTap,
         child: Container(
+          constraints: const BoxConstraints(minHeight: 172),
           decoration: BoxDecoration(
-            gradient: selectedByMe
-                ? const LinearGradient(
-                    colors: [Color(0xFFEAF0E0), AlagagiColors.softSage],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            color: selectedByMe ? null : AlagagiColors.paper,
+            color: selectedByMe
+                ? const Color(0xFFEEF3E8)
+                : const Color(0xFFF8F8F4),
             border: Border.all(
-              color: selectedByMe
-                  ? AlagagiColors.sage
-                  : selectedByPartner
-                  ? AlagagiColors.lavender
-                  : AlagagiColors.line,
-              width: 1.5,
+              color: selectedByMe ? AlagagiColors.sageDeep : AlagagiColors.line,
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(22),
           ),
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(14),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              if (selectedByMe)
-                Align(
-                  alignment: Alignment.topRight,
-                  child: Text(
-                    '나의 선택',
+              Row(
+                children: [
+                  _BalanceOptionIcon(
+                    optionId: option.id,
+                    selected: selectedByMe,
+                  ),
+                  const Spacer(),
+                  if (selectedByPartner)
+                    const Icon(
+                      Icons.person_outline_rounded,
+                      size: 17,
+                      color: AlagagiColors.sageDeep,
+                    ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    option.label,
                     style: serif(
                       context,
-                      size: 13,
+                      size: 18,
+                      weight: FontWeight.w800,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    selectedByMe ? '내 선택' : '끌리는 쪽 고르기',
+                    style: sans(
+                      size: 11.5,
+                      color: AlagagiColors.muted,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Container(
+                  height: 25,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    selectedByMe ? '선택됨' : '고르기',
+                    style: sans(
+                      size: 10.5,
                       color: AlagagiColors.sageDeep,
                       weight: FontWeight.w700,
                     ),
                   ),
                 ),
-              _BalanceOptionIcon(optionId: option.id, selected: selectedByMe),
-              const SizedBox(height: 8),
-              Text(
-                option.label,
-                style: serif(context, size: 18, weight: FontWeight.w700),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (selectedByMe)
-                    const _MiniChoiceAvatar(
-                      icon: Icons.check_rounded,
-                      color: AlagagiColors.softSage,
-                    ),
-                  if (selectedByPartner)
-                    const _MiniChoiceAvatar(
-                      icon: Icons.check_rounded,
-                      color: Color(0xFFE7DDF0),
-                    ),
-                ],
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _BalanceHintPanel extends StatelessWidget {
+  const _BalanceHintPanel({
+    required this.selected,
+    required this.partnerChoice,
+    required this.question,
+    required this.partnerName,
+  });
+
+  final String selected;
+  final String? partnerChoice;
+  final BalanceQuestion question;
+  final String partnerName;
+
+  @override
+  Widget build(BuildContext context) {
+    final myLabel = selected == question.left.id
+        ? question.left.label
+        : question.right.label;
+    final partnerChoice = this.partnerChoice;
+    final copy = partnerChoice == null
+        ? '$partnerName님 선택이 생기면 결과가 열려요. 지금은 내 취향만 조용히 저장해둘게요.'
+        : partnerChoice == selected
+        ? '둘 다 $myLabel 쪽을 골랐어요. 다음에 이야기 꺼내기 좋은 작은 힌트예요.'
+        : '나는 $myLabel 쪽이에요. 서로 다른 선택도 취향을 알아가는 대화거리가 됩니다.';
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF2F2F2B),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      padding: const EdgeInsets.all(15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            partnerChoice == null ? 'WAITING' : 'RESULT',
+            style: sans(
+              size: 10.5,
+              color: const Color(0xFFC9C9C2),
+              weight: FontWeight.w700,
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            copy,
+            style: sans(size: 13, color: const Color(0xFFF2F1EB), height: 1.65),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BalanceHistoryPreview extends StatelessWidget {
+  const _BalanceHistoryPreview({
+    required this.selected,
+    required this.partnerChoice,
+    required this.question,
+    required this.partnerName,
+  });
+
+  final String? selected;
+  final String? partnerChoice;
+  final BalanceQuestion question;
+  final String partnerName;
+
+  @override
+  Widget build(BuildContext context) {
+    final stateLabel = selected == null
+        ? '아직 선택 전'
+        : partnerChoice == null
+        ? '대기 중'
+        : selected == partnerChoice
+        ? '같은 선택'
+        : '다른 선택';
+    final stateCopy = selected == null
+        ? '끌리는 쪽을 고르면 내 취향 힌트가 남아요.'
+        : partnerChoice == null
+        ? '내 선택은 저장됐고, $partnerName님 선택이 생기면 결과가 열립니다.'
+        : selected == partnerChoice
+        ? '둘 다 같은 쪽을 골랐어요. 다음 선택에도 참고할 수 있어요.'
+        : '서로 다른 쪽을 골랐어요. 틀림이 아니라 대화거리로 남겨둡니다.';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                '최근 선택 힌트',
+                style: serif(context, size: 16, weight: FontWeight.w800),
+              ),
+            ),
+            Text('대화거리', style: sans(size: 11.5, color: AlagagiColors.muted)),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AlagagiColors.paper,
+            border: Border.all(color: AlagagiColors.line),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      question.prompt,
+                      style: sans(
+                        size: 13,
+                        color: const Color(0xFF45443F),
+                        weight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    height: 24,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color:
+                          selected != null &&
+                              partnerChoice != null &&
+                              selected == partnerChoice
+                          ? const Color(0xFF2F2F2B)
+                          : const Color(0xFFF8F8F4),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 9),
+                    child: Text(
+                      stateLabel,
+                      style: sans(
+                        size: 10.5,
+                        color:
+                            selected != null &&
+                                partnerChoice != null &&
+                                selected == partnerChoice
+                            ? Colors.white
+                            : AlagagiColors.muted,
+                        weight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 7),
+              Text(
+                stateCopy,
+                style: sans(
+                  size: 11.5,
+                  color: AlagagiColors.muted,
+                  height: 1.55,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -3685,111 +3993,6 @@ class _BalanceOptionIcon extends StatelessWidget {
       'light' => Icons.chat_bubble_outline_rounded,
       _ => Icons.tune_rounded,
     };
-  }
-}
-
-class _MiniChoiceAvatar extends StatelessWidget {
-  const _MiniChoiceAvatar({required this.icon, required this.color});
-
-  final IconData icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 26,
-      height: 26,
-      margin: const EdgeInsets.symmetric(horizontal: 3),
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 5,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      alignment: Alignment.center,
-      child: Icon(icon, size: 14, color: AlagagiColors.sageDeep),
-    );
-  }
-}
-
-class _BalanceResult extends StatelessWidget {
-  const _BalanceResult({
-    required this.me,
-    required this.partner,
-    required this.partnerName,
-  });
-
-  final String me;
-  final String partner;
-  final String partnerName;
-
-  @override
-  Widget build(BuildContext context) {
-    final same = me == partner;
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFEEF1E8),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Text.rich(
-        TextSpan(
-          children: [
-            TextSpan(text: '$partnerName님은 '),
-            TextSpan(
-              text: partner,
-              style: sans(
-                weight: FontWeight.w500,
-                color: AlagagiColors.sageDeep,
-              ),
-            ),
-            const TextSpan(text: ', 나는 '),
-            TextSpan(
-              text: me,
-              style: sans(
-                weight: FontWeight.w500,
-                color: AlagagiColors.sageDeep,
-              ),
-            ),
-            TextSpan(
-              text: same
-                  ? '를 골랐어요.\n닮은 구석이 하나 더 보이네요.'
-                  : '를 골랐어요.\n서로 달라서 더 궁금해져요.',
-            ),
-          ],
-        ),
-        textAlign: TextAlign.center,
-        style: sans(size: 13, color: const Color(0xFF5A6650), height: 1.5),
-      ),
-    );
-  }
-}
-
-class _BalanceWaiting extends StatelessWidget {
-  const _BalanceWaiting({required this.partnerName});
-
-  final String partnerName;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFEEF1E8),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Text(
-        '$partnerName님이 선택하면 결과가 함께 열려요.',
-        textAlign: TextAlign.center,
-        style: sans(size: 13, color: const Color(0xFF5A6650), height: 1.5),
-      ),
-    );
   }
 }
 
@@ -4934,61 +5137,305 @@ class WishlistScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final wishes = controller.visibleWishes;
-    return Stack(
+    final mutualWishes = wishes
+        .where((wish) => wish.isMutual && !wish.done)
+        .toList();
+    final quietWishes = wishes
+        .where((wish) => !wish.isMutual && !wish.done)
+        .toList();
+    final doneWishes = wishes.where((wish) => wish.done).toList();
+
+    return _ScreenScroll(
+      bottomNavigation: _BottomNav(controller: controller),
       children: [
-        _ScreenScroll(
-          bottomNavigation: _BottomNav(controller: controller),
-          padding: const EdgeInsets.fromLTRB(28, 34, 28, 170),
-          children: [
-            _TopBar(
-              title: '언젠가, 같이',
-              trailing: '',
-              onBack: () => controller.goTo(AlagagiRoute.home),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '언젠가 해볼 만한 것을 가볍게 적어둬요',
-              style: sans(size: 12.5, color: AlagagiColors.muted),
-            ),
-            const SizedBox(height: 16),
-            _WishlistFilters(controller: controller),
-            if (controller.state.wishDraftVisible) ...[
-              const SizedBox(height: 16),
-              _WishDraftCard(controller: controller),
-            ],
-            const SizedBox(height: 16),
-            _SectionLabel(
-              controller.state.wishlistFilter == WishlistFilter.mutual
-                  ? '서로 관심 있어요'
-                  : '위시리스트',
-            ),
-            const SizedBox(height: 12),
-            if (wishes.isEmpty)
-              const _EmptyStateCard(text: '같이 해보고 싶은 걸 하나만 담아볼까요?')
-            else
-              for (final wish in wishes) ...[
-                _WishCard(
-                  wish: wish,
-                  meId: controller.state.me.id,
-                  partnerId: controller.state.partner.id,
-                  partnerName: controller.state.partner.nickname,
-                  onInterest: () => controller.toggleWishLike(wish.id),
-                ),
-                const SizedBox(height: 12),
-              ],
-          ],
+        _TopBar(
+          title: '언젠가, 같이',
+          trailing: '',
+          onBack: () => controller.goTo(AlagagiRoute.home),
         ),
-        if (!controller.state.wishDraftVisible)
-          Positioned(
-            left: 28,
-            right: 28,
-            bottom: 84,
-            child: _PrimaryButton(
-              label: '＋ 하고 싶은 것 담기',
-              onPressed: controller.startWishDraft,
+        const SizedBox(height: 4),
+        Text(
+          '언젠가 해볼 만한 것을 가볍게 적어둬요',
+          style: sans(size: 12.5, color: AlagagiColors.muted),
+        ),
+        const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: _WishlistAddButton(controller: controller),
+        ),
+        if (controller.state.wishDraftVisible) ...[
+          const SizedBox(height: 14),
+          _WishDraftCard(controller: controller),
+        ],
+        const SizedBox(height: 16),
+        _WishlistHero(
+          mutualCount: mutualWishes.length,
+          totalCount: wishes.length,
+          doneCount: doneWishes.length,
+        ),
+        const SizedBox(height: 14),
+        _WishlistFilters(controller: controller),
+        const SizedBox(height: 18),
+        _WishlistBoard(
+          wishes: wishes,
+          mutualWishes: mutualWishes,
+          quietWishes: quietWishes,
+          doneWishes: doneWishes,
+          controller: controller,
+        ),
+      ],
+    );
+  }
+}
+
+class _WishlistHero extends StatelessWidget {
+  const _WishlistHero({
+    required this.mutualCount,
+    required this.totalCount,
+    required this.doneCount,
+  });
+
+  final int mutualCount;
+  final int totalCount;
+  final int doneCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AlagagiColors.paper, Color(0xFFF3F5EE)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 28,
+            offset: Offset(0, 14),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'QUIET BOARD',
+            style: sans(
+              size: 10.5,
               color: AlagagiColors.sageDeep,
+              weight: FontWeight.w700,
+              letterSpacing: 2.2,
             ),
           ),
+          const SizedBox(height: 9),
+          Text(
+            '같이 해볼 일을\n가볍게 모아둬요',
+            style: serif(
+              context,
+              size: 22,
+              weight: FontWeight.w800,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 9),
+          Text(
+            '바로 약속을 정하지 않아도 괜찮아요. 서로 관심이 겹치면 다음에 꺼내기 쉬워집니다.',
+            style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.65),
+          ),
+          const SizedBox(height: 17),
+          Row(
+            children: [
+              Expanded(
+                child: _WishlistSummaryTile(
+                  value: '$mutualCount',
+                  label: '서로 관심',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _WishlistSummaryTile(
+                  value: '$totalCount',
+                  label: '담아둔 것',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _WishlistSummaryTile(value: '$doneCount', label: '함께함'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WishlistSummaryTile extends StatelessWidget {
+  const _WishlistSummaryTile({required this.value, required this.label});
+
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xBFFFFFFA),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: sans(
+              size: 15,
+              color: AlagagiColors.ink,
+              weight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            style: sans(size: 10.5, color: AlagagiColors.muted, height: 1.35),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WishlistAddButton extends StatelessWidget {
+  const _WishlistAddButton({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 38,
+      child: OutlinedButton.icon(
+        key: wishAddButtonKey,
+        onPressed: controller.startWishDraft,
+        icon: const Icon(Icons.add_rounded, size: 16),
+        label: const Text('하고 싶은 것 담기'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AlagagiColors.sageDeep,
+          side: const BorderSide(color: Color(0x338A9A7E)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          textStyle: sans(size: 12, weight: FontWeight.w700),
+        ),
+      ),
+    );
+  }
+}
+
+class _WishlistBoard extends StatelessWidget {
+  const _WishlistBoard({
+    required this.wishes,
+    required this.mutualWishes,
+    required this.quietWishes,
+    required this.doneWishes,
+    required this.controller,
+  });
+
+  final List<WishItem> wishes;
+  final List<WishItem> mutualWishes;
+  final List<WishItem> quietWishes;
+  final List<WishItem> doneWishes;
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    if (wishes.isEmpty) {
+      return const _EmptyStateCard(text: '같이 해보고 싶은 걸 하나만 담아볼까요?');
+    }
+    return Column(
+      key: wishlistBoardKey,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _WishlistLane(
+          title: '서로 관심 있어요',
+          meta: '다음에 꺼내기 좋은 것',
+          wishes: mutualWishes,
+          emptyText: '서로 관심이 겹친 항목은 여기에 모여요.',
+          controller: controller,
+        ),
+        const SizedBox(height: 18),
+        _WishlistLane(
+          title: '조용한 제안',
+          meta: '관심 표시 전',
+          wishes: quietWishes,
+          emptyText: '아직 한 명만 담아둔 제안이 없어요.',
+          controller: controller,
+        ),
+        const SizedBox(height: 18),
+        _WishlistLane(
+          title: '함께했어요',
+          meta: '가볍게 남은 기록',
+          wishes: doneWishes,
+          emptyText: '함께한 뒤에는 여기에 조용히 쌓여요.',
+          controller: controller,
+        ),
+      ],
+    );
+  }
+}
+
+class _WishlistLane extends StatelessWidget {
+  const _WishlistLane({
+    required this.title,
+    required this.meta,
+    required this.wishes,
+    required this.emptyText,
+    required this.controller,
+  });
+
+  final String title;
+  final String meta;
+  final List<WishItem> wishes;
+  final String emptyText;
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: serif(context, size: 16, weight: FontWeight.w800),
+              ),
+            ),
+            Text(meta, style: sans(size: 11.5, color: AlagagiColors.muted)),
+          ],
+        ),
+        const SizedBox(height: 10),
+        if (wishes.isEmpty)
+          _InlineEmptyState(text: emptyText)
+        else
+          for (final wish in wishes) ...[
+            _WishCard(
+              wish: wish,
+              meId: controller.state.me.id,
+              partnerId: controller.state.partner.id,
+              partnerName: controller.state.partner.nickname,
+              onInterest: () => controller.toggleWishLike(wish.id),
+            ),
+            const SizedBox(height: 10),
+          ],
       ],
     );
   }
