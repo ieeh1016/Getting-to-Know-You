@@ -369,6 +369,28 @@ This batch focuses only on the question archive calendar UI/UX. It keeps the Fir
   - 월간 grid는 card 내부에서 지나치게 큰 여백 없이 compact spacing을 사용한다.
   - selected detail은 grid 아래에 유지해 사용자가 날짜 선택 결과를 바로 확인할 수 있다.
 
+### MVP v0.11 Focused Home Question Card
+
+This batch focuses only on the HOME today's question card. It follows the `docs/design/home_question_card_redesign.html` focused-question option and must be implemented in SDD/TDD order.
+
+- Default unanswered state:
+  - 홈 질문 카드는 질문을 가장 먼저 읽을 수 있는 focus card로 렌더링한다.
+  - 상단에는 `TODAY'S QUESTION` label과 compact `DAY {day}` chip을 같은 row에 둔다.
+  - 큰 배경 question number는 사용하지 않거나, 텍스트 정렬을 방해하지 않는 수준으로 축소한다.
+  - 질문 본문 아래에는 `아직 내 답을 남기지 않았어요.`와 `답을 남기면 {partnerName}님의 답도 함께 열려요.` 계열의 support block을 둔다.
+  - 홈 카드 안에는 `지금의 마음을 한 줄로...`처럼 입력창처럼 보이는 inline composer를 두지 않는다.
+  - 답변 작성은 full-width primary CTA `답 남기기`를 눌러 기존 답변 화면으로 이동한다.
+- Answered state:
+  - 내 답이 있으면 같은 카드 안에서 질문 본문 아래에 내 답 preview를 보여준다.
+  - 긴 내 답 preview는 기존 접기/펼치기 규칙을 유지한다.
+  - `수정하기` action은 내 답 block 안 또는 바로 아래에 안정적으로 배치한다.
+  - 상대 답이 아직 잠겨 있으면 support block으로 대기 상태를 보여주고 댓글 입력 UI는 숨긴다.
+  - 상대 답이 공개되면 상대 답과 댓글 입력 UI를 기존 규칙대로 보여준다.
+- Mobile UX:
+  - 390px 모바일 viewport에서 card header, question text, support block, CTA baseline이 어긋나지 않는다.
+  - CTA는 단독 row로 배치해 텍스트와 버튼이 같은 줄에서 높이 충돌을 만들지 않는다.
+  - 카드의 첫 화면 높이는 요약 카드 접근을 과도하게 밀어내지 않도록 기존 카드보다 compact하게 유지한다.
+
 ### MVP v0.7 Answer Comments In Scope
 
 - 상대 답변에 직접 입력한 짧은 댓글을 남길 수 있다.
@@ -614,12 +636,12 @@ Required UI:
   - two avatar markers
 - Today question label
 - Question card:
-  - question number
+  - compact day chip or question number
   - `TODAY'S QUESTION`
   - question text
   - my answer preview
   - partner answer locked/waiting state
-  - one-line answer field or CTA
+  - dedicated answer CTA
 - Insight cards:
   - 마음의 결 percentage
   - 주고받은 질문 count
@@ -637,6 +659,7 @@ Acceptance Criteria:
 
 - 홈에 `오늘의 질문`과 질문 번호가 보인다.
 - 내 답이 없으면 답변 CTA가 보인다.
+- 내 답이 없을 때 홈 질문 카드 안에는 one-line 입력창처럼 보이는 inline composer를 두지 않는다.
 - 내 답이 있으면 내 답 preview가 보인다.
 - 내 답 preview가 길면 4줄 안팎으로 접히고 `더 보기`로 펼칠 수 있다.
 - 120자를 넘는 답변은 long answer로 간주한다.

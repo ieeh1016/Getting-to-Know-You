@@ -63,6 +63,9 @@
 - Firebase mode에서 밸런스 선택 전에는 샘플 상대 선택이 보이지 않는다.
 - 로컬 데모 모드는 초대 화면과 닉네임 진입을 유지한다.
 - 홈은 오늘의 질문과 기록 요약을 보여준다.
+- 홈 질문 카드는 질문 집중형 layout으로 `TODAY'S QUESTION`, compact day chip, support block, full-width `답 남기기` CTA를 보여준다.
+- 홈 질문 카드의 unanswered 상태는 inline composer placeholder를 렌더링하지 않는다.
+- 홈 질문 카드는 390px 모바일 viewport에서 CTA와 텍스트 baseline/height가 겹치거나 어긋나지 않는다.
 - 답변 화면은 글자 수 갱신과 저장 후 상대 답 공개를 검증한다.
 - 홈의 긴 답변은 접힌 preview와 `더 보기` 확장을 검증한다.
 - `수정하기`를 누르면 답변 화면에 기존 본문이 채워지고 `수정 저장하기`가 보인다.

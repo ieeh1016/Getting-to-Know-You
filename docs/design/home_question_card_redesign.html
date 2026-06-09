@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>알아가기 · 홈 질문 카드 개선안</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --outer:#e9e8e2;
+    --bg:#f4f3ef;
+    --paper:#fcfcfa;
+    --ink:#2e2e2c;
+    --text:#45443f;
+    --muted:#9a9890;
+    --sage:#8a9a7e;
+    --sage-deep:#6f7f63;
+    --sage-soft:#f0f2eb;
+    --sage-panel:#dfe6d4;
+    --lav:#b9a8c9;
+    --line:#e8e6df;
+    --warm:#f8f8f4;
+  }
+  body{
+    min-height:100vh;
+    background:var(--outer);
+    color:var(--ink);
+    font-family:'Noto Sans KR',sans-serif;
+    font-weight:300;
+    padding:36px 18px 48px;
+  }
+  .wrap{max-width:1260px;margin:0 auto}
+  .page-title{text-align:center;margin-bottom:30px}
+  .page-title .eyebrow{
+    font-size:11px;
+    letter-spacing:3px;
+    color:var(--sage-deep);
+    margin-bottom:8px;
+  }
+  .page-title h1{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:30px;
+    line-height:1.35;
+    font-weight:800;
+  }
+  .page-title p{
+    max-width:680px;
+    margin:10px auto 0;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.75;
+  }
+  .stage{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(300px,390px));
+    gap:24px;
+    justify-content:center;
+    align-items:start;
+  }
+  .option-label{margin:0 0 12px 2px}
+  .option-label .tag{
+    display:inline-flex;
+    align-items:center;
+    height:24px;
+    padding:0 9px;
+    border-radius:999px;
+    border:1px solid rgba(111,127,99,.22);
+    background:rgba(252,252,250,.72);
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+  }
+  .option-label h2{
+    margin-top:8px;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:19px;
+    font-weight:800;
+  }
+  .option-label p{
+    margin-top:5px;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.65;
+  }
+  .phone{
+    width:390px;
+    max-width:100%;
+    min-height:844px;
+    position:relative;
+    overflow:hidden;
+    border:8px solid #fff;
+    border-radius:40px;
+    background:var(--bg);
+    box-shadow:0 28px 70px rgba(60,60,50,.18);
+  }
+  .screen{padding:28px 27px 104px}
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;margin:10px 0 22px}
+  .topbar h3{font-family:'Nanum Myeongjo',serif;font-size:23px;font-weight:800}
+  .topbar p{margin-top:5px;color:var(--muted);font-size:12.5px}
+  .circle-button{
+    width:38px;
+    height:38px;
+    display:grid;
+    place-items:center;
+    border:1px solid var(--line);
+    border-radius:50%;
+    background:var(--paper);
+    color:var(--sage-deep);
+  }
+  svg{display:block}
+  .hero-strip{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:20px;
+    padding:17px 19px;
+    border-radius:20px;
+    background:#2f2f2b;
+    color:#fff;
+  }
+  .hero-strip small{
+    display:block;
+    color:#c9c9c2;
+    font-size:10.5px;
+    letter-spacing:1.4px;
+    margin-bottom:5px;
+  }
+  .hero-strip strong{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:17px;
+    line-height:1.35;
+  }
+  .avatar-stack{display:flex;flex-shrink:0}
+  .avatar{
+    width:31px;
+    height:31px;
+    margin-left:-7px;
+    display:grid;
+    place-items:center;
+    border:2px solid #2f2f2b;
+    border-radius:50%;
+    background:#eef1e8;
+    color:var(--sage-deep);
+  }
+  .section-label{
+    margin:0 0 10px;
+    color:var(--muted);
+    font-size:11.5px;
+    letter-spacing:.8px;
+  }
+  .question-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid var(--line);
+    border-radius:24px;
+    background:var(--paper);
+    box-shadow:0 14px 34px rgba(80,80,70,.045);
+  }
+  .focus-card{padding:24px 22px 21px}
+  .card-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:20px;
+  }
+  .card-head .label{
+    font-size:10.5px;
+    letter-spacing:2.6px;
+    color:var(--sage-deep);
+  }
+  .day-chip{
+    min-width:54px;
+    height:28px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:999px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:700;
+  }
+  .focus-card h4,.state-card h4,.compact-card h4{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:23px;
+    line-height:1.5;
+    font-weight:800;
+    letter-spacing:0;
+  }
+  .support{
+    margin-top:17px;
+    padding:15px 15px;
+    border:1px solid var(--line);
+    border-radius:17px;
+    background:var(--warm);
+  }
+  .support strong{
+    display:block;
+    margin-bottom:5px;
+    color:var(--sage-deep);
+    font-family:'Nanum Myeongjo',serif;
+    font-size:13px;
+  }
+  .support p{
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.6;
+  }
+  .primary{
+    width:100%;
+    height:52px;
+    border:0;
+    border-radius:16px;
+    background:var(--sage-deep);
+    color:#fff;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:15px;
+    font-weight:800;
+    box-shadow:0 12px 24px rgba(111,127,99,.2);
+  }
+  .focus-card .primary{margin-top:18px}
+  .meta-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+  .meta-row span{
+    color:var(--sage-deep);
+    font-family:'Nanum Myeongjo',serif;
+    font-size:13px;
+    font-weight:700;
+  }
+  .meta-row em{
+    font-style:normal;
+    color:var(--muted);
+    font-size:11px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:5px 9px;
+    background:#fff;
+  }
+  .state-card{padding:21px}
+  .answer-block{
+    margin-top:16px;
+    padding:15px;
+    border-radius:17px;
+    background:var(--warm);
+    border:1px solid var(--line);
+  }
+  .answer-title{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:8px;
+  }
+  .answer-title strong{
+    color:var(--sage-deep);
+    font-family:'Nanum Myeongjo',serif;
+    font-size:13px;
+  }
+  .ghost-icon{
+    width:28px;
+    height:28px;
+    display:grid;
+    place-items:center;
+    border:1px solid var(--line);
+    border-radius:50%;
+    background:#fff;
+    color:var(--muted);
+  }
+  .answer-block p{
+    color:var(--text);
+    font-size:13px;
+    line-height:1.65;
+  }
+  .waiting{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    margin-top:10px;
+    padding:13px 14px;
+    border:1px dashed #d9d6cb;
+    border-radius:16px;
+    color:var(--muted);
+    background:#fff;
+    font-size:12.5px;
+    line-height:1.5;
+  }
+  .actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:9px;
+    margin-top:16px;
+  }
+  .secondary{
+    height:48px;
+    border:1px solid var(--line);
+    border-radius:15px;
+    background:#fff;
+    color:var(--text);
+    font-family:'Nanum Myeongjo',serif;
+    font-size:14px;
+    font-weight:800;
+  }
+  .actions .primary{height:48px}
+  .compact-card{padding:0}
+  .compact-hero{
+    padding:23px 22px 21px;
+    background:linear-gradient(180deg,#fcfcfa 0%,#f8f8f4 100%);
+  }
+  .compact-hero .card-head{margin-bottom:15px}
+  .compact-card h4{font-size:21px}
+  .mini-status{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    padding:15px 18px;
+    border-top:1px solid var(--line);
+  }
+  .mini-status p{
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.5;
+  }
+  .round-action{
+    width:46px;
+    height:46px;
+    flex:0 0 auto;
+    display:grid;
+    place-items:center;
+    border:0;
+    border-radius:50%;
+    background:var(--sage-deep);
+    color:#fff;
+    box-shadow:0 12px 24px rgba(111,127,99,.2);
+  }
+  .summary-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:13px;
+    margin-top:20px;
+  }
+  .summary-card{
+    min-height:96px;
+    border:1px solid var(--line);
+    border-radius:19px;
+    background:var(--paper);
+    padding:17px;
+  }
+  .summary-card.soft{background:linear-gradient(145deg,var(--sage-panel),#eef1e8)}
+  .summary-card small{
+    display:block;
+    color:var(--muted);
+    font-size:11.5px;
+    margin-bottom:10px;
+  }
+  .summary-card strong{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:27px;
+    color:var(--sage-deep);
+  }
+  .bottom-nav{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    height:74px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    align-items:center;
+    border-top:1px solid var(--line);
+    background:rgba(252,252,250,.92);
+    backdrop-filter:blur(14px);
+  }
+  .nav-item{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:7px;
+    color:#b9b6ad;
+    font-size:10.5px;
+  }
+  .nav-item .mark{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:#cfcac0;
+  }
+  .nav-item.active{color:var(--sage-deep);font-weight:700}
+  .nav-item.active .mark{width:18px;height:6px;border-radius:999px;background:var(--sage-deep)}
+  .notes{
+    max-width:900px;
+    margin:30px auto 0;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+  }
+  .note{
+    border:1px solid rgba(111,127,99,.16);
+    border-radius:18px;
+    background:rgba(252,252,250,.62);
+    padding:16px;
+  }
+  .note strong{
+    display:block;
+    margin-bottom:6px;
+    color:var(--sage-deep);
+    font-family:'Nanum Myeongjo',serif;
+    font-size:14px;
+  }
+  .note p{color:var(--muted);font-size:12.5px;line-height:1.65}
+  @media (max-width:1180px){
+    .stage{grid-template-columns:repeat(2,minmax(300px,390px))}
+  }
+  @media (max-width:760px){
+    body{padding:22px 0 34px;background:var(--bg)}
+    .page-title{padding:0 20px;text-align:left}
+    .page-title h1{font-size:25px}
+    .stage{display:block}
+    .option{margin-bottom:28px}
+    .option-label{padding:0 22px}
+    .phone{
+      width:100%;
+      min-height:844px;
+      border:0;
+      border-radius:0;
+      box-shadow:none;
+    }
+    .screen{padding-left:28px;padding-right:28px}
+    .notes{grid-template-columns:1fr;margin:8px 20px 0}
+  }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="page-title">
+      <div class="eyebrow">HOME QUESTION CARD</div>
+      <h1>홈 질문 영역 개선 시안</h1>
+      <p>현재 앱의 종이 질감, 세이지 컬러, 조용한 톤은 유지하면서 하단 입력창과 버튼의 높이 불일치를 없애고 질문 자체가 먼저 읽히도록 재구성한 제안입니다.</p>
+    </header>
+
+    <section class="stage" aria-label="홈 질문 카드 디자인 옵션">
+      <article class="option">
+        <div class="option-label">
+          <span class="tag">추천안</span>
+          <h2>질문 집중형</h2>
+          <p>홈에서는 질문을 읽고, 답변 작성은 전용 화면으로 넘기는 가장 안정적인 구조입니다.</p>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="topbar">
+              <div>
+                <h3>알아가기</h3>
+                <p>오늘도 한 가지를 알아가요</p>
+              </div>
+              <button class="circle-button" aria-label="설정">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M4 7h16M7 12h10M10 17h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+            <div class="hero-strip">
+              <div>
+                <small>DAY 12 · 서로의 12번째 질문</small>
+                <strong>오늘도 한 가지를 알아가요</strong>
+              </div>
+              <div class="avatar-stack" aria-hidden="true">
+                <span class="avatar">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                    <path d="M19 4C10 4 5 9 5 20c9 0 14-5 14-16Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                    <path d="M5 20 15 10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                  </svg>
+                </span>
+                <span class="avatar" style="color:var(--lav);background:#f1edf5">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 20c4-3 6-6 6-9a6 6 0 0 0-12 0c0 3 2 6 6 9Z" stroke="currentColor" stroke-width="1.7"/>
+                    <path d="M12 8v6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                  </svg>
+                </span>
+              </div>
+            </div>
+            <p class="section-label">오늘의 질문</p>
+            <section class="question-card focus-card" aria-label="오늘의 질문">
+              <div class="card-head">
+                <span class="label">TODAY'S QUESTION</span>
+                <span class="day-chip">DAY 12</span>
+              </div>
+              <h4>하루 중 가장 좋아하는 시간은 언제인가요?</h4>
+              <div class="support">
+                <strong>아직 내 답을 남기지 않았어요.</strong>
+                <p>답을 남기면 민영님의 답도 함께 열려요.</p>
+              </div>
+              <button class="primary">답 남기기</button>
+            </section>
+            <div class="summary-grid">
+              <div class="summary-card soft">
+                <small>마음의 결</small>
+                <strong>78%</strong>
+              </div>
+              <div class="summary-card">
+                <small>주고받은 질문</small>
+                <strong>12</strong>
+              </div>
+            </div>
+          </div>
+          <nav class="bottom-nav" aria-label="하단 내비게이션">
+            <div class="nav-item active"><span class="mark"></span><span>홈</span></div>
+            <div class="nav-item"><span class="mark"></span><span>질문함</span></div>
+            <div class="nav-item"><span class="mark"></span><span>기록</span></div>
+            <div class="nav-item"><span class="mark"></span><span>마이</span></div>
+          </nav>
+        </div>
+      </article>
+
+      <article class="option">
+        <div class="option-label">
+          <span class="tag">상태 강화</span>
+          <h2>답변 상태형</h2>
+          <p>답변 전후 상태를 한 카드 안에서 보여주고, 작성 후에는 수정과 상대 답 대기를 자연스럽게 분리합니다.</p>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="topbar">
+              <div>
+                <h3>알아가기</h3>
+                <p>오늘도 한 가지를 알아가요</p>
+              </div>
+              <button class="circle-button" aria-label="설정">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M4 7h16M7 12h10M10 17h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+            <div class="hero-strip">
+              <div>
+                <small>DAY 12 · 오늘의 질문</small>
+                <strong>천천히 답을 쌓는 중</strong>
+              </div>
+              <div class="avatar-stack" aria-hidden="true">
+                <span class="avatar"></span>
+                <span class="avatar" style="background:#f1edf5"></span>
+              </div>
+            </div>
+            <p class="section-label">오늘의 질문</p>
+            <section class="question-card state-card" aria-label="오늘의 질문 답변 상태">
+              <div class="meta-row">
+                <span>6월 9일 · DAY 12</span>
+                <em>내 답 있음</em>
+              </div>
+              <h4>하루 중 가장 좋아하는 시간은 언제인가요?</h4>
+              <div class="answer-block">
+                <div class="answer-title">
+                  <strong>내 답</strong>
+                  <button class="ghost-icon" aria-label="수정">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="m4 16-.7 4.7L8 20l10.5-10.5-4-4L4 16Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                      <path d="m13.5 6.5 4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                    </svg>
+                  </button>
+                </div>
+                <p>퇴근하고 집에 들어와 조용히 씻고 난 뒤의 시간이 좋아요.</p>
+              </div>
+              <div class="waiting">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M7 10V8a5 5 0 0 1 10 0v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                  <rect x="5" y="10" width="14" height="10" rx="2.5" stroke="currentColor" stroke-width="1.7"/>
+                </svg>
+                <span>민영님 답은 아직 기다리는 중이에요.</span>
+              </div>
+              <div class="actions">
+                <button class="secondary">수정하기</button>
+                <button class="primary">질문함 보기</button>
+              </div>
+            </section>
+            <div class="summary-grid">
+              <div class="summary-card soft">
+                <small>닮은 답</small>
+                <strong>4</strong>
+              </div>
+              <div class="summary-card">
+                <small>기다리는 답</small>
+                <strong>2</strong>
+              </div>
+            </div>
+          </div>
+          <nav class="bottom-nav" aria-label="하단 내비게이션">
+            <div class="nav-item active"><span class="mark"></span><span>홈</span></div>
+            <div class="nav-item"><span class="mark"></span><span>질문함</span></div>
+            <div class="nav-item"><span class="mark"></span><span>기록</span></div>
+            <div class="nav-item"><span class="mark"></span><span>마이</span></div>
+          </nav>
+        </div>
+      </article>
+
+      <article class="option">
+        <div class="option-label">
+          <span class="tag">컴팩트</span>
+          <h2>저널 배너형</h2>
+          <p>첫 화면의 여백을 줄이고 아래 요약 카드가 더 빨리 보이게 하는 가벼운 버전입니다.</p>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="topbar">
+              <div>
+                <h3>알아가기</h3>
+                <p>오늘도 한 가지를 알아가요</p>
+              </div>
+              <button class="circle-button" aria-label="설정">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M4 7h16M7 12h10M10 17h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+            <div class="hero-strip">
+              <div>
+                <small>DAY 12 · 질문 하나</small>
+                <strong>짧게 남겨도 괜찮아요</strong>
+              </div>
+              <div class="avatar-stack" aria-hidden="true">
+                <span class="avatar"></span>
+                <span class="avatar" style="background:#f1edf5"></span>
+              </div>
+            </div>
+            <p class="section-label">오늘의 질문</p>
+            <section class="question-card compact-card" aria-label="오늘의 질문 컴팩트 카드">
+              <div class="compact-hero">
+                <div class="card-head">
+                  <span class="label">DAY 12</span>
+                  <span class="day-chip">오늘</span>
+                </div>
+                <h4>하루 중 가장 좋아하는 시간은 언제인가요?</h4>
+              </div>
+              <div class="mini-status">
+                <p>아직 답을 남기지 않았어요.<br>편한 만큼만 적어도 돼요.</p>
+                <button class="round-action" aria-label="답 남기기">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+            </section>
+            <div class="summary-grid">
+              <div class="summary-card soft">
+                <small>마음의 결</small>
+                <strong>78%</strong>
+              </div>
+              <div class="summary-card">
+                <small>주고받은 질문</small>
+                <strong>12</strong>
+              </div>
+              <div class="summary-card">
+                <small>닮은 답</small>
+                <strong>4</strong>
+              </div>
+              <div class="summary-card">
+                <small>남은 질문</small>
+                <strong>16</strong>
+              </div>
+            </div>
+          </div>
+          <nav class="bottom-nav" aria-label="하단 내비게이션">
+            <div class="nav-item active"><span class="mark"></span><span>홈</span></div>
+            <div class="nav-item"><span class="mark"></span><span>질문함</span></div>
+            <div class="nav-item"><span class="mark"></span><span>기록</span></div>
+            <div class="nav-item"><span class="mark"></span><span>마이</span></div>
+          </nav>
+        </div>
+      </article>
+    </section>
+
+    <section class="notes" aria-label="디자인 결정 요약">
+      <div class="note">
+        <strong>입력창 제거</strong>
+        <p>홈 카드 안의 작은 입력창을 없애면 버튼과 텍스트 baseline 문제가 사라지고 질문이 더 먼저 읽힙니다.</p>
+      </div>
+      <div class="note">
+        <strong>상태는 한 줄로</strong>
+        <p>답변 전, 답변 후, 상대 답 대기 상태를 chip이나 보조 박스로 정리하면 부담이 줄어듭니다.</p>
+      </div>
+      <div class="note">
+        <strong>추천 방향</strong>
+        <p>실제 구현은 질문 집중형을 기본으로 두고, 답변 후에는 답변 상태형의 내 답 preview를 붙이는 조합이 가장 좋습니다.</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

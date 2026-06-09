@@ -11,6 +11,8 @@ const answerFieldKey = Key('answer-field');
 const wishTitleFieldKey = Key('wish-title-field');
 const wishSubmitButtonKey = Key('wish-submit-button');
 const editAnswerButtonKey = Key('edit-answer-button');
+const homeQuestionCardKey = Key('home-question-card');
+const homeQuestionAnswerButtonKey = Key('home-question-answer-button');
 const answerRetryButtonKey = Key('answer-retry-button');
 const answerCommentFieldKey = Key('answer-comment-field');
 const answerCommentSubmitButtonKey = Key('answer-comment-submit-button');
@@ -1127,58 +1129,52 @@ class _QuestionCard extends StatelessWidget {
     final isSkipped = myAnswer?.skipped ?? false;
 
     return _PaperCard(
+      key: homeQuestionCardKey,
       radius: 22,
-      padding: const EdgeInsets.all(26),
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 21),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Align(
-            alignment: Alignment.topRight,
-            child: Text(
-              '${question.number}',
-              style: serif(
-                context,
-                size: 54,
-                weight: FontWeight.w800,
-                color: const Color(0xFFECEAE2),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'TODAY\'S QUESTION',
+                  style: sans(
+                    size: 10.5,
+                    color: AlagagiColors.sageDeep,
+                    letterSpacing: 2,
+                    weight: FontWeight.w700,
+                  ),
+                ),
               ),
-            ),
+              _DayChip(label: 'DAY ${question.day}'),
+            ],
           ),
-          Text(
-            'TODAY\'S QUESTION',
-            style: sans(
-              size: 11,
-              color: AlagagiColors.sageDeep,
-              letterSpacing: 2,
-            ),
-          ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 18),
           Text(
             question.text,
             style: serif(
               context,
               size: 22,
-              weight: FontWeight.w700,
+              weight: FontWeight.w800,
               height: 1.5,
             ),
           ),
-          const Divider(height: 44, color: AlagagiColors.line),
+          const SizedBox(height: 18),
           if (isSkipped)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '오늘은 내일 다시 보기로 남겨뒀어요.',
-                  style: sans(
-                    size: 14,
-                    color: AlagagiColors.muted,
-                    height: 1.6,
-                  ),
+                const _QuestionSupportBlock(
+                  title: '오늘은 잠시 넘겨뒀어요.',
+                  body: '다시 답하고 싶어지면 여기서 바로 이어갈 수 있어요.',
                 ),
-                const SizedBox(height: 10),
-                _InlineTextAction(
+                const SizedBox(height: 16),
+                _PrimaryButton(
                   label: '다시 답하기',
                   onPressed: controller.answerTodayAfterSkip,
+                  color: AlagagiColors.sageDeep,
                 ),
                 _AnswerSaveStatus(controller: controller),
               ],
@@ -1187,23 +1183,29 @@ class _QuestionCard extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '아직 오늘 답을 남기지 않았어요.',
-                  style: sans(
-                    size: 14,
-                    color: AlagagiColors.muted,
-                    height: 1.6,
-                  ),
+                _QuestionSupportBlock(
+                  title: '아직 내 답을 남기지 않았어요.',
+                  body:
+                      '답을 남기면 ${controller.state.partner.nickname}님의 답도 함께 열려요.',
                 ),
                 const SizedBox(height: 16),
-                _AnswerPrompt(controller: controller),
+                _PrimaryButton(
+                  buttonKey: homeQuestionAnswerButtonKey,
+                  label: '답 남기기',
+                  onPressed: () => controller.goTo(AlagagiRoute.answer),
+                  color: AlagagiColors.sageDeep,
+                ),
               ],
             )
           else ...[
-            _AnswerLine(
-              tag: '나',
-              tagColor: AlagagiColors.sageDeep,
+            _AnswerPreviewBlock(
+              label: '내 답',
               body: myAnswer.body,
+              action: _InlineTextAction(
+                key: editAnswerButtonKey,
+                label: '수정하기',
+                onPressed: controller.editTodayAnswer,
+              ),
               expanded: controller.isAnswerExpanded(
                 myAnswer.questionId,
                 myAnswer.profileId,
@@ -1213,24 +1215,19 @@ class _QuestionCard extends StatelessWidget {
                 myAnswer.profileId,
               ),
             ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: _InlineTextAction(
-                key: editAnswerButtonKey,
-                label: '수정하기',
-                onPressed: controller.editTodayAnswer,
-              ),
-            ),
             const SizedBox(height: 16),
             if (partnerAnswer == null)
-              const _LockedAnswer()
+              _QuestionSupportBlock(
+                title: '${controller.state.partner.nickname}님 답은 기다리는 중이에요.',
+                body: '상대 답이 준비되면 이 자리에서 이어서 볼 수 있어요.',
+              )
             else
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _AnswerLine(
-                    tag: controller.state.partner.nickname,
-                    tagColor: AlagagiColors.lavender,
+                  _AnswerPreviewBlock(
+                    label: '${controller.state.partner.nickname}님 답',
+                    accentColor: AlagagiColors.lavender,
                     body: partnerAnswer.body,
                     expanded: controller.isAnswerExpanded(
                       partnerAnswer.questionId,
@@ -1251,6 +1248,71 @@ class _QuestionCard extends StatelessWidget {
               ),
             _AnswerSaveStatus(controller: controller),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DayChip extends StatelessWidget {
+  const _DayChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 28),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F2EB),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+      child: Text(
+        label,
+        style: sans(
+          size: 11,
+          color: AlagagiColors.sageDeep,
+          weight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _QuestionSupportBlock extends StatelessWidget {
+  const _QuestionSupportBlock({required this.title, required this.body});
+
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(17),
+      ),
+      padding: const EdgeInsets.all(15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: serif(
+              context,
+              size: 13,
+              weight: FontWeight.w800,
+              color: AlagagiColors.sageDeep,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            body,
+            style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.55),
+          ),
         ],
       ),
     );
@@ -1368,47 +1430,76 @@ class _AnswerCommentBox extends StatelessWidget {
   }
 }
 
-class _AnswerPrompt extends StatelessWidget {
-  const _AnswerPrompt({required this.controller});
+class _AnswerPreviewBlock extends StatelessWidget {
+  const _AnswerPreviewBlock({
+    required this.label,
+    required this.body,
+    this.accentColor = AlagagiColors.sageDeep,
+    this.action,
+    this.expanded = false,
+    this.onToggle,
+  });
 
-  final AlagagiController controller;
+  final String label;
+  final String body;
+  final Color accentColor;
+  final Widget? action;
+  final bool expanded;
+  final VoidCallback? onToggle;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const _LockedAnswer(),
-        const SizedBox(height: 16),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: AlagagiColors.line),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
-          child: Row(
+    final isLong = body.length > _longAnswerPreviewLength;
+    final visibleBody = isLong && !expanded
+        ? '${body.substring(0, _longAnswerPreviewLength).trimRight()}...'
+        : body;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(17),
+      ),
+      padding: const EdgeInsets.all(15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Text(
-                  '지금의 마음을 한 줄로…',
-                  style: sans(size: 13, color: AlagagiColors.muted),
-                ),
-              ),
-              TextButton(
-                onPressed: () => controller.goTo(AlagagiRoute.answer),
-                style: TextButton.styleFrom(
-                  backgroundColor: AlagagiColors.sageDeep,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                  label,
+                  style: serif(
+                    context,
+                    size: 13,
+                    weight: FontWeight.w800,
+                    color: accentColor,
                   ),
                 ),
-                child: const Text('답 남기기'),
               ),
+              ?action,
             ],
           ),
-        ),
-      ],
+          const SizedBox(height: 8),
+          Text(
+            visibleBody,
+            style: sans(
+              size: 13.5,
+              color: const Color(0xFF4A4A46),
+              height: 1.62,
+            ),
+          ),
+          if (isLong && onToggle != null) ...[
+            const SizedBox(height: 6),
+            _InlineTextAction(
+              label: expanded ? '접기' : '더 보기',
+              onPressed: onToggle,
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -1546,41 +1637,6 @@ class _AnswerSaveStatus extends StatelessWidget {
             ),
         ],
       ),
-    );
-  }
-}
-
-class _LockedAnswer extends StatelessWidget {
-  const _LockedAnswer();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 48,
-          child: Text(
-            '상대',
-            style: serif(
-              context,
-              size: 13,
-              weight: FontWeight.w700,
-              color: AlagagiColors.lavender,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            '내 답을 남기면 상대 답이 함께 열려요.',
-            style: sans(
-              size: 14,
-              color: AlagagiColors.muted,
-              height: 1.65,
-            ).copyWith(fontStyle: FontStyle.italic),
-          ),
-        ),
-      ],
     );
   }
 }

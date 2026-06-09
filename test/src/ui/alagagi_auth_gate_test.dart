@@ -53,8 +53,9 @@ void main() {
 
       expect(find.text('알아가기'), findsOneWidget);
       expect(find.text('오늘의 질문'), findsOneWidget);
-      expect(find.textContaining('상대 답'), findsOneWidget);
-      expect(find.text('아직 오늘 답을 남기지 않았어요.'), findsOneWidget);
+      expect(find.byKey(homeQuestionCardKey), findsOneWidget);
+      expect(find.text('아직 내 답을 남기지 않았어요.'), findsOneWidget);
+      expect(find.textContaining('답을 남기면'), findsOneWidget);
       expect(find.textContaining('공기가 조금 조용해지는 시간'), findsNothing);
       expect(data.loadedUsers.single.uid, 'youngwooUid');
     });

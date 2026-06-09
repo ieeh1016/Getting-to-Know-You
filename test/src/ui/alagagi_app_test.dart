@@ -23,8 +23,35 @@ void main() {
 
     expect(find.text('알아가기'), findsOneWidget);
     expect(find.text('오늘의 질문'), findsOneWidget);
+    expect(find.byKey(homeQuestionCardKey), findsOneWidget);
+    expect(find.text("TODAY'S QUESTION"), findsOneWidget);
+    expect(find.text('DAY 12'), findsWidgets);
+    expect(find.text('아직 내 답을 남기지 않았어요.'), findsOneWidget);
+    expect(find.textContaining('답을 남기면'), findsOneWidget);
+    expect(find.byKey(homeQuestionAnswerButtonKey), findsOneWidget);
+    expect(find.text('지금의 마음을 한 줄로...'), findsNothing);
     expect(find.text('9:41'), findsNothing);
     expect(find.textContaining('🔋'), findsNothing);
+  });
+
+  testWidgets('home focused question card fits mobile unanswered state', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(const AlagagiApp());
+    await enterSpace(tester);
+
+    expect(tester.takeException(), isNull);
+    expect(tester.getSize(find.byKey(alagagiShellKey)), const Size(390, 844));
+    expect(find.byKey(homeQuestionCardKey), findsOneWidget);
+    expect(find.byKey(homeQuestionAnswerButtonKey), findsOneWidget);
+    expect(find.text('지금의 마음을 한 줄로...'), findsNothing);
   });
 
   testWidgets('submits today answer and reveals partner answer', (
