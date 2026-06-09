@@ -920,6 +920,97 @@ void main() {
     expect(find.textContaining('사랑'), findsNothing);
   });
 
+  testWidgets('music tab edits an existing own song note', (tester) async {
+    final controller = AlagagiController.forSession(
+      AlagagiSession(
+        spaceId: 'main',
+        me: const AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: const AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          musicNotes: [
+            MusicNote(
+              id: 'music_mine',
+              title: '밤 산책',
+              artist: '영우의 추천',
+              link: 'https://music.example/night',
+              note: '퇴근길에 들으면 차분해져요.',
+              mood: '밤',
+              createdByProfileId: 'youngwooUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-09T09:00:00.000Z'),
+            ),
+            MusicNote(
+              id: 'music_partner',
+              title: '오후의 문장',
+              artist: '민영의 추천',
+              link: 'https://music.example/afternoon',
+              note: '카페에서 듣기 좋아요.',
+              mood: '카페',
+              createdByProfileId: 'minyoungUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-09T10:00:00.000Z'),
+            ),
+          ],
+        ),
+      ),
+    )..goTo(AlagagiRoute.music);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(musicEditButtonKey('music_mine')), findsOneWidget);
+    expect(find.byKey(musicEditButtonKey('music_partner')), findsNothing);
+
+    await tester.scrollUntilVisible(
+      find.byKey(musicEditButtonKey('music_mine')),
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(musicEditButtonKey('music_mine')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('음악 노트 다듬기'), findsOneWidget);
+    final titleEditable = tester.widget<EditableText>(
+      find.descendant(
+        of: find.byKey(musicTitleFieldKey),
+        matching: find.byType(EditableText),
+      ),
+    );
+    expect(titleEditable.controller.text, '밤 산책');
+
+    await tester.enterText(find.byKey(musicTitleFieldKey), '다시 듣는 밤 산책');
+    await tester.enterText(find.byKey(musicNoteFieldKey), '조금 더 천천히 듣고 싶어서요.');
+    await tester.scrollUntilVisible(
+      find.byKey(musicSubmitButtonKey),
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(musicSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('다시 듣는 밤 산책'), findsOneWidget);
+    expect(find.text('밤 산책'), findsNothing);
+    expect(find.text('조금 더 천천히 듣고 싶어서요.'), findsOneWidget);
+    expect(
+      controller.musicNotes.where((note) => note.id == 'music_mine'),
+      hasLength(1),
+    );
+  });
+
   testWidgets('home summary marks new partner music until music tab is seen', (
     tester,
   ) async {

@@ -1122,6 +1122,55 @@ void main() {
       },
     );
 
+    test('music note edit overwrites the existing own note document', () async {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        firebaseSessionWithData(
+          AlagagiSpaceData(
+            musicNotes: [
+              MusicNote(
+                id: 'music_mine',
+                title: '밤 산책',
+                artist: '영우의 추천',
+                link: 'https://music.example/night',
+                note: '퇴근길에 들으면 차분해져요.',
+                mood: '밤',
+                createdByProfileId: 'youngwooUid',
+                createdLabel: '오늘',
+                updatedAt: DateTime.parse('2026-06-09T09:00:00.000Z'),
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+      );
+
+      controller.startMusicEdit('music_mine');
+      expect(controller.state.musicDraftVisible, isTrue);
+      expect(controller.state.editingMusicNoteId, 'music_mine');
+      expect(controller.state.musicDraftTitle, '밤 산책');
+
+      controller.updateMusicDraft(
+        title: '다시 듣는 밤 산책',
+        artist: '영우의 추천',
+        link: 'https://music.example/night-v2',
+        note: '조금 더 천천히 듣고 싶어서요.',
+      );
+      controller.setMusicDraftMood('산책');
+      controller.submitMusicDraft();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.musicNotes, hasLength(1));
+      expect(controller.musicNotes.single.id, 'music_mine');
+      expect(controller.musicNotes.single.title, '다시 듣는 밤 산책');
+      expect(controller.musicNotes.single.mood, '산책');
+      expect(controller.state.editingMusicNoteId, isNull);
+      expect(repository.savedMusicNotes, hasLength(1));
+      expect(repository.savedMusicNotes.single.note.id, 'music_mine');
+      expect(repository.savedMusicNotes.single.note.title, '다시 듣는 밤 산책');
+      expect(repository.savedMusicNotes.single.note.updatedAt, isNotNull);
+    });
+
     test(
       'home progress summary uses local seen time for new partner music notes',
       () {

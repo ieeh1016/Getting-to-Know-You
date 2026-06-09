@@ -716,17 +716,26 @@ class MusicNote {
   final String createdLabel;
   final DateTime? updatedAt;
 
-  MusicNote copyWith({String? createdByProfileId}) {
+  MusicNote copyWith({
+    String? title,
+    String? artist,
+    String? link,
+    String? note,
+    String? mood,
+    String? createdByProfileId,
+    String? createdLabel,
+    DateTime? updatedAt,
+  }) {
     return MusicNote(
       id: id,
-      title: title,
-      artist: artist,
-      link: link,
-      note: note,
-      mood: mood,
+      title: title ?? this.title,
+      artist: artist ?? this.artist,
+      link: link ?? this.link,
+      note: note ?? this.note,
+      mood: mood ?? this.mood,
       createdByProfileId: createdByProfileId ?? this.createdByProfileId,
-      createdLabel: createdLabel,
-      updatedAt: updatedAt,
+      createdLabel: createdLabel ?? this.createdLabel,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }
@@ -810,6 +819,7 @@ class AlagagiState {
     this.musicDraftLink = '',
     this.musicDraftNote = '',
     this.musicDraftMood = '차분한',
+    this.editingMusicNoteId,
     this.draftAnswer = '',
     this.inviteError,
     this.answerError,
@@ -845,6 +855,7 @@ class AlagagiState {
   final String musicDraftLink;
   final String musicDraftNote;
   final String musicDraftMood;
+  final String? editingMusicNoteId;
   final String draftAnswer;
   final String? inviteError;
   final String? answerError;
@@ -880,6 +891,8 @@ class AlagagiState {
     String? musicDraftLink,
     String? musicDraftNote,
     String? musicDraftMood,
+    String? editingMusicNoteId,
+    bool clearEditingMusicNoteId = false,
     String? draftAnswer,
     String? inviteError,
     bool clearInviteError = false,
@@ -923,6 +936,9 @@ class AlagagiState {
       musicDraftLink: musicDraftLink ?? this.musicDraftLink,
       musicDraftNote: musicDraftNote ?? this.musicDraftNote,
       musicDraftMood: musicDraftMood ?? this.musicDraftMood,
+      editingMusicNoteId: clearEditingMusicNoteId
+          ? null
+          : editingMusicNoteId ?? this.editingMusicNoteId,
       draftAnswer: draftAnswer ?? this.draftAnswer,
       inviteError: clearInviteError ? null : inviteError ?? this.inviteError,
       answerError: clearAnswerError ? null : answerError ?? this.answerError,
@@ -2572,6 +2588,30 @@ class AlagagiController extends ChangeNotifier {
       musicDraftLink: '',
       musicDraftNote: '',
       musicDraftMood: musicMoodOptions.first,
+      clearEditingMusicNoteId: true,
+      clearMusicDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void startMusicEdit(String noteId) {
+    final note = _musicNotes.cast<MusicNote?>().firstWhere(
+      (candidate) => candidate?.id == noteId,
+      orElse: () => null,
+    );
+    if (note == null || note.createdByProfileId != _state.me.id) {
+      return;
+    }
+    _markMusicNotesSeen();
+    _state = _state.copyWith(
+      route: AlagagiRoute.music,
+      musicDraftVisible: true,
+      musicDraftTitle: note.title,
+      musicDraftArtist: note.artist,
+      musicDraftLink: note.link,
+      musicDraftNote: note.note,
+      musicDraftMood: note.mood,
+      editingMusicNoteId: note.id,
       clearMusicDraftError: true,
     );
     notifyListeners();
@@ -2585,6 +2625,7 @@ class AlagagiController extends ChangeNotifier {
       musicDraftLink: '',
       musicDraftNote: '',
       musicDraftMood: musicMoodOptions.first,
+      clearEditingMusicNoteId: true,
       clearMusicDraftError: true,
     );
     notifyListeners();
@@ -2657,6 +2698,42 @@ class AlagagiController extends ChangeNotifier {
     }
 
     final now = DateTime.now();
+    final editingId = _state.editingMusicNoteId;
+    if (editingId != null) {
+      final editIndex = _musicNotes.indexWhere(
+        (note) =>
+            note.id == editingId && note.createdByProfileId == _state.me.id,
+      );
+      if (editIndex == -1) {
+        _state = _state.copyWith(musicDraftError: '수정할 음악 노트를 찾지 못했어요.');
+        notifyListeners();
+        return;
+      }
+      final updatedNote = _musicNotes[editIndex].copyWith(
+        title: title,
+        artist: artist,
+        link: link,
+        note: noteBody,
+        mood: mood,
+        updatedAt: now,
+      );
+      _musicNotes[editIndex] = updatedNote;
+      _sortMusicNotesByUpdatedAt();
+      _persistMusicNote(updatedNote);
+      _state = _state.copyWith(
+        musicDraftVisible: false,
+        musicDraftTitle: '',
+        musicDraftArtist: '',
+        musicDraftLink: '',
+        musicDraftNote: '',
+        musicDraftMood: musicMoodOptions.first,
+        clearEditingMusicNoteId: true,
+        clearMusicDraftError: true,
+      );
+      notifyListeners();
+      return;
+    }
+
     final note = MusicNote(
       id: 'music_${_state.me.id}_${now.microsecondsSinceEpoch}',
       title: title,
@@ -2678,6 +2755,7 @@ class AlagagiController extends ChangeNotifier {
       musicDraftLink: '',
       musicDraftNote: '',
       musicDraftMood: musicMoodOptions.first,
+      clearEditingMusicNoteId: true,
       clearMusicDraftError: true,
     );
     notifyListeners();

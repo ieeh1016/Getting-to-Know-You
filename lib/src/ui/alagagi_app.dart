@@ -20,6 +20,7 @@ const musicLinkFieldKey = Key('music-link-field');
 const musicNoteFieldKey = Key('music-note-field');
 const musicSubmitButtonKey = Key('music-submit-button');
 const musicAddButtonKey = Key('music-add-button');
+Key musicEditButtonKey(String noteId) => Key('music-edit-button-$noteId');
 const homeProgressSummaryKey = Key('home-progress-summary');
 const homeProgressSummaryCtaKey = Key('home-progress-summary-cta');
 const editAnswerButtonKey = Key('edit-answer-button');
@@ -6012,7 +6013,12 @@ class MusicScreen extends StatelessWidget {
         const _MusicHeroCard(),
         if (controller.state.musicDraftVisible) ...[
           const SizedBox(height: 16),
-          _MusicDraftCard(controller: controller),
+          _MusicDraftCard(
+            key: ValueKey(
+              controller.state.editingMusicNoteId ?? 'new-music-note',
+            ),
+            controller: controller,
+          ),
         ],
         const SizedBox(height: 18),
         Row(
@@ -6137,12 +6143,13 @@ class _OverlapCover extends StatelessWidget {
 }
 
 class _MusicDraftCard extends StatelessWidget {
-  const _MusicDraftCard({required this.controller});
+  const _MusicDraftCard({super.key, required this.controller});
 
   final AlagagiController controller;
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = controller.state.editingMusicNoteId != null;
     return _PaperCard(
       radius: 22,
       padding: const EdgeInsets.all(18),
@@ -6151,7 +6158,7 @@ class _MusicDraftCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            '요즘의 한 곡을\n가볍게 건네요.',
+            isEditing ? '음악 노트 다듬기' : '요즘의 한 곡을\n가볍게 건네요.',
             style: serif(
               context,
               size: 20,
@@ -6161,7 +6168,9 @@ class _MusicDraftCard extends StatelessWidget {
           ),
           const SizedBox(height: 7),
           Text(
-            '정성스러운 소개보다, 떠오른 이유 한 줄이면 충분해요.',
+            isEditing
+                ? '처음 남긴 분위기는 유지하면서 필요한 부분만 고쳐요.'
+                : '정성스러운 소개보다, 떠오른 이유 한 줄이면 충분해요.',
             style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
           ),
           const SizedBox(height: 16),
@@ -6169,6 +6178,7 @@ class _MusicDraftCard extends StatelessWidget {
             fieldKey: musicTitleFieldKey,
             label: 'SONG',
             hint: '예: 밤 산책',
+            initialValue: controller.state.musicDraftTitle,
             maxLength: 60,
             onChanged: (value) => controller.updateMusicDraft(title: value),
           ),
@@ -6177,6 +6187,7 @@ class _MusicDraftCard extends StatelessWidget {
             fieldKey: musicArtistFieldKey,
             label: 'ARTIST',
             hint: '아티스트 이름',
+            initialValue: controller.state.musicDraftArtist,
             maxLength: 60,
             onChanged: (value) => controller.updateMusicDraft(artist: value),
           ),
@@ -6185,6 +6196,7 @@ class _MusicDraftCard extends StatelessWidget {
             fieldKey: musicLinkFieldKey,
             label: 'LINK',
             hint: 'https://...',
+            initialValue: controller.state.musicDraftLink,
             maxLength: 180,
             onChanged: (value) => controller.updateMusicDraft(link: value),
           ),
@@ -6193,6 +6205,7 @@ class _MusicDraftCard extends StatelessWidget {
             fieldKey: musicNoteFieldKey,
             label: 'SHORT NOTE',
             hint: '왜 건네고 싶은 곡인지 한 줄로',
+            initialValue: controller.state.musicDraftNote,
             maxLength: 80,
             minLines: 2,
             maxLines: 3,
@@ -6231,7 +6244,7 @@ class _MusicDraftCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _PrimaryButton(
-                  label: '노래 남기기',
+                  label: isEditing ? '수정 저장' : '노래 남기기',
                   onPressed: controller.submitMusicDraft,
                   color: AlagagiColors.sageDeep,
                   buttonKey: musicSubmitButtonKey,
@@ -6250,6 +6263,7 @@ class _MusicTextField extends StatelessWidget {
     required this.fieldKey,
     required this.label,
     required this.hint,
+    required this.initialValue,
     required this.maxLength,
     required this.onChanged,
     this.minLines = 1,
@@ -6259,6 +6273,7 @@ class _MusicTextField extends StatelessWidget {
   final Key fieldKey;
   final String label;
   final String hint;
+  final String initialValue;
   final int maxLength;
   final ValueChanged<String> onChanged;
   final int minLines;
@@ -6273,8 +6288,9 @@ class _MusicTextField extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
       ),
       padding: const EdgeInsets.fromLTRB(14, 7, 14, 7),
-      child: TextField(
+      child: TextFormField(
         key: fieldKey,
+        initialValue: initialValue,
         maxLength: maxLength,
         minLines: minLines,
         maxLines: maxLines,
@@ -6333,6 +6349,24 @@ class _MusicNoteCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     _SmallBadge(label: note.mood),
+                    if (isMine) ...[
+                      const SizedBox(width: 4),
+                      Tooltip(
+                        message: '음악 노트 수정',
+                        child: IconButton(
+                          key: musicEditButtonKey(note.id),
+                          onPressed: () => controller.startMusicEdit(note.id),
+                          icon: const Icon(Icons.edit_rounded, size: 17),
+                          color: AlagagiColors.sageDeep,
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints.tightFor(
+                            width: 32,
+                            height: 32,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 4),

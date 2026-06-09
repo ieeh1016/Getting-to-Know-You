@@ -461,10 +461,16 @@ This batch follows `docs/design/music_tab_navigation_concept.html` and `docs/des
   - Add form includes title, artist, link, note, and mood chips.
   - Submit CTA label is `노래 남기기`.
   - Saved notes show who left the song and the short note.
+  - A user can edit only music notes they created.
+  - Own note edit opens the same draft panel with title, artist, link, note, and mood prefilled.
+  - Edit mode uses clear copy such as `음악 노트 다듬기` and submit CTA `수정 저장`.
+  - Partner notes are read-only and do not show an edit action.
   - Copy avoids couple/heart/love language and uses `음악 노트`, `한 곡`, `들어볼 곡` tone.
 - Firestore:
   - Store notes under `spaces/{spaceId}/musicNotes/{noteId}`.
   - Write one document only when a user submits a note.
+  - Editing a note updates the existing `musicNotes/{noteId}` document instead of creating a new note.
+  - Edit writes refresh `updatedAt` so local new-note summary can notice a partner's edited note.
   - Load all notes with the rest of the space session data.
   - This scope stays within Firebase free plan assumptions because it does not write on draft changes or playback interactions.
 
@@ -499,7 +505,7 @@ This batch covers the next two practical improvements: a quiet progress summary 
   - 실패/오프라인 상태에서는 상대 답 공개, 댓글 입력, summary count 증가처럼 동기화가 완료된 것처럼 보이는 UI를 열지 않는다.
   - Retry는 사용자가 직접 누를 때만 Firestore write를 다시 호출한다.
   - Draft text는 local state에 유지해 저장 실패 후에도 사용자가 다시 작성하지 않아도 된다.
-  - Save stability 적용 대상은 답변 저장/수정, 답변 댓글 저장/수정, 위시 추가/관심/완료, 소개 카드 슬롯 저장, 개인화 저장, 음악 노트 저장이다.
+  - Save stability 적용 대상은 답변 저장/수정, 답변 댓글 저장/수정, 위시 추가/관심/완료, 소개 카드 슬롯 저장, 개인화 저장, 음악 노트 저장/수정이다.
 - Firestore/free-plan boundary:
   - 새 상태 UI를 위해 별도 `status`, `events`, `notifications`, `analytics` collection을 만들지 않는다.
   - 음악 노트 seen state는 device-local localStorage에만 저장하며 Firestore write를 만들지 않는다.

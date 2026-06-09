@@ -58,6 +58,8 @@
 - 홈 진행 요약은 내가 직접 남긴 music note를 내 기기의 `새 음악 노트` 판정에 포함하지 않는다.
 - 홈 진행 요약은 music note에 비교 가능한 `updatedAt`이 없으면 `새`로 단정하지 않고 count/latest copy로 fallback한다.
 - 홈 진행 요약 primary action은 `오늘 답하기` > `질문함 보기` > `음악 보기` 우선순위로 하나만 선택한다.
+- 내 music note 수정은 기존 값을 draft panel에 채우고 같은 note id/document를 덮어쓴다.
+- 상대 music note는 수정 action을 보여주지 않고 저장 호출도 허용하지 않는다.
 - 저장 operation state는 idle/saving/saved/failed/offline을 구분하고 failed/offline 상태에서 draft를 유지한다.
 - failed/offline retry는 사용자가 누를 때만 동일 repository write를 다시 호출한다.
 - 새 Firestore-backed 기능은 명시적 user action당 1 write 이하를 유지한다.
@@ -124,6 +126,8 @@
 - 저장 실패 상태에서는 `저장 다시 시도` CTA가 보이고 상대 답/댓글/summary 완료 상태가 열리지 않는다.
 - offline 상태에서는 네트워크 안내와 수동 retry CTA가 보이며 자동 반복 저장을 만들지 않는다.
 - 음악 탭의 `한 곡 남기기` CTA는 하단 내비 바로 위에 고정되지 않고 `들어볼 곡` 섹션 제목과 같은 콘텐츠 행에 배치된다.
+- 음악 탭에서 내 음악 노트의 edit action을 누르면 기존 값이 입력 패널에 채워지고 `수정 저장`으로 기존 카드가 갱신된다.
+- 음악 탭에서 상대 음악 노트에는 edit action이 보이지 않는다.
 
 ## Manual Checks
 
@@ -155,7 +159,7 @@
 - 캘린더 월 이동, 날짜 선택, 오늘 shortcut은 Firestore write를 만들지 않는다.
 - 월간 캘린더 grid 계산은 별도 calendar collection을 읽거나 쓰지 않는다.
 - 늦게 답하기 submit은 기존 answer document 1 write 이하로 저장한다.
-- 답변 submit/edit, answer comment save/edit, personalization save, balance select, profile slot fill/edit, wish add/interest/done은 각각 1 document write 이하.
+- 답변 submit/edit, answer comment save/edit, personalization save, balance select, profile slot fill/edit, wish add/interest/done, music note add/edit은 각각 1 document write 이하.
 - 질문 캘린더는 별도 calendar collection 없이 progress 문서와 bounded answer reads로 렌더링한다.
 - Summary/current 갱신이 필요한 action만 2 writes까지 허용한다.
 - Home은 전체 answer/wish/profile slot subcollection hydration 없이 summary/progress/today docs로 렌더링 가능해야 한다.
