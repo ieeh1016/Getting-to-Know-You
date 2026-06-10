@@ -61,6 +61,28 @@ void main() {
     expect(find.text('지금의 마음을 한 줄로...'), findsNothing);
   });
 
+  testWidgets(
+    'bottom navigation reserves space instead of covering scroll content',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(const AlagagiApp());
+      await enterSpace(tester);
+
+      final scrollableBottom = tester
+          .getBottomLeft(find.byType(Scrollable).first)
+          .dy;
+      final navTop = tester.getTopLeft(find.byKey(bottomNavigationKey)).dy;
+
+      expect(scrollableBottom, lessThanOrEqualTo(navTop));
+    },
+  );
+
   testWidgets('submits today answer and reveals partner answer', (
     tester,
   ) async {
@@ -572,6 +594,130 @@ void main() {
     );
   });
 
+  testWidgets('archive read-only comment detail does not expose edit action', (
+    tester,
+  ) async {
+    final controller =
+        AlagagiController.forSession(
+            const AlagagiSession(
+              spaceId: 'main',
+              me: AppProfile(
+                id: 'youngwooUid',
+                nickname: '영우',
+                avatar: '🌿',
+                isMe: true,
+              ),
+              partner: AppProfile(
+                id: 'minyoungUid',
+                nickname: '민영',
+                avatar: '🪻',
+                isMe: false,
+              ),
+              data: AlagagiSpaceData(
+                answers: [
+                  Answer(
+                    questionId: 'q019',
+                    profileId: 'youngwooUid',
+                    body: '작은 약속을 기억해줄 때요.',
+                    createdLabel: '6월 7일',
+                  ),
+                  Answer(
+                    questionId: 'q019',
+                    profileId: 'minyoungUid',
+                    body: '말투가 부드러울 때 오래 기억나요.',
+                    createdLabel: '6월 7일',
+                  ),
+                ],
+                answerComments: [
+                  AnswerComment(
+                    questionId: 'q019',
+                    answerOwnerProfileId: 'minyoungUid',
+                    commenterProfileId: 'youngwooUid',
+                    body: '읽기 전용 댓글은 보기만 할 수 있어요.',
+                    createdLabel: '6월 7일',
+                  ),
+                ],
+                dailyProgress: DailyQuestionProgress(
+                  startedDateKey: '2026-05-20',
+                  currentQuestionId: 'q001',
+                  openedDateKey: '2026-06-09',
+                ),
+              ),
+            ),
+            todayDateKey: '2026-06-09',
+          )
+          ..goTo(AlagagiRoute.archive)
+          ..selectArchiveDate('2026-06-07');
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    final commentPreview = find.text('읽기 전용 댓글은 보기만 할 수 있어요.').first;
+    await tester.ensureVisible(commentPreview);
+    await tester.pumpAndSettle();
+    await tester.tap(commentPreview);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(readableDetailSheetKey), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(readableDetailSheetKey),
+        matching: find.text('수정하기'),
+      ),
+      findsNothing,
+    );
+  });
+
+  testWidgets('archive skipped answer is not shown as an empty saved answer', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          answers: [
+            Answer(
+              questionId: 'q001',
+              profileId: 'youngwooUid',
+              body: '',
+              createdLabel: '6월 7일',
+              skipped: true,
+            ),
+          ],
+          dailyProgress: DailyQuestionProgress(
+            startedDateKey: '2026-06-07',
+            currentQuestionId: 'q003',
+            openedDateKey: '2026-06-09',
+          ),
+        ),
+      ),
+      todayDateKey: '2026-06-09',
+    )..goTo(AlagagiRoute.archive);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('패스한 질문'), findsWidgets);
+    expect(find.text('내 답은 남겼어요.'), findsNothing);
+    expect(find.text('내 답 보기'), findsNothing);
+  });
+
   testWidgets('archive monthly calendar fits a 6-week mobile grid', (
     tester,
   ) async {
@@ -1057,6 +1203,52 @@ void main() {
     expect(find.textContaining('🔒'), findsNothing);
   });
 
+  testWidgets('home and records avoid score-like percent copy', (tester) async {
+    await tester.pumpWidget(const AlagagiApp());
+    await enterSpace(tester);
+
+    expect(find.textContaining('%'), findsNothing);
+    expect(find.textContaining('점수'), findsNothing);
+    expect(find.textContaining('지수'), findsNothing);
+
+    await tester.tap(find.text('질문'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('기록'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('%'), findsNothing);
+    expect(find.textContaining('점수'), findsNothing);
+    expect(find.textContaining('지수'), findsNothing);
+    expect(find.text('함께 답한 질문'), findsWidgets);
+  });
+
+  testWidgets('balance next action waits until an option is selected', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const AlagagiApp());
+    await enterSpace(tester);
+
+    await tester.drag(find.byType(Scrollable), const Offset(0, -600));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('밸런스 게임'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('밸런스 게임'));
+    await tester.pumpAndSettle();
+
+    final beforeSelection = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, '먼저 하나를 골라주세요'),
+    );
+    expect(beforeSelection.onPressed, isNull);
+
+    await tester.tap(find.text('조용한 바다'));
+    await tester.pumpAndSettle();
+
+    final afterSelection = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, '다음 질문'),
+    );
+    expect(afterSelection.onPressed, isNotNull);
+  });
+
   testWidgets('sub screen header follows soft paper option', (tester) async {
     await tester.pumpWidget(const AlagagiApp());
     await enterSpace(tester);
@@ -1372,4 +1564,116 @@ void main() {
     expect(find.text('새 음악 노트가 있어요'), findsNothing);
     expect(find.text('최근 음악 노트 1곡'), findsOneWidget);
   });
+
+  testWidgets(
+    'comment save failure shows a retry action instead of disappearing',
+    (tester) async {
+      final repository = _FailingCommentRepository();
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            answers: [
+              Answer(
+                questionId: 'q001',
+                profileId: 'youngwooUid',
+                body: '노을 질 때가 좋아요.',
+                createdLabel: '오늘',
+              ),
+              Answer(
+                questionId: 'q001',
+                profileId: 'minyoungUid',
+                body: '저는 아침 공기가 좋아요.',
+                createdLabel: '오늘',
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(home: AlagagiRoot(controller: controller)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.byKey(answerCommentFieldKey));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(answerCommentFieldKey), '이 답 좋다.');
+      await tester.tap(find.byKey(answerCommentSubmitButtonKey));
+      await tester.pumpAndSettle();
+
+      expect(find.text('댓글 저장 다시 시도'), findsOneWidget);
+
+      repository.failCommentSaves = false;
+      await tester.tap(find.text('댓글 저장 다시 시도'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('댓글 저장 다시 시도'), findsNothing);
+      expect(repository.savedAnswerComments.single.comment.body, '이 답 좋다.');
+    },
+  );
+}
+
+class _FailingCommentRepository implements AlagagiDataRepository {
+  bool failCommentSaves = true;
+  final List<({String spaceId, AnswerComment comment})> savedAnswerComments =
+      [];
+
+  @override
+  Future<AlagagiSession?> loadSession(AlagagiAuthUser user) async => null;
+
+  @override
+  Future<void> saveAnswer(String spaceId, Answer answer) async {}
+
+  @override
+  Future<void> saveAnswerComment(String spaceId, AnswerComment comment) async {
+    if (failCommentSaves) {
+      throw StateError('comment save failed');
+    }
+    savedAnswerComments.add((spaceId: spaceId, comment: comment));
+  }
+
+  @override
+  Future<void> saveBalanceSelection(
+    String spaceId,
+    BalanceSelection selection,
+  ) async {}
+
+  @override
+  Future<void> saveDailyQuestionProgress(
+    String spaceId,
+    DailyQuestionProgress progress,
+  ) async {}
+
+  @override
+  Future<void> saveMusicNote(String spaceId, MusicNote note) async {}
+
+  @override
+  Future<void> saveProfileSlot(
+    String spaceId,
+    String profileId,
+    ProfileSlot slot,
+  ) async {}
+
+  @override
+  Future<void> saveSpacePersonalization(
+    String spaceId,
+    SpacePersonalization personalization,
+  ) async {}
+
+  @override
+  Future<void> saveWish(String spaceId, WishItem wish) async {}
 }

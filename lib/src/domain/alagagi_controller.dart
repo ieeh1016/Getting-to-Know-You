@@ -837,6 +837,10 @@ class AlagagiState {
     this.commentError,
     this.answerSaveStatus = SaveStatus.idle,
     this.answerSaveFeedback,
+    this.answerSaveQuestionId,
+    this.commentSaveStatus = SaveStatus.idle,
+    this.commentSaveFeedback,
+    this.commentSaveTargetKey,
     this.commentDraftsByAnswerKey = const {},
     this.personalization = const SpacePersonalization(),
     this.personalizationDraft = const SpacePersonalization(),
@@ -873,6 +877,10 @@ class AlagagiState {
   final String? commentError;
   final SaveStatus answerSaveStatus;
   final String? answerSaveFeedback;
+  final String? answerSaveQuestionId;
+  final SaveStatus commentSaveStatus;
+  final String? commentSaveFeedback;
+  final String? commentSaveTargetKey;
   final Map<String, String> commentDraftsByAnswerKey;
   final SpacePersonalization personalization;
   final SpacePersonalization personalizationDraft;
@@ -914,6 +922,13 @@ class AlagagiState {
     SaveStatus? answerSaveStatus,
     String? answerSaveFeedback,
     bool clearAnswerSaveFeedback = false,
+    String? answerSaveQuestionId,
+    bool clearAnswerSaveQuestionId = false,
+    SaveStatus? commentSaveStatus,
+    String? commentSaveFeedback,
+    bool clearCommentSaveFeedback = false,
+    String? commentSaveTargetKey,
+    bool clearCommentSaveTargetKey = false,
     Map<String, String>? commentDraftsByAnswerKey,
     SpacePersonalization? personalization,
     SpacePersonalization? personalizationDraft,
@@ -960,6 +975,16 @@ class AlagagiState {
       answerSaveFeedback: clearAnswerSaveFeedback
           ? null
           : answerSaveFeedback ?? this.answerSaveFeedback,
+      answerSaveQuestionId: clearAnswerSaveQuestionId
+          ? null
+          : answerSaveQuestionId ?? this.answerSaveQuestionId,
+      commentSaveStatus: commentSaveStatus ?? this.commentSaveStatus,
+      commentSaveFeedback: clearCommentSaveFeedback
+          ? null
+          : commentSaveFeedback ?? this.commentSaveFeedback,
+      commentSaveTargetKey: clearCommentSaveTargetKey
+          ? null
+          : commentSaveTargetKey ?? this.commentSaveTargetKey,
       commentDraftsByAnswerKey:
           commentDraftsByAnswerKey ?? this.commentDraftsByAnswerKey,
       personalization: personalization ?? this.personalization,
@@ -1073,6 +1098,7 @@ class AlagagiController extends ChangeNotifier {
   final List<WishItem> _wishes = [];
   final List<MusicNote> _musicNotes = [];
   Answer? _lastFailedAnswer;
+  AnswerComment? _lastFailedAnswerComment;
 
   AlagagiState get state => _state;
 
@@ -1489,6 +1515,7 @@ class AlagagiController extends ChangeNotifier {
       _state = _state.copyWith(
         answerSaveStatus: SaveStatus.saved,
         answerSaveFeedback: '저장됐어요.',
+        answerSaveQuestionId: answer.questionId,
         clearAnswerError: true,
       );
       notifyListeners();
@@ -1503,6 +1530,7 @@ class AlagagiController extends ChangeNotifier {
             _state = _state.copyWith(
               answerSaveStatus: SaveStatus.saved,
               answerSaveFeedback: '저장됐어요.',
+              answerSaveQuestionId: answer.questionId,
               clearAnswerError: true,
             );
             notifyListeners();
@@ -1513,6 +1541,7 @@ class AlagagiController extends ChangeNotifier {
             _state = _state.copyWith(
               answerError: '저장하지 못했어요. 다시 시도해 주세요.',
               answerSaveStatus: SaveStatus.failed,
+              answerSaveQuestionId: answer.questionId,
               clearAnswerSaveFeedback: true,
             );
             notifyListeners();
@@ -1566,10 +1595,48 @@ class AlagagiController extends ChangeNotifier {
     final repository = _repository;
     final spaceId = _spaceId;
     if (repository == null || spaceId == null) {
+      _lastFailedAnswerComment = null;
+      _state = _state.copyWith(
+        commentSaveStatus: SaveStatus.saved,
+        commentSaveFeedback: '댓글을 저장했어요.',
+        commentSaveTargetKey: _answerCommentDraftKey(
+          comment.questionId,
+          comment.answerOwnerProfileId,
+        ),
+        clearCommentError: true,
+      );
+      notifyListeners();
       return;
     }
     unawaited(
-      repository.saveAnswerComment(spaceId, comment).catchError((_) {}),
+      repository
+          .saveAnswerComment(spaceId, comment)
+          .then<void>((_) {
+            _lastFailedAnswerComment = null;
+            _state = _state.copyWith(
+              commentSaveStatus: SaveStatus.saved,
+              commentSaveFeedback: '댓글을 저장했어요.',
+              commentSaveTargetKey: _answerCommentDraftKey(
+                comment.questionId,
+                comment.answerOwnerProfileId,
+              ),
+              clearCommentError: true,
+            );
+            notifyListeners();
+          })
+          .catchError((Object _) {
+            _lastFailedAnswerComment = comment;
+            _state = _state.copyWith(
+              commentError: '댓글을 저장하지 못했어요. 다시 시도해 주세요.',
+              commentSaveStatus: SaveStatus.failed,
+              commentSaveTargetKey: _answerCommentDraftKey(
+                comment.questionId,
+                comment.answerOwnerProfileId,
+              ),
+              clearCommentSaveFeedback: true,
+            );
+            notifyListeners();
+          }),
     );
   }
 
@@ -1746,11 +1813,14 @@ class AlagagiController extends ChangeNotifier {
     final myAnswer = question == null
         ? null
         : _myAnswersByQuestionId[question.id];
+    final hasPersistedMyAnswer = question != null
+        ? _isMyAnswerPersisted(question.id)
+        : false;
     final canLateAnswer =
         question != null &&
         date.isBefore(todayDate) &&
         !isFuture &&
-        myAnswer == null;
+        (myAnswer == null || (!myAnswer.skipped && !hasPersistedMyAnswer));
     return QuestionCalendarDay(
       dateKey: dateKey,
       question: question,
@@ -2052,7 +2122,10 @@ class AlagagiController extends ChangeNotifier {
       ..[draftKey] = value;
     _state = _state.copyWith(
       commentDraftsByAnswerKey: Map<String, String>.unmodifiable(drafts),
+      commentSaveStatus: SaveStatus.idle,
       clearCommentError: true,
+      clearCommentSaveFeedback: true,
+      clearCommentSaveTargetKey: true,
     );
     notifyListeners();
   }
@@ -2065,7 +2138,10 @@ class AlagagiController extends ChangeNotifier {
       ..remove(_answerCommentDraftKey(questionId, answerOwnerProfileId));
     _state = _state.copyWith(
       commentDraftsByAnswerKey: Map<String, String>.unmodifiable(drafts),
+      commentSaveStatus: SaveStatus.idle,
       clearCommentError: true,
+      clearCommentSaveFeedback: true,
+      clearCommentSaveTargetKey: true,
     );
     notifyListeners();
   }
@@ -2074,25 +2150,44 @@ class AlagagiController extends ChangeNotifier {
     required String questionId,
     required String answerOwnerProfileId,
   }) {
+    if (_state.commentSaveStatus == SaveStatus.saving) {
+      return;
+    }
     final body = commentDraftForAnswer(questionId, answerOwnerProfileId).trim();
     if (body.isEmpty) {
-      _state = _state.copyWith(commentError: '한 줄만 남겨도 괜찮아요.');
+      _state = _state.copyWith(
+        commentError: '한 줄만 남겨도 괜찮아요.',
+        commentSaveStatus: SaveStatus.idle,
+        clearCommentSaveFeedback: true,
+      );
       notifyListeners();
       return;
     }
     if (body.length > 120) {
-      _state = _state.copyWith(commentError: '댓글은 120자 안으로 남겨주세요.');
+      _state = _state.copyWith(
+        commentError: '댓글은 120자 안으로 남겨주세요.',
+        commentSaveStatus: SaveStatus.idle,
+        clearCommentSaveFeedback: true,
+      );
       notifyListeners();
       return;
     }
     if (answerOwnerProfileId != _state.partner.id) {
-      _state = _state.copyWith(commentError: '상대 답변에만 댓글을 남길 수 있어요.');
+      _state = _state.copyWith(
+        commentError: '상대 답변에만 댓글을 남길 수 있어요.',
+        commentSaveStatus: SaveStatus.idle,
+        clearCommentSaveFeedback: true,
+      );
       notifyListeners();
       return;
     }
     final partnerAnswer = _visiblePartnerAnswerForQuestion(questionId);
     if (partnerAnswer == null) {
-      _state = _state.copyWith(commentError: '상대 답이 열린 뒤에 댓글을 남길 수 있어요.');
+      _state = _state.copyWith(
+        commentError: '상대 답이 열린 뒤에 댓글을 남길 수 있어요.',
+        commentSaveStatus: SaveStatus.idle,
+        clearCommentSaveFeedback: true,
+      );
       notifyListeners();
       return;
     }
@@ -2116,11 +2211,45 @@ class AlagagiController extends ChangeNotifier {
           _state.me.id,
         )] =
         comment;
+    _lastFailedAnswerComment = null;
     final drafts = Map<String, String>.of(_state.commentDraftsByAnswerKey)
       ..remove(_answerCommentDraftKey(questionId, answerOwnerProfileId));
     _state = _state.copyWith(
       commentDraftsByAnswerKey: Map<String, String>.unmodifiable(drafts),
+      commentSaveStatus: SaveStatus.saving,
+      commentSaveTargetKey: _answerCommentDraftKey(
+        questionId,
+        answerOwnerProfileId,
+      ),
       clearCommentError: true,
+      clearCommentSaveFeedback: true,
+    );
+    notifyListeners();
+    _persistAnswerComment(comment);
+  }
+
+  bool isCommentSaveTarget({
+    required String questionId,
+    required String answerOwnerProfileId,
+  }) {
+    return _state.commentSaveTargetKey ==
+        _answerCommentDraftKey(questionId, answerOwnerProfileId);
+  }
+
+  void retryAnswerCommentSave() {
+    final comment = _lastFailedAnswerComment;
+    if (comment == null || _state.commentSaveStatus == SaveStatus.saving) {
+      return;
+    }
+
+    _state = _state.copyWith(
+      commentSaveStatus: SaveStatus.saving,
+      commentSaveTargetKey: _answerCommentDraftKey(
+        comment.questionId,
+        comment.answerOwnerProfileId,
+      ),
+      clearCommentError: true,
+      clearCommentSaveFeedback: true,
     );
     notifyListeners();
     _persistAnswerComment(comment);
@@ -2221,6 +2350,7 @@ class AlagagiController extends ChangeNotifier {
       editingAnswer: false,
       clearActiveAnswerQuestion: true,
       answerSaveStatus: SaveStatus.saving,
+      answerSaveQuestionId: question.id,
       clearAnswerError: true,
       clearAnswerSaveFeedback: true,
     );
@@ -2263,6 +2393,7 @@ class AlagagiController extends ChangeNotifier {
       draftAnswer: '',
       editingAnswer: false,
       answerSaveStatus: SaveStatus.saving,
+      answerSaveQuestionId: todayQuestion.id,
       clearAnswerError: true,
       clearAnswerSaveFeedback: true,
     );
@@ -2399,6 +2530,7 @@ class AlagagiController extends ChangeNotifier {
 
     _state = _state.copyWith(
       answerSaveStatus: SaveStatus.saving,
+      answerSaveQuestionId: answer.questionId,
       clearAnswerError: true,
       clearAnswerSaveFeedback: true,
     );

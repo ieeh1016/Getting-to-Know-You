@@ -334,29 +334,32 @@ class _ScreenScroll extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottomPadding = bottomNavigation == null
         ? padding.bottom
-        : padding.bottom < 108
-        ? 108.0
+        : padding.bottom > 72
+        ? 24.0
         : padding.bottom;
     final effectivePadding = padding.copyWith(bottom: bottomPadding);
 
-    return Stack(
+    final scrollable = ListView(
+      padding: EdgeInsets.zero,
       children: [
-        Positioned.fill(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              Padding(
-                padding: effectivePadding,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: children,
-                ),
-              ),
-            ],
+        Padding(
+          padding: effectivePadding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: children,
           ),
         ),
-        if (bottomNavigation != null)
-          Positioned(left: 0, right: 0, bottom: 0, child: bottomNavigation!),
+      ],
+    );
+
+    if (bottomNavigation == null) {
+      return scrollable;
+    }
+
+    return Column(
+      children: [
+        Expanded(child: scrollable),
+        bottomNavigation!,
       ],
     );
   }
@@ -1151,19 +1154,9 @@ class _HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Text(
-          controller.state.personalization.appTitle,
-          style: serif(context, size: 23, weight: FontWeight.w800),
-        ),
-        _CircleIconButton(
-          icon: Icons.tune_rounded,
-          onTap: () => controller.goTo(AlagagiRoute.my),
-        ),
-      ],
+    return Text(
+      controller.state.personalization.appTitle,
+      style: serif(context, size: 23, weight: FontWeight.w800),
     );
   }
 }
@@ -1351,7 +1344,10 @@ class _QuestionCard extends StatelessWidget {
                   onPressed: controller.answerTodayAfterSkip,
                   color: AlagagiColors.sageDeep,
                 ),
-                _AnswerSaveStatus(controller: controller),
+                _AnswerSaveStatus(
+                  controller: controller,
+                  questionId: question.id,
+                ),
               ],
             )
           else if (myAnswer == null)
@@ -1456,7 +1452,7 @@ class _QuestionCard extends StatelessWidget {
                   ),
                 ],
               ),
-            _AnswerSaveStatus(controller: controller),
+            _AnswerSaveStatus(controller: controller, questionId: question.id),
           ],
         ],
       ),
@@ -1728,6 +1724,12 @@ class _AnswerCommentBox extends StatelessWidget {
     if (readOnly && existingComment == null) {
       return const SizedBox.shrink();
     }
+    final isSaveTarget = controller.isCommentSaveTarget(
+      questionId: questionId,
+      answerOwnerProfileId: answerOwnerProfileId,
+    );
+    final isSaving =
+        isSaveTarget && controller.state.commentSaveStatus == SaveStatus.saving;
     final inputLength = inputValue.length;
 
     return Container(
@@ -1823,12 +1825,14 @@ class _AnswerCommentBox extends StatelessWidget {
                       label: '내 댓글',
                       title: '상대 답에 남긴 댓글',
                       body: existingComment.body,
-                      actionLabel: '수정하기',
-                      onAction: () => controller.updateAnswerCommentDraft(
-                        questionId: questionId,
-                        answerOwnerProfileId: answerOwnerProfileId,
-                        value: existingComment.body,
-                      ),
+                      actionLabel: readOnly ? null : '수정하기',
+                      onAction: readOnly
+                          ? null
+                          : () => controller.updateAnswerCommentDraft(
+                              questionId: questionId,
+                              answerOwnerProfileId: answerOwnerProfileId,
+                              value: existingComment.body,
+                            ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1944,11 +1948,12 @@ class _AnswerCommentBox extends StatelessWidget {
                           child: _CommentSecondaryButton(
                             key: answerCommentCancelButtonKey,
                             label: '취소',
-                            onPressed: () =>
-                                controller.cancelAnswerCommentDraft(
-                                  questionId: questionId,
-                                  answerOwnerProfileId: answerOwnerProfileId,
-                                ),
+                            onPressed: isSaving
+                                ? null
+                                : () => controller.cancelAnswerCommentDraft(
+                                    questionId: questionId,
+                                    answerOwnerProfileId: answerOwnerProfileId,
+                                  ),
                           ),
                         ),
                         const SizedBox(width: 9),
@@ -1957,11 +1962,17 @@ class _AnswerCommentBox extends StatelessWidget {
                         flex: existingComment == null ? 1 : 2,
                         child: _CommentPrimaryButton(
                           key: answerCommentSubmitButtonKey,
-                          label: existingComment == null ? '댓글 남기기' : '수정 저장',
-                          onPressed: () => controller.submitAnswerComment(
-                            questionId: questionId,
-                            answerOwnerProfileId: answerOwnerProfileId,
-                          ),
+                          label: isSaving
+                              ? '저장 중'
+                              : existingComment == null
+                              ? '댓글 남기기'
+                              : '수정 저장',
+                          onPressed: isSaving
+                              ? null
+                              : () => controller.submitAnswerComment(
+                                  questionId: questionId,
+                                  answerOwnerProfileId: answerOwnerProfileId,
+                                ),
                         ),
                       ),
                     ],
@@ -1970,8 +1981,73 @@ class _AnswerCommentBox extends StatelessWidget {
               ),
             ),
           ],
+          if (isSaveTarget) ...[
+            const SizedBox(height: 10),
+            _CommentSaveStatus(
+              controller: controller,
+              questionId: questionId,
+              answerOwnerProfileId: answerOwnerProfileId,
+            ),
+          ],
         ],
       ),
+    );
+  }
+}
+
+class _CommentSaveStatus extends StatelessWidget {
+  const _CommentSaveStatus({
+    required this.controller,
+    required this.questionId,
+    required this.answerOwnerProfileId,
+  });
+
+  final AlagagiController controller;
+  final String questionId;
+  final String answerOwnerProfileId;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!controller.isCommentSaveTarget(
+      questionId: questionId,
+      answerOwnerProfileId: answerOwnerProfileId,
+    )) {
+      return const SizedBox.shrink();
+    }
+
+    final state = controller.state;
+    final status = state.commentSaveStatus;
+    final message = switch (status) {
+      SaveStatus.saving => '댓글 저장 중이에요...',
+      SaveStatus.saved => state.commentSaveFeedback,
+      SaveStatus.failed => state.commentError,
+      SaveStatus.idle => null,
+    };
+    if (message == null || message.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Text(
+            message,
+            style: sans(
+              size: 11.5,
+              color: status == SaveStatus.failed
+                  ? AlagagiColors.sageDeep
+                  : AlagagiColors.muted,
+              height: 1.45,
+            ),
+          ),
+        ),
+        if (status == SaveStatus.failed)
+          _InlineTextAction(
+            label: '댓글 저장 다시 시도',
+            onPressed: controller.retryAnswerCommentSave,
+          ),
+      ],
     );
   }
 }
@@ -2015,7 +2091,7 @@ class _CommentSecondaryButton extends StatelessWidget {
   });
 
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -2045,7 +2121,7 @@ class _CommentPrimaryButton extends StatelessWidget {
   });
 
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -2478,14 +2554,18 @@ void _showReadableDetailSheet(
 }
 
 class _AnswerSaveStatus extends StatelessWidget {
-  const _AnswerSaveStatus({required this.controller});
+  const _AnswerSaveStatus({required this.controller, this.questionId});
 
   final AlagagiController controller;
+  final String? questionId;
 
   @override
   Widget build(BuildContext context) {
     final state = controller.state;
     final status = state.answerSaveStatus;
+    if (questionId != null && state.answerSaveQuestionId != questionId) {
+      return const SizedBox.shrink();
+    }
     final message = switch (status) {
       SaveStatus.saving => '저장 중이에요...',
       SaveStatus.saved => state.answerSaveFeedback,
@@ -2540,9 +2620,9 @@ class _InsightGrid extends StatelessWidget {
           children: [
             Expanded(
               child: _InsightBox(
-                title: '마음의 결',
-                value: '${insight.similarityPercent}',
-                suffix: '% 닮음',
+                title: '함께 답한 질문',
+                value: '${insight.matchCount}',
+                suffix: '개',
                 highlighted: true,
               ),
             ),
@@ -3518,6 +3598,11 @@ class _SelectedQuestionDetail extends StatelessWidget {
                 myAnswer.profileId,
               ),
             )
+          else if (myAnswer != null && myAnswer.skipped)
+            const _QuestionSupportBlock(
+              title: '패스한 질문',
+              body: '이날은 답하지 않고 지나갔어요. 빈 답변으로 보여주지 않아요.',
+            )
           else
             Text(
               day.canLateAnswer ? '아직 내 답이 없어요.' : statusLabel,
@@ -3575,8 +3660,9 @@ class _SelectedQuestionDetail extends StatelessWidget {
               style: sans(size: 12.5, color: AlagagiColors.muted),
             ),
           ],
+          _AnswerSaveStatus(controller: controller, questionId: question.id),
           const SizedBox(height: 16),
-          if (day.canLateAnswer)
+          if (day.canLateAnswer && myAnswer == null)
             _PrimaryButton(
               buttonKey: lateAnswerButtonKey,
               label: '늦게 답하기',
@@ -3745,10 +3831,12 @@ class _ArchiveCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final waiting = item.myAnswer != null && item.partnerAnswer == null;
+    final skipped = item.myAnswer?.skipped ?? false;
+    final waiting =
+        item.myAnswer != null && item.partnerAnswer == null && !skipped;
     return _PaperCard(
       radius: 20,
-      dashed: waiting,
+      dashed: waiting || skipped,
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: waiting
@@ -3768,7 +3856,11 @@ class _ArchiveCard extends StatelessWidget {
                 ),
               ),
               Text(
-                item.bothAnswered ? '둘 다 답함' : '답 기다리는 중',
+                skipped
+                    ? '패스'
+                    : item.bothAnswered
+                    ? '둘 다 답함'
+                    : '답 기다리는 중',
                 style: sans(size: 11, color: AlagagiColors.muted),
               ),
             ],
@@ -3789,6 +3881,31 @@ class _ArchiveCard extends StatelessWidget {
             Text(
               '아직 답을 남기지 않았어요.',
               style: sans(size: 13, color: AlagagiColors.muted),
+            )
+          else if (skipped)
+            Column(
+              children: [
+                Text(
+                  '패스한 질문',
+                  textAlign: TextAlign.center,
+                  style: serif(
+                    context,
+                    size: 14,
+                    weight: FontWeight.w800,
+                    color: AlagagiColors.sageDeep,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '이날은 답하지 않고 지나갔어요.',
+                  textAlign: TextAlign.center,
+                  style: sans(
+                    size: 13,
+                    color: AlagagiColors.muted,
+                    height: 1.5,
+                  ),
+                ),
+              ],
             )
           else if (waiting)
             Column(
@@ -3911,7 +4028,30 @@ class RecordsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                '${insight.similarityPercent}%',
+                '함께 답한 질문',
+                style: sans(
+                  size: 11,
+                  weight: FontWeight.w800,
+                  color: const Color(0xFF5A6650),
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: '${insight.matchCount}'),
+                    TextSpan(
+                      text: '개',
+                      style: serif(
+                        context,
+                        size: 18,
+                        weight: FontWeight.w700,
+                        color: const Color(0xFF5A6650),
+                      ),
+                    ),
+                  ],
+                ),
                 style: serif(
                   context,
                   size: 46,
@@ -4173,9 +4313,15 @@ class BalanceScreen extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _PrimaryButton(
-          label: controller.isLastBalanceQuestion ? '완료' : '다음 질문',
-          onPressed: controller.nextBalanceQuestion,
-          color: AlagagiColors.sageDeep,
+          label: selected == null
+              ? '먼저 하나를 골라주세요'
+              : controller.isLastBalanceQuestion
+              ? '완료'
+              : '다음 질문',
+          onPressed: selected == null ? null : controller.nextBalanceQuestion,
+          color: selected == null
+              ? const Color(0xFFC7C3BA)
+              : AlagagiColors.sageDeep,
         ),
       ],
     );
@@ -6378,7 +6524,7 @@ class _WishCard extends StatelessWidget {
                 label: wish.done
                     ? '완료'
                     : likedByMe
-                    ? '표시됨'
+                    ? '관심 표시됨'
                     : '관심 표시',
                 selected: likedByMe || wish.done,
               ),
@@ -7868,35 +8014,6 @@ class _BackButton extends StatelessWidget {
               color: Color(0xFF656D5E),
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CircleIconButton extends StatelessWidget {
-  const _CircleIconButton({required this.icon, required this.onTap});
-
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: AlagagiColors.line),
-          ),
-          alignment: Alignment.center,
-          child: Icon(icon, size: 18, color: AlagagiColors.sageDeep),
         ),
       ),
     );

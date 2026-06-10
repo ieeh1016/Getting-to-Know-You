@@ -495,6 +495,64 @@ void main() {
       },
     );
 
+    test(
+      'failed late answer keeps archive retryable until save succeeds',
+      () async {
+        final repository = RecordingAlagagiRepository()..failAnswerSaves = true;
+        final controller = AlagagiController.forSession(
+          const AlagagiSession(
+            spaceId: 'main',
+            me: AppProfile(
+              id: 'youngwooUid',
+              nickname: '영우',
+              avatar: '🌿',
+              isMe: true,
+            ),
+            partner: AppProfile(
+              id: 'minyoungUid',
+              nickname: '민영',
+              avatar: '🪻',
+              isMe: false,
+            ),
+            data: AlagagiSpaceData(
+              dailyProgress: DailyQuestionProgress(
+                startedDateKey: '2026-06-07',
+                currentQuestionId: 'q001',
+                openedDateKey: '2026-06-09',
+              ),
+            ),
+          ),
+          repository: repository,
+          todayDateKey: '2026-06-09',
+        );
+
+        controller.startLateAnswer('q002');
+        controller.updateDraftAnswer('늦게 남기지만 실패할 답이에요.');
+        controller.submitActiveAnswer();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(controller.state.route, AlagagiRoute.archive);
+        expect(controller.state.answerSaveStatus, SaveStatus.failed);
+        expect(
+          controller.selectedQuestionCalendarDay?.status,
+          QuestionCalendarStatus.unanswered,
+        );
+        expect(controller.selectedQuestionCalendarDay?.canLateAnswer, isTrue);
+        expect(controller.partnerAnswerForQuestion('q002'), isNull);
+
+        repository.failAnswerSaves = false;
+        controller.retryAnswerSave();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(controller.state.answerSaveStatus, SaveStatus.saved);
+        expect(
+          controller.selectedQuestionCalendarDay?.status,
+          QuestionCalendarStatus.myAnswerOnly,
+        );
+        expect(repository.savedAnswers.single.answer.questionId, 'q002');
+      },
+    );
+
     test('invalid daily progress safely falls back to the first question', () {
       final controller = AlagagiController.forSession(
         const AlagagiSession(
@@ -1287,6 +1345,7 @@ AlagagiSession firebaseSessionWithData(AlagagiSpaceData data) {
 
 class RecordingAlagagiRepository implements AlagagiDataRepository {
   bool failAnswerSaves = false;
+  bool failAnswerCommentSaves = false;
   Completer<void>? answerSaveCompleter;
   final List<({String spaceId, Answer answer})> savedAnswers = [];
   final List<({String spaceId, BalanceSelection selection})>
@@ -1348,6 +1407,9 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveAnswerComment(String spaceId, AnswerComment comment) async {
+    if (failAnswerCommentSaves) {
+      throw StateError('comment save failed');
+    }
     savedAnswerComments.add((spaceId: spaceId, comment: comment));
   }
 

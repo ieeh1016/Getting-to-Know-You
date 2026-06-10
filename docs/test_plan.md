@@ -13,6 +13,7 @@
 - 질문 카탈로그는 day/depth 규칙에 맞는 질문만 선택한다.
 - 밸런스 결과는 나와 상대의 실제 선택이 모두 있을 때만 계산된다.
 - 알아간 기록 insight는 실제 답변 데이터만 기반으로 계산한다.
+- 홈/기록의 공통점 요약은 관계를 점수화하는 `%`, `점수`, `지수` 표현을 노출하지 않는다.
 - `AlagagiController` 기본 로컬 모드는 초대 화면에서 시작한다.
 - session 기반 controller는 로그인된 홈 화면에서 시작한다.
 - 답변 제출/패스가 repository 저장 경계로 전달된다.
@@ -21,6 +22,7 @@
 - 답변 draft 변경은 repository write를 호출하지 않는다.
 - user-triggered 저장 실패는 failed state와 retry action을 만든다.
 - retry action은 사용자가 누를 때만 repository write를 다시 호출한다.
+- 늦게 답하기 저장 실패는 질문함 선택 detail에서 실패 안내와 재시도 action을 계속 보여준다.
 - 긴 답변 preview는 접힘/펼침 상태를 controller state에 반영한다.
 - 아카이브 필터가 전체/둘 다 답함/닮은 답을 구분한다.
 - `startedDateKey`와 Asia/Seoul 기준 오늘 날짜로 오늘 질문 id를 계산한다.
@@ -33,6 +35,7 @@
 - 과거에 이미 답한 질문은 MVP에서 read-only 상태가 된다.
 - 늦게 답하기 저장은 `{questionId}_{uid}` answer key 1개만 저장한다.
 - 밸런스 선택과 다음 질문 이동이 상태에 반영된다.
+- 밸런스 선택 전 `다음 질문` CTA는 비활성 또는 보조 안내 상태로 보여 사용자가 선택을 먼저 하도록 한다.
 - 밸런스 마지막 질문 완료는 첫 질문으로 순환하지 않고 홈으로 돌아간다.
 - 밸런스 화면은 덱형 2열 선택 UI, 진행 dots, 결과 힌트/대기 상태를 보여준다.
 - 밸런스 결과 copy는 `궁합`, `%`, `점수`, `완벽` 같은 과한 호환성 표현을 사용하지 않는다.
@@ -41,6 +44,7 @@
 - answer comment는 question/answer owner/commenter 조합당 하나만 저장된다.
 - answer comment draft 변경은 repository write를 호출하지 않는다.
 - answer comment 수정 저장은 같은 comment key를 덮어쓰고 `edited`로 표시한다.
+- answer comment 저장 실패는 failed state와 retry action을 만들고 실패를 조용히 무시하지 않는다.
 - 상대 답변이 잠겨 있거나 skipped이면 comment 저장을 거부한다.
 - 소개 카드 슬롯 카탈로그는 24개 내외의 다양한 주제를 제공하고 카테고리별로 분류된다.
 - 소개 카드 슬롯은 날짜와 무관하게 바로 입력 가능하고 진행률에 반영된다.
@@ -90,6 +94,7 @@
 - 홈의 긴 답변은 접힌 preview와 `더 보기` 확장을 검증한다.
 - 홈의 긴 답변 preview를 누르면 전체 본문을 bottom sheet에서 볼 수 있고, 내 답변은 수정 action을 제공한다.
 - 홈의 읽기 전용 댓글 preview를 누르면 전체 댓글을 bottom sheet에서 볼 수 있다.
+- 읽기 전용 댓글/답변 detail sheet는 동작하지 않는 `수정하기` action을 노출하지 않는다.
 - `수정하기`를 누르면 답변 화면에 기존 본문이 채워지고 `수정 저장하기`가 보인다.
 - 수정 저장 후 홈에서 수정된 본문이 보이고 상대 답변 공개 상태가 유지된다.
 - 상대 답변이 공개되면 댓글 입력 UI가 보인다.
@@ -111,6 +116,7 @@
 - 미래 날짜를 선택하면 disabled state가 보이고 답변 CTA는 보이지 않는다.
 - 과거에 이미 답한 날짜를 선택하면 답변은 read-only로 보이고 수정 CTA는 보이지 않는다.
 - 질문함 선택 detail과 기록 카드의 긴 답변은 preview로 유지되고 tap 시 전체 보기 bottom sheet를 연다.
+- 질문함에서 패스한 답변은 `패스한 질문`으로 보이며 빈 `내 답 보기` action을 노출하지 않는다.
 - 위시 화면의 `하고 싶은 것 담기` CTA는 draft 입력 UI를 열고 새 wish를 카드로 추가한다.
 - 위시 화면은 추천 템플릿/추천 카드 섹션을 노출하지 않는다.
 - 위시 화면은 `서로 관심 있어요`, `조용한 제안`, `함께했어요` 상태 그룹을 카드 보드처럼 보여준다.

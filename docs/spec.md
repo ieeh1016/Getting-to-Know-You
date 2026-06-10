@@ -201,6 +201,7 @@ If the app grows, bottom navigation may become:
 - preview 카드 또는 `전체 보기` affordance를 누르면 전체 본문을 scroll 가능한 bottom sheet로 보여준다.
 - 전체 보기 bottom sheet는 label, 제목, 본문, 닫기 action을 포함한다.
 - 내 콘텐츠인 경우에는 전체 보기 bottom sheet 안에서 관련 수정 action을 제공할 수 있다.
+- 읽기 전용 화면의 전체 보기 bottom sheet는 동작하지 않는 수정 action을 노출하지 않는다.
 - 전체 보기/닫기/scroll은 Firestore read/write를 만들지 않는 local UI interaction이다.
 - 적용 대상은 홈 오늘의 질문 답변/댓글, 질문함 선택/기록 답변, 마이 최근 내 흔적, 음악 노트, 소개 카드 읽기 preview다.
 - 밸런스 게임처럼 긴 자유 입력이 없는 기능은 이 패턴의 필수 적용 대상이 아니다.
@@ -372,6 +373,8 @@ This batch fixes the highest-risk gaps found after the v0.6 calendar/design audi
 - Save feedback:
   - Explicit user actions that write to Firestore expose at least a visible failed state or non-destructive no-op.
   - Answer save failure preserves retry state and must not make the answer look fully synchronized.
+  - Late answer save failure keeps the selected archive detail recoverable with a visible retry action.
+  - Comment save failure preserves the draft/comment text and exposes a retry action instead of silently swallowing the failure.
   - Wishlist interest is additive in this MVP: tapping an already-interested wish is a no-op and creates no write.
 - Calendar:
   - The calendar is promoted from a 2-week strip to a compact monthly grid.
@@ -383,11 +386,13 @@ This batch fixes the highest-risk gaps found after the v0.6 calendar/design audi
 - Selected question detail:
   - Shows the selected date, day number, question, my answer/read-only state, partner answer when unlocked, and existing comments in read-only form.
   - For past unanswered questions, `늦게 답하기` opens the answer screen with the selected date context.
+  - Failed late-answer saves do not make the date look fully answered until retry succeeds.
+  - Skipped answers are shown as `패스한 질문` and do not render empty `내 답 보기` actions.
   - Long answers wrap naturally and do not overlap fixed bottom navigation.
 - Mobile shell:
   - Real mobile viewport uses full available height with SafeArea.
   - The decorative 390px phone frame is desktop/tablet-only.
-  - Fixed bottom navigation does not cover scroll content.
+  - Fixed bottom navigation reserves layout space and does not cover scroll content.
   - Bottom navigation visual height stays compact on 390px mobile viewports.
 - Profile card:
   - My card exposes edit action for every slot from day one.
@@ -802,7 +807,7 @@ Required UI:
   - partner answer locked/waiting state
   - dedicated answer CTA
 - Insight cards:
-  - 마음의 결 percentage
+  - 함께 답한 질문 수
   - 주고받은 질문 count
   - 닮은 취향 키워드
 - Quiet progress summary:
@@ -843,7 +848,8 @@ Acceptance Criteria:
 - 댓글 draft 입력 중에는 Firestore write가 발생하지 않는다.
 - 댓글 저장은 답변당 내 댓글 1개 문서만 create/merge한다.
 - 댓글 수정 취소는 draft만 닫고 Firestore write를 만들지 않는다.
-- 기록 요약으로 닮음 퍼센트, 질문 수, 키워드가 보인다.
+- 기록 요약으로 함께 답한 질문 수, 질문 수, 키워드가 보인다.
+- 홈/기록 화면의 공통점 요약은 `사랑 지수`, `%`, `점수`처럼 관계를 채점하는 표현을 쓰지 않는다.
 - 홈 진행 요약은 질문 카드보다 작은 시각 위계로 보인다.
 - 홈 진행 요약은 `오늘 질문`, `둘 다 답한 질문`, `음악 노트` 상태를 한 화면에서 스캔 가능하게 보여준다.
 - 홈 진행 요약은 별도 Firestore write를 만들지 않는다.
@@ -999,7 +1005,7 @@ Required UI:
 
 - Header: `알아간 기록`
 - Subtitle: `답변에서 보이는 작은 공통점`
-- Hero similarity percentage
+- Hero shared-answer summary without percentage score
 - Copy: `답변 속 공통점이 조금씩 보여요`
 - Matched keyword chips
 - Stats:
@@ -1015,7 +1021,8 @@ Required UI:
 
 Acceptance Criteria:
 
-- 닮음 퍼센트가 홈과 같은 기준으로 표시된다.
+- 홈과 같은 기준의 함께 답한 질문 수와 겹치는 키워드가 표시된다.
+- 기록 화면은 `%`, `점수`, `지수`처럼 관계를 채점하는 표현을 쓰지 않는다.
 - 닮은 키워드가 칩 형태로 보인다.
 - 타임라인은 최신순으로 표시된다.
 - 기록이 없으면 빈 상태 문구를 보여준다.
@@ -1075,6 +1082,7 @@ Acceptance Criteria:
 - 결과 문장은 `궁합`, `%`, `점수`, `완벽` 같은 과한 호환성 표현을 사용하지 않는다.
 - 같은 선택은 가벼운 취향 힌트로, 다른 선택은 대화거리로 설명한다.
 - 밸런스 선택 저장은 기존처럼 해당 question/user selection document 1개 write 이하로 유지한다.
+- 선택 전에는 `다음 질문` CTA가 강한 primary 상태로 보이지 않으며, 먼저 하나를 고르도록 안내한다.
 - 다음 질문을 누르면 다음 밸런스 질문으로 이동한다.
 - 마지막 질문에서 완료를 누르면 첫 질문으로 순환하지 않고 홈으로 돌아간다.
 
