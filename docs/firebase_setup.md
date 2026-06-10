@@ -108,6 +108,8 @@ minyoung@gettoknow.local
 
 Firestore Console에서 배열은 `array` 타입으로 넣는다.
 
+`spaces/main/curiosityCards` 하위 컬렉션은 앱에서 처음 `질문 보내기`를 누를 때 자동으로 만들어진다. Console에서 빈 컬렉션을 미리 만들 필요는 없지만, 아래 Security Rules에는 `curiosityCards` 규칙이 포함되어 있어야 한다.
+
 ## 6. Firestore Security Rules
 
 Firestore Database -> Rules에 아래 규칙을 넣고 Publish 한다.
@@ -224,6 +226,57 @@ service cloud.firestore {
         && request.resource.data.createdLabel.size() <= 16;
     }
 
+    function validCuriosityCardShape(spaceId, cardId) {
+      return request.resource.data.keys().hasOnly([
+          'id',
+          'fromProfileId',
+          'toProfileId',
+          'question',
+          'reply',
+          'createdLabel',
+          'repliedLabel',
+          'updatedAt'
+        ])
+        && request.resource.data.id == cardId
+        && request.resource.data.fromProfileId is string
+        && request.resource.data.toProfileId is string
+        && request.resource.data.fromProfileId != request.resource.data.toProfileId
+        && request.resource.data.fromProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        && request.resource.data.toProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        && request.resource.data.question is string
+        && request.resource.data.question.size() > 0
+        && request.resource.data.question.size() <= 80
+        && request.resource.data.reply is string
+        && request.resource.data.reply.size() <= 160
+        && request.resource.data.createdLabel is string
+        && request.resource.data.createdLabel.size() <= 16
+        && request.resource.data.repliedLabel is string
+        && request.resource.data.repliedLabel.size() <= 16;
+    }
+
+    function validNewCuriosityCard(spaceId, cardId) {
+      return validCuriosityCardShape(spaceId, cardId)
+        && request.resource.data.fromProfileId == request.auth.uid
+        && request.resource.data.toProfileId != request.auth.uid
+        && request.resource.data.reply == ''
+        && request.resource.data.repliedLabel == '';
+    }
+
+    function validCuriosityReply(spaceId, cardId) {
+      return validCuriosityCardShape(spaceId, cardId)
+        && resource.data.toProfileId == request.auth.uid
+        && request.resource.data.fromProfileId == resource.data.fromProfileId
+        && request.resource.data.toProfileId == resource.data.toProfileId
+        && request.resource.data.question == resource.data.question
+        && request.resource.data.createdLabel == resource.data.createdLabel
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'reply',
+          'repliedLabel',
+          'updatedAt'
+        ])
+        && request.resource.data.reply.size() > 0;
+    }
+
     match /users/{userId} {
       allow read: if signedIn()
         && (
@@ -311,6 +364,15 @@ service cloud.firestore {
         allow read: if isSpaceMember(spaceId);
         allow create, update: if isSpaceMember(spaceId)
           && validMusicNote(noteId);
+        allow delete: if false;
+      }
+
+      match /curiosityCards/{cardId} {
+        allow read: if isSpaceMember(spaceId);
+        allow create: if isSpaceMember(spaceId)
+          && validNewCuriosityCard(spaceId, cardId);
+        allow update: if isSpaceMember(spaceId)
+          && validCuriosityReply(spaceId, cardId);
         allow delete: if false;
       }
     }

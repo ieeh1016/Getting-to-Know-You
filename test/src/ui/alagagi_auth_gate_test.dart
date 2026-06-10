@@ -21,7 +21,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('J O G E U M S S I K'), findsOneWidget);
+      expect(find.text('천천히 알아가는 기록'), findsOneWidget);
+      expect(find.text('J O G E U M S S I K'), findsNothing);
       expect(find.text('조금씩'), findsOneWidget);
       expect(find.text('알아가기'), findsNothing);
       expect(find.text('아이디가 있으면 조용히 이어서 들어갈 수 있어요.'), findsOneWidget);
@@ -333,6 +334,7 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   final List<AlagagiAuthUser> loadedUsers = [];
   final List<WishItem> savedWishes = [];
   final List<MusicNote> savedMusicNotes = [];
+  final List<CuriosityCard> savedCuriosityCards = [];
   final List<AnswerComment> savedAnswerComments = [];
   final List<SpacePersonalization> savedPersonalizations = [];
 
@@ -385,5 +387,10 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   @override
   Future<void> saveMusicNote(String spaceId, MusicNote note) async {
     savedMusicNotes.add(note);
+  }
+
+  @override
+  Future<void> saveCuriosityCard(String spaceId, CuriosityCard card) async {
+    savedCuriosityCards.add(card);
   }
 }

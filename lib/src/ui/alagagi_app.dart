@@ -35,6 +35,15 @@ const answerCommentCancelButtonKey = Key('answer-comment-cancel-button');
 const answerCommentSubmitButtonKey = Key('answer-comment-submit-button');
 const readableDetailSheetKey = Key('readable-detail-sheet');
 const readableDetailBodyKey = Key('readable-detail-body');
+const homeBrandLogoKey = Key('home-brand-logo');
+const homeCuriosityEntryKey = Key('home-curiosity-entry');
+const homeCuriositySheetKey = Key('home-curiosity-sheet');
+const curiosityQuestionFieldKey = Key('curiosity-question-field');
+const curiosityQuestionSubmitButtonKey = Key(
+  'curiosity-question-submit-button',
+);
+const curiosityReplyFieldKey = Key('curiosity-reply-field');
+const curiosityReplySubmitButtonKey = Key('curiosity-reply-submit-button');
 const firstVisitGuideSheetKey = Key('first-visit-guide-sheet');
 const firstVisitGuideStartButtonKey = Key('first-visit-guide-start-button');
 const firstVisitGuideTourButtonKey = Key('first-visit-guide-tour-button');
@@ -83,7 +92,7 @@ Key profileSlotCancelButtonKey(String slotId) =>
 const _longAnswerPreviewLength = 120;
 const _compactReadablePreviewLength = 64;
 const _brandName = '조금씩';
-const _brandKicker = 'J O G E U M S S I K';
+const _brandKicker = '천천히 알아가는 기록';
 
 bool _showsReadableCue(
   String body, {
@@ -611,7 +620,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: sans(
                   size: 11,
                   color: AlagagiColors.sageDeep,
-                  letterSpacing: 4,
+                  letterSpacing: 0.4,
+                  weight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 14),
@@ -817,7 +827,8 @@ class _InviteScreenState extends State<InviteScreen> {
                 style: sans(
                   size: 11,
                   color: AlagagiColors.sageDeep,
-                  letterSpacing: 4,
+                  letterSpacing: 0.4,
+                  weight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 14),
@@ -889,87 +900,50 @@ class _InviteSeal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return const _BrandLeafMark(size: 80, iconSize: 34);
+  }
+}
+
+class _BrandLeafMark extends StatelessWidget {
+  const _BrandLeafMark({this.size = 42, this.iconSize = 20});
+
+  final double size;
+  final double iconSize;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      width: 80,
-      height: 80,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: AlagagiColors.paper,
         border: Border.all(color: AlagagiColors.line),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0F57624C),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
       ),
       alignment: Alignment.center,
-      child: Transform.rotate(
-        angle: -0.08,
-        child: Container(
-          width: 38,
-          height: 44,
-          decoration: BoxDecoration(
-            color: const Color(0xFFEEF2EA),
-            border: Border.all(color: const Color(0x668A9A7E)),
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x12000000),
-                blurRadius: 12,
-                offset: Offset(0, 6),
-              ),
-            ],
+      child: Container(
+        width: size * 0.62,
+        height: size * 0.62,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            colors: [Color(0xFFEEF2EA), Color(0xFFFCFCFA)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          child: Stack(
-            children: [
-              Positioned(
-                right: 0,
-                top: 0,
-                child: Container(
-                  width: 13,
-                  height: 13,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFDCE5D3),
-                    borderRadius: BorderRadius.only(
-                      topRight: Radius.circular(11),
-                      bottomLeft: Radius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 9,
-                top: 14,
-                child: Container(
-                  width: 20,
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: AlagagiColors.sageDeep,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 9,
-                top: 22,
-                child: Container(
-                  width: 15,
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: AlagagiColors.sage,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 9,
-                bottom: 9,
-                child: Container(
-                  width: 22,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFB9A8C9),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-              ),
-            ],
-          ),
+        ),
+        alignment: Alignment.center,
+        child: Icon(
+          Icons.eco_outlined,
+          size: iconSize,
+          color: AlagagiColors.sageDeep,
         ),
       ),
     );
@@ -1170,6 +1144,8 @@ class HomeScreen extends StatelessWidget {
         const _SectionLabel('오늘의 질문'),
         const SizedBox(height: 12),
         _QuestionCard(controller: controller),
+        const SizedBox(height: 12),
+        _HomeCuriosityEntry(controller: controller),
         const SizedBox(height: 16),
         _HomeProgressSummaryCard(controller: controller),
         const SizedBox(height: 22),
@@ -1452,9 +1428,35 @@ class _HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      controller.state.personalization.appTitle,
-      style: serif(context, size: 23, weight: FontWeight.w800),
+    return Semantics(
+      key: homeBrandLogoKey,
+      label: '${controller.state.personalization.appTitle} 로고',
+      child: Row(
+        children: [
+          const _BrandLeafMark(),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  controller.state.personalization.appTitle,
+                  style: serif(context, size: 24, weight: FontWeight.w800),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  _brandKicker,
+                  style: sans(
+                    size: 10.5,
+                    weight: FontWeight.w800,
+                    color: AlagagiColors.sageDeep,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1605,11 +1607,11 @@ class _QuestionCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'TODAY\'S QUESTION',
+                  'Today\'s Question',
                   style: sans(
                     size: 10.5,
                     color: AlagagiColors.sageDeep,
-                    letterSpacing: 2,
+                    letterSpacing: 1.2,
                     weight: FontWeight.w700,
                   ),
                 ),
@@ -1753,6 +1755,730 @@ class _QuestionCard extends StatelessWidget {
             _AnswerSaveStatus(controller: controller, questionId: question.id),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _HomeCuriosityEntry extends StatelessWidget {
+  const _HomeCuriosityEntry({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final partnerName = controller.state.partner.nickname;
+    final received = controller.latestReceivedCuriosityCard;
+    final sent = controller.latestSentCuriosityCard;
+    final receivedCount = controller.unansweredReceivedCuriosityCount;
+    final hasUnreadReceived = received != null && !received.hasReply;
+    final title = hasUnreadReceived
+        ? '$partnerName님의 궁금함 한 장'
+        : sent != null && !sent.hasReply
+        ? '내가 남긴 궁금함 한 장'
+        : '궁금함 한 장';
+    final subtitle = hasUnreadReceived
+        ? received.question
+        : sent != null && !sent.hasReply
+        ? '$partnerName님 답장을 기다리는 중'
+        : received != null && received.hasReply
+        ? '답장 ${controller.curiosityCards.where((card) => card.hasReply).length}장을 보관 중'
+        : '$partnerName님에게 가볍게 물어보기';
+    final countText = hasUnreadReceived
+        ? receivedCount.toString()
+        : sent != null && !sent.hasReply
+        ? '1'
+        : received != null && received.hasReply
+        ? '✓'
+        : '+';
+    final stateText = hasUnreadReceived
+        ? '받음'
+        : sent != null && !sent.hasReply
+        ? '보냄'
+        : received != null && received.hasReply
+        ? '답함'
+        : '쓰기';
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: homeCuriosityEntryKey,
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => _showCuriosityMenuSheet(context, controller),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 76),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEEF2EA),
+            border: Border.all(color: const Color(0x266F7F63)),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0A57624C),
+                blurRadius: 18,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.fromLTRB(14, 13, 12, 13),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AlagagiColors.sageDeep,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.question_mark_rounded,
+                  size: 20,
+                  color: AlagagiColors.paper,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: sans(
+                        size: 13.3,
+                        weight: FontWeight.w800,
+                        color: const Color(0xFF454741),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: sans(
+                        size: 11.2,
+                        color: AlagagiColors.muted,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 27,
+                    height: 27,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      countText,
+                      style: sans(
+                        size: 11,
+                        weight: FontWeight.w800,
+                        color: AlagagiColors.sageDeep,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    stateText,
+                    style: sans(
+                      size: 9.5,
+                      weight: FontWeight.w800,
+                      color: AlagagiColors.sageDeep,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+void _showCuriosityMenuSheet(
+  BuildContext context,
+  AlagagiController controller,
+) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return DraggableScrollableSheet(
+        initialChildSize: 0.72,
+        minChildSize: 0.42,
+        maxChildSize: 0.86,
+        expand: false,
+        builder: (_, scrollController) {
+          return AnimatedBuilder(
+            animation: controller,
+            builder: (context, _) {
+              return _CuriositySheetContent(
+                controller: controller,
+                scrollController: scrollController,
+              );
+            },
+          );
+        },
+      );
+    },
+  );
+}
+
+class _CuriositySheetContent extends StatelessWidget {
+  const _CuriositySheetContent({
+    required this.controller,
+    required this.scrollController,
+  });
+
+  final AlagagiController controller;
+  final ScrollController scrollController;
+
+  @override
+  Widget build(BuildContext context) {
+    final received = controller.latestReceivedCuriosityCard;
+    final sent = controller.latestSentCuriosityCard;
+    final receivedCount = controller.unansweredReceivedCuriosityCount;
+    final badge = receivedCount > 0
+        ? '받은 질문 $receivedCount'
+        : sent != null && !sent.hasReply
+        ? '답장 기다림'
+        : '새 질문';
+    final isSaving = controller.state.curiositySaveStatus == SaveStatus.saving;
+
+    return SafeArea(
+      child: Container(
+        key: homeCuriositySheetKey,
+        margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+        decoration: BoxDecoration(
+          color: AlagagiColors.paper,
+          border: Border.all(color: AlagagiColors.line),
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x2E2C2B25),
+              blurRadius: 44,
+              offset: Offset(0, 18),
+            ),
+          ],
+        ),
+        child: SingleChildScrollView(
+          controller: scrollController,
+          padding: const EdgeInsets.fromLTRB(18, 11, 18, 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD7D5CC),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 17),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEF2EA),
+                      border: Border.all(color: const Color(0x336F7F63)),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.question_answer_outlined,
+                      size: 20,
+                      color: AlagagiColors.sageDeep,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '궁금함 한 장',
+                          style: serif(
+                            context,
+                            size: 20,
+                            weight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          '서로에게 따로 남기는 작은 질문',
+                          style: sans(
+                            size: 12,
+                            color: AlagagiColors.muted,
+                            height: 1.45,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _CuriosityBadge(label: badge),
+                ],
+              ),
+              const SizedBox(height: 15),
+              _ReceivedCuriosityPanel(controller: controller, card: received),
+              if (sent != null) ...[
+                const SizedBox(height: 10),
+                _SentCuriosityPanel(controller: controller, card: sent),
+              ],
+              const SizedBox(height: 10),
+              _CuriosityComposePanel(
+                controller: controller,
+                isSaving: isSaving,
+              ),
+              _CuriositySaveStatus(controller: controller),
+              const SizedBox(height: 8),
+              _SheetOutlineAction(
+                label: '나중에 보기',
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CuriosityBadge extends StatelessWidget {
+  const _CuriosityBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 26),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEF2EA),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      child: Text(
+        label,
+        style: sans(
+          size: 10.5,
+          weight: FontWeight.w800,
+          color: AlagagiColors.sageDeep,
+        ),
+      ),
+    );
+  }
+}
+
+class _ReceivedCuriosityPanel extends StatelessWidget {
+  const _ReceivedCuriosityPanel({required this.controller, required this.card});
+
+  final AlagagiController controller;
+  final CuriosityCard? card;
+
+  @override
+  Widget build(BuildContext context) {
+    final card = this.card;
+    final partnerName = controller.state.partner.nickname;
+    if (card == null) {
+      return _CuriosityPanel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '받은 질문',
+              style: sans(
+                size: 10.5,
+                weight: FontWeight.w800,
+                color: AlagagiColors.sageDeep,
+                letterSpacing: 0.6,
+              ),
+            ),
+            const SizedBox(height: 7),
+            Text(
+              '아직 받은 궁금함은 없어요.',
+              style: serif(context, size: 15, weight: FontWeight.w800),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final hasReply = card.hasReply;
+    final isSaving =
+        controller.state.curiositySaveStatus == SaveStatus.saving &&
+        controller.isCuriositySaveTarget(card.id);
+    return _CuriosityPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$partnerName님이 물었어요',
+            style: sans(
+              size: 10.5,
+              weight: FontWeight.w800,
+              color: AlagagiColors.sageDeep,
+              letterSpacing: 0.6,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            card.question,
+            style: serif(
+              context,
+              size: 15.5,
+              weight: FontWeight.w800,
+              height: 1.42,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (hasReply)
+            _CuriosityReadBlock(label: '내 답장', body: card.reply!)
+          else ...[
+            _CuriosityTextField(
+              fieldKey: curiosityReplyFieldKey,
+              value: controller.curiosityReplyDraftFor(card.id),
+              hintText: '짧게 답해도 괜찮아요.',
+              maxLines: 3,
+              onChanged: (value) => controller.updateCuriosityReplyDraft(
+                cardId: card.id,
+                value: value,
+              ),
+            ),
+            const SizedBox(height: 10),
+            _PrimaryButton(
+              label: isSaving ? '저장 중...' : '답장 저장하기',
+              buttonKey: curiosityReplySubmitButtonKey,
+              onPressed: isSaving
+                  ? null
+                  : () => controller.submitCuriosityReply(card.id),
+              color: AlagagiColors.sageDeep,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SentCuriosityPanel extends StatelessWidget {
+  const _SentCuriosityPanel({required this.controller, required this.card});
+
+  final AlagagiController controller;
+  final CuriosityCard card;
+
+  @override
+  Widget build(BuildContext context) {
+    final partnerName = controller.state.partner.nickname;
+    return _CuriosityPanel(
+      backgroundColor: const Color(0xFFF8F8F4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '내가 남긴 질문',
+            style: sans(
+              size: 10.5,
+              weight: FontWeight.w800,
+              color: AlagagiColors.sageDeep,
+              letterSpacing: 0.6,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            card.question,
+            style: serif(
+              context,
+              size: 15,
+              weight: FontWeight.w800,
+              height: 1.42,
+            ),
+          ),
+          const SizedBox(height: 9),
+          if (card.hasReply)
+            _CuriosityReadBlock(label: '$partnerName님 답장', body: card.reply!)
+          else
+            Text(
+              '$partnerName님 답장을 기다리는 중이에요.',
+              style: sans(size: 12, color: AlagagiColors.muted, height: 1.45),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CuriosityComposePanel extends StatelessWidget {
+  const _CuriosityComposePanel({
+    required this.controller,
+    required this.isSaving,
+  });
+
+  final AlagagiController controller;
+  final bool isSaving;
+
+  @override
+  Widget build(BuildContext context) {
+    final partnerName = controller.state.partner.nickname;
+    final targetId = controller.state.curiositySaveTargetId;
+    final savingQuestion =
+        isSaving && (targetId == null || targetId.startsWith('curiosity_'));
+    return _CuriosityPanel(
+      backgroundColor: const Color(0xFFFFFEFA),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$partnerName님에게 궁금한 것',
+            style: sans(
+              size: 10.5,
+              weight: FontWeight.w800,
+              color: AlagagiColors.sageDeep,
+              letterSpacing: 0.6,
+            ),
+          ),
+          const SizedBox(height: 9),
+          _CuriosityTextField(
+            fieldKey: curiosityQuestionFieldKey,
+            value: controller.state.curiosityQuestionDraft,
+            hintText: '예: 이번 주에 기대되는 일이 있어요?',
+            maxLines: 2,
+            onChanged: controller.updateCuriosityQuestionDraft,
+          ),
+          const SizedBox(height: 10),
+          _PrimaryButton(
+            label: savingQuestion ? '보내는 중...' : '질문 보내기',
+            buttonKey: curiosityQuestionSubmitButtonKey,
+            onPressed: savingQuestion
+                ? null
+                : controller.submitCuriosityQuestion,
+            color: AlagagiColors.ink,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CuriosityPanel extends StatelessWidget {
+  const _CuriosityPanel({
+    required this.child,
+    this.backgroundColor = const Color(0xFFFFFEFA),
+  });
+
+  final Widget child;
+  final Color backgroundColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: child,
+    );
+  }
+}
+
+class _CuriosityReadBlock extends StatelessWidget {
+  const _CuriosityReadBlock({required this.label, required this.body});
+
+  final String label;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEF2EA),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 11),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: sans(
+              size: 10.5,
+              weight: FontWeight.w800,
+              color: AlagagiColors.sageDeep,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(body, style: sans(size: 13, height: 1.5)),
+        ],
+      ),
+    );
+  }
+}
+
+class _CuriosityTextField extends StatefulWidget {
+  const _CuriosityTextField({
+    required this.fieldKey,
+    required this.value,
+    required this.hintText,
+    required this.maxLines,
+    required this.onChanged,
+  });
+
+  final Key fieldKey;
+  final String value;
+  final String hintText;
+  final int maxLines;
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<_CuriosityTextField> createState() => _CuriosityTextFieldState();
+}
+
+class _CuriosityTextFieldState extends State<_CuriosityTextField> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value);
+  }
+
+  @override
+  void didUpdateWidget(covariant _CuriosityTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value != _controller.text) {
+      _controller.text = widget.value;
+      _controller.selection = TextSelection.collapsed(
+        offset: _controller.text.length,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      key: widget.fieldKey,
+      controller: _controller,
+      minLines: widget.maxLines,
+      maxLines: widget.maxLines,
+      maxLength: widget.fieldKey == curiosityQuestionFieldKey ? 80 : 160,
+      onChanged: widget.onChanged,
+      style: sans(size: 13, height: 1.45),
+      decoration: InputDecoration(
+        hintText: widget.hintText,
+        hintStyle: sans(size: 12.5, color: AlagagiColors.muted),
+        counterText: '',
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.all(12),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AlagagiColors.line),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AlagagiColors.sageDeep),
+        ),
+      ),
+    );
+  }
+}
+
+class _CuriositySaveStatus extends StatelessWidget {
+  const _CuriositySaveStatus({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final error = controller.state.curiosityError;
+    final feedback = controller.state.curiositySaveFeedback;
+    const errorColor = Color(0xFFB18472);
+    if (error == null && feedback == null) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Row(
+        children: [
+          Icon(
+            error == null
+                ? Icons.check_circle_outline_rounded
+                : Icons.error_outline_rounded,
+            size: 16,
+            color: error == null ? AlagagiColors.sageDeep : errorColor,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              error ?? feedback ?? '',
+              style: sans(
+                size: 12,
+                color: error == null ? AlagagiColors.sageDeep : errorColor,
+                weight: FontWeight.w700,
+              ),
+            ),
+          ),
+          if (error != null &&
+              controller.state.curiositySaveStatus == SaveStatus.failed)
+            TextButton(
+              onPressed: controller.retryCuriositySave,
+              child: Text(
+                '다시 시도',
+                style: sans(size: 12, weight: FontWeight.w800),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SheetOutlineAction extends StatelessWidget {
+  const _SheetOutlineAction({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 40,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AlagagiColors.sageDeep,
+          side: const BorderSide(color: Color(0x338A9A7E)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+          textStyle: sans(size: 12, weight: FontWeight.w800),
+        ),
+        child: Text(label, textAlign: TextAlign.center),
       ),
     );
   }

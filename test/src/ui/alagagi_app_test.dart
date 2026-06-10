@@ -15,7 +15,8 @@ void main() {
   testWidgets('shows invite and enters home with nickname', (tester) async {
     await tester.pumpWidget(const AlagagiApp());
 
-    expect(find.text('J O G E U M S S I K'), findsOneWidget);
+    expect(find.text('천천히 알아가는 기록'), findsOneWidget);
+    expect(find.text('J O G E U M S S I K'), findsNothing);
     expect(find.text('우리, 천천히\n알아가 볼래요?'), findsOneWidget);
     expect(find.text('알아가기'), findsNothing);
     expect(find.text('9:41'), findsNothing);
@@ -24,17 +25,91 @@ void main() {
     await enterSpace(tester);
 
     expect(find.text('조금씩'), findsOneWidget);
+    expect(find.byKey(homeBrandLogoKey), findsOneWidget);
+    expect(find.text('천천히 알아가는 기록'), findsOneWidget);
+    expect(find.text('J O G E U M S S I K'), findsNothing);
     expect(find.text('알아가기'), findsNothing);
     expect(find.text('오늘의 질문'), findsOneWidget);
     expect(find.byKey(homeQuestionCardKey), findsOneWidget);
-    expect(find.text("TODAY'S QUESTION"), findsOneWidget);
+    expect(find.text("Today's Question"), findsOneWidget);
     expect(find.text('DAY 12'), findsWidgets);
     expect(find.text('아직 내 답을 남기지 않았어요.'), findsOneWidget);
     expect(find.textContaining('답을 남기면'), findsOneWidget);
     expect(find.byKey(homeQuestionAnswerButtonKey), findsOneWidget);
+    expect(find.byKey(homeCuriosityEntryKey), findsOneWidget);
+    expect(find.textContaining('궁금함 한 장'), findsOneWidget);
     expect(find.text('지금의 마음을 한 줄로...'), findsNothing);
     expect(find.text('9:41'), findsNothing);
     expect(find.textContaining('🔋'), findsNothing);
+  });
+
+  testWidgets('opens the soft curiosity menu from home', (tester) async {
+    await tester.pumpWidget(const AlagagiApp());
+    await enterSpace(tester);
+
+    await tester.ensureVisible(find.byKey(homeCuriosityEntryKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(homeCuriosityEntryKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(homeCuriositySheetKey), findsOneWidget);
+    expect(find.text('궁금함 한 장'), findsOneWidget);
+    expect(find.textContaining('님이 물었어요'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(homeCuriositySheetKey),
+        matching: find.text('요즘 제일 자주 생각나는 건 뭐예요?'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byKey(curiosityReplyFieldKey), findsOneWidget);
+    expect(find.text('답장 저장하기'), findsOneWidget);
+    expect(find.text('나중에 보기'), findsOneWidget);
+    expect(find.byKey(curiosityQuestionFieldKey), findsOneWidget);
+    expect(find.text('질문 보내기'), findsOneWidget);
+  });
+
+  testWidgets('saves a curiosity reply and a new question in the sheet', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const AlagagiApp());
+    await enterSpace(tester);
+
+    await tester.ensureVisible(find.byKey(homeCuriosityEntryKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(homeCuriosityEntryKey));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(curiosityReplyFieldKey),
+      '산책하면서 생각을 정리하는 시간이요.',
+    );
+    await tester.ensureVisible(find.byKey(curiosityReplySubmitButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(curiosityReplySubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('내 답장'), findsOneWidget);
+    expect(find.text('산책하면서 생각을 정리하는 시간이요.'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(curiosityQuestionFieldKey),
+      '이번 주에 기대되는 일이 있어요?',
+    );
+    await tester.ensureVisible(find.byKey(curiosityQuestionSubmitButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(curiosityQuestionSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('내가 남긴 질문'), findsOneWidget);
+    expect(find.text('이번 주에 기대되는 일이 있어요?'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(homeCuriositySheetKey),
+        matching: find.textContaining('답장을 기다리는 중'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('home focused question card fits mobile unanswered state', (
@@ -54,6 +129,8 @@ void main() {
     expect(tester.getSize(find.byKey(alagagiShellKey)), const Size(390, 844));
     expect(find.byKey(homeQuestionCardKey), findsOneWidget);
     expect(find.byKey(homeQuestionAnswerButtonKey), findsOneWidget);
+    expect(find.byKey(homeBrandLogoKey), findsOneWidget);
+    expect(find.byKey(homeCuriosityEntryKey), findsOneWidget);
     expect(
       tester.getSize(find.byKey(bottomNavigationKey)).height,
       lessThanOrEqualTo(72),
@@ -1798,6 +1875,9 @@ class _FailingCommentRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveMusicNote(String spaceId, MusicNote note) async {}
+
+  @override
+  Future<void> saveCuriosityCard(String spaceId, CuriosityCard card) async {}
 
   @override
   Future<void> saveProfileSlot(

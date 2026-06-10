@@ -74,7 +74,7 @@
 ## Widget Tests
 
 - Firebase-enabled app이 signed-out 상태에서 로그인 화면을 보여준다.
-- Firebase login 화면은 `조금씩`, `J O G E U M S S I K`, `아이디가 있으면 조용히 이어서 들어갈 수 있어요.` 톤을 보여주고 로그인 전 `우리, 천천히 알아가 볼래요?`, `두 사람만 로그인할 수 있어요.` 문구를 노출하지 않는다.
+- Firebase login 화면은 `조금씩`, `천천히 알아가는 기록`, `아이디가 있으면 조용히 이어서 들어갈 수 있어요.` 톤을 보여주고 로그인 전 `우리, 천천히 알아가 볼래요?`, `두 사람만 로그인할 수 있어요.` 문구를 노출하지 않는다.
 - Firebase login 비밀번호 입력칸은 label만 보여주고 hint/placeholder를 노출하지 않는다.
 - 아이디/비밀번호를 입력하고 로그인하면 fake session을 로드해 홈으로 이동한다.
 - 기존 auth session이 있으면 로그인 화면을 건너뛰고 홈으로 이동한다.
@@ -92,10 +92,11 @@
 - Firebase mode에서 밸런스 선택 전에는 샘플 상대 선택이 보이지 않는다.
 - 로컬 데모 모드는 초대 화면과 닉네임 진입을 유지한다.
 - 초대 화면과 홈 header는 사용자-facing 앱 이름을 `조금씩`으로 보여주고 기존 `알아가기` 브랜드를 노출하지 않는다.
+- 초대/로그인/홈 브랜드는 어색한 로마자 kicker 대신 한글 보조 문구와 새싹/잎 계열 표식을 사용한다.
 - 웹 `index.html`과 `manifest.json`은 `조금씩` title/name/short_name과 세이지 계열 theme/background color를 사용한다.
 - favicon/PWA icon 파일은 16/192/512 및 maskable 크기를 유지한다.
 - 홈은 오늘의 질문과 기록 요약을 보여준다.
-- 홈 질문 카드는 질문 집중형 layout으로 `TODAY'S QUESTION`, compact day chip, support block, full-width `답 남기기` CTA를 보여준다.
+- 홈 질문 카드는 질문 집중형 layout으로 `Today's Question`, compact day chip, support block, full-width `답 남기기` CTA를 보여준다.
 - 홈 질문 카드의 unanswered 상태는 inline composer placeholder를 렌더링하지 않는다.
 - 홈 질문 카드는 390px 모바일 viewport에서 CTA와 텍스트 baseline/height가 겹치거나 어긋나지 않는다.
 - 답변 화면은 글자 수 갱신과 저장 후 상대 답 공개를 검증한다.
@@ -147,6 +148,11 @@
 - 마이 대시보드 진입, 스크롤, CTA 표시 자체는 repository write를 호출하지 않는다.
 - 마이 화면의 최근 내 흔적 카드는 말줄임 preview를 유지하고 긴 내용에만 `펼쳐 읽기` affordance를 보여주며 tap 시 전체 내용을 bottom sheet에서 보여준다.
 - 홈은 질문 카드 아래에 조용한 진행 요약을 보여주고, 390px 모바일 viewport에서 질문 CTA보다 강하게 보이지 않는다.
+- 홈은 `Today's Question` 아래에 작은 `궁금함` 상태 카드를 보여주고, 카드를 누르면 실제 질문/답장 bottom sheet를 연다.
+- 홈 `궁금함` 메뉴는 받은 질문, `답장 저장하기`, 내가 보낸 질문 상태, `질문 보내기`, `나중에 보기`를 보여준다.
+- `궁금함` 질문 draft와 답장 draft 변경은 repository write를 호출하지 않고, `질문 보내기`/`답장 저장하기` submit 시에만 `curiosityCards` 문서를 저장한다.
+- Firebase mode session data에 `curiosityCards`가 있으면 홈 sheet에 받은 질문과 답장 상태가 반영된다.
+- 홈 `궁금함` 상태 카드와 bottom sheet는 390px 모바일 viewport에서 오늘 질문 카드와 하단 내비게이션을 가리거나 겹치지 않는다.
 - 홈 진행 요약은 `오늘 질문`, `둘 다 답한 질문`, `음악 노트` 3개 상태를 보여준다.
 - 홈 진행 요약은 primary CTA를 동시에 2개 이상 보여주지 않는다.
 - 저장 실패 상태에서는 `저장 다시 시도` CTA가 보이고 상대 답/댓글/summary 완료 상태가 열리지 않는다.

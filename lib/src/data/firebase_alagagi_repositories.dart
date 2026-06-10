@@ -274,6 +274,25 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         }, SetOptions(merge: true));
   }
 
+  @override
+  Future<void> saveCuriosityCard(String spaceId, CuriosityCard card) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('curiosityCards')
+        .doc(card.id)
+        .set({
+          'id': card.id,
+          'fromProfileId': card.fromProfileId,
+          'toProfileId': card.toProfileId,
+          'question': card.question,
+          'reply': card.reply ?? '',
+          'createdLabel': card.createdLabel,
+          'repliedLabel': card.repliedLabel ?? '',
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+  }
+
   Future<AlagagiSpaceData> _loadSpaceData({
     required String spaceId,
     required String meId,
@@ -286,6 +305,9 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     final balanceSnapshot = await space.collection('balanceSelections').get();
     final wishesSnapshot = await space.collection('wishes').get();
     final musicNotesSnapshot = await space.collection('musicNotes').get();
+    final curiosityCardsSnapshot = await space
+        .collection('curiosityCards')
+        .get();
     final progressSnapshot = await space
         .collection('progress')
         .doc('daily')
@@ -326,6 +348,10 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           .toList(),
       musicNotes: musicNotesSnapshot.docs
           .map((doc) => _musicNoteFromData(doc.id, doc.data()))
+          .nonNulls
+          .toList(),
+      curiosityCards: curiosityCardsSnapshot.docs
+          .map((doc) => _curiosityCardFromData(doc.id, doc.data()))
           .nonNulls
           .toList(),
       dailyProgress: _dailyProgressFromData(progressSnapshot.data()),
@@ -461,6 +487,28 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       mood: _readString(data, 'mood') ?? musicMoodOptions.first,
       createdByProfileId: _readString(data, 'createdByProfileId') ?? '',
       createdLabel: _readString(data, 'createdLabel') ?? '오늘',
+      updatedAt: _readDateTime(data, 'updatedAt'),
+    );
+  }
+
+  CuriosityCard? _curiosityCardFromData(
+    String fallbackId,
+    Map<String, dynamic> data,
+  ) {
+    final fromProfileId = _readString(data, 'fromProfileId');
+    final toProfileId = _readString(data, 'toProfileId');
+    final question = _readString(data, 'question');
+    if (fromProfileId == null || toProfileId == null || question == null) {
+      return null;
+    }
+    return CuriosityCard(
+      id: _readString(data, 'id') ?? fallbackId,
+      fromProfileId: fromProfileId,
+      toProfileId: toProfileId,
+      question: question,
+      createdLabel: _readString(data, 'createdLabel') ?? '오늘',
+      reply: _readString(data, 'reply'),
+      repliedLabel: _readString(data, 'repliedLabel'),
       updatedAt: _readDateTime(data, 'updatedAt'),
     );
   }

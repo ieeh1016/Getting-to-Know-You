@@ -166,6 +166,15 @@ void main() {
                 likedByProfileIds: {'youngwooUid', 'minyoungUid'},
               ),
             ],
+            curiosityCards: [
+              CuriosityCard(
+                id: 'curiosity_1',
+                fromProfileId: 'minyoungUid',
+                toProfileId: 'youngwooUid',
+                question: '요즘 제일 자주 생각나는 건 뭐예요?',
+                createdLabel: '오늘',
+              ),
+            ],
           ),
         ),
         todayDateKey: '2026-06-08',
@@ -176,8 +185,78 @@ void main() {
       expect(controller.activeBalanceSelection, 'sea');
       expect(controller.activePartnerBalanceSelection, 'forest');
       expect(controller.visibleWishes.single.title, '조용한 카페에서 커피 마시기');
+      expect(
+        controller.latestReceivedCuriosityCard?.question,
+        '요즘 제일 자주 생각나는 건 뭐예요?',
+      );
       expect(controller.insight.questionCount, 1);
       expect(controller.insight.matchCount, 1);
+    });
+
+    test('session controller saves curiosity question and reply', () {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            curiosityCards: [
+              CuriosityCard(
+                id: 'curiosity_existing',
+                fromProfileId: 'minyoungUid',
+                toProfileId: 'youngwooUid',
+                question: '요즘 제일 자주 생각나는 건 뭐예요?',
+                createdLabel: '오늘',
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+      );
+
+      controller.updateCuriosityQuestionDraft('이번 주에 기대되는 일이 있어요?');
+      controller.submitCuriosityQuestion();
+
+      expect(repository.savedCuriosityCards.last.spaceId, 'main');
+      expect(
+        repository.savedCuriosityCards.last.card.fromProfileId,
+        'youngwooUid',
+      );
+      expect(
+        repository.savedCuriosityCards.last.card.toProfileId,
+        'minyoungUid',
+      );
+      expect(
+        repository.savedCuriosityCards.last.card.question,
+        '이번 주에 기대되는 일이 있어요?',
+      );
+
+      controller.updateCuriosityReplyDraft(
+        cardId: 'curiosity_existing',
+        value: '산책하면서 생각을 정리하는 시간이요.',
+      );
+      controller.submitCuriosityReply('curiosity_existing');
+
+      expect(repository.savedCuriosityCards.last.card.id, 'curiosity_existing');
+      expect(
+        repository.savedCuriosityCards.last.card.reply,
+        '산책하면서 생각을 정리하는 시간이요.',
+      );
+      expect(
+        controller.latestReceivedCuriosityCard?.reply,
+        '산책하면서 생각을 정리하는 시간이요.',
+      );
     });
 
     test('daily progress selects the shared current question', () {
@@ -1356,6 +1435,7 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   final List<({String spaceId, MusicNote note})> savedMusicNotes = [];
   final List<({String spaceId, AnswerComment comment})> savedAnswerComments =
       [];
+  final List<({String spaceId, CuriosityCard card})> savedCuriosityCards = [];
   final List<({String spaceId, DailyQuestionProgress progress})>
   savedDailyQuestionProgress = [];
   final List<({String spaceId, SpacePersonalization personalization})>
@@ -1403,6 +1483,11 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   @override
   Future<void> saveMusicNote(String spaceId, MusicNote note) async {
     savedMusicNotes.add((spaceId: spaceId, note: note));
+  }
+
+  @override
+  Future<void> saveCuriosityCard(String spaceId, CuriosityCard card) async {
+    savedCuriosityCards.add((spaceId: spaceId, card: card));
   }
 
   @override

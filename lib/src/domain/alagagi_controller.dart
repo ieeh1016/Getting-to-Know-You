@@ -103,6 +103,7 @@ class AlagagiSpaceData {
     this.profileSlots = const [],
     this.wishes = const [],
     this.musicNotes = const [],
+    this.curiosityCards = const [],
     this.dailyProgress,
     this.personalization = const SpacePersonalization(),
   });
@@ -113,6 +114,7 @@ class AlagagiSpaceData {
   final List<ProfileSlotValue> profileSlots;
   final List<WishItem> wishes;
   final List<MusicNote> musicNotes;
+  final List<CuriosityCard> curiosityCards;
   final DailyQuestionProgress? dailyProgress;
   final SpacePersonalization personalization;
 }
@@ -164,6 +166,8 @@ abstract class AlagagiDataRepository {
   Future<void> saveWish(String spaceId, WishItem wish);
 
   Future<void> saveMusicNote(String spaceId, MusicNote note);
+
+  Future<void> saveCuriosityCard(String spaceId, CuriosityCard card);
 }
 
 class AppProfile {
@@ -751,6 +755,48 @@ class MusicNote {
   }
 }
 
+class CuriosityCard {
+  const CuriosityCard({
+    required this.id,
+    required this.fromProfileId,
+    required this.toProfileId,
+    required this.question,
+    required this.createdLabel,
+    this.reply,
+    this.repliedLabel,
+    this.updatedAt,
+  });
+
+  final String id;
+  final String fromProfileId;
+  final String toProfileId;
+  final String question;
+  final String createdLabel;
+  final String? reply;
+  final String? repliedLabel;
+  final DateTime? updatedAt;
+
+  bool get hasReply => reply != null && reply!.trim().isNotEmpty;
+
+  CuriosityCard copyWith({
+    String? question,
+    String? reply,
+    String? repliedLabel,
+    DateTime? updatedAt,
+  }) {
+    return CuriosityCard(
+      id: id,
+      fromProfileId: fromProfileId,
+      toProfileId: toProfileId,
+      question: question ?? this.question,
+      createdLabel: createdLabel,
+      reply: reply ?? this.reply,
+      repliedLabel: repliedLabel ?? this.repliedLabel,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+}
+
 class HomeProgressSummary {
   const HomeProgressSummary({required this.items, this.primaryAction});
 
@@ -855,6 +901,12 @@ class AlagagiState {
     this.musicDraftNote = '',
     this.musicDraftMood = '차분한',
     this.editingMusicNoteId,
+    this.curiosityQuestionDraft = '',
+    this.curiosityReplyDraftsByCardId = const {},
+    this.curiosityError,
+    this.curiositySaveStatus = SaveStatus.idle,
+    this.curiositySaveFeedback,
+    this.curiositySaveTargetId,
     this.draftAnswer = '',
     this.inviteError,
     this.answerError,
@@ -896,6 +948,12 @@ class AlagagiState {
   final String musicDraftNote;
   final String musicDraftMood;
   final String? editingMusicNoteId;
+  final String curiosityQuestionDraft;
+  final Map<String, String> curiosityReplyDraftsByCardId;
+  final String? curiosityError;
+  final SaveStatus curiositySaveStatus;
+  final String? curiositySaveFeedback;
+  final String? curiositySaveTargetId;
   final String draftAnswer;
   final String? inviteError;
   final String? answerError;
@@ -938,6 +996,15 @@ class AlagagiState {
     String? musicDraftMood,
     String? editingMusicNoteId,
     bool clearEditingMusicNoteId = false,
+    String? curiosityQuestionDraft,
+    Map<String, String>? curiosityReplyDraftsByCardId,
+    String? curiosityError,
+    bool clearCuriosityError = false,
+    SaveStatus? curiositySaveStatus,
+    String? curiositySaveFeedback,
+    bool clearCuriositySaveFeedback = false,
+    String? curiositySaveTargetId,
+    bool clearCuriositySaveTargetId = false,
     String? draftAnswer,
     String? inviteError,
     bool clearInviteError = false,
@@ -992,6 +1059,20 @@ class AlagagiState {
       editingMusicNoteId: clearEditingMusicNoteId
           ? null
           : editingMusicNoteId ?? this.editingMusicNoteId,
+      curiosityQuestionDraft:
+          curiosityQuestionDraft ?? this.curiosityQuestionDraft,
+      curiosityReplyDraftsByCardId:
+          curiosityReplyDraftsByCardId ?? this.curiosityReplyDraftsByCardId,
+      curiosityError: clearCuriosityError
+          ? null
+          : curiosityError ?? this.curiosityError,
+      curiositySaveStatus: curiositySaveStatus ?? this.curiositySaveStatus,
+      curiositySaveFeedback: clearCuriositySaveFeedback
+          ? null
+          : curiositySaveFeedback ?? this.curiositySaveFeedback,
+      curiositySaveTargetId: clearCuriositySaveTargetId
+          ? null
+          : curiositySaveTargetId ?? this.curiositySaveTargetId,
       draftAnswer: draftAnswer ?? this.draftAnswer,
       inviteError: clearInviteError ? null : inviteError ?? this.inviteError,
       answerError: clearAnswerError ? null : answerError ?? this.answerError,
@@ -1132,8 +1213,10 @@ class AlagagiController extends ChangeNotifier {
   final List<ProfileCardData> _profileCards = [];
   final List<WishItem> _wishes = [];
   final List<MusicNote> _musicNotes = [];
+  final List<CuriosityCard> _curiosityCards = [];
   Answer? _lastFailedAnswer;
   AnswerComment? _lastFailedAnswerComment;
+  CuriosityCard? _lastFailedCuriosityCard;
 
   AlagagiState get state => _state;
 
@@ -1314,6 +1397,23 @@ class AlagagiController extends ChangeNotifier {
         }),
       );
     _sortMusicNotesByUpdatedAt();
+    _curiosityCards
+      ..clear()
+      ..addAll(
+        seedCuriosityCards.map((card) {
+          return CuriosityCard(
+            id: card.id,
+            fromProfileId: _mapSeedProfileId(card.fromProfileId),
+            toProfileId: _mapSeedProfileId(card.toProfileId),
+            question: card.question,
+            createdLabel: card.createdLabel,
+            reply: card.reply,
+            repliedLabel: card.repliedLabel,
+            updatedAt: card.updatedAt,
+          );
+        }),
+      );
+    _sortCuriosityCardsByUpdatedAt();
   }
 
   void _applySessionData(AlagagiSpaceData data) {
@@ -1385,6 +1485,10 @@ class AlagagiController extends ChangeNotifier {
       ..clear()
       ..addAll(data.musicNotes);
     _sortMusicNotesByUpdatedAt();
+    _curiosityCards
+      ..clear()
+      ..addAll(data.curiosityCards);
+    _sortCuriosityCardsByUpdatedAt();
   }
 
   static DailyQuestionProgress _resolveDailyQuestionProgress(
@@ -1624,6 +1728,46 @@ class AlagagiController extends ChangeNotifier {
       return;
     }
     unawaited(repository.saveMusicNote(spaceId, note).catchError((_) {}));
+  }
+
+  void _persistCuriosityCard(CuriosityCard card) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      _lastFailedCuriosityCard = null;
+      _state = _state.copyWith(
+        curiositySaveStatus: SaveStatus.saved,
+        curiositySaveFeedback: '저장됐어요.',
+        curiositySaveTargetId: card.id,
+        clearCuriosityError: true,
+      );
+      notifyListeners();
+      return;
+    }
+    unawaited(
+      repository
+          .saveCuriosityCard(spaceId, card)
+          .then<void>((_) {
+            _lastFailedCuriosityCard = null;
+            _state = _state.copyWith(
+              curiositySaveStatus: SaveStatus.saved,
+              curiositySaveFeedback: '저장됐어요.',
+              curiositySaveTargetId: card.id,
+              clearCuriosityError: true,
+            );
+            notifyListeners();
+          })
+          .catchError((Object _) {
+            _lastFailedCuriosityCard = card;
+            _state = _state.copyWith(
+              curiosityError: '저장하지 못했어요. 다시 시도해 주세요.',
+              curiositySaveStatus: SaveStatus.failed,
+              curiositySaveTargetId: card.id,
+              clearCuriositySaveFeedback: true,
+            );
+            notifyListeners();
+          }),
+    );
   }
 
   void _persistAnswerComment(AnswerComment comment) {
@@ -1984,6 +2128,36 @@ class AlagagiController extends ChangeNotifier {
 
   List<MusicNote> get musicNotes => List<MusicNote>.unmodifiable(_musicNotes);
 
+  List<CuriosityCard> get curiosityCards =>
+      List<CuriosityCard>.unmodifiable(_curiosityCards);
+
+  CuriosityCard? get latestReceivedCuriosityCard {
+    return _firstCuriosityCardWhere((card) => card.toProfileId == _state.me.id);
+  }
+
+  CuriosityCard? get latestSentCuriosityCard {
+    return _firstCuriosityCardWhere(
+      (card) => card.fromProfileId == _state.me.id,
+    );
+  }
+
+  int get unansweredReceivedCuriosityCount {
+    return _curiosityCards.where((card) {
+      return card.toProfileId == _state.me.id && !card.hasReply;
+    }).length;
+  }
+
+  CuriosityCard? _firstCuriosityCardWhere(
+    bool Function(CuriosityCard card) test,
+  ) {
+    for (final card in _curiosityCards) {
+      if (test(card)) {
+        return card;
+      }
+    }
+    return null;
+  }
+
   List<ArchiveItem> get archiveItems {
     final visibleQuestions = _usesDemoData
         ? questions
@@ -2118,6 +2292,23 @@ class AlagagiController extends ChangeNotifier {
       final bUpdatedAt = b.updatedAt;
       if (aUpdatedAt == null && bUpdatedAt == null) {
         return 0;
+      }
+      if (aUpdatedAt == null) {
+        return 1;
+      }
+      if (bUpdatedAt == null) {
+        return -1;
+      }
+      return bUpdatedAt.compareTo(aUpdatedAt);
+    });
+  }
+
+  void _sortCuriosityCardsByUpdatedAt() {
+    _curiosityCards.sort((a, b) {
+      final aUpdatedAt = a.updatedAt;
+      final bUpdatedAt = b.updatedAt;
+      if (aUpdatedAt == null && bUpdatedAt == null) {
+        return b.id.compareTo(a.id);
       }
       if (aUpdatedAt == null) {
         return 1;
@@ -2792,6 +2983,168 @@ class AlagagiController extends ChangeNotifier {
     _wishes[index] = updatedWish;
     _persistWish(updatedWish);
     notifyListeners();
+  }
+
+  String curiosityReplyDraftFor(String cardId) {
+    return _state.curiosityReplyDraftsByCardId[cardId] ?? '';
+  }
+
+  bool isCuriositySaveTarget(String cardId) {
+    return _state.curiositySaveTargetId == cardId;
+  }
+
+  void updateCuriosityQuestionDraft(String value) {
+    _state = _state.copyWith(
+      curiosityQuestionDraft: value,
+      curiositySaveStatus: SaveStatus.idle,
+      clearCuriosityError: true,
+      clearCuriositySaveFeedback: true,
+      clearCuriositySaveTargetId: true,
+    );
+    notifyListeners();
+  }
+
+  void updateCuriosityReplyDraft({
+    required String cardId,
+    required String value,
+  }) {
+    final drafts = Map<String, String>.of(_state.curiosityReplyDraftsByCardId)
+      ..[cardId] = value;
+    _state = _state.copyWith(
+      curiosityReplyDraftsByCardId: Map<String, String>.unmodifiable(drafts),
+      curiositySaveStatus: SaveStatus.idle,
+      clearCuriosityError: true,
+      clearCuriositySaveFeedback: true,
+      clearCuriositySaveTargetId: true,
+    );
+    notifyListeners();
+  }
+
+  void submitCuriosityQuestion() {
+    if (_state.curiositySaveStatus == SaveStatus.saving) {
+      return;
+    }
+    final question = _state.curiosityQuestionDraft.trim();
+    if (question.isEmpty) {
+      _state = _state.copyWith(
+        curiosityError: '궁금한 걸 한 줄만 남겨도 괜찮아요.',
+        curiositySaveStatus: SaveStatus.idle,
+        clearCuriositySaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    if (question.length > 80) {
+      _state = _state.copyWith(
+        curiosityError: '질문은 80자 안으로 남겨주세요.',
+        curiositySaveStatus: SaveStatus.idle,
+        clearCuriositySaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+
+    final now = DateTime.now();
+    final card = CuriosityCard(
+      id: 'curiosity_${_state.me.id}_${now.microsecondsSinceEpoch}',
+      fromProfileId: _state.me.id,
+      toProfileId: _state.partner.id,
+      question: question,
+      createdLabel: '오늘',
+      updatedAt: now,
+    );
+    _curiosityCards.insert(0, card);
+    _sortCuriosityCardsByUpdatedAt();
+    _lastFailedCuriosityCard = null;
+    _state = _state.copyWith(
+      curiosityQuestionDraft: '',
+      curiositySaveStatus: SaveStatus.saving,
+      curiositySaveTargetId: card.id,
+      clearCuriosityError: true,
+      clearCuriositySaveFeedback: true,
+    );
+    notifyListeners();
+    _persistCuriosityCard(card);
+  }
+
+  void submitCuriosityReply(String cardId) {
+    if (_state.curiositySaveStatus == SaveStatus.saving) {
+      return;
+    }
+    final index = _curiosityCards.indexWhere((card) => card.id == cardId);
+    if (index == -1) {
+      _state = _state.copyWith(
+        curiosityError: '답장할 질문을 찾지 못했어요.',
+        curiositySaveStatus: SaveStatus.idle,
+        clearCuriositySaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    final card = _curiosityCards[index];
+    if (card.toProfileId != _state.me.id) {
+      _state = _state.copyWith(
+        curiosityError: '받은 질문에만 답장할 수 있어요.',
+        curiositySaveStatus: SaveStatus.idle,
+        clearCuriositySaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    final reply = curiosityReplyDraftFor(cardId).trim();
+    if (reply.isEmpty) {
+      _state = _state.copyWith(
+        curiosityError: '짧게라도 답장을 남겨주세요.',
+        curiositySaveStatus: SaveStatus.idle,
+        clearCuriositySaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    if (reply.length > 160) {
+      _state = _state.copyWith(
+        curiosityError: '답장은 160자 안으로 남겨주세요.',
+        curiositySaveStatus: SaveStatus.idle,
+        clearCuriositySaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+
+    final updatedCard = card.copyWith(
+      reply: reply,
+      repliedLabel: card.repliedLabel ?? '오늘',
+      updatedAt: DateTime.now(),
+    );
+    _curiosityCards[index] = updatedCard;
+    _sortCuriosityCardsByUpdatedAt();
+    _lastFailedCuriosityCard = null;
+    final drafts = Map<String, String>.of(_state.curiosityReplyDraftsByCardId)
+      ..remove(cardId);
+    _state = _state.copyWith(
+      curiosityReplyDraftsByCardId: Map<String, String>.unmodifiable(drafts),
+      curiositySaveStatus: SaveStatus.saving,
+      curiositySaveTargetId: cardId,
+      clearCuriosityError: true,
+      clearCuriositySaveFeedback: true,
+    );
+    notifyListeners();
+    _persistCuriosityCard(updatedCard);
+  }
+
+  void retryCuriositySave() {
+    final card = _lastFailedCuriosityCard;
+    if (card == null || _state.curiositySaveStatus == SaveStatus.saving) {
+      return;
+    }
+    _state = _state.copyWith(
+      curiositySaveStatus: SaveStatus.saving,
+      curiositySaveTargetId: card.id,
+      clearCuriosityError: true,
+      clearCuriositySaveFeedback: true,
+    );
+    notifyListeners();
+    _persistCuriosityCard(card);
   }
 
   void startMusicDraft() {
@@ -3743,6 +4096,16 @@ const seedMusicNotes = [
     note: '카페에서 이야기할 때 배경에 있으면 좋을 것 같아서요.',
     mood: '카페',
     createdByProfileId: 'me',
+    createdLabel: '오늘',
+  ),
+];
+
+const seedCuriosityCards = [
+  CuriosityCard(
+    id: 'curiosity_seed_1',
+    fromProfileId: 'partner',
+    toProfileId: 'me',
+    question: '요즘 제일 자주 생각나는 건 뭐예요?',
     createdLabel: '오늘',
   ),
 ];

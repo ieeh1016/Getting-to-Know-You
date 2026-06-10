@@ -214,10 +214,22 @@ If the app grows, bottom navigation may become:
 
 - 서비스의 사용자-facing 이름은 `조금씩`으로 사용한다.
 - 기존 코드 네임 `Alagagi`는 내부 class/file naming으로만 유지할 수 있지만, 앱 UI, 브라우저 탭, PWA 설치 이름에는 노출하지 않는다.
-- 브랜드 kicker는 `J O G E U M S S I K`을 사용한다.
-- 로고는 하트/커플/기념일 톤을 피하고, 작은 노트/종이 조각과 세이지 색상을 중심으로 만든다.
+- 브랜드 kicker는 로마자 표기 대신 `천천히 알아가는 기록`처럼 한글 중심의 조용한 설명을 사용한다.
+- 로고는 하트/커플/기념일 톤을 피하고, 작은 새싹/잎 표식과 세이지 색상의 한글 워드마크를 중심으로 만든다.
 - `web/index.html` title, apple mobile title, description과 `web/manifest.json` name/short_name/theme/background 색상은 `조금씩` 브랜드와 일치해야 한다.
 - favicon과 PWA icon은 동일한 브랜드 심볼을 사용하며, 16/192/512 및 maskable icon 크기를 유지한다.
+
+### MVP v0.17 Home Curiosity Menu
+
+- 홈 header는 단순 텍스트 제목 대신 작은 새싹 표식, `조금씩` 한글 워드마크, `천천히 알아가는 기록` 보조 문구로 앱 브랜드를 보여준다.
+- 홈의 핵심 시선은 `Today's Question` 카드에 남겨두고, 추가 기능은 질문 카드 아래의 작은 `궁금함` 상태 카드로만 진입시킨다.
+- `궁금함` 상태 카드는 받은 질문, 보낸 질문, 답장 완료 상태를 낮은 압력의 문구로 요약한다.
+- `궁금함` 상태 카드를 누르면 bottom sheet가 열리고, 받은 질문 답장 입력, 내가 보낸 질문 상태, 새 질문 작성 흐름을 보여준다.
+- 질문 작성과 답장 저장은 사용자가 명시적으로 `질문 보내기` 또는 `답장 저장하기`를 눌렀을 때만 `spaces/{spaceId}/curiosityCards/{cardId}`에 기록한다.
+- `curiosityCards` 문서는 `id`, `fromProfileId`, `toProfileId`, `question`, `reply`, `createdLabel`, `repliedLabel`, `updatedAt` 필드를 가진다.
+- 질문은 작성자 본인의 profile id를 `fromProfileId`로, 상대 profile id를 `toProfileId`로 저장한다. 답장은 받은 사람만 자신의 받은 질문 문서에 남기는 흐름으로 다룬다.
+- `나중에 보기`는 sheet를 닫는 읽기 전용 UI interaction이며 Firestore write를 만들지 않는다.
+- 390px 모바일 viewport에서 `Today's Question`, `궁금함` 상태 카드, 하단 내비게이션이 서로 겹치거나 잘리지 않아야 한다.
 
 ### MVP v0.16 First Visit Guide
 
@@ -458,7 +470,7 @@ This batch focuses only on the HOME today's question card. It follows the `docs/
 
 - Default unanswered state:
   - 홈 질문 카드는 질문을 가장 먼저 읽을 수 있는 focus card로 렌더링한다.
-  - 상단에는 `TODAY'S QUESTION` label과 compact `DAY {day}` chip을 같은 row에 둔다.
+  - 상단에는 `Today's Question` label과 compact `DAY {day}` chip을 같은 row에 둔다.
   - 큰 배경 question number는 사용하지 않거나, 텍스트 정렬을 방해하지 않는 수준으로 축소한다.
   - 질문 본문 아래에는 `아직 내 답을 남기지 않았어요.`와 `답을 남기면 {partnerName}님의 답도 함께 열려요.` 계열의 support block을 둔다.
   - 홈 카드 안에는 `지금의 마음을 한 줄로...`처럼 입력창처럼 보이는 inline composer를 두지 않는다.
@@ -730,7 +742,7 @@ Required UI:
 
 - Safe top spacing without fake OS status row
 - Seal icon area
-- Kicker: `J O G E U M S S I K`
+- Kicker: `천천히 알아가는 기록`
 - Hero headline: `조금씩`
 - Helper copy: `아이디가 있으면 조용히 이어서 들어갈 수 있어요.`
 - Login note rows:
@@ -777,7 +789,7 @@ Required UI:
 
 - Safe top spacing without fake OS status row
 - Seal icon area
-- Kicker: `J O G E U M S S I K`
+- Kicker: `천천히 알아가는 기록`
 - Hero headline: `우리, 천천히 알아가 볼래요?`
 - Inviter copy: `{inviterName}님이 대화 공간을 열어두었어요.`
 - Note rows:
@@ -821,7 +833,7 @@ Required UI:
 - Today question label
 - Question card:
   - compact day chip or question number
-  - `TODAY'S QUESTION`
+  - `Today's Question`
   - question text
   - my answer preview
   - partner answer locked/waiting state
