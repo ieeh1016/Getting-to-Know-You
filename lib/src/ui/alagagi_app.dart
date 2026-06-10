@@ -32,6 +32,8 @@ const answerCommentFieldKey = Key('answer-comment-field');
 const answerCommentEditButtonKey = Key('answer-comment-edit-button');
 const answerCommentCancelButtonKey = Key('answer-comment-cancel-button');
 const answerCommentSubmitButtonKey = Key('answer-comment-submit-button');
+const readableDetailSheetKey = Key('readable-detail-sheet');
+const readableDetailBodyKey = Key('readable-detail-body');
 const myDashboardKey = Key('my-dashboard');
 const myNextPrimaryButtonKey = Key('my-next-primary-button');
 const myProfileCardActionButtonKey = Key('my-profile-card-action-button');
@@ -48,6 +50,13 @@ const profileEditorPanelKey = Key('profile-editor-panel');
 
 Key archiveCalendarDayButtonKey(String dateKey) =>
     Key('archive-calendar-day-$dateKey');
+
+Key answerPreviewBlockKey(String questionId, String profileId) =>
+    Key('answer-preview-$questionId-$profileId');
+
+Key musicNoteCardKey(String noteId) => Key('music-note-card-$noteId');
+
+Key myTraceCardKey(String type) => Key('my-trace-card-$type');
 
 Key profileCategoryChipKey(String category) =>
     Key('profile-category-chip-$category');
@@ -1294,8 +1303,20 @@ class _QuestionCard extends StatelessWidget {
             )
           else ...[
             _AnswerPreviewBlock(
+              key: answerPreviewBlockKey(
+                myAnswer.questionId,
+                myAnswer.profileId,
+              ),
               label: '내 답',
               body: myAnswer.body,
+              onOpenFull: () => _showReadableDetailSheet(
+                context,
+                label: '내 답',
+                title: question.text,
+                body: myAnswer.body,
+                actionLabel: '수정하기',
+                onAction: controller.editTodayAnswer,
+              ),
               action: _InlineTextAction(
                 key: editAnswerButtonKey,
                 label: '수정하기',
@@ -1315,6 +1336,12 @@ class _QuestionCard extends StatelessWidget {
               _ReadOnlyCommentBlock(
                 label: '${controller.state.partner.nickname}님의 댓글',
                 body: receivedComment.body,
+                onOpenFull: () => _showReadableDetailSheet(
+                  context,
+                  label: '${controller.state.partner.nickname}님의 댓글',
+                  title: '내 답에 남겨진 댓글',
+                  body: receivedComment.body,
+                ),
               ),
             ],
             const SizedBox(height: 16),
@@ -1328,9 +1355,19 @@ class _QuestionCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _AnswerPreviewBlock(
+                    key: answerPreviewBlockKey(
+                      partnerAnswer.questionId,
+                      partnerAnswer.profileId,
+                    ),
                     label: '${controller.state.partner.nickname}님 답',
                     accentColor: AlagagiColors.lavender,
                     body: partnerAnswer.body,
+                    onOpenFull: () => _showReadableDetailSheet(
+                      context,
+                      label: '${controller.state.partner.nickname}님 답',
+                      title: question.text,
+                      body: partnerAnswer.body,
+                    ),
                     expanded: controller.isAnswerExpanded(
                       partnerAnswer.questionId,
                       partnerAnswer.profileId,
@@ -1708,12 +1745,36 @@ class _AnswerCommentBox extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    existingComment.body,
-                    style: sans(
-                      size: 13,
-                      color: AlagagiColors.ink,
-                      height: 1.55,
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _showReadableDetailSheet(
+                      context,
+                      label: '내 댓글',
+                      title: '상대 답에 남긴 댓글',
+                      body: existingComment.body,
+                      actionLabel: '수정하기',
+                      onAction: () => controller.updateAnswerCommentDraft(
+                        questionId: questionId,
+                        answerOwnerProfileId: answerOwnerProfileId,
+                        value: existingComment.body,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          existingComment.body,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: sans(
+                            size: 13,
+                            color: AlagagiColors.ink,
+                            height: 1.55,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        const _FullTextCue(),
+                      ],
                     ),
                   ),
                   if (existingComment.edited) ...[
@@ -1954,12 +2015,14 @@ class _EditedBadge extends StatelessWidget {
 
 class _AnswerPreviewBlock extends StatelessWidget {
   const _AnswerPreviewBlock({
+    super.key,
     required this.label,
     required this.body,
     this.accentColor = AlagagiColors.sageDeep,
     this.action,
     this.expanded = false,
     this.onToggle,
+    this.onOpenFull,
   });
 
   final String label;
@@ -1968,6 +2031,7 @@ class _AnswerPreviewBlock extends StatelessWidget {
   final Widget? action;
   final bool expanded;
   final VoidCallback? onToggle;
+  final VoidCallback? onOpenFull;
 
   @override
   Widget build(BuildContext context) {
@@ -1976,51 +2040,63 @@ class _AnswerPreviewBlock extends StatelessWidget {
         ? '${body.substring(0, _longAnswerPreviewLength).trimRight()}...'
         : body;
 
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
-        border: Border.all(color: AlagagiColors.line),
-        borderRadius: BorderRadius.circular(17),
-      ),
-      padding: const EdgeInsets.all(15),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Text(
-                  label,
-                  style: serif(
-                    context,
-                    size: 13,
-                    weight: FontWeight.w800,
-                    color: accentColor,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onOpenFull,
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8F8F4),
+          border: Border.all(color: AlagagiColors.line),
+          borderRadius: BorderRadius.circular(17),
+        ),
+        padding: const EdgeInsets.all(15),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: serif(
+                      context,
+                      size: 13,
+                      weight: FontWeight.w800,
+                      color: accentColor,
+                    ),
                   ),
                 ),
+                ?action,
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              visibleBody,
+              style: sans(
+                size: 13.5,
+                color: const Color(0xFF4A4A46),
+                height: 1.62,
               ),
-              ?action,
+            ),
+            if ((isLong && onToggle != null) || onOpenFull != null) ...[
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 14,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  if (isLong && onToggle != null)
+                    _InlineTextAction(
+                      label: expanded ? '접기' : '더 보기',
+                      onPressed: onToggle,
+                    ),
+                  if (onOpenFull != null) const _FullTextCue(),
+                ],
+              ),
             ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            visibleBody,
-            style: sans(
-              size: 13.5,
-              color: const Color(0xFF4A4A46),
-              height: 1.62,
-            ),
-          ),
-          if (isLong && onToggle != null) ...[
-            const SizedBox(height: 6),
-            _InlineTextAction(
-              label: expanded ? '접기' : '더 보기',
-              onPressed: onToggle,
-            ),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -2033,6 +2109,7 @@ class _AnswerLine extends StatelessWidget {
     required this.body,
     this.expanded = false,
     this.onToggle,
+    this.onOpenFull,
   });
 
   final String tag;
@@ -2040,6 +2117,7 @@ class _AnswerLine extends StatelessWidget {
   final String body;
   final bool expanded;
   final VoidCallback? onToggle;
+  final VoidCallback? onOpenFull;
 
   @override
   Widget build(BuildContext context) {
@@ -2048,44 +2126,56 @@ class _AnswerLine extends StatelessWidget {
         ? '${body.substring(0, _longAnswerPreviewLength).trimRight()}...'
         : body;
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 48,
-          child: Text(
-            tag,
-            style: serif(
-              context,
-              size: 13,
-              weight: FontWeight.w700,
-              color: tagColor,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onOpenFull,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 48,
+            child: Text(
+              tag,
+              style: serif(
+                context,
+                size: 13,
+                weight: FontWeight.w700,
+                color: tagColor,
+              ),
             ),
           ),
-        ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                visibleBody,
-                style: sans(
-                  size: 14,
-                  color: const Color(0xFF4A4A46),
-                  height: 1.65,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  visibleBody,
+                  style: sans(
+                    size: 14,
+                    color: const Color(0xFF4A4A46),
+                    height: 1.65,
+                  ),
                 ),
-              ),
-              if (isLong && onToggle != null) ...[
-                const SizedBox(height: 4),
-                _InlineTextAction(
-                  label: expanded ? '접기' : '더 보기',
-                  onPressed: onToggle,
-                ),
+                if ((isLong && onToggle != null) || onOpenFull != null) ...[
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 12,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      if (isLong && onToggle != null)
+                        _InlineTextAction(
+                          label: expanded ? '접기' : '더 보기',
+                          onPressed: onToggle,
+                        ),
+                      if (onOpenFull != null) const _FullTextCue(),
+                    ],
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -2113,6 +2203,207 @@ class _InlineTextAction extends StatelessWidget {
       child: Text(label, style: sans(size: 12, weight: FontWeight.w700)),
     );
   }
+}
+
+class _FullTextCue extends StatelessWidget {
+  const _FullTextCue();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(
+          Icons.open_in_full_rounded,
+          size: 13,
+          color: AlagagiColors.sageDeep,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '전체 보기',
+          style: sans(
+            size: 11.5,
+            weight: FontWeight.w700,
+            color: AlagagiColors.sageDeep,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+void _showReadableDetailSheet(
+  BuildContext context, {
+  required String label,
+  required String title,
+  required String body,
+  String? meta,
+  String? actionLabel,
+  VoidCallback? onAction,
+}) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return DraggableScrollableSheet(
+        initialChildSize: 0.62,
+        minChildSize: 0.34,
+        maxChildSize: 0.88,
+        expand: false,
+        builder: (_, scrollController) {
+          return SafeArea(
+            child: Container(
+              key: readableDetailSheetKey,
+              margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              decoration: BoxDecoration(
+                color: AlagagiColors.paper,
+                border: Border.all(color: AlagagiColors.line),
+                borderRadius: BorderRadius.circular(26),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x22000000),
+                    blurRadius: 32,
+                    offset: Offset(0, 16),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 10),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD7D5CC),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                label,
+                                style: sans(
+                                  size: 10.5,
+                                  weight: FontWeight.w800,
+                                  color: AlagagiColors.sageDeep,
+                                  letterSpacing: 1.6,
+                                ),
+                              ),
+                              const SizedBox(height: 7),
+                              Text(
+                                title,
+                                style: serif(
+                                  sheetContext,
+                                  size: 20,
+                                  weight: FontWeight.w800,
+                                  height: 1.45,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: '닫기',
+                          onPressed: () => Navigator.of(sheetContext).pop(),
+                          icon: const Icon(Icons.close_rounded, size: 20),
+                          color: AlagagiColors.muted,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                      children: [
+                        if (meta != null && meta.trim().isNotEmpty) ...[
+                          Text(
+                            meta,
+                            style: sans(
+                              size: 12,
+                              color: AlagagiColors.muted,
+                              height: 1.55,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        Text(
+                          body,
+                          key: readableDetailBodyKey,
+                          style: sans(
+                            size: 14.2,
+                            color: const Color(0xFF3F3E39),
+                            height: 1.72,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.of(sheetContext).pop(),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AlagagiColors.muted,
+                              side: const BorderSide(color: AlagagiColors.line),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              textStyle: sans(
+                                size: 13,
+                                weight: FontWeight.w700,
+                              ),
+                            ),
+                            child: const Text('닫기'),
+                          ),
+                        ),
+                        if (actionLabel != null && onAction != null) ...[
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.of(sheetContext).pop();
+                                onAction();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                elevation: 0,
+                                backgroundColor: AlagagiColors.sageDeep,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                textStyle: sans(
+                                  size: 13,
+                                  weight: FontWeight.w800,
+                                ),
+                              ),
+                              child: Text(actionLabel),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
 }
 
 class _AnswerSaveStatus extends StatelessWidget {
@@ -3133,10 +3424,28 @@ class _SelectedQuestionDetail extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           if (myAnswer != null && !myAnswer.skipped)
-            _SelectedAnswerBlock(
+            _AnswerPreviewBlock(
+              key: answerPreviewBlockKey(
+                myAnswer.questionId,
+                myAnswer.profileId,
+              ),
               label: '내 답',
-              color: AlagagiColors.sageDeep,
+              accentColor: AlagagiColors.sageDeep,
               body: myAnswer.body,
+              onOpenFull: () => _showReadableDetailSheet(
+                context,
+                label: '내 답',
+                title: question.text,
+                body: myAnswer.body,
+              ),
+              expanded: controller.isAnswerExpanded(
+                myAnswer.questionId,
+                myAnswer.profileId,
+              ),
+              onToggle: () => controller.toggleAnswerExpanded(
+                myAnswer.questionId,
+                myAnswer.profileId,
+              ),
             )
           else
             Text(
@@ -3145,14 +3454,41 @@ class _SelectedQuestionDetail extends StatelessWidget {
             ),
           if (receivedComment != null) ...[
             const SizedBox(height: 10),
-            _ReadOnlyCommentBlock(label: '받은 댓글', body: receivedComment.body),
+            _ReadOnlyCommentBlock(
+              label: '받은 댓글',
+              body: receivedComment.body,
+              onOpenFull: () => _showReadableDetailSheet(
+                context,
+                label: '받은 댓글',
+                title: '내 답에 남겨진 댓글',
+                body: receivedComment.body,
+              ),
+            ),
           ],
           if (partnerAnswer != null) ...[
             const SizedBox(height: 12),
-            _SelectedAnswerBlock(
+            _AnswerPreviewBlock(
+              key: answerPreviewBlockKey(
+                partnerAnswer.questionId,
+                partnerAnswer.profileId,
+              ),
               label: '${controller.state.partner.nickname}님 답',
-              color: AlagagiColors.lavender,
+              accentColor: AlagagiColors.lavender,
               body: partnerAnswer.body,
+              onOpenFull: () => _showReadableDetailSheet(
+                context,
+                label: '${controller.state.partner.nickname}님 답',
+                title: question.text,
+                body: partnerAnswer.body,
+              ),
+              expanded: controller.isAnswerExpanded(
+                partnerAnswer.questionId,
+                partnerAnswer.profileId,
+              ),
+              onToggle: () => controller.toggleAnswerExpanded(
+                partnerAnswer.questionId,
+                partnerAnswer.profileId,
+              ),
             ),
             const SizedBox(height: 10),
             _AnswerCommentBox(
@@ -3188,68 +3524,46 @@ class _SelectedQuestionDetail extends StatelessWidget {
   }
 }
 
-class _SelectedAnswerBlock extends StatelessWidget {
-  const _SelectedAnswerBlock({
+class _ReadOnlyCommentBlock extends StatelessWidget {
+  const _ReadOnlyCommentBlock({
     required this.label,
-    required this.color,
     required this.body,
+    this.onOpenFull,
   });
 
   final String label;
-  final Color color;
   final String body;
+  final VoidCallback? onOpenFull;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: serif(
-              context,
-              size: 13,
-              weight: FontWeight.w800,
-              color: color,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onOpenFull,
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          border: Border.all(color: AlagagiColors.line),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: sans(size: 11, color: AlagagiColors.muted)),
+            const SizedBox(height: 4),
+            Text(
+              body,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: sans(size: 13, height: 1.5),
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(body, style: sans(size: 13.5, height: 1.6)),
-        ],
-      ),
-    );
-  }
-}
-
-class _ReadOnlyCommentBlock extends StatelessWidget {
-  const _ReadOnlyCommentBlock({required this.label, required this.body});
-
-  final String label;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        border: Border.all(color: AlagagiColors.line),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: sans(size: 11, color: AlagagiColors.muted)),
-          const SizedBox(height: 4),
-          Text(body, style: sans(size: 13, height: 1.5)),
-        ],
+            if (onOpenFull != null) ...[
+              const SizedBox(height: 5),
+              const _FullTextCue(),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -3406,16 +3720,40 @@ class _ArchiveCard extends StatelessWidget {
               style: sans(size: 13, color: AlagagiColors.muted),
             )
           else if (waiting)
-            Text(
-              '내 답은 남겼어요.\n상대가 답하면 함께 열려요.',
-              textAlign: TextAlign.center,
-              style: sans(size: 13, color: AlagagiColors.muted, height: 1.5),
+            Column(
+              children: [
+                Text(
+                  '내 답은 남겼어요.\n상대가 답하면 함께 열려요.',
+                  textAlign: TextAlign.center,
+                  style: sans(
+                    size: 13,
+                    color: AlagagiColors.muted,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                _InlineTextAction(
+                  label: '내 답 보기',
+                  onPressed: () => _showReadableDetailSheet(
+                    context,
+                    label: '내 답',
+                    title: item.question.text,
+                    body: item.myAnswer!.body,
+                  ),
+                ),
+              ],
             )
           else ...[
             _AnswerLine(
               tag: '나',
               tagColor: AlagagiColors.sageDeep,
               body: item.myAnswer!.body,
+              onOpenFull: () => _showReadableDetailSheet(
+                context,
+                label: '내 답',
+                title: item.question.text,
+                body: item.myAnswer!.body,
+              ),
               expanded: controller.isAnswerExpanded(
                 item.myAnswer!.questionId,
                 item.myAnswer!.profileId,
@@ -3430,6 +3768,12 @@ class _ArchiveCard extends StatelessWidget {
               tag: partnerName,
               tagColor: AlagagiColors.lavender,
               body: item.partnerAnswer!.body,
+              onOpenFull: () => _showReadableDetailSheet(
+                context,
+                label: '$partnerName님 답',
+                title: item.question.text,
+                body: item.partnerAnswer!.body,
+              ),
               expanded: controller.isAnswerExpanded(
                 item.partnerAnswer!.questionId,
                 item.partnerAnswer!.profileId,
@@ -5119,10 +5463,28 @@ class _ProfileSlotCard extends StatelessWidget {
             const SizedBox(height: 10),
             Align(
               alignment: Alignment.centerLeft,
-              child: _InlineTextAction(
-                key: profileSlotEditButtonKey(slot.id),
-                label: filled ? '수정' : '작성',
-                onPressed: onEdit,
+              child: Wrap(
+                spacing: 12,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  if (filled)
+                    _InlineTextAction(
+                      label: '전체 보기',
+                      onPressed: () => _showReadableDetailSheet(
+                        context,
+                        label: '소개 카드',
+                        title: slot.label,
+                        body: slot.value!,
+                        actionLabel: '수정하기',
+                        onAction: onEdit,
+                      ),
+                    ),
+                  _InlineTextAction(
+                    key: profileSlotEditButtonKey(slot.id),
+                    label: filled ? '수정' : '작성',
+                    onPressed: onEdit,
+                  ),
+                ],
               ),
             ),
           ],
@@ -5195,44 +5557,57 @@ class _ProfileReadCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AlagagiColors.paper,
-        border: Border.all(color: AlagagiColors.line),
-        borderRadius: BorderRadius.circular(20),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _showReadableDetailSheet(
+        context,
+        label: '소개 카드',
+        title: slot.label,
+        body: slot.value!,
       ),
-      padding: const EdgeInsets.all(15),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _ProfileSlotIcon(slotId: slot.id),
-              const SizedBox(width: 9),
-              Expanded(
-                child: Text(
-                  slot.label,
-                  style: sans(
-                    size: 12.5,
-                    color: AlagagiColors.muted,
-                    weight: FontWeight.w700,
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: AlagagiColors.paper,
+          border: Border.all(color: AlagagiColors.line),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        padding: const EdgeInsets.all(15),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _ProfileSlotIcon(slotId: slot.id),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    slot.label,
+                    style: sans(
+                      size: 12.5,
+                      color: AlagagiColors.muted,
+                      weight: FontWeight.w700,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 9),
-          Text(
-            slot.value!,
-            style: sans(
-              size: 13.5,
-              color: const Color(0xFF45443F),
-              height: 1.7,
-              weight: FontWeight.w500,
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 9),
+            Text(
+              slot.value!,
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+              style: sans(
+                size: 13.5,
+                color: const Color(0xFF45443F),
+                height: 1.7,
+                weight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const _FullTextCue(),
+          ],
+        ),
       ),
     );
   }
@@ -6320,85 +6695,114 @@ class _MusicNoteCard extends StatelessWidget {
     final creator = isMine
         ? controller.state.me.nickname
         : controller.state.partner.nickname;
-    return _PaperCard(
-      radius: 19,
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _MusicCover(
-            color: isMine ? AlagagiColors.sage : AlagagiColors.lavender,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        note.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: sans(
-                          size: 14,
-                          weight: FontWeight.w700,
-                          color: const Color(0xFF33332F),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    _SmallBadge(label: note.mood),
-                    if (isMine) ...[
-                      const SizedBox(width: 4),
-                      Tooltip(
-                        message: '음악 노트 수정',
-                        child: IconButton(
-                          key: musicEditButtonKey(note.id),
-                          onPressed: () => controller.startMusicEdit(note.id),
-                          icon: const Icon(Icons.edit_rounded, size: 17),
-                          color: AlagagiColors.sageDeep,
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints.tightFor(
-                            width: 32,
-                            height: 32,
+    final detailBody = [
+      if (note.note.trim().isNotEmpty) note.note.trim(),
+      if (note.link.trim().isNotEmpty) '링크\n${note.link.trim()}',
+    ].join('\n\n');
+    return GestureDetector(
+      key: musicNoteCardKey(note.id),
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _showReadableDetailSheet(
+        context,
+        label: '음악 노트',
+        title: note.title,
+        meta: '$creator · ${note.artist} · ${note.mood}',
+        body: detailBody.isEmpty ? '남겨둔 메모는 아직 없어요.' : detailBody,
+        actionLabel: isMine ? '수정하기' : null,
+        onAction: isMine ? () => controller.startMusicEdit(note.id) : null,
+      ),
+      child: _PaperCard(
+        radius: 19,
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _MusicCover(
+              color: isMine ? AlagagiColors.sage : AlagagiColors.lavender,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          note.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: sans(
+                            size: 14,
+                            weight: FontWeight.w700,
+                            color: const Color(0xFF33332F),
                           ),
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      _SmallBadge(label: note.mood),
+                      if (isMine) ...[
+                        const SizedBox(width: 4),
+                        Tooltip(
+                          message: '음악 노트 수정',
+                          child: IconButton(
+                            key: musicEditButtonKey(note.id),
+                            onPressed: () => controller.startMusicEdit(note.id),
+                            icon: const Icon(Icons.edit_rounded, size: 17),
+                            color: AlagagiColors.sageDeep,
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints.tightFor(
+                              width: 32,
+                              height: 32,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$creator · ${note.artist}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: sans(size: 11.6, color: AlagagiColors.muted),
-                ),
-                if (note.note.isNotEmpty) ...[
-                  const SizedBox(height: 7),
+                  ),
+                  const SizedBox(height: 4),
                   Text(
-                    note.note,
-                    style: sans(
-                      size: 12.3,
-                      color: const Color(0xFF6F6C65),
-                      height: 1.45,
+                    '$creator · ${note.artist}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: sans(size: 11.6, color: AlagagiColors.muted),
+                  ),
+                  if (note.note.isNotEmpty) ...[
+                    const SizedBox(height: 7),
+                    Text(
+                      note.note,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: sans(
+                        size: 12.3,
+                        color: const Color(0xFF6F6C65),
+                        height: 1.45,
+                      ),
                     ),
-                  ),
+                  ],
+                  if (note.link.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '링크가 저장되어 있어요',
+                          style: sans(size: 11, color: AlagagiColors.sageDeep),
+                        ),
+                        const SizedBox(width: 8),
+                        const _FullTextCue(),
+                      ],
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 8),
+                    const _FullTextCue(),
+                  ],
                 ],
-                if (note.link.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    '링크가 저장되어 있어요',
-                    style: sans(size: 11, color: AlagagiColors.sageDeep),
-                  ),
-                ],
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -6568,19 +6972,38 @@ class MyScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: _MyTraceCard(
+                    key: myTraceCardKey('question'),
                     label: 'QUESTION',
                     title: recentQuestion?.text ?? '아직 남긴 답이 없어요',
                     body: recentAnswer?.body ?? '오늘 질문부터 천천히 시작해요.',
+                    onTap: () => _showReadableDetailSheet(
+                      context,
+                      label: '최근 질문 답변',
+                      title: recentQuestion?.text ?? '아직 남긴 답이 없어요',
+                      body: recentAnswer?.body ?? '오늘 질문부터 천천히 시작해요.',
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: _MyTraceCard(
+                    key: myTraceCardKey('music'),
                     label: 'MUSIC',
                     title: recentMusic?.title ?? '아직 음악 노트가 없어요',
                     body: recentMusic?.note.isNotEmpty == true
                         ? recentMusic!.note
                         : '요즘의 한 곡을 가볍게 남겨볼 수 있어요.',
+                    onTap: () => _showReadableDetailSheet(
+                      context,
+                      label: '최근 음악 노트',
+                      title: recentMusic?.title ?? '아직 음악 노트가 없어요',
+                      body: recentMusic?.note.isNotEmpty == true
+                          ? recentMusic!.note
+                          : '요즘의 한 곡을 가볍게 남겨볼 수 있어요.',
+                      meta: recentMusic == null
+                          ? null
+                          : '${recentMusic.artist} · ${recentMusic.mood}',
+                    ),
                   ),
                 ),
               ],
@@ -7025,59 +7448,68 @@ class _MyNextTile extends StatelessWidget {
 
 class _MyTraceCard extends StatelessWidget {
   const _MyTraceCard({
+    super.key,
     required this.label,
     required this.title,
     required this.body,
+    required this.onTap,
   });
 
   final String label;
   final String title;
   final String body;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return _PaperCard(
-      radius: 20,
-      padding: const EdgeInsets.all(14),
-      child: SizedBox(
-        height: 96,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: sans(
-                size: 10,
-                weight: FontWeight.w800,
-                color: AlagagiColors.sageDeep,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: _PaperCard(
+        radius: 20,
+        padding: const EdgeInsets.all(14),
+        child: SizedBox(
+          height: 104,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: sans(
+                  size: 10,
+                  weight: FontWeight.w800,
+                  color: AlagagiColors.sageDeep,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: sans(
-                size: 13.6,
-                weight: FontWeight.w800,
-                color: const Color(0xFF46443F),
-                height: 1.35,
-              ),
-            ),
-            const SizedBox(height: 7),
-            Expanded(
-              child: Text(
-                body,
+              const SizedBox(height: 8),
+              Text(
+                title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: sans(
-                  size: 11.6,
-                  color: AlagagiColors.muted,
-                  height: 1.45,
+                  size: 13.6,
+                  weight: FontWeight.w800,
+                  color: const Color(0xFF46443F),
+                  height: 1.35,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 7),
+              Expanded(
+                child: Text(
+                  body,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: sans(
+                    size: 11.6,
+                    color: AlagagiColors.muted,
+                    height: 1.45,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              const _FullTextCue(),
+            ],
+          ),
         ),
       ),
     );

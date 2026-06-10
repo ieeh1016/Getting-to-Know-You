@@ -195,6 +195,16 @@ If the app grows, bottom navigation may become:
 - 음악 기능은 독립 탭으로 제공해 반복 방문 가능한 작은 루틴처럼 보이게 한다.
 - Selected design: `docs/design/music_tab_navigation_concept.html`.
 
+### MVP v0.14 Readable Detail Pattern
+
+- 긴 사용자 입력은 카드/리스트 안에서 2-4줄 preview와 말줄임으로 보여준다.
+- preview 카드 또는 `전체 보기` affordance를 누르면 전체 본문을 scroll 가능한 bottom sheet로 보여준다.
+- 전체 보기 bottom sheet는 label, 제목, 본문, 닫기 action을 포함한다.
+- 내 콘텐츠인 경우에는 전체 보기 bottom sheet 안에서 관련 수정 action을 제공할 수 있다.
+- 전체 보기/닫기/scroll은 Firestore read/write를 만들지 않는 local UI interaction이다.
+- 적용 대상은 홈 오늘의 질문 답변/댓글, 질문함 선택/기록 답변, 마이 최근 내 흔적, 음악 노트, 소개 카드 읽기 preview다.
+- 밸런스 게임처럼 긴 자유 입력이 없는 기능은 이 패턴의 필수 적용 대상이 아니다.
+
 ## 8. MVP Scope
 
 ### MVP v0.2 In Scope

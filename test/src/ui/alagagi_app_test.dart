@@ -133,6 +133,45 @@ void main() {
     expect(find.text('접기'), findsOneWidget);
   });
 
+  testWidgets('opens a full detail sheet from a long today answer preview', (
+    tester,
+  ) async {
+    final controller = AlagagiController()..enterSpace('영우');
+    const tail = '끝까지 읽히는 마지막 문장';
+    final longAnswer = '${'오늘 생각을 천천히 적어둡니다. ' * 8}$tail';
+    controller
+      ..updateDraftAnswer(longAnswer)
+      ..submitTodayAnswer();
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(readableDetailSheetKey), findsNothing);
+
+    await tester.ensureVisible(find.byKey(answerPreviewBlockKey('q12', 'me')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(answerPreviewBlockKey('q12', 'me')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(readableDetailSheetKey), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(readableDetailSheetKey),
+        matching: find.textContaining(tail),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(readableDetailSheetKey),
+        matching: find.text('수정하기'),
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('saves a short comment after partner answer is revealed', (
     tester,
   ) async {
@@ -460,6 +499,76 @@ void main() {
     expect(find.text('6월 9일 · DAY 21'), findsOneWidget);
   });
 
+  testWidgets('archive selected answer opens a readable detail sheet', (
+    tester,
+  ) async {
+    const tail = '달력에서도 끝까지 읽히는 문장';
+    final longBody = '${'선택한 날짜에 남긴 긴 답변입니다. ' * 8}$tail';
+    final controller =
+        AlagagiController.forSession(
+            AlagagiSession(
+              spaceId: 'main',
+              me: const AppProfile(
+                id: 'youngwooUid',
+                nickname: '영우',
+                avatar: '🌿',
+                isMe: true,
+              ),
+              partner: const AppProfile(
+                id: 'minyoungUid',
+                nickname: '민영',
+                avatar: '🪻',
+                isMe: false,
+              ),
+              data: AlagagiSpaceData(
+                answers: [
+                  Answer(
+                    questionId: 'q019',
+                    profileId: 'youngwooUid',
+                    body: longBody,
+                    createdLabel: '6월 7일',
+                  ),
+                  const Answer(
+                    questionId: 'q019',
+                    profileId: 'minyoungUid',
+                    body: '말투가 부드러울 때 오래 기억나요.',
+                    createdLabel: '6월 7일',
+                  ),
+                ],
+                dailyProgress: const DailyQuestionProgress(
+                  startedDateKey: '2026-05-20',
+                  currentQuestionId: 'q001',
+                  openedDateKey: '2026-06-09',
+                ),
+              ),
+            ),
+            todayDateKey: '2026-06-09',
+          )
+          ..goTo(AlagagiRoute.archive)
+          ..selectArchiveDate('2026-06-07');
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(
+      find.byKey(answerPreviewBlockKey('q019', 'youngwooUid')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(answerPreviewBlockKey('q019', 'youngwooUid')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(readableDetailSheetKey), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(readableDetailSheetKey),
+        matching: find.textContaining(tail),
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('archive monthly calendar fits a 6-week mobile grid', (
     tester,
   ) async {
@@ -703,6 +812,57 @@ void main() {
 
     expect(controller.state.route, AlagagiRoute.music);
     expect(controller.state.editingMusicNoteId, 'music_mine');
+  });
+
+  testWidgets('my recent trace card opens the full saved text', (tester) async {
+    const tail = '최근 흔적 팝업에서 보여야 하는 마지막 문장';
+    final longAnswer = '${'최근 남긴 답변을 조금 길게 적어둡니다. ' * 8}$tail';
+    final controller = AlagagiController.forSession(
+      AlagagiSession(
+        spaceId: 'main',
+        me: const AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: const AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          answers: [
+            Answer(
+              questionId: 'q002',
+              profileId: 'youngwooUid',
+              body: longAnswer,
+              createdLabel: '어제',
+            ),
+          ],
+        ),
+      ),
+    )..goTo(AlagagiRoute.my);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(myTraceCardKey('question')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(myTraceCardKey('question')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(readableDetailSheetKey), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(readableDetailSheetKey),
+        matching: find.textContaining(tail),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('profile card focused editor can save and cancel a slot', (
@@ -1083,6 +1243,69 @@ void main() {
     expect(
       controller.musicNotes.where((note) => note.id == 'music_mine'),
       hasLength(1),
+    );
+  });
+
+  testWidgets('music note card opens a full detail sheet', (tester) async {
+    const tail = '음악 메모 팝업에서 보여야 하는 마지막 문장';
+    final longNote = '${'퇴근길에 들으면 차분해져서 남겨둔 메모입니다. ' * 4}$tail';
+    final controller = AlagagiController.forSession(
+      AlagagiSession(
+        spaceId: 'main',
+        me: const AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: const AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          musicNotes: [
+            MusicNote(
+              id: 'music_mine',
+              title: '밤 산책',
+              artist: '영우의 추천',
+              link: 'https://music.example/night',
+              note: longNote,
+              mood: '밤',
+              createdByProfileId: 'youngwooUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-09T09:00:00.000Z'),
+            ),
+          ],
+        ),
+      ),
+    )..goTo(AlagagiRoute.music);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(musicNoteCardKey('music_mine')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(musicNoteCardKey('music_mine')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(readableDetailSheetKey), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(readableDetailSheetKey),
+        matching: find.textContaining(tail),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(readableDetailSheetKey),
+        matching: find.textContaining('https://music.example/night'),
+      ),
+      findsOneWidget,
     );
   });
 
