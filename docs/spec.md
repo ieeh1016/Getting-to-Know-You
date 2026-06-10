@@ -200,6 +200,7 @@ If the app grows, bottom navigation may become:
 - 긴 사용자 입력은 카드/리스트 안에서 2-4줄 preview와 말줄임으로 보여준다.
 - preview 카드 또는 `전체 보기` affordance를 누르면 전체 본문을 scroll 가능한 bottom sheet로 보여준다.
 - 전체 보기 bottom sheet는 label, 제목, 본문, 닫기 action을 포함한다.
+- 전체 보기 bottom sheet는 읽기 집중형 header, 작은 context icon, paper-style body card, 44px급 하단 action을 사용해 긴 글을 편하게 읽게 한다.
 - 내 콘텐츠인 경우에는 전체 보기 bottom sheet 안에서 관련 수정 action을 제공할 수 있다.
 - 읽기 전용 화면의 전체 보기 bottom sheet는 동작하지 않는 수정 action을 노출하지 않는다.
 - 전체 보기/닫기/scroll은 Firestore read/write를 만들지 않는 local UI interaction이다.

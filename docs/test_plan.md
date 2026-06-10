@@ -103,6 +103,7 @@
 - 홈의 긴 답변 preview를 누르면 전체 본문을 bottom sheet에서 볼 수 있고, 내 답변은 수정 action을 제공한다.
 - 홈의 읽기 전용 댓글 preview를 누르면 전체 댓글을 bottom sheet에서 볼 수 있다.
 - 읽기 전용 댓글/답변 detail sheet는 동작하지 않는 `수정하기` action을 노출하지 않는다.
+- 전체 보기 detail sheet는 읽기 집중형 header, paper-style body card, 44px급 닫기/action 버튼을 유지한다.
 - `수정하기`를 누르면 답변 화면에 기존 본문이 채워지고 `수정 저장하기`가 보인다.
 - 수정 저장 후 홈에서 수정된 본문이 보이고 상대 답변 공개 상태가 유지된다.
 - 상대 답변이 공개되면 댓글 입력 UI가 보인다.

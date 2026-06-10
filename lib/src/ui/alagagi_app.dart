@@ -2677,6 +2677,7 @@ void _showReadableDetailSheet(
   String? actionLabel,
   VoidCallback? onAction,
 }) {
+  final trimmedMeta = meta?.trim();
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -2695,15 +2696,16 @@ void _showReadableDetailSheet(
               decoration: BoxDecoration(
                 color: AlagagiColors.paper,
                 border: Border.all(color: AlagagiColors.line),
-                borderRadius: BorderRadius.circular(26),
+                borderRadius: BorderRadius.circular(28),
                 boxShadow: const [
                   BoxShadow(
-                    color: Color(0x22000000),
-                    blurRadius: 32,
-                    offset: Offset(0, 16),
+                    color: Color(0x2E2C2B25),
+                    blurRadius: 44,
+                    offset: Offset(0, 18),
                   ),
                 ],
               ),
+              clipBehavior: Clip.antiAlias,
               child: Column(
                 children: [
                   const SizedBox(height: 10),
@@ -2715,73 +2717,72 @@ void _showReadableDetailSheet(
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFF7FAF2), AlagagiColors.paper],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                label,
-                                style: sans(
-                                  size: 10.5,
-                                  weight: FontWeight.w800,
-                                  color: AlagagiColors.sageDeep,
-                                  letterSpacing: 1.6,
-                                ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _ReadableDetailMark(label: label),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    label,
+                                    style: sans(
+                                      size: 10.5,
+                                      weight: FontWeight.w800,
+                                      color: AlagagiColors.sageDeep,
+                                      letterSpacing: 1.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    title,
+                                    style: serif(
+                                      sheetContext,
+                                      size: 19.5,
+                                      weight: FontWeight.w800,
+                                      height: 1.43,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 7),
-                              Text(
-                                title,
-                                style: serif(
-                                  sheetContext,
-                                  size: 20,
-                                  weight: FontWeight.w800,
-                                  height: 1.45,
-                                ),
-                              ),
-                            ],
+                            ),
+                            const SizedBox(width: 10),
+                            _ReadableDetailCloseButton(
+                              onPressed: () => Navigator.of(sheetContext).pop(),
+                            ),
+                          ],
+                        ),
+                        if (trimmedMeta != null && trimmedMeta.isNotEmpty) ...[
+                          const SizedBox(height: 13),
+                          Wrap(
+                            spacing: 7,
+                            runSpacing: 7,
+                            children: [_ReadableDetailPill(text: trimmedMeta)],
                           ),
-                        ),
-                        IconButton(
-                          tooltip: '닫기',
-                          onPressed: () => Navigator.of(sheetContext).pop(),
-                          icon: const Icon(Icons.close_rounded, size: 20),
-                          color: AlagagiColors.muted,
-                          visualDensity: VisualDensity.compact,
-                        ),
+                        ],
                       ],
                     ),
                   ),
                   Expanded(
                     child: ListView(
                       controller: scrollController,
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                      children: [
-                        if (meta != null && meta.trim().isNotEmpty) ...[
-                          Text(
-                            meta,
-                            style: sans(
-                              size: 12,
-                              color: AlagagiColors.muted,
-                              height: 1.55,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                        ],
-                        Text(
-                          body,
-                          key: readableDetailBodyKey,
-                          style: sans(
-                            size: 14.2,
-                            color: const Color(0xFF3F3E39),
-                            height: 1.72,
-                          ),
-                        ),
-                      ],
+                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+                      children: [_ReadableDetailBodyCard(body: body)],
                     ),
                   ),
                   Padding(
@@ -2789,43 +2790,51 @@ void _showReadableDetailSheet(
                     child: Row(
                       children: [
                         Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.of(sheetContext).pop(),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AlagagiColors.muted,
-                              side: const BorderSide(color: AlagagiColors.line),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              textStyle: sans(
-                                size: 13,
-                                weight: FontWeight.w700,
-                              ),
-                            ),
-                            child: const Text('닫기'),
-                          ),
-                        ),
-                        if (actionLabel != null && onAction != null) ...[
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.of(sheetContext).pop();
-                                onAction();
-                              },
-                              style: ElevatedButton.styleFrom(
-                                elevation: 0,
-                                backgroundColor: AlagagiColors.sageDeep,
-                                foregroundColor: Colors.white,
+                          child: SizedBox(
+                            height: 44,
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.of(sheetContext).pop(),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AlagagiColors.muted,
+                                side: const BorderSide(
+                                  color: AlagagiColors.line,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 textStyle: sans(
                                   size: 13,
-                                  weight: FontWeight.w800,
+                                  weight: FontWeight.w700,
                                 ),
                               ),
-                              child: Text(actionLabel),
+                              child: const Text('닫기'),
+                            ),
+                          ),
+                        ),
+                        if (actionLabel != null && onAction != null) ...[
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: SizedBox(
+                              height: 44,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.of(sheetContext).pop();
+                                  onAction();
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  elevation: 0,
+                                  backgroundColor: AlagagiColors.sageDeep,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  textStyle: sans(
+                                    size: 13,
+                                    weight: FontWeight.w800,
+                                  ),
+                                ),
+                                child: Text(actionLabel),
+                              ),
                             ),
                           ),
                         ],
@@ -2840,6 +2849,159 @@ void _showReadableDetailSheet(
       );
     },
   );
+}
+
+class _ReadableDetailMark extends StatelessWidget {
+  const _ReadableDetailMark({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.76),
+        border: Border.all(color: const Color(0x336F7F63)),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      alignment: Alignment.center,
+      child: Icon(
+        _iconForLabel(label),
+        size: 20,
+        color: AlagagiColors.sageDeep,
+      ),
+    );
+  }
+
+  IconData _iconForLabel(String label) {
+    if (label.contains('음악')) {
+      return Icons.music_note_rounded;
+    }
+    if (label.contains('댓글')) {
+      return Icons.chat_bubble_outline_rounded;
+    }
+    if (label.contains('소개')) {
+      return Icons.badge_outlined;
+    }
+    return Icons.description_outlined;
+  }
+}
+
+class _ReadableDetailCloseButton extends StatelessWidget {
+  const _ReadableDetailCloseButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: '닫기',
+      child: SizedBox(
+        width: 42,
+        height: 42,
+        child: IconButton(
+          onPressed: onPressed,
+          icon: const Icon(Icons.close_rounded, size: 20),
+          color: AlagagiColors.muted,
+          padding: EdgeInsets.zero,
+          style: IconButton.styleFrom(
+            backgroundColor: Colors.white.withValues(alpha: 0.72),
+            shape: RoundedRectangleBorder(
+              side: const BorderSide(color: AlagagiColors.line),
+              borderRadius: BorderRadius.circular(21),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReadableDetailPill extends StatelessWidget {
+  const _ReadableDetailPill({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 26),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.72),
+        border: Border.all(color: const Color(0x266F7F63)),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      child: Text(
+        text,
+        style: sans(
+          size: 11,
+          weight: FontWeight.w700,
+          color: AlagagiColors.muted,
+          height: 1.25,
+        ),
+      ),
+    );
+  }
+}
+
+class _ReadableDetailBodyCard extends StatelessWidget {
+  const _ReadableDetailBodyCard({required this.body});
+
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFEFA),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(21),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 19),
+      child: Stack(
+        children: [
+          Positioned(
+            left: 0,
+            top: 1,
+            bottom: 1,
+            child: Container(
+              width: 3,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                gradient: const LinearGradient(
+                  colors: [AlagagiColors.sage, AlagagiColors.lavender],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 15),
+            child: Text(
+              body,
+              key: readableDetailBodyKey,
+              style: sans(
+                size: 14.2,
+                color: const Color(0xFF3F3E39),
+                height: 1.82,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 void _showFirstVisitGuideBook(BuildContext context) {
