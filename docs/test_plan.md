@@ -11,6 +11,7 @@
 - Firebase mode의 빈 Firestore wishes snapshot은 샘플 위시가 아닌 empty state로 변환된다.
 - Firebase mode의 빈 Firestore profile slots snapshot은 샘플 소개 카드 값이 아닌 empty state로 변환된다.
 - 질문 카탈로그는 day/depth 규칙에 맞는 질문만 선택한다.
+- 데일리 질문 카탈로그 v1은 q001-q058까지 58개 질문을 stable ID/day 순서로 제공한다.
 - 밸런스 결과는 나와 상대의 실제 선택이 모두 있을 때만 계산된다.
 - 알아간 기록 insight는 실제 답변 데이터만 기반으로 계산한다.
 - 홈/기록의 공통점 요약은 관계를 점수화하는 `%`, `점수`, `지수` 표현을 노출하지 않는다.

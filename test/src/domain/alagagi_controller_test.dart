@@ -179,5 +179,55 @@ void main() {
         }
       },
     );
+
+    test('daily question catalog provides 58 stable sequential questions', () {
+      expect(questionCatalogV1, hasLength(58));
+
+      for (var index = 0; index < questionCatalogV1.length; index++) {
+        final expectedNumber = index + 1;
+        final question = questionCatalogV1[index];
+
+        expect(question.id, 'q${expectedNumber.toString().padLeft(3, '0')}');
+        expect(question.day, expectedNumber);
+        expect(question.number, expectedNumber);
+        expect(question.text.trim(), isNotEmpty);
+        expect(question.highlightedText.trim(), isNotEmpty);
+      }
+
+      final ids = questionCatalogV1.map((question) => question.id).toSet();
+      expect(ids, hasLength(questionCatalogV1.length));
+    });
+
+    test('daily question resolver reaches the extended catalog', () {
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            dailyProgress: DailyQuestionProgress(
+              startedDateKey: '2026-06-01',
+              currentQuestionId: 'q001',
+              openedDateKey: '2026-06-01',
+            ),
+          ),
+        ),
+        todayDateKey: '2026-07-28',
+      );
+
+      expect(controller.todayQuestion.id, 'q058');
+      expect(controller.todayQuestion.text, contains('자연스럽게'));
+      expect(controller.dailyProgress.currentQuestionId, 'q058');
+    });
   });
 }
