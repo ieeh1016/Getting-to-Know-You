@@ -198,13 +198,16 @@ If the app grows, bottom navigation may become:
 ### MVP v0.14 Readable Detail Pattern
 
 - 긴 사용자 입력은 카드/리스트 안에서 2-4줄 preview와 말줄임으로 보여준다.
-- preview 카드 또는 `전체 보기` affordance를 누르면 전체 본문을 scroll 가능한 bottom sheet로 보여준다.
+- 긴 preview에는 하단 반복 문구 대신 본문 끝의 페이드와 `펼쳐 읽기` affordance를 보여준다.
+- 짧은 preview에는 별도 전체 보기 affordance를 노출하지 않아 카드/리스트의 반복감을 줄인다.
+- preview 카드 또는 읽기 affordance를 누르면 전체 본문을 scroll 가능한 bottom sheet로 보여준다.
 - 전체 보기 bottom sheet는 label, 제목, 본문, 닫기 action을 포함한다.
 - 전체 보기 bottom sheet는 읽기 집중형 header, 작은 context icon, paper-style body card, 44px급 하단 action을 사용해 긴 글을 편하게 읽게 한다.
 - 내 콘텐츠인 경우에는 전체 보기 bottom sheet 안에서 관련 수정 action을 제공할 수 있다.
 - 읽기 전용 화면의 전체 보기 bottom sheet는 동작하지 않는 수정 action을 노출하지 않는다.
 - 전체 보기/닫기/scroll은 Firestore read/write를 만들지 않는 local UI interaction이다.
 - 적용 대상은 홈 오늘의 질문 답변/댓글, 질문함 선택/기록 답변, 마이 최근 내 흔적, 음악 노트, 소개 카드 읽기 preview다.
+- 소개 카드처럼 작은 타일이 반복되는 화면은 텍스트형 전체 보기 action 대신 우상단 icon affordance를 사용한다.
 - 밸런스 게임처럼 긴 자유 입력이 없는 기능은 이 패턴의 필수 적용 대상이 아니다.
 
 ### MVP v0.15 Brand Identity
@@ -853,7 +856,7 @@ Acceptance Criteria:
 - 내 답이 없으면 답변 CTA가 보인다.
 - 내 답이 없을 때 홈 질문 카드 안에는 one-line 입력창처럼 보이는 inline composer를 두지 않는다.
 - 내 답이 있으면 내 답 preview가 보인다.
-- 내 답 preview가 길면 4줄 안팎으로 접히고 `더 보기`로 펼칠 수 있다.
+- 내 답 preview가 길면 4줄 안팎으로 접히고 `더 보기`로 펼칠 수 있으며, 전체 본문은 `펼쳐 읽기` affordance 또는 preview tap으로 연다.
 - 120자를 넘는 답변은 long answer로 간주한다.
 - 내 답이 있으면 `수정하기` 액션이 보인다.
 - 오늘 패스한 질문에는 `다시 답하기` 액션이 보인다.
@@ -1141,6 +1144,7 @@ Required UI:
   - slot label
   - input hint or saved value preview
   - empty/filled visual state
+  - filled slot read action uses an upper-right icon affordance with `전체 보기` semantics instead of repeated visible text
 - Empty slot state: `아직 비어 있어요`
 - My card write action opens a focused editor panel.
 - Editor panel:
@@ -1987,7 +1991,7 @@ class AlagagiState {
 - Invite shows headline and enters home after nickname submit
 - Home shows today question and record summary
 - Answer screen updates character count and saves answer
-- Home answer preview collapses long text and expands with `더 보기`
+- Home answer preview collapses long text, expands with `더 보기`, and exposes long-form reading through the `펼쳐 읽기` affordance
 - Answer edit opens existing answer text and saves the edited body
 - Answer edit keeps partner answer visibility after save
 - Home shows comment composer after partner answer is revealed and hides it while locked

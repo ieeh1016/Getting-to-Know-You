@@ -148,6 +148,8 @@ void main() {
 
     expect(find.textContaining(tail), findsNothing);
     expect(find.text('더 보기'), findsOneWidget);
+    expect(find.text('펼쳐 읽기'), findsOneWidget);
+    expect(find.text('전체 보기'), findsNothing);
 
     await tester.ensureVisible(find.text('더 보기'));
     await tester.pumpAndSettle();
@@ -175,9 +177,9 @@ void main() {
 
     expect(find.byKey(readableDetailSheetKey), findsNothing);
 
-    await tester.ensureVisible(find.byKey(answerPreviewBlockKey('q12', 'me')));
+    await tester.ensureVisible(find.text('펼쳐 읽기'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(answerPreviewBlockKey('q12', 'me')));
+    await tester.tap(find.text('펼쳐 읽기'));
     await tester.pumpAndSettle();
 
     expect(find.byKey(readableDetailSheetKey), findsOneWidget);
@@ -217,6 +219,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('이 답 좋다.'), findsOneWidget);
+    expect(find.text('펼쳐 읽기'), findsNothing);
   });
 
   testWidgets('keeps comment editor open when an edit is emptied', (
@@ -1052,6 +1055,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('집에서 차 마시기'), findsOneWidget);
+    expect(find.byKey(profileSlotReadButtonKey('rest')), findsOneWidget);
+    expect(find.text('전체 보기'), findsNothing);
 
     await tester.ensureVisible(find.byKey(profileSlotEditButtonKey('rest')));
     await tester.pumpAndSettle();
@@ -1086,6 +1091,22 @@ void main() {
     expect(find.text('아직 비어 있어요'), findsNothing);
     expect(find.byKey(profileRecommendedSlotButtonKey), findsNothing);
     expect(find.text('이 질문 쓰기'), findsNothing);
+    expect(find.byKey(profileSlotReadButtonKey('food')), findsOneWidget);
+    expect(find.text('전체 보기'), findsNothing);
+
+    await tester.ensureVisible(find.byKey(profileSlotReadButtonKey('food')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(profileSlotReadButtonKey('food')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(readableDetailSheetKey), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(readableDetailSheetKey),
+        matching: find.textContaining('매콤한 분식이나 따뜻한 국물'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('my screen hides implementation terms in user copy', (

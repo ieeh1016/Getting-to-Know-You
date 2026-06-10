@@ -69,6 +69,8 @@ Key profileCategoryChipKey(String category) =>
 
 Key profileSlotCardKey(String slotId) => Key('profile-slot-card-$slotId');
 
+Key profileSlotReadButtonKey(String slotId) => Key('profile-slot-read-$slotId');
+
 Key profileSlotEditButtonKey(String slotId) => Key('profile-slot-edit-$slotId');
 
 Key profileSlotFieldKey(String slotId) => Key('profile-slot-field-$slotId');
@@ -79,8 +81,15 @@ Key profileSlotCancelButtonKey(String slotId) =>
     Key('profile-slot-cancel-$slotId');
 
 const _longAnswerPreviewLength = 120;
+const _compactReadablePreviewLength = 64;
 const _brandName = '조금씩';
 const _brandKicker = 'J O G E U M S S I K';
+
+bool _showsReadableCue(
+  String body, {
+  int threshold = _longAnswerPreviewLength,
+  bool expanded = false,
+}) => !expanded && body.trim().length > threshold;
 
 class AlagagiApp extends StatelessWidget {
   const AlagagiApp({
@@ -2104,48 +2113,57 @@ class _AnswerCommentBox extends StatelessWidget {
             const SizedBox(height: 10),
             Padding(
               padding: const EdgeInsets.only(left: 36),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => _showReadableDetailSheet(
-                      context,
-                      label: '내 댓글',
-                      title: '상대 답에 남긴 댓글',
-                      body: existingComment.body,
-                      actionLabel: readOnly ? null : '수정하기',
-                      onAction: readOnly
-                          ? null
-                          : () => controller.updateAnswerCommentDraft(
-                              questionId: questionId,
-                              answerOwnerProfileId: answerOwnerProfileId,
-                              value: existingComment.body,
-                            ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          existingComment.body,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: sans(
-                            size: 13,
-                            color: AlagagiColors.ink,
-                            height: 1.55,
-                          ),
+              child: Builder(
+                builder: (context) {
+                  final showReadableCue = _showsReadableCue(
+                    existingComment.body,
+                  );
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => _showReadableDetailSheet(
+                          context,
+                          label: '내 댓글',
+                          title: '상대 답에 남긴 댓글',
+                          body: existingComment.body,
+                          actionLabel: readOnly ? null : '수정하기',
+                          onAction: readOnly
+                              ? null
+                              : () => controller.updateAnswerCommentDraft(
+                                  questionId: questionId,
+                                  answerOwnerProfileId: answerOwnerProfileId,
+                                  value: existingComment.body,
+                                ),
                         ),
-                        const SizedBox(height: 5),
-                        const _FullTextCue(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              existingComment.body,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: sans(
+                                size: 13,
+                                color: AlagagiColors.ink,
+                                height: 1.55,
+                              ),
+                            ),
+                            if (showReadableCue) ...[
+                              const SizedBox(height: 5),
+                              const _FullTextCue(),
+                            ],
+                          ],
+                        ),
+                      ),
+                      if (existingComment.edited) ...[
+                        const SizedBox(height: 8),
+                        const _EditedBadge(),
                       ],
-                    ),
-                  ),
-                  if (existingComment.edited) ...[
-                    const SizedBox(height: 8),
-                    const _EditedBadge(),
-                  ],
-                ],
+                    ],
+                  );
+                },
               ),
             ),
           ],
@@ -2472,6 +2490,7 @@ class _AnswerPreviewBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isLong = body.length > _longAnswerPreviewLength;
+    final showReadableCue = _showsReadableCue(body, expanded: expanded);
     final visibleBody = isLong && !expanded
         ? '${body.substring(0, _longAnswerPreviewLength).trimRight()}...'
         : body;
@@ -2516,10 +2535,12 @@ class _AnswerPreviewBlock extends StatelessWidget {
                 height: 1.62,
               ),
             ),
-            if ((isLong && onToggle != null) || onOpenFull != null) ...[
+            if ((isLong && onToggle != null) ||
+                (showReadableCue && onOpenFull != null)) ...[
               const SizedBox(height: 6),
               Wrap(
                 spacing: 14,
+                runSpacing: 6,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   if (isLong && onToggle != null)
@@ -2527,7 +2548,8 @@ class _AnswerPreviewBlock extends StatelessWidget {
                       label: expanded ? '접기' : '더 보기',
                       onPressed: onToggle,
                     ),
-                  if (onOpenFull != null) const _FullTextCue(),
+                  if (showReadableCue && onOpenFull != null)
+                    const _FullTextCue(),
                 ],
               ),
             ],
@@ -2558,6 +2580,7 @@ class _AnswerLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isLong = body.length > _longAnswerPreviewLength;
+    final showReadableCue = _showsReadableCue(body, expanded: expanded);
     final visibleBody = isLong && !expanded
         ? '${body.substring(0, _longAnswerPreviewLength).trimRight()}...'
         : body;
@@ -2592,10 +2615,12 @@ class _AnswerLine extends StatelessWidget {
                     height: 1.65,
                   ),
                 ),
-                if ((isLong && onToggle != null) || onOpenFull != null) ...[
+                if ((isLong && onToggle != null) ||
+                    (showReadableCue && onOpenFull != null)) ...[
                   const SizedBox(height: 4),
                   Wrap(
                     spacing: 12,
+                    runSpacing: 6,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       if (isLong && onToggle != null)
@@ -2603,7 +2628,8 @@ class _AnswerLine extends StatelessWidget {
                           label: expanded ? '접기' : '더 보기',
                           onPressed: onToggle,
                         ),
-                      if (onOpenFull != null) const _FullTextCue(),
+                      if (showReadableCue && onOpenFull != null)
+                        const _FullTextCue(),
                     ],
                   ),
                 ],
@@ -2646,24 +2672,69 @@ class _FullTextCue extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(
+    return Semantics(
+      label: '전체 보기',
+      button: true,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 30),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F4ED),
+          border: Border.all(color: const Color(0x336F7F63)),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '펼쳐 읽기',
+              style: sans(
+                size: 11.5,
+                weight: FontWeight.w800,
+                color: AlagagiColors.sageDeep,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 15,
+              color: AlagagiColors.sageDeep,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OpenReadableIconButton extends StatelessWidget {
+  const _OpenReadableIconButton({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: '전체 보기',
+      onPressed: onPressed,
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+      icon: Container(
+        width: 31,
+        height: 31,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F4ED),
+          border: Border.all(color: const Color(0x336F7F63)),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        alignment: Alignment.center,
+        child: const Icon(
           Icons.open_in_full_rounded,
-          size: 13,
+          size: 15,
           color: AlagagiColors.sageDeep,
         ),
-        const SizedBox(width: 4),
-        Text(
-          '전체 보기',
-          style: sans(
-            size: 11.5,
-            weight: FontWeight.w700,
-            color: AlagagiColors.sageDeep,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -4394,6 +4465,7 @@ class _ReadOnlyCommentBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final showReadableCue = _showsReadableCue(body);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onOpenFull,
@@ -4415,7 +4487,7 @@ class _ReadOnlyCommentBlock extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: sans(size: 13, height: 1.5),
             ),
-            if (onOpenFull != null) ...[
+            if (showReadableCue && onOpenFull != null) ...[
               const SizedBox(height: 5),
               const _FullTextCue(),
             ],
@@ -6300,6 +6372,14 @@ class _ProfileSlotCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final filled = slot.value != null;
+    void openFull() => _showReadableDetailSheet(
+      context,
+      label: '소개 카드',
+      title: slot.label,
+      body: slot.value!,
+      actionLabel: '수정하기',
+      onAction: onEdit,
+    );
     return InkWell(
       key: profileSlotCardKey(slot.id),
       borderRadius: BorderRadius.circular(20),
@@ -6328,6 +6408,12 @@ class _ProfileSlotCard extends StatelessWidget {
               children: [
                 _ProfileSlotIcon(slotId: slot.id),
                 const Spacer(),
+                if (filled)
+                  _OpenReadableIconButton(
+                    key: profileSlotReadButtonKey(slot.id),
+                    onPressed: openFull,
+                  ),
+                if (filled) const SizedBox(width: 2),
                 Container(
                   height: 22,
                   alignment: Alignment.center,
@@ -6380,28 +6466,10 @@ class _ProfileSlotCard extends StatelessWidget {
             const SizedBox(height: 10),
             Align(
               alignment: Alignment.centerLeft,
-              child: Wrap(
-                spacing: 12,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  if (filled)
-                    _InlineTextAction(
-                      label: '전체 보기',
-                      onPressed: () => _showReadableDetailSheet(
-                        context,
-                        label: '소개 카드',
-                        title: slot.label,
-                        body: slot.value!,
-                        actionLabel: '수정하기',
-                        onAction: onEdit,
-                      ),
-                    ),
-                  _InlineTextAction(
-                    key: profileSlotEditButtonKey(slot.id),
-                    label: filled ? '수정' : '작성',
-                    onPressed: onEdit,
-                  ),
-                ],
+              child: _InlineTextAction(
+                key: profileSlotEditButtonKey(slot.id),
+                label: filled ? '수정' : '작성',
+                onPressed: onEdit,
               ),
             ),
           ],
@@ -6474,14 +6542,15 @@ class _ProfileReadCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    void openFull() => _showReadableDetailSheet(
+      context,
+      label: '소개 카드',
+      title: slot.label,
+      body: slot.value!,
+    );
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => _showReadableDetailSheet(
-        context,
-        label: '소개 카드',
-        title: slot.label,
-        body: slot.value!,
-      ),
+      onTap: openFull,
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
@@ -6507,6 +6576,10 @@ class _ProfileReadCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                _OpenReadableIconButton(
+                  key: profileSlotReadButtonKey(slot.id),
+                  onPressed: openFull,
+                ),
               ],
             ),
             const SizedBox(height: 9),
@@ -6521,8 +6594,6 @@ class _ProfileReadCard extends StatelessWidget {
                 weight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 6),
-            const _FullTextCue(),
           ],
         ),
       ),
@@ -7616,6 +7687,9 @@ class _MusicNoteCard extends StatelessWidget {
       if (note.note.trim().isNotEmpty) note.note.trim(),
       if (note.link.trim().isNotEmpty) '링크\n${note.link.trim()}',
     ].join('\n\n');
+    final showReadableCue =
+        note.link.trim().isNotEmpty ||
+        _showsReadableCue(detailBody, threshold: _compactReadablePreviewLength);
     return GestureDetector(
       key: musicNoteCardKey(note.id),
       behavior: HitTestBehavior.opaque,
@@ -7700,18 +7774,18 @@ class _MusicNoteCard extends StatelessWidget {
                   ],
                   if (note.link.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
                       children: [
                         Text(
                           '링크가 저장되어 있어요',
                           style: sans(size: 11, color: AlagagiColors.sageDeep),
                         ),
-                        const SizedBox(width: 8),
-                        const _FullTextCue(),
+                        if (showReadableCue) const _FullTextCue(),
                       ],
                     ),
-                  ] else ...[
+                  ] else if (showReadableCue) ...[
                     const SizedBox(height: 8),
                     const _FullTextCue(),
                   ],
@@ -8381,6 +8455,10 @@ class _MyTraceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final showReadableCue = _showsReadableCue(
+      body,
+      threshold: _compactReadablePreviewLength,
+    );
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -8425,8 +8503,10 @@ class _MyTraceCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 4),
-              const _FullTextCue(),
+              if (showReadableCue) ...[
+                const SizedBox(height: 4),
+                const _FullTextCue(),
+              ],
             ],
           ),
         ),
