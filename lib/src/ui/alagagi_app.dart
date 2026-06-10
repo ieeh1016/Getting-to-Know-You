@@ -1769,7 +1769,9 @@ class _HomeCuriosityEntry extends StatelessWidget {
   Widget build(BuildContext context) {
     final partnerName = controller.state.partner.nickname;
     final received = controller.latestReceivedCuriosityCard;
-    final sent = controller.latestSentCuriosityCard;
+    final sent =
+        controller.pendingSentCuriosityCard ??
+        controller.latestSentCuriosityCard;
     final receivedCount = controller.unansweredReceivedCuriosityCount;
     final hasUnreadReceived = received != null && !received.hasReply;
     final title = hasUnreadReceived
@@ -1947,7 +1949,9 @@ class _CuriositySheetContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final received = controller.latestReceivedCuriosityCard;
-    final sent = controller.latestSentCuriosityCard;
+    final sent =
+        controller.pendingSentCuriosityCard ??
+        controller.latestSentCuriosityCard;
     final receivedCount = controller.unansweredReceivedCuriosityCount;
     final badge = receivedCount > 0
         ? '받은 질문 $receivedCount'
@@ -2236,9 +2240,51 @@ class _CuriosityComposePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final partnerName = controller.state.partner.nickname;
+    final pendingSent = controller.pendingSentCuriosityCard;
     final targetId = controller.state.curiositySaveTargetId;
     final savingQuestion =
         isSaving && (targetId == null || targetId.startsWith('curiosity_'));
+    if (pendingSent != null) {
+      return _CuriosityPanel(
+        backgroundColor: const Color(0xFFFFFEFA),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '답장을 기다리는 질문이 있어요',
+              style: sans(
+                size: 10.5,
+                weight: FontWeight.w800,
+                color: AlagagiColors.sageDeep,
+                letterSpacing: 0.6,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '한 장이 열린 동안에는 새 질문을 잠시 쉬어가요.',
+              style: sans(size: 12, color: AlagagiColors.muted, height: 1.45),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 42,
+              child: OutlinedButton.icon(
+                onPressed: null,
+                icon: const Icon(Icons.hourglass_empty_rounded, size: 15),
+                label: const Text('답장 기다리는 중'),
+                style: OutlinedButton.styleFrom(
+                  disabledForegroundColor: AlagagiColors.muted,
+                  side: const BorderSide(color: AlagagiColors.line),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  textStyle: sans(size: 12, weight: FontWeight.w800),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     return _CuriosityPanel(
       backgroundColor: const Color(0xFFFFFEFA),
       child: Column(

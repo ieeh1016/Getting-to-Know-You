@@ -259,6 +259,46 @@ void main() {
       );
     });
 
+    test('session controller blocks another curiosity while one waits', () {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            curiosityCards: [
+              CuriosityCard(
+                id: 'curiosity_waiting',
+                fromProfileId: 'youngwooUid',
+                toProfileId: 'minyoungUid',
+                question: '이번 주에 기대되는 일이 있어요?',
+                createdLabel: '오늘',
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+      );
+
+      controller.updateCuriosityQuestionDraft('하나 더 물어봐도 돼요?');
+      controller.submitCuriosityQuestion();
+
+      expect(repository.savedCuriosityCards, isEmpty);
+      expect(controller.state.curiosityError, contains('답장을 기다리는'));
+      expect(controller.state.curiosityQuestionDraft, '하나 더 물어봐도 돼요?');
+    });
+
     test('daily progress selects the shared current question', () {
       final controller = AlagagiController.forSession(
         const AlagagiSession(

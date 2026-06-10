@@ -151,6 +151,7 @@
 - 홈은 `Today's Question` 아래에 작은 `궁금함` 상태 카드를 보여주고, 카드를 누르면 실제 질문/답장 bottom sheet를 연다.
 - 홈 `궁금함` 메뉴는 받은 질문, `답장 저장하기`, 내가 보낸 질문 상태, `질문 보내기`, `나중에 보기`를 보여준다.
 - `궁금함` 질문 draft와 답장 draft 변경은 repository write를 호출하지 않고, `질문 보내기`/`답장 저장하기` submit 시에만 `curiosityCards` 문서를 저장한다.
+- 답장을 기다리는 내가 보낸 `curiosityCards` 문서가 있으면 새 질문 submit은 repository write를 호출하지 않고 대기 안내를 보여준다.
 - Firebase mode session data에 `curiosityCards`가 있으면 홈 sheet에 받은 질문과 답장 상태가 반영된다.
 - 홈 `궁금함` 상태 카드와 bottom sheet는 390px 모바일 viewport에서 오늘 질문 카드와 하단 내비게이션을 가리거나 겹치지 않는다.
 - 홈 진행 요약은 `오늘 질문`, `둘 다 답한 질문`, `음악 노트` 3개 상태를 보여준다.

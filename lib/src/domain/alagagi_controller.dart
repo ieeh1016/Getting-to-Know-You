@@ -2141,6 +2141,14 @@ class AlagagiController extends ChangeNotifier {
     );
   }
 
+  CuriosityCard? get pendingSentCuriosityCard {
+    return _firstCuriosityCardWhere(
+      (card) => card.fromProfileId == _state.me.id && !card.hasReply,
+    );
+  }
+
+  bool get hasPendingSentCuriosityCard => pendingSentCuriosityCard != null;
+
   int get unansweredReceivedCuriosityCount {
     return _curiosityCards.where((card) {
       return card.toProfileId == _state.me.id && !card.hasReply;
@@ -3022,6 +3030,16 @@ class AlagagiController extends ChangeNotifier {
 
   void submitCuriosityQuestion() {
     if (_state.curiositySaveStatus == SaveStatus.saving) {
+      return;
+    }
+    if (hasPendingSentCuriosityCard) {
+      _state = _state.copyWith(
+        curiosityError: '먼저 보낸 질문의 답장을 기다리는 중이에요.',
+        curiositySaveStatus: SaveStatus.idle,
+        clearCuriositySaveFeedback: true,
+        clearCuriositySaveTargetId: true,
+      );
+      notifyListeners();
       return;
     }
     final question = _state.curiosityQuestionDraft.trim();

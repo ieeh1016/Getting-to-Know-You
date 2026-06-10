@@ -228,6 +228,7 @@ If the app grows, bottom navigation may become:
 - 질문 작성과 답장 저장은 사용자가 명시적으로 `질문 보내기` 또는 `답장 저장하기`를 눌렀을 때만 `spaces/{spaceId}/curiosityCards/{cardId}`에 기록한다.
 - `curiosityCards` 문서는 `id`, `fromProfileId`, `toProfileId`, `question`, `reply`, `createdLabel`, `repliedLabel`, `updatedAt` 필드를 가진다.
 - 질문은 작성자 본인의 profile id를 `fromProfileId`로, 상대 profile id를 `toProfileId`로 저장한다. 답장은 받은 사람만 자신의 받은 질문 문서에 남기는 흐름으로 다룬다.
+- 내가 보낸 질문 중 답장을 기다리는 문서가 하나라도 있으면 새 질문 작성 UI를 잠그고, `답장을 기다리는 질문이 있어요` 안내를 보여준다.
 - `나중에 보기`는 sheet를 닫는 읽기 전용 UI interaction이며 Firestore write를 만들지 않는다.
 - 390px 모바일 viewport에서 `Today's Question`, `궁금함` 상태 카드, 하단 내비게이션이 서로 겹치거나 잘리지 않아야 한다.
 

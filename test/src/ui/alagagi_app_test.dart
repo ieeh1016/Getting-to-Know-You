@@ -110,6 +110,9 @@ void main() {
       ),
       findsOneWidget,
     );
+    expect(find.text('답장을 기다리는 질문이 있어요'), findsOneWidget);
+    expect(find.byKey(curiosityQuestionFieldKey), findsNothing);
+    expect(find.text('답장 기다리는 중'), findsWidgets);
   });
 
   testWidgets('home focused question card fits mobile unanswered state', (
