@@ -811,6 +811,30 @@ class MemoryMusicNoteSeenStore implements MusicNoteSeenStore {
   }
 }
 
+abstract class FirstVisitGuideStore {
+  bool hasSeenFirstVisitGuide(String spaceId, String profileId);
+
+  void markFirstVisitGuideSeen(String spaceId, String profileId);
+}
+
+class MemoryFirstVisitGuideStore implements FirstVisitGuideStore {
+  final Set<String> _seenKeys = {};
+
+  @override
+  bool hasSeenFirstVisitGuide(String spaceId, String profileId) {
+    return _seenKeys.contains(_key(spaceId, profileId));
+  }
+
+  @override
+  void markFirstVisitGuideSeen(String spaceId, String profileId) {
+    _seenKeys.add(_key(spaceId, profileId));
+  }
+
+  static String _key(String spaceId, String profileId) {
+    return 'jogeumssik:onboardingSeen:$spaceId:$profileId';
+  }
+}
+
 @immutable
 class AlagagiState {
   const AlagagiState({
@@ -852,6 +876,7 @@ class AlagagiState {
     this.expandedAnswerKeys = const {},
     this.activeAnswerQuestionId,
     this.selectedArchiveDateKey,
+    this.firstVisitGuideVisible = false,
   });
 
   final AppProfile me;
@@ -892,6 +917,7 @@ class AlagagiState {
   final Set<String> expandedAnswerKeys;
   final String? activeAnswerQuestionId;
   final String? selectedArchiveDateKey;
+  final bool firstVisitGuideVisible;
 
   AlagagiState copyWith({
     AppProfile? me,
@@ -944,6 +970,7 @@ class AlagagiState {
     String? activeAnswerQuestionId,
     bool clearActiveAnswerQuestion = false,
     String? selectedArchiveDateKey,
+    bool? firstVisitGuideVisible,
   }) {
     return AlagagiState(
       me: me ?? this.me,
@@ -1006,6 +1033,8 @@ class AlagagiState {
           : activeAnswerQuestionId ?? this.activeAnswerQuestionId,
       selectedArchiveDateKey:
           selectedArchiveDateKey ?? this.selectedArchiveDateKey,
+      firstVisitGuideVisible:
+          firstVisitGuideVisible ?? this.firstVisitGuideVisible,
     );
   }
 }
@@ -1014,8 +1043,10 @@ class AlagagiController extends ChangeNotifier {
   AlagagiController({
     AlagagiDataRepository? repository,
     MusicNoteSeenStore? musicNoteSeenStore,
+    FirstVisitGuideStore? firstVisitGuideStore,
   }) : _repository = repository,
        _musicNoteSeenStore = musicNoteSeenStore ?? MemoryMusicNoteSeenStore(),
+       _firstVisitGuideStore = firstVisitGuideStore,
        _spaceId = null,
        _usesDemoData = true,
        _todayQuestion = seedQuestions.first,
@@ -1042,9 +1073,11 @@ class AlagagiController extends ChangeNotifier {
     AlagagiSession session, {
     AlagagiDataRepository? repository,
     MusicNoteSeenStore? musicNoteSeenStore,
+    FirstVisitGuideStore? firstVisitGuideStore,
     String? todayDateKey,
   }) : _repository = repository,
        _musicNoteSeenStore = musicNoteSeenStore ?? MemoryMusicNoteSeenStore(),
+       _firstVisitGuideStore = firstVisitGuideStore,
        _spaceId = session.spaceId,
        _usesDemoData = false,
        _dailyProgress = _resolveDailyQuestionProgress(
@@ -1075,11 +1108,13 @@ class AlagagiController extends ChangeNotifier {
        ) {
     _applySessionData(session.data);
     _persistDailyQuestionProgressIfChanged(session.data.dailyProgress);
+    _initializeFirstVisitGuide();
   }
 
   AlagagiState _state;
   final AlagagiDataRepository? _repository;
   final MusicNoteSeenStore _musicNoteSeenStore;
+  final FirstVisitGuideStore? _firstVisitGuideStore;
   final String? _spaceId;
   final bool _usesDemoData;
 
@@ -2003,6 +2038,36 @@ class AlagagiController extends ChangeNotifier {
       clearAnswerSaveFeedback: route == AlagagiRoute.answer,
     );
     notifyListeners();
+  }
+
+  void completeFirstVisitGuide() {
+    _markFirstVisitGuideSeen();
+    if (!_state.firstVisitGuideVisible) {
+      return;
+    }
+    _state = _state.copyWith(firstVisitGuideVisible: false);
+    notifyListeners();
+  }
+
+  void _initializeFirstVisitGuide() {
+    final store = _firstVisitGuideStore;
+    final spaceId = _spaceId;
+    if (store == null || spaceId == null) {
+      return;
+    }
+    if (store.hasSeenFirstVisitGuide(spaceId, _state.me.id)) {
+      return;
+    }
+    _state = _state.copyWith(firstVisitGuideVisible: true);
+  }
+
+  void _markFirstVisitGuideSeen() {
+    final store = _firstVisitGuideStore;
+    final spaceId = _spaceId;
+    if (store == null || spaceId == null) {
+      return;
+    }
+    store.markFirstVisitGuideSeen(spaceId, _state.me.id);
   }
 
   void activateHomeProgressSummaryAction() {

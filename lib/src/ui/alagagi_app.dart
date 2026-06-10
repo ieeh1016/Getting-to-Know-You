@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/first_visit_guide_store.dart';
 import '../data/firebase_alagagi_repositories.dart';
 import '../data/music_note_seen_store.dart';
 import '../domain/alagagi_controller.dart';
@@ -34,10 +35,15 @@ const answerCommentCancelButtonKey = Key('answer-comment-cancel-button');
 const answerCommentSubmitButtonKey = Key('answer-comment-submit-button');
 const readableDetailSheetKey = Key('readable-detail-sheet');
 const readableDetailBodyKey = Key('readable-detail-body');
+const firstVisitGuideSheetKey = Key('first-visit-guide-sheet');
+const firstVisitGuideStartButtonKey = Key('first-visit-guide-start-button');
+const firstVisitGuideTourButtonKey = Key('first-visit-guide-tour-button');
+const firstVisitGuideBookSheetKey = Key('first-visit-guide-book-sheet');
 const myDashboardKey = Key('my-dashboard');
 const myNextPrimaryButtonKey = Key('my-next-primary-button');
 const myProfileCardActionButtonKey = Key('my-profile-card-action-button');
 const myMusicActionButtonKey = Key('my-music-action-button');
+const myFirstVisitGuideButtonKey = Key('my-first-visit-guide-button');
 const alagagiShellKey = Key('alagagi-shell');
 const bottomNavigationKey = Key('bottom-navigation');
 const archiveCalendarKey = Key('archive-question-calendar');
@@ -83,12 +89,14 @@ class AlagagiApp extends StatelessWidget {
     this.authRepository,
     this.dataRepository,
     this.musicNoteSeenStore,
+    this.firstVisitGuideStore,
   });
 
   final bool firebaseEnabled;
   final AlagagiAuthRepository? authRepository;
   final AlagagiDataRepository? dataRepository;
   final MusicNoteSeenStore? musicNoteSeenStore;
+  final FirstVisitGuideStore? firstVisitGuideStore;
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +108,7 @@ class AlagagiApp extends StatelessWidget {
         authRepository: auth,
         dataRepository: data,
         musicNoteSeenStore: musicNoteSeenStore,
+        firstVisitGuideStore: firstVisitGuideStore,
       );
     } else {
       home = AlagagiRoot(musicNoteSeenStore: musicNoteSeenStore);
@@ -133,11 +142,13 @@ class AlagagiRoot extends StatefulWidget {
     this.controller,
     this.onSignOut,
     this.musicNoteSeenStore,
+    this.firstVisitGuideStore,
   });
 
   final AlagagiController? controller;
   final VoidCallback? onSignOut;
   final MusicNoteSeenStore? musicNoteSeenStore;
+  final FirstVisitGuideStore? firstVisitGuideStore;
 
   @override
   State<AlagagiRoot> createState() => _AlagagiRootState();
@@ -156,6 +167,7 @@ class _AlagagiRootState extends State<AlagagiRoot> {
         AlagagiController(
           musicNoteSeenStore:
               widget.musicNoteSeenStore ?? createDefaultMusicNoteSeenStore(),
+          firstVisitGuideStore: widget.firstVisitGuideStore,
         );
   }
 
@@ -172,7 +184,16 @@ class _AlagagiRootState extends State<AlagagiRoot> {
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
-        return _PhoneShell(child: _buildRoute());
+        return _PhoneShell(
+          child: Stack(
+            children: [
+              Positioned.fill(child: _buildRoute()),
+              if (_controller.state.firstVisitGuideVisible &&
+                  _controller.state.route == AlagagiRoute.home)
+                _FirstVisitGuideOverlay(controller: _controller),
+            ],
+          ),
+        );
       },
     );
   }
@@ -371,11 +392,13 @@ class AlagagiAuthGate extends StatelessWidget {
     required this.authRepository,
     required this.dataRepository,
     this.musicNoteSeenStore,
+    this.firstVisitGuideStore,
   });
 
   final AlagagiAuthRepository authRepository;
   final AlagagiDataRepository dataRepository;
   final MusicNoteSeenStore? musicNoteSeenStore;
+  final FirstVisitGuideStore? firstVisitGuideStore;
 
   @override
   Widget build(BuildContext context) {
@@ -400,6 +423,7 @@ class AlagagiAuthGate extends StatelessWidget {
           authRepository: authRepository,
           dataRepository: dataRepository,
           musicNoteSeenStore: musicNoteSeenStore,
+          firstVisitGuideStore: firstVisitGuideStore,
         );
       },
     );
@@ -413,12 +437,14 @@ class _SessionGate extends StatefulWidget {
     required this.authRepository,
     required this.dataRepository,
     this.musicNoteSeenStore,
+    this.firstVisitGuideStore,
   });
 
   final AlagagiAuthUser user;
   final AlagagiAuthRepository authRepository;
   final AlagagiDataRepository dataRepository;
   final MusicNoteSeenStore? musicNoteSeenStore;
+  final FirstVisitGuideStore? firstVisitGuideStore;
 
   @override
   State<_SessionGate> createState() => _SessionGateState();
@@ -475,6 +501,9 @@ class _SessionGateState extends State<_SessionGate> {
           repository: widget.dataRepository,
           musicNoteSeenStore:
               widget.musicNoteSeenStore ?? createDefaultMusicNoteSeenStore(),
+          firstVisitGuideStore:
+              widget.firstVisitGuideStore ??
+              createDefaultFirstVisitGuideStore(),
         );
         return AlagagiRoot(
           controller: _controller,
@@ -1143,6 +1172,266 @@ class HomeScreen extends StatelessWidget {
         const SizedBox(height: 12),
         _PlusGrid(controller: controller),
       ],
+    );
+  }
+}
+
+class _FirstVisitGuideOverlay extends StatelessWidget {
+  const _FirstVisitGuideOverlay({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: Material(
+        color: Colors.transparent,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final maxSheetHeight = (constraints.maxHeight - 32).clamp(
+              320.0,
+              620.0,
+            );
+            return Container(
+              color: AlagagiColors.ink.withValues(alpha: 0.28),
+              alignment: Alignment.bottomCenter,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: maxSheetHeight),
+                child: Container(
+                  key: firstVisitGuideSheetKey,
+                  decoration: BoxDecoration(
+                    color: AlagagiColors.paper,
+                    border: Border.all(color: AlagagiColors.line),
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x2E2C2B25),
+                        blurRadius: 42,
+                        offset: Offset(0, 18),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
+                  child: SingleChildScrollView(
+                    child: SafeArea(
+                      top: false,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Center(
+                            child: Container(
+                              width: 40,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFD7D5CC),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 17),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '처음 방문 안내',
+                                  style: sans(
+                                    size: 10.5,
+                                    weight: FontWeight.w800,
+                                    color: AlagagiColors.sageDeep,
+                                    letterSpacing: 1.6,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                height: 26,
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEEF2EA),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  '약 30초',
+                                  style: sans(
+                                    size: 11,
+                                    weight: FontWeight.w800,
+                                    color: AlagagiColors.sageDeep,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            '오늘은 여기서 시작하면 충분해요',
+                            style: serif(
+                              context,
+                              size: 23,
+                              weight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 7),
+                          Text(
+                            '기능을 전부 외울 필요 없이, 편한 것부터 하나씩 눌러보면 됩니다.',
+                            style: sans(
+                              size: 12.7,
+                              color: AlagagiColors.muted,
+                              height: 1.58,
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+                          const _FirstVisitPathRow(
+                            number: '01',
+                            title: '오늘 질문에 답하기',
+                            body: '가장 자연스러운 첫 행동으로 안내합니다.',
+                          ),
+                          const SizedBox(height: 8),
+                          const _FirstVisitPathRow(
+                            number: '02',
+                            title: '한 곡 남기기',
+                            body: '말보다 음악이 편한 날을 위한 선택지입니다.',
+                          ),
+                          const SizedBox(height: 8),
+                          const _FirstVisitPathRow(
+                            number: '03',
+                            title: '언젠가 같이 담기',
+                            body: '해보고 싶은 일을 가볍게 모아둡니다.',
+                          ),
+                          const SizedBox(height: 13),
+                          Row(
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  color: AlagagiColors.sage,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 7),
+                              Expanded(
+                                child: Text(
+                                  '닫아도 마이에서 처음 안내를 다시 볼 수 있어요.',
+                                  style: sans(
+                                    size: 11.5,
+                                    color: AlagagiColors.muted,
+                                    height: 1.45,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          _PrimaryButton(
+                            buttonKey: firstVisitGuideTourButtonKey,
+                            label: '30초 둘러보기',
+                            onPressed: () {
+                              _showFirstVisitGuideBook(context);
+                              controller.completeFirstVisitGuide();
+                            },
+                            color: AlagagiColors.sageDeep,
+                          ),
+                          const SizedBox(height: 6),
+                          SizedBox(
+                            height: 44,
+                            child: TextButton(
+                              key: firstVisitGuideStartButtonKey,
+                              onPressed: controller.completeFirstVisitGuide,
+                              style: TextButton.styleFrom(
+                                foregroundColor: AlagagiColors.sageDeep,
+                                textStyle: sans(
+                                  size: 13,
+                                  weight: FontWeight.w800,
+                                ),
+                              ),
+                              child: const Text('바로 시작하기'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _FirstVisitPathRow extends StatelessWidget {
+  const _FirstVisitPathRow({
+    required this.number,
+    required this.title,
+    required this.body,
+  });
+
+  final String number;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 62),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Text(
+              number,
+              style: sans(
+                size: 11,
+                weight: FontWeight.w800,
+                color: AlagagiColors.sageDeep,
+              ),
+            ),
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: sans(
+                    size: 13,
+                    weight: FontWeight.w800,
+                    color: const Color(0xFF46443F),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  body,
+                  style: sans(
+                    size: 11.5,
+                    color: AlagagiColors.muted,
+                    height: 1.42,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -2551,6 +2840,255 @@ void _showReadableDetailSheet(
       );
     },
   );
+}
+
+void _showFirstVisitGuideBook(BuildContext context) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return DraggableScrollableSheet(
+        initialChildSize: 0.74,
+        minChildSize: 0.42,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (_, scrollController) {
+          return SafeArea(
+            child: Container(
+              key: firstVisitGuideBookSheetKey,
+              margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              decoration: BoxDecoration(
+                color: AlagagiColors.paper,
+                border: Border.all(color: AlagagiColors.line),
+                borderRadius: BorderRadius.circular(26),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x22000000),
+                    blurRadius: 32,
+                    offset: Offset(0, 16),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 10),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD7D5CC),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'GUIDE BOOK',
+                                style: sans(
+                                  size: 10.5,
+                                  weight: FontWeight.w800,
+                                  color: AlagagiColors.sageDeep,
+                                  letterSpacing: 1.6,
+                                ),
+                              ),
+                              const SizedBox(height: 7),
+                              Text(
+                                '헷갈릴 때만 다시 보는 안내서',
+                                style: serif(
+                                  sheetContext,
+                                  size: 21,
+                                  weight: FontWeight.w800,
+                                  height: 1.4,
+                                ),
+                              ),
+                              const SizedBox(height: 7),
+                              Text(
+                                '읽어도 상대에게 알림이 가지 않습니다. 필요한 기능만 눌러서 확인하면 돼요.',
+                                style: sans(
+                                  size: 12.3,
+                                  color: AlagagiColors.muted,
+                                  height: 1.58,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: '닫기',
+                          onPressed: () => Navigator.of(sheetContext).pop(),
+                          icon: const Icon(Icons.close_rounded, size: 20),
+                          color: AlagagiColors.muted,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+                      children: const [
+                        _GuideBookFeatureRow(
+                          icon: Icons.question_answer_outlined,
+                          title: '오늘의 질문',
+                          body: '답을 남기면 상대 답도 함께 열려요.',
+                          where: '홈',
+                        ),
+                        SizedBox(height: 8),
+                        _GuideBookFeatureRow(
+                          icon: Icons.calendar_month_outlined,
+                          title: '질문함과 기록',
+                          body: '지난 질문을 보고 늦게 답할 질문을 확인해요.',
+                          where: '질문',
+                        ),
+                        SizedBox(height: 8),
+                        _GuideBookFeatureRow(
+                          icon: Icons.music_note_outlined,
+                          title: '음악 노트',
+                          body: '요즘 듣는 곡과 짧은 메모를 남겨요.',
+                          where: '음악',
+                        ),
+                        SizedBox(height: 8),
+                        _GuideBookFeatureRow(
+                          icon: Icons.badge_outlined,
+                          title: '소개 카드',
+                          body: '취향과 대화 방식을 편한 질문부터 채워요.',
+                          where: '마이',
+                        ),
+                        SizedBox(height: 8),
+                        _GuideBookFeatureRow(
+                          icon: Icons.bookmark_add_outlined,
+                          title: '언젠가, 같이',
+                          body: '같이 해보고 싶은 일을 조용히 담아둬요.',
+                          where: '홈',
+                        ),
+                        SizedBox(height: 8),
+                        _GuideBookFeatureRow(
+                          icon: Icons.tune_rounded,
+                          title: '밸런스 게임',
+                          body: '글을 쓰기 어려운 날에는 둘 중 하나만 골라요.',
+                          where: '홈',
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AlagagiColors.sageDeep,
+                          side: const BorderSide(color: Color(0x338A9A7E)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          textStyle: sans(size: 13, weight: FontWeight.w800),
+                        ),
+                        child: const Text('닫기'),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+class _GuideBookFeatureRow extends StatelessWidget {
+  const _GuideBookFeatureRow({
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.where,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+  final String where;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AlagagiColors.paper,
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEEF2EA),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(icon, size: 19, color: AlagagiColors.sageDeep),
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: sans(
+                    size: 12.8,
+                    weight: FontWeight.w800,
+                    color: const Color(0xFF46443F),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  body,
+                  style: sans(
+                    size: 11.4,
+                    color: AlagagiColors.muted,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 9),
+          Container(
+            height: 24,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F8F4),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              where,
+              style: sans(
+                size: 10,
+                weight: FontWeight.w800,
+                color: AlagagiColors.sageDeep,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _AnswerSaveStatus extends StatelessWidget {
@@ -7226,6 +7764,8 @@ class MyScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
+            _MyHelpCard(onOpenGuide: () => _showFirstVisitGuideBook(context)),
+            const SizedBox(height: 16),
             _MyAccountCard(onSignOut: onSignOut),
           ],
         ),
@@ -7728,6 +8268,111 @@ class _MyTraceCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _MyHelpCard extends StatelessWidget {
+  const _MyHelpCard({required this.onOpenGuide});
+
+  final VoidCallback onOpenGuide;
+
+  @override
+  Widget build(BuildContext context) {
+    return _PaperCard(
+      radius: 20,
+      padding: const EdgeInsets.all(15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '도움말',
+            style: sans(
+              size: 13.2,
+              weight: FontWeight.w800,
+              color: const Color(0xFF46443F),
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            '헷갈릴 때만 조용히 열어볼 수 있어요. 읽어도 상대에게 알림이 가지 않습니다.',
+            style: sans(size: 11.7, color: AlagagiColors.muted, height: 1.55),
+          ),
+          const SizedBox(height: 12),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: myFirstVisitGuideButtonKey,
+              borderRadius: BorderRadius.circular(18),
+              onTap: onOpenGuide,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AlagagiColors.paper,
+                  border: Border.all(color: AlagagiColors.line),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                padding: const EdgeInsets.all(13),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEEF2EA),
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                      child: const Icon(
+                        Icons.menu_book_outlined,
+                        size: 19,
+                        color: AlagagiColors.sageDeep,
+                      ),
+                    ),
+                    const SizedBox(width: 11),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '처음 안내 다시 보기',
+                            style: sans(
+                              size: 12.8,
+                              weight: FontWeight.w800,
+                              color: const Color(0xFF46443F),
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '짧은 기능 안내를 다시 확인해요.',
+                            style: sans(
+                              size: 11.2,
+                              color: AlagagiColors.muted,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 9),
+                    Container(
+                      width: 26,
+                      height: 26,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFEEF2EA),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: AlagagiColors.sageDeep,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

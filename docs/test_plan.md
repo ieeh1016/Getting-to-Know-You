@@ -61,6 +61,8 @@
 - 홈 진행 요약은 음악 탭을 열 때만 device-local 마지막 확인 시간을 갱신하고 Firestore write를 만들지 않는다.
 - 홈 진행 요약은 내가 직접 남긴 music note를 내 기기의 `새 음악 노트` 판정에 포함하지 않는다.
 - 홈 진행 요약은 music note에 비교 가능한 `updatedAt`이 없으면 `새`로 단정하지 않고 count/latest copy로 fallback한다.
+- First visit guide visibility는 session/profile/space와 device-local seen state로만 계산한다.
+- First visit guide dismiss/tour start는 local seen state만 갱신하고 repository write를 호출하지 않는다.
 - 홈 진행 요약 primary action은 `오늘 답하기` > `질문함 보기` > `음악 보기` 우선순위로 하나만 선택한다.
 - 내 music note 수정은 기존 값을 draft panel에 채우고 같은 note id/document를 덮어쓴다.
 - 상대 music note는 수정 action을 보여주지 않고 저장 호출도 허용하지 않는다.
@@ -78,6 +80,11 @@
 - 로그인은 실패 시 입력값을 유지하고 오류 문구를 보여준다.
 - `users/{uid}` 문서가 없으면 setup required 화면에 UID를 보여준다.
 - 로그아웃 버튼을 누르면 로그인 화면으로 돌아온다.
+- First visit guide는 로그인/세션 로드 후 홈이 준비된 상태에서 local seen state가 없을 때만 노출된다.
+- First visit guide의 `바로 시작하기`를 누르면 같은 space/profile/device에서 다시 자동 노출되지 않는다.
+- First visit guide의 `30초 둘러보기`는 기능 안내 bottom sheet를 열고 local seen state를 저장한다.
+- 마이 화면은 `도움말` / `처음 안내 다시 보기`를 보여주고, 탭하면 기능 안내 bottom sheet를 다시 연다.
+- First visit guide와 마이 도움말 다시 보기는 하트/커플/기념일/애정 표현 톤을 노출하지 않는다.
 - Firebase mode에서 실제 답변이 없으면 홈/질문함에 샘플 상대 답변이 보이지 않는다.
 - Firebase mode에서 실제 기록이 없으면 알아간 기록은 0/empty state를 보여준다.
 - Firebase mode에서 실제 위시가 없으면 위시리스트는 비어 있고 직접 담기 CTA만 보인다.
@@ -184,4 +191,5 @@
 - Home progress summary는 별도 status/events/analytics collection을 읽거나 쓰지 않는다.
 - Save/offline state는 local app state이며 Firestore에 retry history를 저장하지 않는다.
 - Music note seen state는 localStorage에만 저장하며 Firestore read/write 예산에 포함하지 않는다.
+- First visit guide seen state는 `jogeumssik:onboardingSeen:{spaceId}:{profileId}` 형식의 localStorage에만 저장하며 Firestore read/write 예산에 포함하지 않는다.
 - TTL, backup, PITR, restore, clone, Storage upload, Cloud Functions가 필요한 기능은 Spark/free-plan MVP 테스트 범위에 넣지 않는다.

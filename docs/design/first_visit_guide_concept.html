@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>조금씩 · 첫 방문 안내 UX 개선 시안</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --outer:#e9e8e2;
+    --bg:#f4f3ef;
+    --paper:#fcfcfa;
+    --soft:#f8f8f4;
+    --line:#e5e2da;
+    --ink:#2f302c;
+    --text:#484840;
+    --muted:#8f8a80;
+    --sage:#8a9a7e;
+    --sage-deep:#68795f;
+    --sage-soft:#eef2ea;
+    --mint:#dfe9dd;
+    --lav:#b8a8c8;
+    --lav-soft:#f2eef5;
+    --clay:#b48672;
+    --clay-soft:#f5eee9;
+    --shadow:0 28px 72px rgba(64,62,54,.16);
+  }
+  body{
+    min-height:100vh;
+    background:var(--outer);
+    color:var(--ink);
+    font-family:'Noto Sans KR',sans-serif;
+    font-weight:300;
+    padding:38px 18px 60px;
+  }
+  button{font:inherit;border:0;background:none;color:inherit}
+  svg{display:block}
+  h1,h2,h3,h4{
+    font-family:'Nanum Myeongjo',serif;
+    letter-spacing:0;
+  }
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+  }
+  .page-head{
+    max-width:820px;
+    margin:0 auto 25px;
+    text-align:center;
+  }
+  .eyebrow{
+    margin-bottom:9px;
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:3px;
+  }
+  .page-head h1{
+    font-size:34px;
+    line-height:1.34;
+    font-weight:800;
+  }
+  .page-head p{
+    max-width:690px;
+    margin:11px auto 0;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.75;
+  }
+  .rules{
+    max-width:1000px;
+    margin:0 auto 30px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+  }
+  .rule{
+    min-height:86px;
+    border:1px solid rgba(229,226,218,.92);
+    border-radius:18px;
+    background:rgba(252,252,250,.72);
+    padding:15px 15px 14px;
+  }
+  .rule b{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:var(--text);
+    font-size:12.5px;
+    font-weight:800;
+  }
+  .rule b::before{
+    content:"";
+    width:8px;
+    height:8px;
+    flex:0 0 auto;
+    border-radius:50%;
+    background:var(--sage);
+  }
+  .rule p{
+    margin-top:7px;
+    color:var(--muted);
+    font-size:11.8px;
+    line-height:1.55;
+  }
+  .showcase{
+    display:grid;
+    grid-template-columns:minmax(330px,430px) minmax(360px,1fr);
+    gap:26px;
+    align-items:start;
+  }
+  .panel-title{
+    margin:0 0 12px 3px;
+  }
+  .tag{
+    display:inline-flex;
+    align-items:center;
+    min-height:24px;
+    padding:0 10px;
+    border:1px solid rgba(104,121,95,.22);
+    border-radius:999px;
+    background:rgba(252,252,250,.72);
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:800;
+  }
+  .panel-title h2{
+    margin-top:8px;
+    font-size:20px;
+    line-height:1.35;
+    font-weight:800;
+  }
+  .panel-title p{
+    margin-top:6px;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.62;
+  }
+  .phone{
+    width:390px;
+    max-width:100%;
+    min-height:844px;
+    position:relative;
+    overflow:hidden;
+    border:8px solid #fff;
+    border-radius:40px;
+    background:var(--bg);
+    box-shadow:var(--shadow);
+  }
+  .phone.slim{
+    min-height:640px;
+  }
+  .screen{
+    min-height:844px;
+    padding:28px 24px 92px;
+    position:relative;
+  }
+  .phone.slim .screen{
+    min-height:640px;
+    padding-bottom:28px;
+  }
+  .topbar{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:14px;
+    margin:6px 0 18px;
+  }
+  .topbar h3{
+    font-size:23px;
+    font-weight:800;
+  }
+  .topbar p{
+    margin-top:5px;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.55;
+  }
+  .round-btn{
+    width:38px;
+    height:38px;
+    flex:0 0 auto;
+    display:grid;
+    place-items:center;
+    border:1px solid var(--line);
+    border-radius:50%;
+    background:var(--paper);
+    color:var(--sage-deep);
+  }
+  .home-summary{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    margin-bottom:16px;
+    padding:17px 18px;
+    border-radius:20px;
+    background:#30312d;
+    color:#fff;
+  }
+  .home-summary small{
+    display:block;
+    margin-bottom:5px;
+    color:#c9c9c0;
+    font-size:10.5px;
+    font-weight:600;
+    letter-spacing:1.1px;
+  }
+  .home-summary strong{
+    font-size:17px;
+    line-height:1.35;
+    font-weight:800;
+  }
+  .home-badge{
+    width:48px;
+    height:48px;
+    flex:0 0 auto;
+    display:grid;
+    place-items:center;
+    border-radius:18px;
+    background:#eef2ea;
+    color:var(--sage-deep);
+  }
+  .paper{
+    border:1px solid var(--line);
+    border-radius:24px;
+    background:var(--paper);
+    box-shadow:0 14px 34px rgba(80,78,70,.045);
+  }
+  .question-card{
+    padding:22px 21px 20px;
+  }
+  .card-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:18px;
+  }
+  .label{
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:800;
+    letter-spacing:2.1px;
+  }
+  .day-chip{
+    min-width:54px;
+    height:28px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:999px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:800;
+  }
+  .question-card h4{
+    font-size:22px;
+    line-height:1.5;
+    font-weight:800;
+  }
+  .answer-state{
+    margin-top:17px;
+    padding:14px;
+    border:1px solid var(--line);
+    border-radius:17px;
+    background:var(--soft);
+  }
+  .answer-state strong{
+    display:block;
+    margin-bottom:4px;
+    color:var(--sage-deep);
+    font-size:13px;
+    font-weight:800;
+  }
+  .answer-state p{
+    color:var(--muted);
+    font-size:12.3px;
+    line-height:1.55;
+  }
+  .primary-btn{
+    width:100%;
+    min-height:50px;
+    border-radius:16px;
+    background:var(--sage-deep);
+    color:#fff;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:15px;
+    font-weight:800;
+  }
+  .ghost-btn{
+    width:100%;
+    min-height:44px;
+    border-radius:15px;
+    color:var(--sage-deep);
+    font-size:13px;
+    font-weight:800;
+  }
+  .question-card .primary-btn{
+    margin-top:15px;
+  }
+  .overlay{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:flex-end;
+    padding:0 16px 16px;
+    background:linear-gradient(180deg,rgba(47,48,44,.06),rgba(47,48,44,.34));
+  }
+  .welcome-sheet{
+    width:100%;
+    border:1px solid rgba(229,226,218,.94);
+    border-radius:30px;
+    background:var(--paper);
+    box-shadow:0 22px 52px rgba(44,43,38,.24);
+    padding:12px 18px 18px;
+  }
+  .handle{
+    width:40px;
+    height:4px;
+    margin:0 auto 17px;
+    border-radius:999px;
+    background:#d8d5cc;
+  }
+  .sheet-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:10px;
+  }
+  .sheet-kicker{
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:900;
+    letter-spacing:1.7px;
+  }
+  .time-pill{
+    height:26px;
+    display:inline-flex;
+    align-items:center;
+    padding:0 10px;
+    border-radius:999px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:800;
+  }
+  .welcome-sheet h4{
+    font-size:23px;
+    line-height:1.34;
+    font-weight:800;
+  }
+  .welcome-sheet .lead{
+    margin-top:7px;
+    color:var(--muted);
+    font-size:12.7px;
+    line-height:1.58;
+  }
+  .start-path{
+    margin-top:15px;
+    display:grid;
+    gap:8px;
+  }
+  .path-row{
+    display:grid;
+    grid-template-columns:36px 1fr;
+    gap:11px;
+    align-items:center;
+    min-height:62px;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:var(--soft);
+  }
+  .path-num{
+    width:34px;
+    height:34px;
+    display:grid;
+    place-items:center;
+    border-radius:13px;
+    background:#fff;
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:900;
+  }
+  .path-row strong{
+    display:block;
+    color:var(--text);
+    font-size:13px;
+    font-weight:900;
+  }
+  .path-row span{
+    display:block;
+    margin-top:3px;
+    color:var(--muted);
+    font-size:11.5px;
+    line-height:1.45;
+  }
+  .sheet-note{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    margin-top:13px;
+    color:var(--muted);
+    font-size:11.6px;
+    line-height:1.45;
+  }
+  .sheet-note i{
+    width:6px;
+    height:6px;
+    flex:0 0 auto;
+    border-radius:50%;
+    background:var(--sage);
+  }
+  .action-row{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:6px;
+    margin-top:14px;
+  }
+  .bottom-nav{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    height:68px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    border-top:1px solid var(--line);
+    background:rgba(252,252,250,.95);
+  }
+  .nav-item{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    color:#77746d;
+    font-size:10.2px;
+    font-weight:700;
+  }
+  .nav-item.on{
+    color:var(--ink);
+    font-weight:900;
+  }
+  .nav-item svg{
+    width:18px;
+    height:18px;
+  }
+  .right-col{
+    display:grid;
+    gap:22px;
+  }
+  .mini-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(280px,390px));
+    gap:22px;
+  }
+  .sub-topbar{
+    display:grid;
+    grid-template-columns:42px 1fr 42px;
+    align-items:center;
+    margin:6px 0 18px;
+  }
+  .sub-topbar h3{
+    text-align:center;
+    font-size:18px;
+    line-height:1.25;
+    font-weight:800;
+  }
+  .tour-card{
+    padding:20px;
+    border-radius:24px;
+    border:1px solid var(--line);
+    background:linear-gradient(135deg,var(--sage-soft),#f8f5f0);
+  }
+  .tour-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:17px;
+  }
+  .tour-head span{
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:900;
+    letter-spacing:1.8px;
+  }
+  .progress{
+    display:flex;
+    gap:5px;
+  }
+  .progress i{
+    width:6px;
+    height:6px;
+    border-radius:999px;
+    background:#d4d1c8;
+  }
+  .progress i.on{
+    width:18px;
+    background:var(--sage-deep);
+  }
+  .tour-card h4{
+    font-size:24px;
+    line-height:1.34;
+    font-weight:800;
+  }
+  .tour-card p{
+    margin-top:9px;
+    color:var(--muted);
+    font-size:12.7px;
+    line-height:1.62;
+  }
+  .spotlight{
+    margin-top:17px;
+    border:1px solid rgba(104,121,95,.24);
+    border-radius:20px;
+    background:rgba(252,252,250,.68);
+    padding:12px;
+  }
+  .spot-card{
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:var(--paper);
+    padding:14px;
+  }
+  .spot-card small{
+    color:var(--sage-deep);
+    font-size:10px;
+    font-weight:900;
+    letter-spacing:1.7px;
+  }
+  .spot-card strong{
+    display:block;
+    margin-top:8px;
+    color:var(--text);
+    font-size:15px;
+    line-height:1.45;
+    font-family:'Nanum Myeongjo',serif;
+    font-weight:800;
+  }
+  .callout{
+    position:relative;
+    margin:13px 0 0 18px;
+    padding:12px 13px;
+    border-radius:16px;
+    background:#30312d;
+    color:#fff;
+  }
+  .callout::before{
+    content:"";
+    position:absolute;
+    left:18px;
+    top:-7px;
+    width:14px;
+    height:14px;
+    transform:rotate(45deg);
+    background:#30312d;
+  }
+  .callout b{
+    display:block;
+    font-size:12px;
+    font-weight:900;
+  }
+  .callout span{
+    display:block;
+    margin-top:4px;
+    color:#d8d8cf;
+    font-size:11.2px;
+    line-height:1.45;
+  }
+  .tour-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-top:15px;
+  }
+  .tour-actions .ghost-btn{
+    border:1px solid var(--line);
+    background:var(--paper);
+  }
+  .guide-hero{
+    margin-bottom:14px;
+    padding:19px;
+    border-radius:24px;
+    border:1px solid var(--line);
+    background:linear-gradient(135deg,var(--sage-soft),#f7f4ef);
+  }
+  .guide-hero small{
+    display:block;
+    margin-bottom:8px;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:900;
+    letter-spacing:1.8px;
+  }
+  .guide-hero h4{
+    font-size:22px;
+    line-height:1.35;
+    font-weight:800;
+  }
+  .guide-hero p{
+    margin-top:8px;
+    color:var(--muted);
+    font-size:12.2px;
+    line-height:1.6;
+  }
+  .feature-list{
+    display:grid;
+    gap:8px;
+  }
+  .feature-row{
+    display:grid;
+    grid-template-columns:38px 1fr auto;
+    gap:11px;
+    align-items:center;
+    padding:12px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:var(--paper);
+  }
+  .feature-icon{
+    width:38px;
+    height:38px;
+    display:grid;
+    place-items:center;
+    border-radius:13px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+  }
+  .feature-row:nth-child(2) .feature-icon{background:var(--lav-soft);color:var(--lav)}
+  .feature-row:nth-child(3) .feature-icon{background:var(--clay-soft);color:var(--clay)}
+  .feature-row strong{
+    display:block;
+    color:var(--text);
+    font-size:12.7px;
+    font-weight:900;
+  }
+  .feature-row span{
+    display:block;
+    margin-top:2px;
+    color:var(--muted);
+    font-size:11.2px;
+    line-height:1.42;
+  }
+  .where{
+    height:24px;
+    display:inline-flex;
+    align-items:center;
+    padding:0 8px;
+    border-radius:999px;
+    background:var(--soft);
+    color:var(--sage-deep);
+    font-size:10px;
+    font-weight:900;
+  }
+  .my-card{
+    padding:18px;
+    margin-bottom:12px;
+  }
+  .my-card h4{
+    font-size:18px;
+    line-height:1.35;
+    font-weight:800;
+  }
+  .my-card p{
+    margin-top:6px;
+    color:var(--muted);
+    font-size:12.2px;
+    line-height:1.58;
+  }
+  .my-link{
+    display:grid;
+    grid-template-columns:38px 1fr 26px;
+    align-items:center;
+    gap:11px;
+    margin-top:12px;
+    padding:13px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:var(--paper);
+  }
+  .link-icon{
+    width:38px;
+    height:38px;
+    display:grid;
+    place-items:center;
+    border-radius:13px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+  }
+  .my-link strong{
+    display:block;
+    color:var(--text);
+    font-size:12.8px;
+    font-weight:900;
+  }
+  .my-link span{
+    display:block;
+    margin-top:3px;
+    color:var(--muted);
+    font-size:11.2px;
+    line-height:1.42;
+  }
+  .arrow{
+    width:26px;
+    height:26px;
+    display:grid;
+    place-items:center;
+    border-radius:50%;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+  }
+  .implementation{
+    display:grid;
+    grid-template-columns:1.1fr .9fr;
+    gap:18px;
+    margin-top:26px;
+  }
+  .note-card{
+    border:1px solid var(--line);
+    border-radius:24px;
+    background:rgba(252,252,250,.72);
+    padding:20px;
+  }
+  .note-card h3{
+    font-size:20px;
+    line-height:1.35;
+    font-weight:800;
+  }
+  .note-card p{
+    margin-top:8px;
+    color:var(--muted);
+    font-size:12.8px;
+    line-height:1.68;
+  }
+  .check-list{
+    margin-top:14px;
+    display:grid;
+    gap:8px;
+  }
+  .check{
+    display:flex;
+    gap:9px;
+    align-items:flex-start;
+    color:var(--text);
+    font-size:12.5px;
+    line-height:1.58;
+  }
+  .check i{
+    width:18px;
+    height:18px;
+    flex:0 0 auto;
+    display:grid;
+    place-items:center;
+    border-radius:50%;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    margin-top:1px;
+  }
+  code{
+    padding:2px 6px;
+    border-radius:7px;
+    background:var(--soft);
+    color:var(--sage-deep);
+    font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+    font-size:11px;
+  }
+  @media(max-width:1180px){
+    .showcase{grid-template-columns:1fr}
+    .showcase>section:first-child{justify-self:center}
+    .mini-grid{justify-content:center}
+  }
+  @media(max-width:900px){
+    body{padding:28px 12px 46px}
+    .page-head h1{font-size:28px}
+    .rules{grid-template-columns:1fr 1fr}
+    .mini-grid{grid-template-columns:minmax(300px,390px)}
+    .implementation{grid-template-columns:1fr}
+  }
+  @media(max-width:560px){
+    body{padding-left:0;padding-right:0}
+    .page-head,.rules,.panel-title,.implementation{padding-left:14px;padding-right:14px}
+    .rules{grid-template-columns:1fr}
+    .phone{
+      width:100%;
+      border:0;
+      border-radius:0;
+      box-shadow:none;
+    }
+    .showcase,.right-col,.mini-grid{gap:18px}
+    .tour-actions{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page-head">
+    <div class="eyebrow">FIRST VISIT GUIDE</div>
+    <h1>처음 화면은 더 가볍게,<br>안내는 더 또렷하게</h1>
+    <p>첫 방문에서 모든 기능을 설명하지 않고, 시작에 필요한 세 가지만 먼저 보여줍니다. 자세한 기능 안내는 마이에서 다시 열 수 있게 분리해 부담을 줄이는 방향입니다.</p>
+  </header>
+
+  <section class="rules" aria-label="UX 원칙">
+    <article class="rule">
+      <b>첫 진입 1회</b>
+      <p>로그인 후 홈이 준비되면 한 번만 안내합니다.</p>
+    </article>
+    <article class="rule">
+      <b>선택권 유지</b>
+      <p>둘러보기와 바로 시작하기를 같은 높이로 제공합니다.</p>
+    </article>
+    <article class="rule">
+      <b>마이에서 재확인</b>
+      <p>닫아도 도움말에서 언제든 다시 볼 수 있습니다.</p>
+    </article>
+    <article class="rule">
+      <b>Firestore 추가 없음</b>
+      <p>읽음 여부는 기기 localStorage에만 저장합니다.</p>
+    </article>
+  </section>
+
+  <main class="showcase">
+    <section>
+      <div class="panel-title">
+        <span class="tag">추천 화면 · 첫 진입</span>
+        <h2>앱을 가리지 않는 짧은 시작 안내</h2>
+        <p>첫 화면은 홈 맥락을 보여준 상태에서 bottom sheet로만 안내합니다. 사용자는 앱 분위기를 먼저 보고, 원하면 30초만 둘러볼 수 있습니다.</p>
+      </div>
+
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <div>
+              <h3>조금씩</h3>
+              <p>오늘도 한 가지를 알아가요</p>
+            </div>
+            <button class="round-btn" aria-label="알림">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 21h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+
+          <div class="home-summary">
+            <div>
+              <small>DAY 12 · 오늘의 질문</small>
+              <strong>서로를 조금씩 알아가는 공간</strong>
+            </div>
+            <div class="home-badge">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M7 20c8-1 12-7 13-16C11 5 5 10 4 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M4 19c4-4 7-6 12-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+
+          <article class="paper question-card">
+            <div class="card-head">
+              <span class="label">TODAY'S QUESTION</span>
+              <span class="day-chip">DAY 12</span>
+            </div>
+            <h4>하루 중 가장 좋아하는 시간은 언제인가요?</h4>
+            <div class="answer-state">
+              <strong>아직 내 답을 남기지 않았어요.</strong>
+              <p>답을 남기면 상대의 답도 함께 열려요.</p>
+            </div>
+            <button class="primary-btn">답 남기기</button>
+          </article>
+        </div>
+
+        <div class="overlay" aria-label="첫 방문 안내 바텀시트">
+          <section class="welcome-sheet">
+            <div class="handle"></div>
+            <div class="sheet-top">
+              <span class="sheet-kicker">처음 방문 안내</span>
+              <span class="time-pill">약 30초</span>
+            </div>
+            <h4>오늘은 여기서<br>시작하면 충분해요</h4>
+            <p class="lead">기능을 전부 외울 필요 없이, 편한 것부터 하나씩 눌러보면 됩니다.</p>
+
+            <div class="start-path">
+              <div class="path-row">
+                <div class="path-num">01</div>
+                <div>
+                  <strong>오늘 질문에 답하기</strong>
+                  <span>가장 자연스러운 첫 행동으로 안내합니다.</span>
+                </div>
+              </div>
+              <div class="path-row">
+                <div class="path-num">02</div>
+                <div>
+                  <strong>한 곡 남기기</strong>
+                  <span>말보다 음악이 편한 날을 위한 선택지입니다.</span>
+                </div>
+              </div>
+              <div class="path-row">
+                <div class="path-num">03</div>
+                <div>
+                  <strong>언젠가 같이 담기</strong>
+                  <span>해보고 싶은 일을 가볍게 모아둡니다.</span>
+                </div>
+              </div>
+            </div>
+
+            <p class="sheet-note"><i></i>닫아도 마이에서 처음 안내를 다시 볼 수 있어요.</p>
+            <div class="action-row">
+              <button class="primary-btn">30초 둘러보기</button>
+              <button class="ghost-btn">바로 시작하기</button>
+            </div>
+          </section>
+        </div>
+
+        <nav class="bottom-nav">
+          <div class="nav-item on"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11 12 5l8 6v8H4z" stroke="currentColor" stroke-width="1.8"/></svg>홈</div>
+          <div class="nav-item"><svg viewBox="0 0 24 24" fill="none"><path d="M6 5h9a3 3 0 0 1 3 3v11H9a3 3 0 0 0-3 0V5Z" stroke="currentColor" stroke-width="1.8"/></svg>질문</div>
+          <div class="nav-item"><svg viewBox="0 0 24 24" fill="none"><path d="M9 18V5l10-2v13" stroke="currentColor" stroke-width="1.8"/><circle cx="7" cy="18" r="3" stroke="currentColor" stroke-width="1.8"/></svg>음악</div>
+          <div class="nav-item"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c1-4 13-4 14 0" stroke="currentColor" stroke-width="1.8"/></svg>마이</div>
+        </nav>
+      </div>
+    </section>
+
+    <section class="right-col">
+      <div class="panel-title">
+        <span class="tag">둘러보기와 다시 보기</span>
+        <h2>설명은 한 화면씩, 보관은 마이에</h2>
+        <p>둘러보기는 기능을 하나씩 보여주고, 전체 설명서는 마이의 도움말로 옮겨 홈을 복잡하게 만들지 않습니다.</p>
+      </div>
+
+      <div class="mini-grid">
+        <div class="phone slim">
+          <div class="screen">
+            <div class="sub-topbar">
+              <button class="round-btn" aria-label="닫기">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+              </button>
+              <h3>짧은 둘러보기</h3>
+              <span></span>
+            </div>
+
+            <section class="tour-card">
+              <div class="tour-head">
+                <span>STEP 1 · 홈</span>
+                <div class="progress"><i class="on"></i><i></i><i></i><i></i></div>
+              </div>
+              <h4>오늘 질문부터<br>시작해요</h4>
+              <p>내 답을 남기면 같은 질문에 대한 상대의 답도 함께 확인할 수 있습니다.</p>
+
+              <div class="spotlight">
+                <div class="spot-card">
+                  <small>TODAY'S QUESTION</small>
+                  <strong>오늘의 질문 카드가 첫 시작점이에요.</strong>
+                </div>
+                <div class="callout">
+                  <b>여기서 답을 남겨요</b>
+                  <span>긴 글이 아니어도 괜찮고, 나중에 오늘 답은 수정할 수 있어요.</span>
+                </div>
+              </div>
+
+              <div class="tour-actions">
+                <button class="ghost-btn">건너뛰기</button>
+                <button class="primary-btn">다음</button>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div class="phone slim">
+          <div class="screen">
+            <div class="sub-topbar">
+              <button class="round-btn" aria-label="뒤로">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="m15 6-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <h3>처음 안내</h3>
+              <span></span>
+            </div>
+
+            <div class="guide-hero">
+              <small>GUIDE BOOK</small>
+              <h4>헷갈릴 때만 다시 보는 안내서</h4>
+              <p>읽어도 상대에게 알림이 가지 않습니다. 필요한 기능만 눌러서 확인하는 구조입니다.</p>
+            </div>
+
+            <div class="feature-list">
+              <article class="feature-row">
+                <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M7 5h10M7 9h7M7 13h10M7 17h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+                <div><strong>오늘의 질문</strong><span>답을 남기고 상대 답을 확인해요.</span></div>
+                <b class="where">홈</b>
+              </article>
+              <article class="feature-row">
+                <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 18V5l10-2v13" stroke="currentColor" stroke-width="1.8"/><circle cx="7" cy="18" r="3" stroke="currentColor" stroke-width="1.8"/></svg></div>
+                <div><strong>음악 노트</strong><span>한 곡과 짧은 메모를 남겨요.</span></div>
+                <b class="where">음악</b>
+              </article>
+              <article class="feature-row">
+                <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M7 7h10v11H7z" stroke="currentColor" stroke-width="1.8"/><path d="M9 5v4M15 5v4M7 11h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+                <div><strong>언젠가, 같이</strong><span>같이 해보고 싶은 일을 담아요.</span></div>
+                <b class="where">홈</b>
+              </article>
+              <article class="feature-row">
+                <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="5" y="5" width="14" height="14" rx="4" stroke="currentColor" stroke-width="1.8"/><path d="M8 10h8M8 14h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+                <div><strong>소개 카드</strong><span>편한 질문부터 나를 채워요.</span></div>
+                <b class="where">마이</b>
+              </article>
+              <article class="feature-row">
+                <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M7 8h10M7 16h10M9 6v4M15 14v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+                <div><strong>밸런스 게임</strong><span>글을 쓰기 어려운 날의 가벼운 선택지.</span></div>
+                <b class="where">홈</b>
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone slim">
+        <div class="screen">
+          <div class="sub-topbar">
+            <button class="round-btn" aria-label="뒤로">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="m15 6-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <h3>마이</h3>
+            <span></span>
+          </div>
+
+          <section class="my-card paper">
+            <h4>도움말</h4>
+            <p>처음 안내는 홈에서 사라져도 여기에 남습니다. 기능 설명이 필요할 때만 열어보는 구조입니다.</p>
+            <div class="my-link">
+              <div class="link-icon">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M6 5h9a3 3 0 0 1 3 3v11H9a3 3 0 0 0-3 0V5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div>
+                <strong>처음 안내 다시 보기</strong>
+                <span>짧은 둘러보기와 기능 안내서</span>
+              </div>
+              <div class="arrow">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M8 5l8 7-8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </section>
+
+          <section class="my-card paper">
+            <h4>다음에 해볼 것</h4>
+            <div class="my-link">
+              <div class="link-icon">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M7 5h10M7 9h7M7 13h10M7 17h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              </div>
+              <div>
+                <strong>오늘 질문 답하기</strong>
+                <span>아직 남기지 않은 답이 있어요.</span>
+              </div>
+              <div class="arrow">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M8 5l8 7-8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <section class="implementation" aria-label="구현 메모">
+    <article class="note-card">
+      <h3>동작 기준</h3>
+      <p>첫 방문 안내는 앱 데이터가 준비된 뒤 홈에서 노출하고, 사용자가 둘러보기나 바로 시작하기를 누르면 같은 기기에서는 다시 자동으로 띄우지 않습니다.</p>
+      <div class="check-list">
+        <div class="check"><i><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></i><span>저장 키는 <code>jogeumssik:onboardingSeen:{spaceId}:{profileId}</code> 형태를 권장합니다.</span></div>
+        <div class="check"><i><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></i><span>Firestore에는 안내 읽음 상태를 저장하지 않아 무료 플랜 비용을 늘리지 않습니다.</span></div>
+      </div>
+    </article>
+
+    <article class="note-card">
+      <h3>화면 배치</h3>
+      <p>홈에는 첫 방문 안내만 잠깐 노출하고, 전체 기능 설명은 <code>마이 &gt; 도움말 &gt; 처음 안내 다시 보기</code>로 이동합니다. 홈의 밀도는 유지하고 처음 사용자의 불안감만 줄입니다.</p>
+      <div class="check-list">
+        <div class="check"><i><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></i><span>로맨틱한 표현 대신 기능 중심의 담백한 문구를 사용합니다.</span></div>
+        <div class="check"><i><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></i><span>둘러보기는 단계형 화면으로 처리해 사용자가 현재 위치를 바로 알 수 있게 합니다.</span></div>
+      </div>
+    </article>
+  </section>
+</div>
+</body>
+</html>

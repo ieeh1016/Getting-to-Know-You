@@ -16,6 +16,7 @@ void main() {
           firebaseEnabled: true,
           authRepository: auth,
           dataRepository: data,
+          firstVisitGuideStore: _seenGuideStore(),
         ),
       );
       await tester.pumpAndSettle();
@@ -50,6 +51,7 @@ void main() {
           firebaseEnabled: true,
           authRepository: auth,
           dataRepository: data,
+          firstVisitGuideStore: _seenGuideStore(),
         ),
       );
       await tester.pumpAndSettle();
@@ -90,6 +92,7 @@ void main() {
           firebaseEnabled: true,
           authRepository: auth,
           dataRepository: data,
+          firstVisitGuideStore: _seenGuideStore(),
         ),
       );
       await tester.pumpAndSettle();
@@ -116,6 +119,7 @@ void main() {
           firebaseEnabled: true,
           authRepository: auth,
           dataRepository: data,
+          firstVisitGuideStore: _seenGuideStore(),
         ),
       );
       await tester.pumpAndSettle();
@@ -141,6 +145,7 @@ void main() {
           firebaseEnabled: true,
           authRepository: auth,
           dataRepository: data,
+          firstVisitGuideStore: _seenGuideStore(),
         ),
       );
       await tester.pumpAndSettle();
@@ -179,6 +184,7 @@ void main() {
           firebaseEnabled: true,
           authRepository: auth,
           dataRepository: data,
+          firstVisitGuideStore: _seenGuideStore(),
         ),
       );
       await tester.pumpAndSettle();
@@ -238,6 +244,7 @@ void main() {
           firebaseEnabled: true,
           authRepository: auth,
           dataRepository: data,
+          firstVisitGuideStore: _seenGuideStore(),
         ),
       );
       await tester.pumpAndSettle();
@@ -262,6 +269,11 @@ void main() {
       expect(data.savedWishes.single.title, '한강에서 같이 산책하기');
     });
   });
+}
+
+FirstVisitGuideStore _seenGuideStore() {
+  return MemoryFirstVisitGuideStore()
+    ..markFirstVisitGuideSeen(testSession.spaceId, testSession.me.id);
 }
 
 const testSession = AlagagiSession(

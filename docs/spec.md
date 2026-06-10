@@ -215,6 +215,22 @@ If the app grows, bottom navigation may become:
 - `web/index.html` title, apple mobile title, description과 `web/manifest.json` name/short_name/theme/background 색상은 `조금씩` 브랜드와 일치해야 한다.
 - favicon과 PWA icon은 동일한 브랜드 심볼을 사용하며, 16/192/512 및 maskable icon 크기를 유지한다.
 
+### MVP v0.16 First Visit Guide
+
+- 최초 방문 안내는 로그인/세션 로드 후 홈 화면이 준비된 상태에서 한 번만 bottom sheet overlay로 보여준다.
+- 로그인, 로딩, Firebase setup required 상태에서는 최초 방문 안내를 보여주지 않는다.
+- 첫 안내는 홈 전체를 설명하지 않고 `오늘 질문에 답하기`, `한 곡 남기기`, `언젠가 같이 담기` 3개 시작 행동만 보여준다.
+- 첫 안내 CTA는 `30초 둘러보기`와 `바로 시작하기`를 제공한다.
+- `바로 시작하기`는 안내를 닫고 같은 기기/공간/프로필 조합에서는 다시 자동 노출하지 않는다.
+- `30초 둘러보기`는 안내를 닫고 기능 안내 bottom sheet를 연다. 이 동작도 자동 노출을 다시 만들지 않는다.
+- 안내 확인 여부는 `localStorage` 같은 device-local storage에만 저장하며 Firestore read/write를 만들지 않는다.
+- 저장 키는 `jogeumssik:onboardingSeen:{spaceId}:{profileId}` 형태를 사용한다.
+- `마이 > 도움말 > 처음 안내 다시 보기`는 언제든 기능 안내를 다시 열 수 있어야 한다.
+- 다시 보기 동작은 읽기 전용 UI interaction이며 Firestore read/write를 만들지 않는다.
+- 390px 모바일 viewport에서 안내 sheet, 둘러보기/시작하기 CTA, 하단 내비게이션이 서로 겹치거나 잘리지 않아야 한다.
+- 안내 문구는 소개팅 이후 알아가는 단계에 맞춰 담백하게 유지하고, 하트/커플/기념일/애정 표현 톤을 사용하지 않는다.
+- Selected design: `docs/design/first_visit_guide_concept.html`.
+
 ## 8. MVP Scope
 
 ### MVP v0.2 In Scope

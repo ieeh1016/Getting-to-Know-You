@@ -1566,6 +1566,123 @@ void main() {
   });
 
   testWidgets(
+    'first visit guide appears once and stores start choice locally',
+    (tester) async {
+      final guideStore = MemoryFirstVisitGuideStore();
+      const session = AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(),
+      );
+      final controller = AlagagiController.forSession(
+        session,
+        firstVisitGuideStore: guideStore,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(home: AlagagiRoot(controller: controller)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(firstVisitGuideSheetKey), findsOneWidget);
+      expect(find.text('처음 방문 안내'), findsOneWidget);
+      expect(find.text('오늘은 여기서 시작하면 충분해요'), findsOneWidget);
+      expect(find.text('오늘 질문에 답하기'), findsOneWidget);
+      expect(find.text('한 곡 남기기'), findsOneWidget);
+      expect(find.text('언젠가 같이 담기'), findsOneWidget);
+      expect(find.textContaining('하트'), findsNothing);
+      expect(find.textContaining('커플'), findsNothing);
+
+      await tester.ensureVisible(find.byKey(firstVisitGuideStartButtonKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(firstVisitGuideStartButtonKey));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(firstVisitGuideSheetKey), findsNothing);
+      expect(guideStore.hasSeenFirstVisitGuide('main', 'youngwooUid'), isTrue);
+
+      final returningController = AlagagiController.forSession(
+        session,
+        firstVisitGuideStore: guideStore,
+      );
+      await tester.pumpWidget(
+        MaterialApp(home: AlagagiRoot(controller: returningController)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(firstVisitGuideSheetKey), findsNothing);
+    },
+  );
+
+  testWidgets('first visit tour and my help reopen the guide book', (
+    tester,
+  ) async {
+    final guideStore = MemoryFirstVisitGuideStore();
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(),
+      ),
+      firstVisitGuideStore: guideStore,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(firstVisitGuideTourButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(firstVisitGuideTourButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(firstVisitGuideSheetKey), findsNothing);
+    expect(find.byKey(firstVisitGuideBookSheetKey), findsOneWidget);
+    expect(find.text('헷갈릴 때만 다시 보는 안내서'), findsOneWidget);
+    expect(guideStore.hasSeenFirstVisitGuide('main', 'youngwooUid'), isTrue);
+
+    await tester.tap(find.byIcon(Icons.close_rounded).last);
+    await tester.pumpAndSettle();
+
+    controller.goTo(AlagagiRoute.my);
+    await tester.pumpAndSettle();
+
+    expect(find.text('도움말'), findsOneWidget);
+    expect(find.byKey(myFirstVisitGuideButtonKey), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(myFirstVisitGuideButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(myFirstVisitGuideButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(firstVisitGuideBookSheetKey), findsOneWidget);
+    expect(find.text('처음 안내 다시 보기'), findsWidgets);
+  });
+
+  testWidgets(
     'comment save failure shows a retry action instead of disappearing',
     (tester) async {
       final repository = _FailingCommentRepository();
