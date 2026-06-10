@@ -598,36 +598,111 @@ void main() {
     expect(find.text('늦게 남기는 답이에요.'), findsOneWidget);
   });
 
-  testWidgets('customizes app title and home line from my screen', (
+  testWidgets('my screen shows a personal dashboard and next actions', (
     tester,
   ) async {
-    final controller = AlagagiController()
-      ..enterSpace('영우')
-      ..goTo(AlagagiRoute.my);
+    final controller = AlagagiController.forSession(
+      AlagagiSession(
+        spaceId: 'main',
+        me: const AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: const AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          answers: const [
+            Answer(
+              questionId: 'q002',
+              profileId: 'youngwooUid',
+              body: '밤에 조금 조용해지는 시간이 좋아요.',
+              createdLabel: '어제',
+            ),
+          ],
+          profileSlots: const [
+            ProfileSlotValue(
+              profileId: 'youngwooUid',
+              slot: ProfileSlot(
+                id: 'rest',
+                label: '나에게 맞는 속도',
+                icon: 'clock',
+                value: '천천히 생각하고 말하는 쪽이 편해요.',
+              ),
+            ),
+          ],
+          musicNotes: [
+            MusicNote(
+              id: 'music_mine',
+              title: '밤 산책',
+              artist: '영우의 추천',
+              link: 'https://music.example/night',
+              note: '퇴근길에 들으면 마음이 조금 차분해져요.',
+              mood: '밤',
+              createdByProfileId: 'youngwooUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-09T09:00:00.000Z'),
+            ),
+          ],
+        ),
+      ),
+    )..goTo(AlagagiRoute.my);
 
     await tester.pumpWidget(
       MaterialApp(home: AlagagiRoot(controller: controller)),
     );
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.byKey(personalizationAppTitleFieldKey),
-      '민영과 영우',
-    );
-    await tester.enterText(
-      find.byKey(personalizationHomeLineFieldKey),
-      '천천히 알아가는 중',
-    );
-    await tester.ensureVisible(find.byKey(personalizationSubmitButtonKey));
+    expect(find.byKey(myDashboardKey), findsOneWidget);
+    expect(find.text('내 기록'), findsOneWidget);
+    expect(find.text('다음에 해볼 것'), findsOneWidget);
+    expect(find.text('최근 내 흔적'), findsOneWidget);
+    expect(find.text('계정'), findsOneWidget);
+    expect(find.text('내 공간 다듬기'), findsNothing);
+    expect(find.text('커스텀 저장'), findsNothing);
+    expect(find.text('1'), findsWidgets);
+    expect(find.text('밤 산책'), findsOneWidget);
+    expect(find.text('밤에 조금 조용해지는 시간이 좋아요.'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(myNextPrimaryButtonKey));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(personalizationSubmitButtonKey));
+    await tester.tap(find.byKey(myNextPrimaryButtonKey));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('홈'));
+    expect(controller.state.route, AlagagiRoute.answer);
+
+    controller.goTo(AlagagiRoute.my);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(myProfileCardActionButtonKey),
+      140,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(myProfileCardActionButtonKey));
     await tester.pumpAndSettle();
 
-    expect(find.text('민영과 영우'), findsOneWidget);
-    expect(find.text('천천히 알아가는 중'), findsOneWidget);
+    expect(controller.state.route, AlagagiRoute.profileCard);
+    expect(controller.state.profileCardTab, ProfileCardTab.me);
+
+    controller.goTo(AlagagiRoute.my);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(myMusicActionButtonKey),
+      140,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(myMusicActionButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(controller.state.route, AlagagiRoute.music);
+    expect(controller.state.editingMusicNoteId, 'music_mine');
   });
 
   testWidgets('profile card focused editor can save and cancel a slot', (

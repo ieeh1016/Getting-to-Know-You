@@ -505,7 +505,7 @@ This batch covers the next two practical improvements: a quiet progress summary 
   - 실패/오프라인 상태에서는 상대 답 공개, 댓글 입력, summary count 증가처럼 동기화가 완료된 것처럼 보이는 UI를 열지 않는다.
   - Retry는 사용자가 직접 누를 때만 Firestore write를 다시 호출한다.
   - Draft text는 local state에 유지해 저장 실패 후에도 사용자가 다시 작성하지 않아도 된다.
-  - Save stability 적용 대상은 답변 저장/수정, 답변 댓글 저장/수정, 위시 추가/관심/완료, 소개 카드 슬롯 저장, 개인화 저장, 음악 노트 저장/수정이다.
+  - Save stability 적용 대상은 답변 저장/수정, 답변 댓글 저장/수정, 위시 추가/관심/완료, 소개 카드 슬롯 저장, 음악 노트 저장/수정이다.
 - Firestore/free-plan boundary:
   - 새 상태 UI를 위해 별도 `status`, `events`, `notifications`, `analytics` collection을 만들지 않는다.
   - 음악 노트 seen state는 device-local localStorage에만 저장하며 Firestore write를 만들지 않는다.
@@ -526,13 +526,25 @@ This batch covers the next two practical improvements: a quiet progress summary 
 
 ### MVP v0.8 Personalization In Scope
 
-- 앱 이름 커스텀
-- 홈 상단 배너 문구 커스텀
-- `inviteLine`, `accentEmoji`는 data model fallback 필드로 보존하되 v0.8 UI에서는 앱 이름/홈 문구 저장부터 제공한다.
-- 초대/홈/마이 화면에서 기본값 fallback
-- 커스텀 설정은 text/emoji only로 제한한다.
+- `SpacePersonalization` data model은 기존 Firestore 문서와 기본값 fallback을 위해 보존한다.
+- 앱 이름, 홈 상단 문구, `inviteLine`, `accentEmoji`는 읽기/fallback 필드로 유지할 수 있다.
+- 추천 A 마이 대시보드 이후 MVP 주요 화면에서는 앱 이름/홈 문구 편집 UI를 노출하지 않는다.
 - 사진/파일/외부 이미지 업로드는 포함하지 않는다.
-- 저장은 명시적인 `커스텀 저장` 액션에서만 발생한다.
+- 현재 마이 대시보드 진입과 표시는 personalization write를 만들지 않는다.
+
+### MVP v0.16 My Dashboard Redesign
+
+- Selected design: `docs/design/my_menu_redesign.html` 추천 A.
+- `마이` 화면은 설정 화면이 아니라 내 흐름을 확인하는 개인 대시보드로 렌더링한다.
+- `내 공간 다듬기`, 앱 이름 입력, 홈 문구 입력, `커스텀 저장`은 마이 주요 화면에서 노출하지 않는다.
+- 상단에는 내 이름, 상대 이름, 로그인/비공개 공간 상태를 조용한 profile card로 보여준다.
+- `내 기록`은 이미 로드된 데이터에서 내 답변 수, 내 소개 카드 작성 수, 내 음악 노트 수를 계산한다.
+- `다음에 해볼 것`은 대표 CTA 1개와 보조 CTA 2개로 구성한다.
+  - 대표 CTA는 오늘 질문 답변 상태에 따라 `오늘 질문 답하기` 또는 질문함 이동으로 이어진다.
+  - 보조 CTA는 내 소개 카드 작성 화면과 내 음악 노트 작성/수정 화면으로 이어진다.
+- `최근 내 흔적`은 최근 내 답변과 최근 내 음악 노트 preview를 읽기 전용으로 보여준다.
+- `계정` 섹션은 로그아웃이 가능한 경우에만 로그아웃 action을 제공한다.
+- 마이 대시보드 진입은 Firestore write를 만들지 않고, 새 컬렉션이나 새 문서를 요구하지 않는다.
 
 ### MVP v0.9 Question Mood & Stability In Scope
 
@@ -2035,8 +2047,8 @@ class AlagagiState {
 
 ### Step 13: Personalization
 
-- Add text-only app title and home-line personalization.
-- Keep invite-line/accent emoji as fallback data fields for a later UI pass.
+- Keep text-only app title and home-line personalization as fallback data.
+- Do not expose the personalization editor in the recommended A My dashboard.
 - Avoid photos, file uploads, and Storage.
 
 ## 18. Migration Notes From Initial Prototype

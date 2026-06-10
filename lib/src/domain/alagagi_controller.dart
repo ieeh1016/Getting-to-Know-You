@@ -1838,6 +1838,10 @@ class AlagagiController extends ChangeNotifier {
     return null;
   }
 
+  ProfileCardData get myProfileCard {
+    return _profileCards.firstWhere((card) => card.profile.isMe);
+  }
+
   ProfileCardData get activeProfileCard {
     final isPartner = _state.profileCardTab == ProfileCardTab.partner;
     return _profileCards.firstWhere((card) => card.profile.isMe != isPartner);

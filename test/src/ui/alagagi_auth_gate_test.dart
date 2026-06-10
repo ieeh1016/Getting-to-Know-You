@@ -145,6 +145,12 @@ void main() {
 
       await tester.tap(find.text('마이'));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('로그아웃'),
+        160,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.text('로그아웃'));
       await tester.pumpAndSettle();
 

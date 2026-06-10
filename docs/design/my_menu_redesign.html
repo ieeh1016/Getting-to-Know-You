@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>알아가기 · 마이 메뉴 전면개편 시안</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --outer:#e9e8e2;
+    --bg:#f4f3ef;
+    --paper:#fcfcfa;
+    --ink:#2e2e2c;
+    --text:#46443f;
+    --muted:#8f8b82;
+    --soft:#f8f8f4;
+    --line:#e7e4dc;
+    --sage:#8a9a7e;
+    --sage-deep:#6f7f63;
+    --sage-soft:#eef2ea;
+    --lav:#b9a8c9;
+    --clay:#b18472;
+    --gold:#c8ad6d;
+  }
+  body{
+    min-height:100vh;
+    background:var(--outer);
+    color:var(--ink);
+    font-family:'Noto Sans KR',sans-serif;
+    font-weight:300;
+    padding:38px 18px 50px;
+  }
+  button{font:inherit;border:0;background:none;color:inherit}
+  .wrap{max-width:1080px;margin:0 auto}
+  .page-title{text-align:center;margin-bottom:26px}
+  .page-title .eyebrow{
+    margin-bottom:8px;
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:3px;
+  }
+  .page-title h1{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:31px;
+    line-height:1.35;
+    font-weight:800;
+  }
+  .page-title p{
+    max-width:720px;
+    margin:10px auto 0;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.75;
+  }
+  .proposal{
+    max-width:940px;
+    margin:0 auto 30px;
+    display:grid;
+    grid-template-columns:1.05fr .95fr;
+    gap:14px;
+  }
+  .proposal-card{
+    border:1px solid rgba(232,230,223,.95);
+    border-radius:22px;
+    background:rgba(252,252,250,.72);
+    padding:19px 20px;
+  }
+  .proposal-card small{
+    display:block;
+    margin-bottom:8px;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:2px;
+  }
+  .proposal-card h2{
+    margin-bottom:8px;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:20px;
+    font-weight:800;
+  }
+  .proposal-card p,.proposal-card li{
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.75;
+  }
+  .proposal-card ul{margin-left:17px}
+  .stage{
+    display:grid;
+    grid-template-columns:minmax(300px,390px) minmax(300px,390px);
+    gap:24px;
+    justify-content:center;
+    align-items:start;
+  }
+  .caption{margin:0 0 12px 2px}
+  .caption .tag{
+    display:inline-flex;
+    align-items:center;
+    height:24px;
+    padding:0 9px;
+    border:1px solid rgba(111,127,99,.22);
+    border-radius:999px;
+    background:rgba(252,252,250,.74);
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+  }
+  .caption h2{
+    margin-top:8px;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:19px;
+    font-weight:800;
+  }
+  .caption p{
+    margin-top:5px;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.65;
+  }
+  .phone{
+    width:390px;
+    max-width:100%;
+    min-height:844px;
+    position:relative;
+    overflow:hidden;
+    border:8px solid #fff;
+    border-radius:40px;
+    background:var(--bg);
+    box-shadow:0 28px 70px rgba(60,60,50,.18);
+  }
+  .screen{padding:28px 24px 108px}
+  .topbar{
+    display:grid;
+    grid-template-columns:42px 1fr 42px;
+    align-items:center;
+    margin-bottom:18px;
+  }
+  .back{
+    width:38px;
+    height:38px;
+    display:grid;
+    place-items:center;
+    border:1px solid rgba(232,230,223,.95);
+    border-radius:50%;
+    background:rgba(252,252,250,.86);
+    box-shadow:0 8px 20px rgba(74,72,65,.07);
+  }
+  .chev{
+    width:9px;
+    height:9px;
+    border-left:2px solid var(--sage-deep);
+    border-bottom:2px solid var(--sage-deep);
+    transform:rotate(45deg);
+    margin-left:3px;
+  }
+  .topbar h3{
+    text-align:center;
+    font-size:18px;
+    font-weight:700;
+    letter-spacing:0;
+  }
+  .profile-card{
+    border:1px solid var(--line);
+    border-radius:24px;
+    background:var(--paper);
+    padding:19px 18px;
+  }
+  .profile-main{
+    display:flex;
+    gap:13px;
+    align-items:center;
+  }
+  .avatar{
+    width:54px;
+    height:54px;
+    flex:0 0 auto;
+    display:grid;
+    place-items:center;
+    border-radius:17px;
+    background:linear-gradient(135deg,var(--sage),#d9decf);
+    color:#fff;
+    font-size:22px;
+    font-weight:800;
+    font-family:'Nanum Myeongjo',serif;
+  }
+  .profile-main h4{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:21px;
+    line-height:1.25;
+    font-weight:800;
+  }
+  .profile-main p{
+    margin-top:4px;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.55;
+  }
+  .profile-chip-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:16px;
+  }
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    height:30px;
+    padding:0 10px;
+    border:1px solid rgba(138,154,126,.2);
+    border-radius:999px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    font-size:11.5px;
+    font-weight:600;
+  }
+  .dot{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:var(--sage);
+  }
+  .section{margin-top:16px}
+  .section-head{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:12px;
+    margin:0 2px 10px;
+  }
+  .section-head h4{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:18px;
+    font-weight:800;
+  }
+  .section-head span{
+    color:var(--muted);
+    font-size:11.5px;
+  }
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:9px;
+  }
+  .stat{
+    min-height:82px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:var(--paper);
+    padding:13px 11px;
+  }
+  .stat strong{
+    display:block;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:24px;
+    line-height:1;
+    font-weight:800;
+  }
+  .stat span{
+    display:block;
+    margin-top:7px;
+    color:var(--muted);
+    font-size:11.5px;
+    line-height:1.35;
+  }
+  .next-stack{
+    display:grid;
+    gap:10px;
+  }
+  .next-primary{
+    width:100%;
+    text-align:left;
+    display:grid;
+    grid-template-columns:1fr 34px;
+    gap:12px;
+    align-items:center;
+    border:1px solid rgba(138,154,126,.26);
+    border-radius:22px;
+    background:linear-gradient(135deg,#fcfcfa 0%,#eef2ea 100%);
+    padding:16px 15px;
+    box-shadow:0 10px 24px rgba(74,72,65,.06);
+  }
+  .next-kicker{
+    display:inline-flex;
+    align-items:center;
+    height:23px;
+    margin-bottom:9px;
+    padding:0 8px;
+    border:1px solid rgba(111,127,99,.18);
+    border-radius:999px;
+    background:rgba(255,255,255,.72);
+    color:var(--sage-deep);
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:1.2px;
+  }
+  .next-primary b{
+    display:block;
+    color:var(--text);
+    font-size:15px;
+    font-weight:800;
+  }
+  .next-primary span.desc{
+    display:block;
+    margin-top:5px;
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.5;
+  }
+  .next-meta-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:13px;
+  }
+  .next-pill{
+    height:25px;
+    display:inline-flex;
+    align-items:center;
+    padding:0 9px;
+    border-radius:999px;
+    background:#fff;
+    color:var(--sage-deep);
+    font-size:10.8px;
+    font-weight:800;
+  }
+  .next-track{
+    flex:1;
+    height:5px;
+    border-radius:999px;
+    background:rgba(138,154,126,.18);
+    overflow:hidden;
+  }
+  .next-fill{
+    width:64%;
+    height:100%;
+    border-radius:inherit;
+    background:var(--sage);
+  }
+  .next-arrow{
+    width:34px;
+    height:34px;
+    display:grid;
+    place-items:center;
+    border-radius:50%;
+    background:var(--sage-deep);
+  }
+  .next-arrow:before{
+    content:"";
+    width:9px;
+    height:9px;
+    border-right:2px solid #fff;
+    border-top:2px solid #fff;
+    transform:rotate(45deg);
+    margin-left:-2px;
+  }
+  .next-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+  }
+  .next-tile{
+    min-height:124px;
+    text-align:left;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    border:1px solid var(--line);
+    border-radius:20px;
+    background:var(--paper);
+    padding:13px;
+  }
+  .next-tile-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .next-icon{
+    min-width:34px;
+    height:34px;
+    display:grid;
+    place-items:center;
+    border-radius:13px;
+    background:var(--soft);
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:800;
+  }
+  .next-icon.lav{background:#f0edf4;color:#7e6d91}
+  .next-icon.gold{background:#f6f0df;color:#8d7847}
+  .next-mini-state{
+    color:var(--muted);
+    font-size:10.5px;
+    font-weight:700;
+    white-space:nowrap;
+  }
+  .next-tile b{
+    display:block;
+    color:var(--text);
+    font-size:13px;
+    line-height:1.35;
+    font-weight:800;
+  }
+  .next-tile p{
+    margin-top:5px;
+    color:var(--muted);
+    font-size:11.3px;
+    line-height:1.45;
+  }
+  .next-tile .arrow{
+    align-self:flex-end;
+    margin-top:10px;
+  }
+  .action-list{
+    border:1px solid var(--line);
+    border-radius:22px;
+    background:var(--paper);
+    overflow:hidden;
+  }
+  .action-row{
+    display:grid;
+    grid-template-columns:36px 1fr 22px;
+    gap:11px;
+    align-items:center;
+    min-height:72px;
+    padding:12px 14px;
+  }
+  .action-row + .action-row{border-top:1px solid var(--line)}
+  .mark{
+    width:36px;
+    height:36px;
+    display:grid;
+    place-items:center;
+    border-radius:13px;
+    background:var(--soft);
+    color:var(--sage-deep);
+    font-size:12px;
+    font-weight:800;
+  }
+  .mark.lav{background:#f0edf4;color:#7e6d91}
+  .mark.gold{background:#f6f0df;color:#8d7847}
+  .action-copy b{
+    display:block;
+    color:var(--text);
+    font-size:13.3px;
+    font-weight:700;
+  }
+  .action-copy span{
+    display:block;
+    margin-top:3px;
+    color:var(--muted);
+    font-size:11.7px;
+    line-height:1.45;
+  }
+  .arrow{
+    width:8px;
+    height:8px;
+    border-right:1.8px solid #b2aea5;
+    border-top:1.8px solid #b2aea5;
+    transform:rotate(45deg);
+  }
+  .trace-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .trace{
+    min-height:116px;
+    border:1px solid var(--line);
+    border-radius:20px;
+    background:var(--paper);
+    padding:14px;
+  }
+  .trace small{
+    display:block;
+    color:var(--sage-deep);
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:1.4px;
+  }
+  .trace h5{
+    margin-top:8px;
+    color:var(--text);
+    font-size:13.6px;
+    line-height:1.45;
+    font-weight:700;
+  }
+  .trace p{
+    margin-top:7px;
+    color:var(--muted);
+    font-size:11.6px;
+    line-height:1.5;
+  }
+  .account{
+    border:1px solid var(--line);
+    border-radius:20px;
+    background:rgba(252,252,250,.76);
+    padding:15px;
+  }
+  .account b{
+    display:block;
+    color:var(--text);
+    font-size:13.2px;
+  }
+  .account p{
+    margin-top:5px;
+    color:var(--muted);
+    font-size:11.7px;
+    line-height:1.55;
+  }
+  .ghost-btn{
+    width:100%;
+    height:44px;
+    margin-top:13px;
+    border:1px solid rgba(111,127,99,.2);
+    border-radius:14px;
+    background:#fff;
+    color:var(--sage-deep);
+    font-size:13px;
+    font-weight:700;
+  }
+  .bottom-nav{
+    position:absolute;
+    left:18px;
+    right:18px;
+    bottom:16px;
+    height:66px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    align-items:center;
+    border:1px solid rgba(232,230,223,.9);
+    border-radius:24px;
+    background:rgba(252,252,250,.9);
+    backdrop-filter:blur(10px);
+    box-shadow:0 12px 28px rgba(74,72,65,.08);
+  }
+  .nav-item{
+    display:grid;
+    justify-items:center;
+    gap:5px;
+    color:#aaa69d;
+    font-size:10.5px;
+    font-weight:600;
+  }
+  .nav-icon{
+    width:20px;
+    height:20px;
+    position:relative;
+  }
+  .nav-icon.home:before{
+    content:"";
+    position:absolute;
+    inset:4px 3px 2px;
+    border:1.7px solid currentColor;
+    border-top:0;
+  }
+  .nav-icon.home:after{
+    content:"";
+    position:absolute;
+    left:4px;
+    top:2px;
+    width:12px;
+    height:12px;
+    border-left:1.7px solid currentColor;
+    border-top:1.7px solid currentColor;
+    transform:rotate(45deg);
+  }
+  .nav-icon.line:before,.nav-icon.line:after{
+    content:"";
+    position:absolute;
+    left:3px;
+    right:3px;
+    height:1.7px;
+    background:currentColor;
+    border-radius:2px;
+  }
+  .nav-icon.line:before{top:5px;box-shadow:0 5px 0 currentColor}
+  .nav-icon.line:after{top:15px;width:11px}
+  .nav-icon.music:before{
+    content:"";
+    position:absolute;
+    left:9px;
+    top:3px;
+    width:7px;
+    height:13px;
+    border-left:1.8px solid currentColor;
+    border-top:1.8px solid currentColor;
+  }
+  .nav-icon.music:after{
+    content:"";
+    position:absolute;
+    left:3px;
+    bottom:2px;
+    width:8px;
+    height:8px;
+    border:1.8px solid currentColor;
+    border-radius:50%;
+  }
+  .nav-icon.my:before{
+    content:"";
+    position:absolute;
+    left:6px;
+    top:2px;
+    width:8px;
+    height:8px;
+    border:1.7px solid currentColor;
+    border-radius:50%;
+  }
+  .nav-icon.my:after{
+    content:"";
+    position:absolute;
+    left:3px;
+    top:13px;
+    width:14px;
+    height:7px;
+    border:1.7px solid currentColor;
+    border-bottom:0;
+    border-radius:10px 10px 0 0;
+  }
+  .nav-item.active{color:var(--ink)}
+  .nav-item.active .nav-icon{color:var(--sage-deep)}
+  .option-note{
+    margin-top:18px;
+    border:1px solid rgba(232,230,223,.9);
+    border-radius:22px;
+    background:rgba(252,252,250,.76);
+    padding:18px 20px;
+  }
+  .option-note h3{
+    margin-bottom:8px;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:19px;
+    font-weight:800;
+  }
+  .option-note li{
+    margin-left:18px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.75;
+  }
+  @media(max-width:900px){
+    body{padding:24px 14px 36px}
+    .proposal,.stage{grid-template-columns:1fr}
+    .phone{margin:0 auto}
+  }
+  @media(max-width:430px){
+    body{padding:0;background:var(--bg)}
+    .page-title,.proposal,.caption,.option-note{display:none}
+    .stage{display:block}
+    .stage > div:nth-child(2){display:none}
+    .phone{width:100%;min-height:100vh;border:0;border-radius:0;box-shadow:none}
+    .screen{padding:28px 24px 108px}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="page-title">
+      <div class="eyebrow">MY MENU REDESIGN</div>
+      <h1>마이는 설정이 아니라<br>내 흐름을 확인하는 곳</h1>
+      <p>`내 공간 다듬기`처럼 앱 전체 문구를 바꾸는 기능은 사용 빈도가 낮습니다. 대신 내가 남긴 기록, 아직 해볼 수 있는 일, 계정 상태를 한 화면에 모아 다음 행동이 자연스럽게 보이도록 제안합니다.</p>
+    </header>
+
+    <section class="proposal">
+      <article class="proposal-card">
+        <small>INFORMATION ARCHITECTURE</small>
+        <h2>넣으면 좋은 기능</h2>
+        <ul>
+          <li>내 프로필 요약: 이름, 공간 참여 상태, 마지막 활동 느낌</li>
+          <li>내 기록 숫자: 답변, 소개 카드, 음악 노트처럼 이미 로드된 데이터 기반</li>
+          <li>다음 행동: 오늘 질문, 비어있는 소개 카드, 음악 노트 같은 1개성 task</li>
+          <li>내가 남긴 흔적: 최근 답변/음악/같이 하고 싶은 것의 짧은 preview</li>
+          <li>계정: 로그아웃만 조용히 제공</li>
+        </ul>
+      </article>
+      <article class="proposal-card">
+        <small>REMOVE OR HIDE</small>
+        <h2>빼는 게 좋은 기능</h2>
+        <p>`내 공간 다듬기`의 앱 이름/홈 문구 변경은 지금 앱의 핵심 사용 가치와 거리가 있습니다. 꼭 유지한다면 마이 최상단이 아니라 하단의 작은 `표시 문구 설정` 같은 고급 설정으로 숨기는 편이 낫습니다.</p>
+      </article>
+    </section>
+
+    <section class="stage">
+      <div>
+        <div class="caption">
+          <span class="tag">추천 A · 개인 대시보드</span>
+          <h2>마이 홈</h2>
+          <p>사용자가 다시 들어왔을 때 “내가 어디까지 했지?”를 가장 빨리 알 수 있는 구조입니다.</p>
+        </div>
+        <div class="phone">
+          <main class="screen">
+            <div class="topbar">
+              <button class="back" aria-label="홈으로"><span class="chev"></span></button>
+              <h3>마이</h3>
+              <div></div>
+            </div>
+
+            <section class="profile-card">
+              <div class="profile-main">
+                <div class="avatar">영</div>
+                <div>
+                  <h4>영우</h4>
+                  <p>민영과 알아가는 비공개 공간에 들어와 있어요.</p>
+                </div>
+              </div>
+              <div class="profile-chip-row">
+                <span class="chip"><span class="dot"></span>로그인됨</span>
+                <span class="chip">조용한 속도</span>
+                <span class="chip">2명 공간</span>
+              </div>
+            </section>
+
+            <section class="section">
+              <div class="section-head">
+                <h4>내 기록</h4>
+                <span>최근 기준</span>
+              </div>
+              <div class="stats">
+                <article class="stat">
+                  <strong>8</strong>
+                  <span>남긴<br>질문 답</span>
+                </article>
+                <article class="stat">
+                  <strong>5</strong>
+                  <span>채운<br>소개 카드</span>
+                </article>
+                <article class="stat">
+                  <strong>3</strong>
+                  <span>남긴<br>음악 노트</span>
+                </article>
+              </div>
+            </section>
+
+            <section class="section">
+              <div class="section-head">
+                <h4>다음에 해볼 것</h4>
+                <span>가볍게 하나씩</span>
+              </div>
+              <div class="next-stack">
+                <button class="next-primary">
+                  <span>
+                    <span class="next-kicker">NEXT STEP</span>
+                    <b>오늘 질문 답하기</b>
+                    <span class="desc">아직 내 답이 비어 있어요. 짧게 남겨도 충분해요.</span>
+                    <span class="next-meta-row">
+                      <span class="next-pill">DAY 12</span>
+                      <span class="next-track"><span class="next-fill"></span></span>
+                    </span>
+                  </span>
+                  <span class="next-arrow"></span>
+                </button>
+
+                <div class="next-grid">
+                  <button class="next-tile">
+                    <span>
+                      <span class="next-tile-top">
+                        <span class="next-icon lav">카드</span>
+                        <span class="next-mini-state">5 / 12</span>
+                      </span>
+                    <b>소개 카드 한 칸 채우기</b>
+                      <p>대화할 때 편한 방식을 적어볼 수 있어요.</p>
+                    </span>
+                    <span class="arrow"></span>
+                  </button>
+
+                  <button class="next-tile">
+                    <span>
+                      <span class="next-tile-top">
+                        <span class="next-icon gold">음악</span>
+                        <span class="next-mini-state">최근 1곡</span>
+                      </span>
+                    <b>내 음악 노트 다듬기</b>
+                      <p>최근 남긴 곡을 다시 수정할 수 있어요.</p>
+                    </span>
+                    <span class="arrow"></span>
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <section class="section">
+              <div class="section-head">
+                <h4>최근 내 흔적</h4>
+                <span>읽기 전용</span>
+              </div>
+              <div class="trace-grid">
+                <article class="trace">
+                  <small>QUESTION</small>
+                  <h5>요즘 가장 편한 시간은?</h5>
+                  <p>밤에 조금 조용해지는 시간이 좋아요.</p>
+                </article>
+                <article class="trace">
+                  <small>MUSIC</small>
+                  <h5>밤 산책</h5>
+                  <p>퇴근길에 들으면 마음이 조금 차분해져요.</p>
+                </article>
+              </div>
+            </section>
+
+            <section class="section">
+              <div class="account">
+                <b>계정</b>
+                <p>이 기기에서 잠시 나가고 싶을 때만 로그아웃하면 돼요.</p>
+                <button class="ghost-btn">로그아웃</button>
+              </div>
+            </section>
+          </main>
+
+          <nav class="bottom-nav">
+            <div class="nav-item"><span class="nav-icon home"></span><span>홈</span></div>
+            <div class="nav-item"><span class="nav-icon line"></span><span>질문</span></div>
+            <div class="nav-item"><span class="nav-icon music"></span><span>음악</span></div>
+            <div class="nav-item active"><span class="nav-icon my"></span><span>마이</span></div>
+          </nav>
+        </div>
+      </div>
+
+      <div>
+        <div class="caption">
+          <span class="tag">추천 B · 관리 중심</span>
+          <h2>내가 관리할 수 있는 것</h2>
+          <p>기능이 더 많아졌을 때 마이를 “개인 관리 허브”로 쓰는 확장안입니다.</p>
+        </div>
+        <div class="phone">
+          <main class="screen">
+            <div class="topbar">
+              <button class="back" aria-label="홈으로"><span class="chev"></span></button>
+              <h3>마이</h3>
+              <div></div>
+            </div>
+
+            <section class="profile-card">
+              <div class="profile-main">
+                <div class="avatar">영</div>
+                <div>
+                  <h4>내가 남긴 것</h4>
+                  <p>작성한 내용만 빠르게 찾아보고 필요한 것만 수정해요.</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="section">
+              <div class="section-head">
+                <h4>관리</h4>
+                <span>내 작성분만</span>
+              </div>
+              <div class="action-list">
+                <button class="action-row">
+                  <span class="mark">답</span>
+                  <span class="action-copy">
+                    <b>내 질문 답변</b>
+                    <span>오늘 답변과 작성 가능한 지난 질문으로 이동</span>
+                  </span>
+                  <span class="arrow"></span>
+                </button>
+                <button class="action-row">
+                  <span class="mark lav">소개</span>
+                  <span class="action-copy">
+                    <b>내 소개 카드</b>
+                    <span>채운 칸과 비어 있는 칸을 한 번에 확인</span>
+                  </span>
+                  <span class="arrow"></span>
+                </button>
+                <button class="action-row">
+                  <span class="mark gold">곡</span>
+                  <span class="action-copy">
+                    <b>내 음악 노트</b>
+                    <span>내가 남긴 곡을 수정하거나 새로 남기기</span>
+                  </span>
+                  <span class="arrow"></span>
+                </button>
+                <button class="action-row">
+                  <span class="mark">같이</span>
+                  <span class="action-copy">
+                    <b>언젠가, 같이</b>
+                    <span>내가 만든 항목과 서로 관심 항목 확인</span>
+                  </span>
+                  <span class="arrow"></span>
+                </button>
+              </div>
+            </section>
+
+            <section class="section">
+              <div class="section-head">
+                <h4>상태</h4>
+                <span>부담 없이</span>
+              </div>
+              <div class="trace-grid">
+                <article class="trace">
+                  <small>OPEN</small>
+                  <h5>서로 답이 열린 질문</h5>
+                  <p>3개 질문에서 서로의 답을 볼 수 있어요.</p>
+                </article>
+                <article class="trace">
+                  <small>NEXT</small>
+                  <h5>아직 비어 있는 칸</h5>
+                  <p>소개 카드 4칸, 오늘 질문 1개가 남아 있어요.</p>
+                </article>
+              </div>
+            </section>
+
+            <section class="section">
+              <div class="account">
+                <b>표시 문구 설정은 하단으로 이동</b>
+                <p>앱 이름/홈 문구 변경은 자주 쓰지 않으니 기본 마이 화면에서는 숨기는 편이 좋아요.</p>
+                <button class="ghost-btn">계정에서 로그아웃</button>
+              </div>
+            </section>
+          </main>
+
+          <nav class="bottom-nav">
+            <div class="nav-item"><span class="nav-icon home"></span><span>홈</span></div>
+            <div class="nav-item"><span class="nav-icon line"></span><span>질문</span></div>
+            <div class="nav-item"><span class="nav-icon music"></span><span>음악</span></div>
+            <div class="nav-item active"><span class="nav-icon my"></span><span>마이</span></div>
+          </nav>
+        </div>
+      </div>
+    </section>
+
+    <section class="option-note">
+      <h3>추천 결론</h3>
+      <ul>
+        <li>MVP에서는 A안을 추천합니다. 홈/질문/음악을 침범하지 않고, 마이만의 역할이 생깁니다.</li>
+        <li>Firestore 무료 플랜 기준으로는 새 컬렉션 없이 기존 로드 데이터에서 count/preview를 계산하면 됩니다.</li>
+        <li>`내 공간 다듬기`는 제거하거나 하단의 고급 설정으로 숨기고, 로그아웃은 계정 섹션에만 둡니다.</li>
+      </ul>
+    </section>
+  </div>
+</body>
+</html>

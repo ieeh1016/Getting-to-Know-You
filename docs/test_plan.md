@@ -118,8 +118,10 @@
 - 소개 카드 내 카드 탭은 추천 질문, 카테고리 필터, 카드형 슬롯 목록을 보여주고 날짜 잠금 문구를 숨긴다.
 - 소개 카드 내 카드 탭에서 빈 슬롯 또는 추천 질문을 선택하면 집중 작성 패널이 열리고 저장/취소할 수 있다.
 - 소개 카드 상대 탭은 상대가 채운 슬롯만 읽기 카드로 보여주고 빈 슬롯 목록과 작성 CTA를 노출하지 않는다.
-- 마이 화면에서 앱 이름/홈 문구를 저장하면 홈/마이 화면에 반영된다.
-- 개인화 설정 저장 전 draft 입력은 repository write를 호출하지 않는다.
+- 마이 화면은 추천 A 대시보드로 내 프로필, 내 기록, 다음에 해볼 것, 최근 내 흔적, 계정 섹션을 보여준다.
+- 마이 화면은 `내 공간 다듬기`, 앱 이름/홈 문구 입력, `커스텀 저장`을 주요 화면에 노출하지 않는다.
+- 마이 화면의 대표 CTA는 오늘 질문 답변 화면으로 이동하고, 보조 CTA는 내 소개 카드와 내 음악 노트 흐름으로 이동한다.
+- 마이 대시보드 진입, 스크롤, CTA 표시 자체는 repository write를 호출하지 않는다.
 - 홈은 질문 카드 아래에 조용한 진행 요약을 보여주고, 390px 모바일 viewport에서 질문 CTA보다 강하게 보이지 않는다.
 - 홈 진행 요약은 `오늘 질문`, `둘 다 답한 질문`, `음악 노트` 3개 상태를 보여준다.
 - 홈 진행 요약은 primary CTA를 동시에 2개 이상 보여주지 않는다.
@@ -159,10 +161,11 @@
 - 캘린더 월 이동, 날짜 선택, 오늘 shortcut은 Firestore write를 만들지 않는다.
 - 월간 캘린더 grid 계산은 별도 calendar collection을 읽거나 쓰지 않는다.
 - 늦게 답하기 submit은 기존 answer document 1 write 이하로 저장한다.
-- 답변 submit/edit, answer comment save/edit, personalization save, balance select, profile slot fill/edit, wish add/interest/done, music note add/edit은 각각 1 document write 이하.
+- 답변 submit/edit, answer comment save/edit, balance select, profile slot fill/edit, wish add/interest/done, music note add/edit은 각각 1 document write 이하.
 - 질문 캘린더는 별도 calendar collection 없이 progress 문서와 bounded answer reads로 렌더링한다.
 - Summary/current 갱신이 필요한 action만 2 writes까지 허용한다.
 - Home은 전체 answer/wish/profile slot subcollection hydration 없이 summary/progress/today docs로 렌더링 가능해야 한다.
+- My dashboard는 이미 로드된 answers/profile slots/music notes로 count/preview를 계산하고 별도 Firestore read/write를 만들지 않는다.
 - Home progress summary는 별도 status/events/analytics collection을 읽거나 쓰지 않는다.
 - Save/offline state는 local app state이며 Firestore에 retry history를 저장하지 않는다.
 - Music note seen state는 localStorage에만 저장하며 Firestore read/write 예산에 포함하지 않는다.
