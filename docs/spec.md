@@ -1,4 +1,4 @@
-# 알아가기 Product Spec
+# 조금씩 Product Spec
 
 ## 0. Source
 
@@ -39,11 +39,11 @@ Acceptance Criteria:
 
 ## 1. Product Summary
 
-`알아가기`는 소개팅 이후 두 사람이 부담 없이 서로를 알아가도록 돕는 비공개 모바일 웹앱이다.
+`조금씩`은 소개팅 이후 두 사람이 부담 없이 서로를 알아가도록 돕는 비공개 모바일 웹앱이다.
 사용자는 링크 하나로 들어오고, 민영과 영우에게만 발급된 아이디/비밀번호로 로그인해 시작한다.
 앱은 매일 하나의 질문, 가벼운 밸런스 선택, 천천히 채워지는 소개 카드, 함께 해보고 싶은 위시리스트를 통해 대화가 서두르지 않고 자연스럽게 이어지도록 설계한다.
 
-초기 Flutter MVP는 `알아가기` 컨셉으로 전체 리디자인한다.
+초기 Flutter MVP는 `조금씩` 컨셉으로 전체 리디자인한다.
 다음 만남 후보 선택/쿠폰 중심 구조는 제거하거나 후순위로 내리고, 질문 기반의 상호 이해 경험을 핵심으로 삼는다.
 
 ## 2. Product Goals
@@ -204,6 +204,15 @@ If the app grows, bottom navigation may become:
 - 전체 보기/닫기/scroll은 Firestore read/write를 만들지 않는 local UI interaction이다.
 - 적용 대상은 홈 오늘의 질문 답변/댓글, 질문함 선택/기록 답변, 마이 최근 내 흔적, 음악 노트, 소개 카드 읽기 preview다.
 - 밸런스 게임처럼 긴 자유 입력이 없는 기능은 이 패턴의 필수 적용 대상이 아니다.
+
+### MVP v0.15 Brand Identity
+
+- 서비스의 사용자-facing 이름은 `조금씩`으로 사용한다.
+- 기존 코드 네임 `Alagagi`는 내부 class/file naming으로만 유지할 수 있지만, 앱 UI, 브라우저 탭, PWA 설치 이름에는 노출하지 않는다.
+- 브랜드 kicker는 `J O G E U M S S I K`을 사용한다.
+- 로고는 하트/커플/기념일 톤을 피하고, 작은 노트/종이 조각과 세이지 색상을 중심으로 만든다.
+- `web/index.html` title, apple mobile title, description과 `web/manifest.json` name/short_name/theme/background 색상은 `조금씩` 브랜드와 일치해야 한다.
+- favicon과 PWA icon은 동일한 브랜드 심볼을 사용하며, 16/192/512 및 maskable icon 크기를 유지한다.
 
 ## 8. MVP Scope
 
@@ -696,8 +705,8 @@ Required UI:
 
 - Safe top spacing without fake OS status row
 - Seal icon area
-- Kicker: `A L A G A G I`
-- Hero headline: `알아가기`
+- Kicker: `J O G E U M S S I K`
+- Hero headline: `조금씩`
 - Helper copy: `아이디가 있으면 조용히 이어서 들어갈 수 있어요.`
 - Login note rows:
   - `짧게 확인`
@@ -743,13 +752,13 @@ Required UI:
 
 - Safe top spacing without fake OS status row
 - Seal icon area
-- Kicker: `A L A G A G I`
+- Kicker: `J O G E U M S S I K`
 - Hero headline: `우리, 천천히 알아가 볼래요?`
 - Inviter copy: `{inviterName}님이 대화 공간을 열어두었어요.`
 - Note rows:
   - 하루에 딱 하나
   - 비공개 기록
-  - 천천히 알아가기
+  - 천천히 적어두기
 - Nickname field
 - CTA: `대화 공간으로 들어가기`
 - Fine print: `가입 절차 없이 바로 시작해요 · 언제든 그만둘 수 있어요`
@@ -778,7 +787,7 @@ Purpose:
 
 Required UI:
 
-- Header title: `알아가기`
+- Header title: `조금씩`
 - Notification dot or icon
 - Progress strip:
   - `DAY 12 · 서로의 12번째 질문`
@@ -1653,10 +1662,10 @@ abstract class MusicNoteSeenStore {
 
 ```json
 {
-  "name": "알아가기",
+  "name": "조금씩",
   "memberIds": ["{youngwooUid}", "{minyoungUid}"],
   "personalization": {
-    "appTitle": "알아가기",
+    "appTitle": "조금씩",
     "homeLine": "오늘도 한 가지를 알아가요",
     "inviteLine": "하루에 하나씩, 조용히 알아가요",
     "accentEmoji": "🌿"
@@ -2073,7 +2082,7 @@ Initial prototype:
 
 New app:
 
-- `알아가기`
+- `조금씩`
 - invite and nickname
 - daily question and answer
 - archive
@@ -2091,7 +2100,6 @@ Migration decision:
 
 ## 19. Open Questions
 
-- 앱 이름은 `알아가기`로 고정하고, 홈 문구만 개인화할지.
 - 상대 이름을 `민영`으로 고정할지, 닉네임 입력 기반으로 바꿀지.
 - 내 이름/상대 이름의 기본값을 무엇으로 둘지.
 - MVP에서 실제 local persistence를 넣을지, 메모리 상태로만 갈지.

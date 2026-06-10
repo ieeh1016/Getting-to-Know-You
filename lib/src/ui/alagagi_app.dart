@@ -73,6 +73,8 @@ Key profileSlotCancelButtonKey(String slotId) =>
     Key('profile-slot-cancel-$slotId');
 
 const _longAnswerPreviewLength = 120;
+const _brandName = '조금씩';
+const _brandKicker = 'J O G E U M S S I K';
 
 class AlagagiApp extends StatelessWidget {
   const AlagagiApp({
@@ -105,7 +107,7 @@ class AlagagiApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: '알아가기',
+      title: _brandName,
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: AlagagiColors.outerBackground,
@@ -564,7 +566,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const _InviteSeal(),
               const SizedBox(height: 26),
               Text(
-                'A L A G A G I',
+                _brandKicker,
                 style: sans(
                   size: 11,
                   color: AlagagiColors.sageDeep,
@@ -573,7 +575,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 14),
               Text(
-                '알아가기',
+                _brandName,
                 textAlign: TextAlign.center,
                 style: serif(
                   context,
@@ -770,7 +772,7 @@ class _InviteScreenState extends State<InviteScreen> {
               const _InviteSeal(),
               const SizedBox(height: 26),
               Text(
-                'A L A G A G I',
+                _brandKicker,
                 style: sans(
                   size: 11,
                   color: AlagagiColors.sageDeep,
@@ -855,10 +857,79 @@ class _InviteSeal extends StatelessWidget {
         border: Border.all(color: AlagagiColors.line),
       ),
       alignment: Alignment.center,
-      child: const Icon(
-        Icons.mail_outline_rounded,
-        size: 34,
-        color: AlagagiColors.sageDeep,
+      child: Transform.rotate(
+        angle: -0.08,
+        child: Container(
+          width: 38,
+          height: 44,
+          decoration: BoxDecoration(
+            color: const Color(0xFFEEF2EA),
+            border: Border.all(color: const Color(0x668A9A7E)),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x12000000),
+                blurRadius: 12,
+                offset: Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: 0,
+                top: 0,
+                child: Container(
+                  width: 13,
+                  height: 13,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFDCE5D3),
+                    borderRadius: BorderRadius.only(
+                      topRight: Radius.circular(11),
+                      bottomLeft: Radius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 9,
+                top: 14,
+                child: Container(
+                  width: 20,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: AlagagiColors.sageDeep,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 9,
+                top: 22,
+                child: Container(
+                  width: 15,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: AlagagiColors.sage,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 9,
+                bottom: 9,
+                child: Container(
+                  width: 22,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFB9A8C9),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -892,7 +963,7 @@ class _InviteNotes extends StatelessWidget {
           _NoteDivider(),
           _NoteRow(
             icon: Icons.eco_outlined,
-            title: '천천히 알아가기',
+            title: '천천히 적어두기',
             body: '답이 없어도 괜찮고, 서두르지 않아도 돼요.',
           ),
         ],

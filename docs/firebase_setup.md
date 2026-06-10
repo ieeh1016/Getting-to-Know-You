@@ -95,10 +95,10 @@ minyoung@gettoknow.local
 
 ```json
 {
-  "name": "알아가기",
+  "name": "조금씩",
   "memberIds": ["{youngwooUid}", "{minyoungUid}"],
   "personalization": {
-    "appTitle": "알아가기",
+    "appTitle": "조금씩",
     "homeLine": "오늘도 한 가지를 알아가요",
     "inviteLine": "하루에 하나씩, 조용히 알아가요",
     "accentEmoji": "🌿"

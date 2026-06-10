@@ -291,7 +291,7 @@ class DailyQuestionProgress {
 
 class SpacePersonalization {
   const SpacePersonalization({
-    this.appTitle = '알아가기',
+    this.appTitle = '조금씩',
     this.homeLine = '오늘도 한 가지를 알아가요',
     this.inviteLine = '하루에 하나씩, 조용히 알아가요',
     this.accentEmoji = '🌿',
@@ -315,6 +315,17 @@ class SpacePersonalization {
       accentEmoji: accentEmoji ?? this.accentEmoji,
     );
   }
+}
+
+SpacePersonalization _normalizeBrandPersonalization(
+  SpacePersonalization personalization,
+) {
+  const defaults = SpacePersonalization();
+  final appTitle = personalization.appTitle.trim();
+  if (appTitle.isEmpty || appTitle == '알아가기') {
+    return personalization.copyWith(appTitle: defaults.appTitle);
+  }
+  return personalization;
 }
 
 class ArchiveItem {
@@ -1030,8 +1041,12 @@ class AlagagiController extends ChangeNotifier {
          me: session.me,
          partner: session.partner,
          route: AlagagiRoute.home,
-         personalization: session.data.personalization,
-         personalizationDraft: session.data.personalization,
+         personalization: _normalizeBrandPersonalization(
+           session.data.personalization,
+         ),
+         personalizationDraft: _normalizeBrandPersonalization(
+           session.data.personalization,
+         ),
        ) {
     _applySessionData(session.data);
     _persistDailyQuestionProgressIfChanged(session.data.dailyProgress);
@@ -3152,7 +3167,7 @@ const seedInsight = RelationshipInsight(
       highlight: '느슨한 계획파',
     ),
     TimelineEvent(dateLabel: '5월 30일', description: '민영님이 처음 답을 남긴 날'),
-    TimelineEvent(dateLabel: '5월 28일', description: '우리, 알아가기를 시작했어요'),
+    TimelineEvent(dateLabel: '5월 28일', description: '우리, 조금씩 기록을 시작했어요'),
   ],
 );
 

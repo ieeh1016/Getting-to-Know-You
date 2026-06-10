@@ -87,6 +87,32 @@ void main() {
       },
     );
 
+    test('session controller normalizes the old default app title', () {
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            personalization: SpacePersonalization(appTitle: '알아가기'),
+          ),
+        ),
+      );
+
+      expect(controller.state.personalization.appTitle, '조금씩');
+      expect(controller.state.personalizationDraft.appTitle, '조금씩');
+    });
+
     test('session controller uses real Firestore-style session data', () {
       final controller = AlagagiController.forSession(
         const AlagagiSession(

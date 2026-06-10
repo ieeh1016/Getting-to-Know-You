@@ -15,13 +15,16 @@ void main() {
   testWidgets('shows invite and enters home with nickname', (tester) async {
     await tester.pumpWidget(const AlagagiApp());
 
+    expect(find.text('J O G E U M S S I K'), findsOneWidget);
     expect(find.text('우리, 천천히\n알아가 볼래요?'), findsOneWidget);
+    expect(find.text('알아가기'), findsNothing);
     expect(find.text('9:41'), findsNothing);
     expect(find.textContaining('🔋'), findsNothing);
 
     await enterSpace(tester);
 
-    expect(find.text('알아가기'), findsOneWidget);
+    expect(find.text('조금씩'), findsOneWidget);
+    expect(find.text('알아가기'), findsNothing);
     expect(find.text('오늘의 질문'), findsOneWidget);
     expect(find.byKey(homeQuestionCardKey), findsOneWidget);
     expect(find.text("TODAY'S QUESTION"), findsOneWidget);
