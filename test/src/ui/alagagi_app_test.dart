@@ -2163,6 +2163,9 @@ class _FailingCommentRepository implements AlagagiDataRepository {
   Future<void> saveSharedPlace(String spaceId, SharedPlace place) async {}
 
   @override
+  Future<void> deleteSharedPlace(String spaceId, String placeId) async {}
+
+  @override
   Future<void> saveCuriosityCard(String spaceId, CuriosityCard card) async {}
 
   @override

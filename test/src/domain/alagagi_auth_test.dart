@@ -193,6 +193,230 @@ void main() {
       expect(controller.insight.matchCount, 1);
     });
 
+    test('session place draft updates duplicate kakao place', () async {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            sharedPlaces: [
+              SharedPlace(
+                id: 'place_partner_cafe',
+                name: '느린 커피',
+                address: '서울 성동구',
+                category: PlaceCategory.cafe,
+                provider: MapApiProvider.kakao,
+                providerPlaceId: 'kakao-cafe-1',
+                latitude: 37.5446,
+                longitude: 127.0557,
+                note: '상대가 담은 곳',
+                createdByProfileId: 'minyoungUid',
+                interestedByProfileIds: {'minyoungUid'},
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+      );
+
+      controller.startPlaceDraft();
+      controller.applyKakaoPlaceResult(
+        providerPlaceId: 'kakao-cafe-1',
+        name: '느린 커피',
+        address: '서울 성동구',
+        latitude: 37.5446,
+        longitude: 127.0557,
+        category: PlaceCategory.food,
+      );
+      controller.updatePlaceDraft(note: '저녁 후보로 좋아 보여요.');
+      controller.submitPlaceDraft();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.sharedPlaces, hasLength(1));
+      expect(controller.sharedPlaces.single.id, 'place_partner_cafe');
+      expect(
+        controller.sharedPlaces.single.interestedByProfileIds,
+        containsAll(['youngwooUid', 'minyoungUid']),
+      );
+      expect(repository.savedSharedPlaces.single.spaceId, 'main');
+      expect(
+        repository.savedSharedPlaces.single.place.id,
+        'place_partner_cafe',
+      );
+      expect(
+        repository.savedSharedPlaces.single.place.category,
+        PlaceCategory.cafe,
+      );
+      expect(repository.savedSharedPlaces.single.place.note, '상대가 담은 곳');
+    });
+
+    test('session place save failure exposes retry state', () async {
+      final repository = RecordingAlagagiRepository()
+        ..failSharedPlaceSaves = true;
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+        ),
+        repository: repository,
+      );
+
+      controller.startPlaceDraft();
+      controller.applyKakaoPlaceResult(
+        providerPlaceId: 'kakao-cafe-1',
+        name: '느린 커피',
+        address: '서울 성동구',
+        latitude: 37.5446,
+        longitude: 127.0557,
+        category: PlaceCategory.cafe,
+      );
+      controller.submitPlaceDraft();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.state.placeSaveStatus, SaveStatus.failed);
+      expect(controller.state.placeError, contains('저장하지 못했어요'));
+      expect(repository.savedSharedPlaces, isEmpty);
+
+      repository.failSharedPlaceSaves = false;
+      controller.retryPlaceSave();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.state.placeSaveStatus, SaveStatus.saved);
+      expect(
+        repository.savedSharedPlaces.single.place.providerPlaceId,
+        'kakao-cafe-1',
+      );
+    });
+
+    test(
+      'session place meeting link adds my interest and can unlink',
+      () async {
+        final repository = RecordingAlagagiRepository();
+        final controller = AlagagiController.forSession(
+          const AlagagiSession(
+            spaceId: 'main',
+            me: AppProfile(
+              id: 'youngwooUid',
+              nickname: '영우',
+              avatar: '🌿',
+              isMe: true,
+            ),
+            partner: AppProfile(
+              id: 'minyoungUid',
+              nickname: '민영',
+              avatar: '🪻',
+              isMe: false,
+            ),
+            data: AlagagiSpaceData(
+              sharedPlaces: [
+                SharedPlace(
+                  id: 'place_partner_cafe',
+                  name: '느린 커피',
+                  address: '서울 성동구',
+                  category: PlaceCategory.cafe,
+                  provider: MapApiProvider.kakao,
+                  providerPlaceId: 'kakao-cafe-1',
+                  latitude: 37.5446,
+                  longitude: 127.0557,
+                  createdByProfileId: 'minyoungUid',
+                  interestedByProfileIds: {'minyoungUid'},
+                ),
+              ],
+            ),
+          ),
+          repository: repository,
+        );
+
+        controller.selectMeetingDate('2026-06-21');
+        controller.linkPlaceToSelectedMeeting('place_partner_cafe');
+        await Future<void>.delayed(Duration.zero);
+
+        expect(controller.sharedPlaces.single.linkedDateKey, '2026-06-21');
+        expect(
+          controller.sharedPlaces.single.interestedByProfileIds,
+          contains('youngwooUid'),
+        );
+        expect(
+          repository.savedSharedPlaces.single.place.linkedDateKey,
+          '2026-06-21',
+        );
+
+        controller.linkPlaceToSelectedMeeting('place_partner_cafe');
+        await Future<void>.delayed(Duration.zero);
+
+        expect(controller.sharedPlaces.single.linkedDateKey, isNull);
+        expect(repository.savedSharedPlaces.last.place.linkedDateKey, isNull);
+      },
+    );
+
+    test('session place delete removes my place from repository', () async {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            sharedPlaces: [
+              SharedPlace(
+                id: 'place_my_cafe',
+                name: '느린 커피',
+                address: '서울 성동구',
+                category: PlaceCategory.cafe,
+                provider: MapApiProvider.kakao,
+                providerPlaceId: 'kakao-cafe-1',
+                latitude: 37.5446,
+                longitude: 127.0557,
+                createdByProfileId: 'youngwooUid',
+                interestedByProfileIds: {'youngwooUid'},
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+      );
+
+      controller.deletePlace('place_my_cafe');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.sharedPlaces, isEmpty);
+      expect(repository.deletedSharedPlaces.single.spaceId, 'main');
+      expect(repository.deletedSharedPlaces.single.placeId, 'place_my_cafe');
+    });
+
     test('session controller saves curiosity question and reply', () {
       final repository = RecordingAlagagiRepository();
       final controller = AlagagiController.forSession(
@@ -1680,7 +1904,9 @@ AlagagiSession firebaseSessionWithData(AlagagiSpaceData data) {
 class RecordingAlagagiRepository implements AlagagiDataRepository {
   bool failAnswerSaves = false;
   bool failAnswerCommentSaves = false;
+  bool failSharedPlaceSaves = false;
   Completer<void>? answerSaveCompleter;
+  Completer<void>? sharedPlaceSaveCompleter;
   final List<({String spaceId, Answer answer})> savedAnswers = [];
   final List<({String spaceId, BalanceSelection selection})>
   savedBalanceSelections = [];
@@ -1690,6 +1916,7 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   final List<({String spaceId, MusicNote note})> savedMusicNotes = [];
   final List<({String spaceId, ScheduleEntry entry})> savedScheduleEntries = [];
   final List<({String spaceId, SharedPlace place})> savedSharedPlaces = [];
+  final List<({String spaceId, String placeId})> deletedSharedPlaces = [];
   final List<({String spaceId, StockStory story})> savedStockStories = [];
   final List<({String spaceId, StockHolding holding})> savedStockHoldings = [];
   final List<({String spaceId, AnswerComment comment})> savedAnswerComments =
@@ -1751,7 +1978,19 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveSharedPlace(String spaceId, SharedPlace place) async {
+    final completer = sharedPlaceSaveCompleter;
+    if (completer != null) {
+      await completer.future;
+    }
+    if (failSharedPlaceSaves) {
+      throw StateError('place save failed');
+    }
     savedSharedPlaces.add((spaceId: spaceId, place: place));
+  }
+
+  @override
+  Future<void> deleteSharedPlace(String spaceId, String placeId) async {
+    deletedSharedPlaces.add((spaceId: spaceId, placeId: placeId));
   }
 
   @override

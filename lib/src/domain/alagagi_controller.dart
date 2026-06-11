@@ -195,6 +195,8 @@ abstract class AlagagiDataRepository {
 
   Future<void> saveSharedPlace(String spaceId, SharedPlace place);
 
+  Future<void> deleteSharedPlace(String spaceId, String placeId);
+
   Future<void> saveCuriosityCard(String spaceId, CuriosityCard card);
 
   Future<void> saveStockStory(String spaceId, StockStory story);
@@ -1234,6 +1236,11 @@ class AlagagiState {
     this.placeDraftLatitude,
     this.placeDraftLongitude,
     this.placeDraftError,
+    this.editingPlaceId,
+    this.placeSaveStatus = SaveStatus.idle,
+    this.placeSaveFeedback,
+    this.placeSaveTargetId,
+    this.placeError,
     this.stockStoryTab = StockStoryTab.stories,
     this.stockStoryDraftVisible = false,
     this.stockStoryDraftName = '',
@@ -1323,6 +1330,11 @@ class AlagagiState {
   final double? placeDraftLatitude;
   final double? placeDraftLongitude;
   final String? placeDraftError;
+  final String? editingPlaceId;
+  final SaveStatus placeSaveStatus;
+  final String? placeSaveFeedback;
+  final String? placeSaveTargetId;
+  final String? placeError;
   final StockStoryTab stockStoryTab;
   final bool stockStoryDraftVisible;
   final String stockStoryDraftName;
@@ -1416,6 +1428,15 @@ class AlagagiState {
     bool clearPlaceDraftCoordinates = false,
     String? placeDraftError,
     bool clearPlaceDraftError = false,
+    String? editingPlaceId,
+    bool clearEditingPlaceId = false,
+    SaveStatus? placeSaveStatus,
+    String? placeSaveFeedback,
+    bool clearPlaceSaveFeedback = false,
+    String? placeSaveTargetId,
+    bool clearPlaceSaveTargetId = false,
+    String? placeError,
+    bool clearPlaceError = false,
     StockStoryTab? stockStoryTab,
     bool? stockStoryDraftVisible,
     String? stockStoryDraftName,
@@ -1541,6 +1562,17 @@ class AlagagiState {
       placeDraftError: clearPlaceDraftError
           ? null
           : placeDraftError ?? this.placeDraftError,
+      editingPlaceId: clearEditingPlaceId
+          ? null
+          : editingPlaceId ?? this.editingPlaceId,
+      placeSaveStatus: placeSaveStatus ?? this.placeSaveStatus,
+      placeSaveFeedback: clearPlaceSaveFeedback
+          ? null
+          : placeSaveFeedback ?? this.placeSaveFeedback,
+      placeSaveTargetId: clearPlaceSaveTargetId
+          ? null
+          : placeSaveTargetId ?? this.placeSaveTargetId,
+      placeError: clearPlaceError ? null : placeError ?? this.placeError,
       stockStoryTab: stockStoryTab ?? this.stockStoryTab,
       stockStoryDraftVisible:
           stockStoryDraftVisible ?? this.stockStoryDraftVisible,
@@ -1751,6 +1783,7 @@ class AlagagiController extends ChangeNotifier {
   final List<StockHolding> _stockHoldings = [];
   Answer? _lastFailedAnswer;
   AnswerComment? _lastFailedAnswerComment;
+  SharedPlace? _lastFailedSharedPlace;
   CuriosityCard? _lastFailedCuriosityCard;
 
   AlagagiState get state => _state;
@@ -2384,9 +2417,86 @@ class AlagagiController extends ChangeNotifier {
     final repository = _repository;
     final spaceId = _spaceId;
     if (repository == null || spaceId == null) {
+      _lastFailedSharedPlace = null;
+      _state = _state.copyWith(
+        placeSaveStatus: SaveStatus.saved,
+        placeSaveFeedback: '장소를 저장했어요.',
+        placeSaveTargetId: place.id,
+        clearPlaceError: true,
+      );
+      notifyListeners();
       return;
     }
-    unawaited(repository.saveSharedPlace(spaceId, place).catchError((_) {}));
+    unawaited(
+      repository
+          .saveSharedPlace(spaceId, place)
+          .then<void>((_) {
+            _lastFailedSharedPlace = null;
+            _state = _state.copyWith(
+              placeSaveStatus: SaveStatus.saved,
+              placeSaveFeedback: '장소를 저장했어요.',
+              placeSaveTargetId: place.id,
+              clearPlaceError: true,
+            );
+            notifyListeners();
+          })
+          .catchError((Object _) {
+            _lastFailedSharedPlace = place;
+            _state = _state.copyWith(
+              placeError: '장소를 저장하지 못했어요. 다시 시도해 주세요.',
+              placeSaveStatus: SaveStatus.failed,
+              placeSaveTargetId: place.id,
+              clearPlaceSaveFeedback: true,
+            );
+            notifyListeners();
+          }),
+    );
+  }
+
+  void _deleteSharedPlace(SharedPlace place, int previousIndex) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      _lastFailedSharedPlace = null;
+      _state = _state.copyWith(
+        placeSaveStatus: SaveStatus.saved,
+        placeSaveFeedback: '장소를 삭제했어요.',
+        placeSaveTargetId: place.id,
+        clearPlaceError: true,
+      );
+      notifyListeners();
+      return;
+    }
+    unawaited(
+      repository
+          .deleteSharedPlace(spaceId, place.id)
+          .then<void>((_) {
+            _lastFailedSharedPlace = null;
+            _state = _state.copyWith(
+              placeSaveStatus: SaveStatus.saved,
+              placeSaveFeedback: '장소를 삭제했어요.',
+              placeSaveTargetId: place.id,
+              clearPlaceError: true,
+            );
+            notifyListeners();
+          })
+          .catchError((Object _) {
+            final boundedIndex = previousIndex
+                .clamp(0, _sharedPlaces.length)
+                .toInt();
+            if (!_sharedPlaces.any((candidate) => candidate.id == place.id)) {
+              _sharedPlaces.insert(boundedIndex, place);
+              _sortSharedPlacesByUpdatedAt();
+            }
+            _state = _state.copyWith(
+              placeError: '장소를 삭제하지 못했어요. 다시 시도해 주세요.',
+              placeSaveStatus: SaveStatus.failed,
+              placeSaveTargetId: place.id,
+              clearPlaceSaveFeedback: true,
+            );
+            notifyListeners();
+          }),
+    );
   }
 
   void _persistCuriosityCard(CuriosityCard card) {
@@ -2810,6 +2920,8 @@ class AlagagiController extends ChangeNotifier {
 
   List<SharedPlace> get sharedPlaces =>
       List<SharedPlace>.unmodifiable(_sharedPlaces);
+
+  bool get canRetryPlaceSave => _lastFailedSharedPlace != null;
 
   String get selectedMeetingDateKey =>
       _state.selectedMeetingDateKey ?? _todayDateKey();
@@ -4364,6 +4476,58 @@ class AlagagiController extends ChangeNotifier {
       placeDraftProviderPlaceId: '',
       clearPlaceDraftCoordinates: true,
       clearPlaceDraftError: true,
+      clearEditingPlaceId: true,
+      placeSaveStatus: SaveStatus.idle,
+      clearPlaceError: true,
+      clearPlaceSaveFeedback: true,
+      clearPlaceSaveTargetId: true,
+    );
+    notifyListeners();
+  }
+
+  void startEditingPlace(String placeId) {
+    final place = _sharedPlaces.firstWhere(
+      (candidate) => candidate.id == placeId,
+      orElse: () => const SharedPlace(
+        id: '',
+        name: '',
+        address: '',
+        category: PlaceCategory.activity,
+        provider: MapApiProvider.kakao,
+        createdByProfileId: '',
+        interestedByProfileIds: {},
+      ),
+    );
+    if (place.id.isEmpty) {
+      return;
+    }
+    if (place.createdByProfileId != _state.me.id) {
+      _state = _state.copyWith(
+        placeError: '내가 담은 장소만 수정할 수 있어요.',
+        placeSaveStatus: SaveStatus.failed,
+        placeSaveTargetId: placeId,
+        clearPlaceSaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    _state = _state.copyWith(
+      route: AlagagiRoute.places,
+      placeDraftVisible: true,
+      placeDraftName: place.name,
+      placeDraftAddress: place.address,
+      placeDraftNote: place.note,
+      placeDraftCategory: place.category,
+      placeDraftProvider: MapApiProvider.kakao,
+      placeDraftProviderPlaceId: place.providerPlaceId,
+      placeDraftLatitude: place.latitude,
+      placeDraftLongitude: place.longitude,
+      editingPlaceId: place.id,
+      clearPlaceDraftError: true,
+      placeSaveStatus: SaveStatus.idle,
+      clearPlaceError: true,
+      clearPlaceSaveFeedback: true,
+      clearPlaceSaveTargetId: true,
     );
     notifyListeners();
   }
@@ -4379,6 +4543,7 @@ class AlagagiController extends ChangeNotifier {
       placeDraftProviderPlaceId: '',
       clearPlaceDraftCoordinates: true,
       clearPlaceDraftError: true,
+      clearEditingPlaceId: true,
     );
     notifyListeners();
   }
@@ -4431,6 +4596,9 @@ class AlagagiController extends ChangeNotifier {
   }
 
   void submitPlaceDraft() {
+    if (_state.placeSaveStatus == SaveStatus.saving) {
+      return;
+    }
     final name = _state.placeDraftName.trim();
     final address = _state.placeDraftAddress.trim();
     final note = _state.placeDraftNote.trim();
@@ -4464,23 +4632,84 @@ class AlagagiController extends ChangeNotifier {
     }
 
     final now = DateTime.now();
-    final place = SharedPlace(
-      id: 'place_${_state.me.id}_${now.microsecondsSinceEpoch}',
-      name: name,
-      address: address,
-      category: _state.placeDraftCategory,
-      provider: MapApiProvider.kakao,
-      providerPlaceId: providerPlaceId,
-      latitude: _state.placeDraftLatitude,
-      longitude: _state.placeDraftLongitude,
-      note: note,
-      createdByProfileId: _state.me.id,
-      interestedByProfileIds: {_state.me.id},
-      updatedAt: now,
+    final editingPlaceId = _state.editingPlaceId;
+    final editingIndex = editingPlaceId == null
+        ? -1
+        : _sharedPlaces.indexWhere((place) => place.id == editingPlaceId);
+    final duplicateIndex = _sharedPlaces.indexWhere(
+      (place) =>
+          place.provider == MapApiProvider.kakao &&
+          place.providerPlaceId.trim().isNotEmpty &&
+          place.providerPlaceId.trim() == providerPlaceId &&
+          place.id != editingPlaceId,
     );
-    _sharedPlaces.insert(0, place);
+    final targetIndex = editingIndex != -1 ? editingIndex : duplicateIndex;
+    final existingPlace = targetIndex == -1 ? null : _sharedPlaces[targetIndex];
+    if (editingPlaceId != null && editingIndex == -1) {
+      _state = _state.copyWith(
+        placeDraftError: '수정할 장소를 찾지 못했어요.',
+        placeSaveStatus: SaveStatus.idle,
+        clearPlaceSaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    if (existingPlace != null &&
+        editingPlaceId != null &&
+        existingPlace.createdByProfileId != _state.me.id) {
+      _state = _state.copyWith(
+        placeDraftError: '내가 담은 장소만 수정할 수 있어요.',
+        placeSaveStatus: SaveStatus.idle,
+        clearPlaceSaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+
+    final canChangePlaceContent =
+        existingPlace == null ||
+        existingPlace.createdByProfileId == _state.me.id;
+    final place = existingPlace == null
+        ? SharedPlace(
+            id: 'place_${_state.me.id}_${now.microsecondsSinceEpoch}',
+            name: name,
+            address: address,
+            category: _state.placeDraftCategory,
+            provider: MapApiProvider.kakao,
+            providerPlaceId: providerPlaceId,
+            latitude: _state.placeDraftLatitude,
+            longitude: _state.placeDraftLongitude,
+            note: note,
+            createdByProfileId: _state.me.id,
+            interestedByProfileIds: {_state.me.id},
+            updatedAt: now,
+          )
+        : canChangePlaceContent
+        ? existingPlace.copyWith(
+            name: name,
+            address: address,
+            category: _state.placeDraftCategory,
+            provider: MapApiProvider.kakao,
+            providerPlaceId: providerPlaceId,
+            latitude: _state.placeDraftLatitude,
+            longitude: _state.placeDraftLongitude,
+            note: note,
+            updatedAt: now,
+          )
+        : existingPlace.copyWith(
+            interestedByProfileIds: {
+              ...existingPlace.interestedByProfileIds,
+              _state.me.id,
+            },
+            updatedAt: now,
+          );
+    if (existingPlace == null) {
+      _sharedPlaces.insert(0, place);
+    } else {
+      _sharedPlaces[targetIndex] = place;
+    }
     _sortSharedPlacesByUpdatedAt();
-    _persistSharedPlace(place);
+    _lastFailedSharedPlace = null;
     _state = _state.copyWith(
       placeDraftVisible: false,
       placeDraftName: '',
@@ -4491,42 +4720,129 @@ class AlagagiController extends ChangeNotifier {
       placeDraftProviderPlaceId: '',
       clearPlaceDraftCoordinates: true,
       clearPlaceDraftError: true,
+      clearEditingPlaceId: true,
+      placeSaveStatus: SaveStatus.saving,
+      placeSaveTargetId: place.id,
+      clearPlaceError: true,
+      clearPlaceSaveFeedback: true,
     );
     notifyListeners();
+    _persistSharedPlace(place);
   }
 
   void togglePlaceInterest(String placeId) {
+    if (_state.placeSaveStatus == SaveStatus.saving) {
+      return;
+    }
     final index = _sharedPlaces.indexWhere((place) => place.id == placeId);
     if (index == -1) {
       return;
     }
     final place = _sharedPlaces[index];
-    if (place.interestedByProfileIds.contains(_state.me.id)) {
-      return;
+    final interestedBy = Set<String>.of(place.interestedByProfileIds);
+    final likedByMe = interestedBy.contains(_state.me.id);
+    if (likedByMe) {
+      interestedBy.remove(_state.me.id);
+    } else {
+      interestedBy.add(_state.me.id);
     }
     final updatedPlace = place.copyWith(
-      interestedByProfileIds: {...place.interestedByProfileIds, _state.me.id},
+      interestedByProfileIds: interestedBy,
       updatedAt: DateTime.now(),
     );
     _sharedPlaces[index] = updatedPlace;
     _sortSharedPlacesByUpdatedAt();
-    _persistSharedPlace(updatedPlace);
+    _lastFailedSharedPlace = null;
+    _state = _state.copyWith(
+      placeSaveStatus: SaveStatus.saving,
+      placeSaveTargetId: updatedPlace.id,
+      clearPlaceError: true,
+      clearPlaceSaveFeedback: true,
+    );
     notifyListeners();
+    _persistSharedPlace(updatedPlace);
   }
 
   void linkPlaceToSelectedMeeting(String placeId) {
+    if (_state.placeSaveStatus == SaveStatus.saving) {
+      return;
+    }
     final index = _sharedPlaces.indexWhere((place) => place.id == placeId);
     if (index == -1) {
       return;
     }
-    final updatedPlace = _sharedPlaces[index].copyWith(
-      linkedDateKey: selectedMeetingDateKey,
+    final place = _sharedPlaces[index];
+    final selectedDateKey = selectedMeetingDateKey;
+    final alreadyLinkedToSelectedDate = place.linkedDateKey == selectedDateKey;
+    final updatedPlace = place.copyWith(
+      linkedDateKey: alreadyLinkedToSelectedDate ? null : selectedDateKey,
+      clearLinkedDateKey: alreadyLinkedToSelectedDate,
+      interestedByProfileIds: alreadyLinkedToSelectedDate
+          ? place.interestedByProfileIds
+          : {...place.interestedByProfileIds, _state.me.id},
       updatedAt: DateTime.now(),
     );
     _sharedPlaces[index] = updatedPlace;
     _sortSharedPlacesByUpdatedAt();
-    _persistSharedPlace(updatedPlace);
+    _lastFailedSharedPlace = null;
+    _state = _state.copyWith(
+      placeSaveStatus: SaveStatus.saving,
+      placeSaveTargetId: updatedPlace.id,
+      clearPlaceError: true,
+      clearPlaceSaveFeedback: true,
+    );
     notifyListeners();
+    _persistSharedPlace(updatedPlace);
+  }
+
+  void deletePlace(String placeId) {
+    if (_state.placeSaveStatus == SaveStatus.saving) {
+      return;
+    }
+    final index = _sharedPlaces.indexWhere((place) => place.id == placeId);
+    if (index == -1) {
+      return;
+    }
+    final place = _sharedPlaces[index];
+    if (place.createdByProfileId != _state.me.id) {
+      _state = _state.copyWith(
+        placeError: '내가 담은 장소만 삭제할 수 있어요.',
+        placeSaveStatus: SaveStatus.failed,
+        placeSaveTargetId: place.id,
+        clearPlaceSaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    _sharedPlaces.removeAt(index);
+    _lastFailedSharedPlace = null;
+    _state = _state.copyWith(
+      placeSaveStatus: SaveStatus.saving,
+      placeSaveTargetId: place.id,
+      clearPlaceError: true,
+      clearPlaceSaveFeedback: true,
+    );
+    notifyListeners();
+    _deleteSharedPlace(place, index);
+  }
+
+  bool isPlaceSaveTarget(String placeId) {
+    return _state.placeSaveTargetId == placeId;
+  }
+
+  void retryPlaceSave() {
+    final place = _lastFailedSharedPlace;
+    if (place == null || _state.placeSaveStatus == SaveStatus.saving) {
+      return;
+    }
+    _state = _state.copyWith(
+      placeSaveStatus: SaveStatus.saving,
+      placeSaveTargetId: place.id,
+      clearPlaceError: true,
+      clearPlaceSaveFeedback: true,
+    );
+    notifyListeners();
+    _persistSharedPlace(place);
   }
 
   void setStockStoryTab(StockStoryTab tab) {

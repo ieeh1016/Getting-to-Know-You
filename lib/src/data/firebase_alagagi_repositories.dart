@@ -317,6 +317,16 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
   }
 
   @override
+  Future<void> deleteSharedPlace(String spaceId, String placeId) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('sharedPlaces')
+        .doc(placeId)
+        .delete();
+  }
+
+  @override
   Future<void> saveCuriosityCard(String spaceId, CuriosityCard card) {
     return _firestore
         .collection('spaces')

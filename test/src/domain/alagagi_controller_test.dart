@@ -184,7 +184,7 @@ void main() {
       expect(entry.timeBlocks.single.title, '병원 예약');
     });
 
-    test('place board saves a place and ignores duplicate interest', () {
+    test('place board saves a place and toggles interest', () {
       final controller = AlagagiController()..enterSpace('영우');
 
       controller.startPlaceDraft();
@@ -209,10 +209,123 @@ void main() {
 
       controller.togglePlaceInterest(place.id);
       expect(
-        controller.sharedPlaces.first.interestedByProfileIds.where(
-          (id) => id == controller.state.me.id,
-        ),
-        hasLength(1),
+        controller.sharedPlaces.first.interestedByProfileIds,
+        isNot(contains(controller.state.me.id)),
+      );
+
+      controller.togglePlaceInterest(place.id);
+      expect(
+        controller.sharedPlaces.first.interestedByProfileIds,
+        contains(controller.state.me.id),
+      );
+    });
+
+    test(
+      'place board updates duplicate kakao place instead of adding another',
+      () {
+        final controller = AlagagiController()..enterSpace('영우');
+
+        controller.startPlaceDraft();
+        controller.applyKakaoPlaceResult(
+          providerPlaceId: 'kakao-cafe-1',
+          name: '조용한 카페',
+          address: '서울 성동구',
+          latitude: 37.5446,
+          longitude: 127.0557,
+          category: PlaceCategory.cafe,
+        );
+        controller.updatePlaceDraft(note: '첫 메모');
+        controller.submitPlaceDraft();
+
+        controller.startPlaceDraft();
+        controller.applyKakaoPlaceResult(
+          providerPlaceId: 'kakao-cafe-1',
+          name: '조용한 카페',
+          address: '서울 성동구',
+          latitude: 37.5446,
+          longitude: 127.0557,
+          category: PlaceCategory.food,
+        );
+        controller.updatePlaceDraft(note: '업데이트한 메모');
+        controller.submitPlaceDraft();
+
+        final matchingPlaces = controller.sharedPlaces
+            .where((place) => place.providerPlaceId == 'kakao-cafe-1')
+            .toList();
+        expect(matchingPlaces, hasLength(1));
+        expect(matchingPlaces.single.category, PlaceCategory.food);
+        expect(matchingPlaces.single.note, '업데이트한 메모');
+      },
+    );
+
+    test('place board links and unlinks selected meeting date', () {
+      final controller = AlagagiController()..enterSpace('영우');
+
+      controller.startPlaceDraft();
+      controller.applyKakaoPlaceResult(
+        providerPlaceId: 'kakao-cafe-1',
+        name: '조용한 카페',
+        address: '서울 성동구',
+        latitude: 37.5446,
+        longitude: 127.0557,
+        category: PlaceCategory.cafe,
+      );
+      controller.submitPlaceDraft();
+
+      final placeId = controller.sharedPlaces
+          .firstWhere((place) => place.providerPlaceId == 'kakao-cafe-1')
+          .id;
+      controller.selectMeetingDate('2026-06-21');
+      controller.linkPlaceToSelectedMeeting(placeId);
+      expect(
+        controller.sharedPlaces
+            .firstWhere((place) => place.id == placeId)
+            .linkedDateKey,
+        '2026-06-21',
+      );
+
+      controller.linkPlaceToSelectedMeeting(placeId);
+      expect(
+        controller.sharedPlaces
+            .firstWhere((place) => place.id == placeId)
+            .linkedDateKey,
+        isNull,
+      );
+    });
+
+    test('place board edits and deletes my place', () {
+      final controller = AlagagiController()..enterSpace('영우');
+
+      controller.startPlaceDraft();
+      controller.applyKakaoPlaceResult(
+        providerPlaceId: 'kakao-cafe-1',
+        name: '조용한 카페',
+        address: '서울 성동구',
+        latitude: 37.5446,
+        longitude: 127.0557,
+        category: PlaceCategory.cafe,
+      );
+      controller.updatePlaceDraft(note: '첫 메모');
+      controller.submitPlaceDraft();
+
+      final placeId = controller.sharedPlaces
+          .firstWhere((place) => place.providerPlaceId == 'kakao-cafe-1')
+          .id;
+      controller.startEditingPlace(placeId);
+      controller.setPlaceDraftCategory(PlaceCategory.food);
+      controller.updatePlaceDraft(note: '수정한 메모');
+      controller.submitPlaceDraft();
+
+      final editedPlace = controller.sharedPlaces.firstWhere(
+        (place) => place.id == placeId,
+      );
+      expect(editedPlace.category, PlaceCategory.food);
+      expect(editedPlace.note, '수정한 메모');
+
+      controller.deletePlace(placeId);
+      expect(
+        controller.sharedPlaces.any((place) => place.id == placeId),
+        isFalse,
       );
     });
 

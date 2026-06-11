@@ -9,6 +9,9 @@
 - 선택한 결과의 `id`, 장소명, 주소, 위도, 경도만 앱 모델로 정규화해 저장한다.
 - Firestore `provider` 값은 항상 `kakao`다.
 - 현재 위치, 이동 경로, 검색 API raw payload, 이미지 blob은 저장하지 않는다.
+- 같은 카카오 `providerPlaceId`를 다시 담으면 새 카드 대신 기존 카드를 업데이트하거나 내 관심만 추가한다.
+- 내가 담은 장소는 수정/삭제할 수 있고, 상대가 담은 장소는 관심 표시와 약속 날짜 연결만 바꾼다.
+- 저장 실패는 장소 보드 안에 표시되며 저장 재시도를 제공한다.
 
 ## Kakao Developers 설정
 
@@ -73,4 +76,6 @@ https://dapi.kakao.com/v2/maps/sdk.js?appkey=<KAKAO_MAP_JS_KEY>&libraries=servic
 - 카카오 콘솔에 접속 도메인이 정확히 등록되어 있는지 확인한다.
 - 브라우저 콘솔에 SDK 로드 오류가 없는지 확인한다.
 - 검색 결과 선택 후 저장하면 지도 마커가 추가되는지 확인한다.
+- 같은 장소를 다시 저장해도 카드가 중복 생성되지 않는지 확인한다.
+- 상대가 담은 장소를 날짜에 연결하면 내 관심도 함께 추가되어 Firestore rules를 통과하는지 확인한다.
 - Firestore rules에서 `provider == 'kakao'`만 허용되는지 확인한다.

@@ -505,9 +505,71 @@ service cloud.firestore {
         && request.resource.data.createdByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
         && request.resource.data.interestedByProfileIds is list
         && request.resource.data.interestedByProfileIds.size() <= 2
-        && request.auth.uid in request.resource.data.interestedByProfileIds
         && request.resource.data.linkedDateKey is string
         && request.resource.data.linkedDateKey.size() <= 16;
+    }
+
+    function validNewSharedPlace(spaceId, placeId) {
+      return validSharedPlace(spaceId, placeId)
+        && request.resource.data.createdByProfileId == request.auth.uid
+        && request.resource.data.interestedByProfileIds.size() == 1
+        && request.auth.uid in request.resource.data.interestedByProfileIds
+        && request.resource.data.linkedDateKey == '';
+    }
+
+    function validSharedPlaceOwnerEdit(spaceId, placeId) {
+      return validSharedPlace(spaceId, placeId)
+        && resource.data.createdByProfileId == request.auth.uid
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.createdByProfileId == resource.data.createdByProfileId
+        && request.resource.data.interestedByProfileIds == resource.data.interestedByProfileIds
+        && request.resource.data.linkedDateKey == resource.data.linkedDateKey
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'name',
+          'address',
+          'category',
+          'provider',
+          'providerPlaceId',
+          'latitude',
+          'longitude',
+          'note',
+          'updatedAt'
+        ]);
+    }
+
+    function validSharedPlaceInterestUpdate(spaceId, placeId) {
+      return validSharedPlace(spaceId, placeId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'interestedByProfileIds',
+          'updatedAt'
+        ])
+        && (
+          request.auth.uid in resource.data.interestedByProfileIds
+          || request.auth.uid in request.resource.data.interestedByProfileIds
+        );
+    }
+
+    function validSharedPlaceLinkUpdate(spaceId, placeId) {
+      return validSharedPlace(spaceId, placeId)
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.createdByProfileId == resource.data.createdByProfileId
+        && request.resource.data.name == resource.data.name
+        && request.resource.data.address == resource.data.address
+        && request.resource.data.category == resource.data.category
+        && request.resource.data.provider == resource.data.provider
+        && request.resource.data.providerPlaceId == resource.data.providerPlaceId
+        && request.resource.data.latitude == resource.data.latitude
+        && request.resource.data.longitude == resource.data.longitude
+        && request.resource.data.note == resource.data.note
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'interestedByProfileIds',
+          'linkedDateKey',
+          'updatedAt'
+        ])
+        && (
+          request.auth.uid in resource.data.interestedByProfileIds
+          || request.auth.uid in request.resource.data.interestedByProfileIds
+        );
     }
 
     match /users/{userId} {
@@ -609,9 +671,16 @@ service cloud.firestore {
 
       match /sharedPlaces/{placeId} {
         allow read: if isSpaceMember(spaceId);
-        allow create, update: if isSpaceMember(spaceId)
-          && validSharedPlace(spaceId, placeId);
-        allow delete: if false;
+        allow create: if isSpaceMember(spaceId)
+          && validNewSharedPlace(spaceId, placeId);
+        allow update: if isSpaceMember(spaceId)
+          && (
+            validSharedPlaceOwnerEdit(spaceId, placeId)
+            || validSharedPlaceInterestUpdate(spaceId, placeId)
+            || validSharedPlaceLinkUpdate(spaceId, placeId)
+          );
+        allow delete: if isSpaceMember(spaceId)
+          && resource.data.createdByProfileId == request.auth.uid;
       }
 
       match /curiosityCards/{cardId} {

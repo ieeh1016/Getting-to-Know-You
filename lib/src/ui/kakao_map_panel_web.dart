@@ -103,7 +103,9 @@ class _KakaoMapPanelState extends State<KakaoMapPanel> {
         'jogeumssikKakaoMaps'.toJS,
       );
       if (bridge == null) {
-        throw StateError('카카오 지도 브릿지를 찾을 수 없어요.');
+        throw StateError(
+          '카카오 지도 연결 객체를 찾을 수 없어요. web/kakao_maps_bridge.js 등록 여부를 확인해주세요.',
+        );
       }
       final optionsJson = jsonEncode({
         'elementId': _elementId,
@@ -119,7 +121,7 @@ class _KakaoMapPanelState extends State<KakaoMapPanel> {
       }
     } catch (error) {
       if (mounted) {
-        setState(() => _error = '카카오 지도를 불러오지 못했어요.');
+        setState(() => _error = _kakaoUiMessage('카카오 지도 오류', error));
       }
     }
   }
@@ -130,7 +132,19 @@ Future<void> _ensureKakaoBridgeLoaded() {
   if (bridge != null) {
     return Future<void>.value();
   }
-  return _kakaoBridgeLoadFuture ??= _loadKakaoBridgeScript();
+  final pendingLoad = _kakaoBridgeLoadFuture;
+  if (pendingLoad != null) {
+    return pendingLoad;
+  }
+
+  late final Future<void> loadFuture;
+  loadFuture = _loadKakaoBridgeScript().whenComplete(() {
+    if (identical(_kakaoBridgeLoadFuture, loadFuture)) {
+      _kakaoBridgeLoadFuture = null;
+    }
+  });
+  _kakaoBridgeLoadFuture = loadFuture;
+  return loadFuture;
 }
 
 Future<void> _loadKakaoBridgeScript() {
@@ -147,7 +161,11 @@ Future<void> _loadKakaoBridgeScript() {
       'jogeumssikKakaoMaps'.toJS,
     );
     if (bridge == null) {
-      completer.completeError(StateError('Kakao map bridge did not register.'));
+      completer.completeError(
+        StateError(
+          '카카오 지도 연결 스크립트가 등록되지 않았어요. web/kakao_maps_bridge.js 경로를 확인해주세요.',
+        ),
+      );
     } else {
       completer.complete();
     }
@@ -156,7 +174,9 @@ Future<void> _loadKakaoBridgeScript() {
   }).toJS;
 
   errorListener = ((web.Event event) {
-    completer.completeError(StateError('Kakao map bridge failed to load.'));
+    completer.completeError(
+      StateError('카카오 지도 연결 스크립트 로드 실패. 배포 경로 또는 정적 파일 설정을 확인해주세요.'),
+    );
     script.removeEventListener('load', loadListener);
     script.removeEventListener('error', errorListener);
   }).toJS;
@@ -175,27 +195,39 @@ Future<List<KakaoPlaceSearchResult>> searchKakaoPlaces(
   if (trimmed.length < 2) {
     return const [];
   }
-  await _ensureKakaoBridgeLoaded();
-  final bridge = web.window.getProperty<JSObject?>('jogeumssikKakaoMaps'.toJS);
-  if (bridge == null) {
-    throw StateError('카카오 지도 브릿지를 찾을 수 없어요.');
+
+  try {
+    await _ensureKakaoBridgeLoaded();
+    final bridge = web.window.getProperty<JSObject?>(
+      'jogeumssikKakaoMaps'.toJS,
+    );
+    if (bridge == null) {
+      throw StateError(
+        '카카오 지도 연결 객체를 찾을 수 없어요. web/kakao_maps_bridge.js 등록 여부를 확인해주세요.',
+      );
+    }
+    final optionsJson = jsonEncode({
+      'appKey': effectiveKakaoMapJsKey(appKey),
+      'keyword': trimmed,
+    });
+    final resultJson = await _KakaoMapBridge(
+      bridge,
+    ).searchPlacesFromJson(optionsJson.toJS).toDart;
+    final decoded = jsonDecode(resultJson.toDart);
+    if (decoded is! List) {
+      throw StateError('카카오 장소 검색 응답 형식이 올바르지 않아요.');
+    }
+    return decoded
+        .whereType<Map<String, Object?>>()
+        .map(_placeSearchResultFromMap)
+        .whereType<KakaoPlaceSearchResult>()
+        .toList(growable: false);
+  } catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      StateError(_kakaoUiMessage('카카오 장소 검색 오류', error)),
+      stackTrace,
+    );
   }
-  final optionsJson = jsonEncode({
-    'appKey': effectiveKakaoMapJsKey(appKey),
-    'keyword': trimmed,
-  });
-  final resultJson = await _KakaoMapBridge(
-    bridge,
-  ).searchPlacesFromJson(optionsJson.toJS).toDart;
-  final decoded = jsonDecode(resultJson.toDart);
-  if (decoded is! List) {
-    return const [];
-  }
-  return decoded
-      .whereType<Map<String, Object?>>()
-      .map(_placeSearchResultFromMap)
-      .whereType<KakaoPlaceSearchResult>()
-      .toList(growable: false);
 }
 
 KakaoPlaceSearchResult? _placeSearchResultFromMap(Map<String, Object?> data) {
@@ -226,4 +258,25 @@ double? _readDouble(Object? value) {
     return double.tryParse(value);
   }
   return null;
+}
+
+String _kakaoUiMessage(String title, Object error) {
+  final detail = _kakaoErrorDetail(error);
+  return detail.isEmpty ? title : '$title: $detail';
+}
+
+String _kakaoErrorDetail(Object error) {
+  var message = error.toString().trim();
+  for (final prefix in const [
+    'Bad state: ',
+    'Exception: ',
+    'Error: ',
+    'JavaScriptError: ',
+    'JogeumssikKakaoMapError: ',
+  ]) {
+    if (message.startsWith(prefix)) {
+      message = message.substring(prefix.length).trim();
+    }
+  }
+  return message.isEmpty ? '알 수 없는 오류' : message;
 }

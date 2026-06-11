@@ -50,6 +50,9 @@ Key placeInterestButtonKey(String placeId) =>
     Key('place-interest-button-$placeId');
 Key placeLinkMeetingButtonKey(String placeId) =>
     Key('place-link-meeting-button-$placeId');
+Key placeEditButtonKey(String placeId) => Key('place-edit-button-$placeId');
+Key placeDeleteButtonKey(String placeId) => Key('place-delete-button-$placeId');
+const placeRetryButtonKey = Key('place-retry-button');
 const homeProgressSummaryKey = Key('home-progress-summary');
 const homeProgressSummaryCtaKey = Key('home-progress-summary-cta');
 const editAnswerButtonKey = Key('edit-answer-button');
@@ -9118,6 +9121,7 @@ class PlaceBoardScreen extends StatelessWidget {
           linkedCount: linkedCount,
           places: places,
         ),
+        _PlaceSaveStatus(controller: controller),
         const SizedBox(height: 14),
         if (controller.state.placeDraftVisible)
           _PlaceDraftCard(controller: controller)
@@ -9329,6 +9333,76 @@ class _PlaceMapPreview extends StatelessWidget {
   }
 }
 
+class _PlaceSaveStatus extends StatelessWidget {
+  const _PlaceSaveStatus({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = controller.state;
+    final status = state.placeSaveStatus;
+    final message = switch (status) {
+      SaveStatus.saving => '장소를 저장 중이에요...',
+      SaveStatus.saved => state.placeSaveFeedback,
+      SaveStatus.failed => state.placeError,
+      SaveStatus.idle => null,
+    };
+    if (message == null || message.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final failed = status == SaveStatus.failed;
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: failed ? const Color(0xFFFFF7F3) : const Color(0xFFF7F8F3),
+          border: Border.all(
+            color: failed ? const Color(0x33B18472) : const Color(0x338A9A7E),
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            Icon(
+              failed
+                  ? Icons.error_outline_rounded
+                  : status == SaveStatus.saving
+                  ? Icons.sync_rounded
+                  : Icons.check_circle_outline_rounded,
+              size: 16,
+              color: failed ? const Color(0xFFB18472) : AlagagiColors.sageDeep,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: sans(
+                  size: 12,
+                  color: failed
+                      ? const Color(0xFFB18472)
+                      : AlagagiColors.sageDeep,
+                  weight: FontWeight.w700,
+                ),
+              ),
+            ),
+            if (failed && controller.canRetryPlaceSave)
+              TextButton(
+                key: placeRetryButtonKey,
+                onPressed: controller.retryPlaceSave,
+                child: Text(
+                  '다시 시도',
+                  style: sans(size: 12, weight: FontWeight.w800),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _PlaceMapFallback extends StatelessWidget {
   const _PlaceMapFallback({
     required this.reason,
@@ -9439,6 +9513,7 @@ class _PlaceDraftCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = controller.state.editingPlaceId != null;
     return _PaperCard(
       radius: 22,
       padding: const EdgeInsets.all(18),
@@ -9447,7 +9522,7 @@ class _PlaceDraftCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            '가보고 싶은 곳을\n보드에 담아요.',
+            isEditing ? '장소 정보를\n다듬어요.' : '가보고 싶은 곳을\n보드에 담아요.',
             style: serif(
               context,
               size: 20,
@@ -9457,7 +9532,9 @@ class _PlaceDraftCard extends StatelessWidget {
           ),
           const SizedBox(height: 7),
           Text(
-            '카카오 지도에서 장소를 검색하고 결과를 선택하면 주소와 좌표가 함께 저장돼요.',
+            isEditing
+                ? '메모와 카테고리를 고치거나, 다른 카카오 검색 결과로 장소를 바꿀 수 있어요.'
+                : '카카오 지도에서 장소를 검색하고 결과를 선택하면 주소와 좌표가 함께 저장돼요.',
             style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
           ),
           const SizedBox(height: 14),
@@ -9505,7 +9582,7 @@ class _PlaceDraftCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _PrimaryButton(
-                  label: '장소 보드에 담기',
+                  label: isEditing ? '수정 저장하기' : '장소 보드에 담기',
                   buttonKey: placeSubmitButtonKey,
                   onPressed: controller.submitPlaceDraft,
                   color: AlagagiColors.sageDeep,
@@ -10222,6 +10299,11 @@ class _PlaceCard extends StatelessWidget {
     final likedByMe = place.interestedByProfileIds.contains(
       controller.state.me.id,
     );
+    final placeBusy =
+        controller.state.placeSaveStatus == SaveStatus.saving &&
+        controller.isPlaceSaveTarget(place.id);
+    final selectedDateKey = controller.selectedMeetingDateKey;
+    final linkedToSelectedDate = place.linkedDateKey == selectedDateKey;
     final creator = isMine
         ? controller.state.me.nickname
         : controller.state.partner.nickname;
@@ -10304,6 +10386,27 @@ class _PlaceCard extends StatelessWidget {
               ),
             ),
           ],
+          if (place.linkedDateKey != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Icon(
+                  Icons.event_available_outlined,
+                  size: 14,
+                  color: Color(0xFF80672B),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  '${_meetingDateLabel(place.linkedDateKey!)} 후보로 연결됨',
+                  style: sans(
+                    size: 11.5,
+                    color: const Color(0xFF80672B),
+                    weight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
@@ -10330,16 +10433,16 @@ class _PlaceCard extends StatelessWidget {
                 height: 32,
                 child: OutlinedButton.icon(
                   key: placeInterestButtonKey(place.id),
-                  onPressed: likedByMe
+                  onPressed: placeBusy
                       ? null
                       : () => controller.togglePlaceInterest(place.id),
                   icon: Icon(
                     likedByMe
-                        ? Icons.check_rounded
+                        ? Icons.remove_circle_outline_rounded
                         : Icons.add_circle_outline_rounded,
                     size: 14,
                   ),
-                  label: Text(likedByMe ? '관심 표시됨' : '관심 표시'),
+                  label: Text(likedByMe ? '관심 해제' : '관심 표시'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AlagagiColors.sageDeep,
                     disabledForegroundColor: AlagagiColors.muted,
@@ -10355,13 +10458,21 @@ class _PlaceCard extends StatelessWidget {
                 height: 32,
                 child: OutlinedButton.icon(
                   key: placeLinkMeetingButtonKey(place.id),
-                  onPressed: () =>
-                      controller.linkPlaceToSelectedMeeting(place.id),
-                  icon: const Icon(Icons.event_available_outlined, size: 14),
+                  onPressed: placeBusy
+                      ? null
+                      : () => controller.linkPlaceToSelectedMeeting(place.id),
+                  icon: Icon(
+                    linkedToSelectedDate
+                        ? Icons.event_busy_outlined
+                        : Icons.event_available_outlined,
+                    size: 14,
+                  ),
                   label: Text(
-                    place.linkedDateKey == null
+                    linkedToSelectedDate
+                        ? '연결 해제'
+                        : place.linkedDateKey == null
                         ? '선택한 날에 담기'
-                        : '${_meetingDateLabel(place.linkedDateKey!)} 후보',
+                        : '선택한 날로 변경',
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF80672B),
@@ -10373,6 +10484,46 @@ class _PlaceCard extends StatelessWidget {
                   ),
                 ),
               ),
+              if (isMine)
+                SizedBox(
+                  height: 32,
+                  child: OutlinedButton.icon(
+                    key: placeEditButtonKey(place.id),
+                    onPressed: placeBusy
+                        ? null
+                        : () => controller.startEditingPlace(place.id),
+                    icon: const Icon(Icons.edit_outlined, size: 14),
+                    label: const Text('수정'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AlagagiColors.sageDeep,
+                      side: const BorderSide(color: Color(0x336F7F63)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      textStyle: sans(size: 11.5, weight: FontWeight.w800),
+                    ),
+                  ),
+                ),
+              if (isMine)
+                SizedBox(
+                  height: 32,
+                  child: OutlinedButton.icon(
+                    key: placeDeleteButtonKey(place.id),
+                    onPressed: placeBusy
+                        ? null
+                        : () => controller.deletePlace(place.id),
+                    icon: const Icon(Icons.delete_outline_rounded, size: 14),
+                    label: const Text('삭제'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFB18472),
+                      side: const BorderSide(color: Color(0x33B18472)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      textStyle: sans(size: 11.5, weight: FontWeight.w800),
+                    ),
+                  ),
+                ),
             ],
           ),
         ],

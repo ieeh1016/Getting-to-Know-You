@@ -252,8 +252,10 @@ If the app grows, bottom navigation may become:
 - 장소 추가는 카카오 지도 검색 결과 선택을 기반으로 하며, 다른 지도 provider와 직접 입력 provider는 제공하지 않는다.
 - 카카오 검색 결과는 `provider`, `providerPlaceId`, `name`, `address`, `latitude`, `longitude`, `category`로 정규화해 저장한다.
 - 현재 위치, 이동 경로, 검색 API raw payload, 사진 blob은 Firestore에 저장하지 않는다.
-- 장소 관심 표시는 위시리스트처럼 중복 탭을 no-op으로 처리하고 `interestedByProfileIds`에 내 profile id를 추가한다.
-- 장소는 선택한 일정 날짜에 연결할 수 있으며, 이 MVP에서는 place document의 `linkedDateKey`로 가볍게 연결한다.
+- 장소 관심 표시는 toggle로 동작하며 `interestedByProfileIds`에 내 profile id를 추가하거나 제거한다.
+- 같은 카카오 `providerPlaceId`를 다시 담으면 새 장소를 만들지 않고 기존 장소를 업데이트한다.
+- 내가 담은 장소는 메모/카테고리/카카오 검색 결과를 수정하거나 삭제할 수 있다.
+- 장소는 선택한 일정 날짜에 연결하거나 다시 눌러 연결 해제할 수 있으며, 이 MVP에서는 place document의 `linkedDateKey`로 가볍게 연결한다.
 - Open API 준비/운영 가이드는 `docs/map_open_api_guide.md`를 따른다.
 - Selected design: `docs/design/schedule_place_coordination_concept.html`.
 
@@ -1986,7 +1988,9 @@ Rules:
 
 - Places are normalized before storage; provider-specific raw payloads are not stored.
 - Current location, movement path, and route history are not stored.
-- Duplicate interest from the same profile is a no-op.
+- Duplicate Kakao `providerPlaceId` submissions update the existing place instead of creating a second card.
+- Interest is reversible; members can add or remove their own profile id from `interestedByProfileIds`.
+- Creators can edit or delete their own places.
 - `provider` is always `kakao`.
 
 `spaces/{spaceId}/stockStories/{storyId}`
