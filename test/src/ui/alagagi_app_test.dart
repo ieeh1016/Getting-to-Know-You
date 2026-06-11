@@ -159,7 +159,6 @@ void main() {
 
     await tester.tap(find.byKey(stockStoryAddButtonKey));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(stockStorySymbolFieldKey), 'NVDA');
     await tester.enterText(find.byKey(stockStoryNameFieldKey), 'Nvidia');
     await tester.enterText(
       find.byKey(stockStoryReasonFieldKey),
@@ -179,12 +178,69 @@ void main() {
     await tester.tap(find.byKey(stockStorySubmitButtonKey));
     await tester.pumpAndSettle();
 
-    expect(find.text('NVDA'), findsOneWidget);
+    expect(find.text('Nvidia'), findsOneWidget);
     expect(find.textContaining('데이터센터 매출'), findsOneWidget);
     expect(find.text('매수'), findsNothing);
     expect(find.text('매도'), findsNothing);
     expect(find.text('수익률'), findsNothing);
   });
+
+  testWidgets(
+    'stock holdings tab shares a held stock without a new home card',
+    (tester) async {
+      await tester.pumpWidget(const AlagagiApp());
+      await enterSpace(tester);
+
+      await tester.tap(find.byKey(homeMenuButtonKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(homeMenuStockStoryButtonKey));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(stockStoryTabStoriesKey), findsOneWidget);
+      expect(find.byKey(stockStoryTabHoldingsKey), findsOneWidget);
+      expect(find.byKey(stockHoldingAddButtonKey), findsNothing);
+
+      await tester.tap(find.byKey(stockStoryTabHoldingsKey));
+      await tester.pumpAndSettle();
+
+      expect(find.text('보유'), findsWidgets);
+      expect(find.byKey(stockHoldingAddButtonKey), findsOneWidget);
+      expect(find.text('함께 보유 중'), findsWidgets);
+
+      await tester.ensureVisible(find.byKey(stockHoldingAddButtonKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(stockHoldingAddButtonKey));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(stockHoldingNameFieldKey), 'Microsoft');
+      await tester.enterText(
+        find.byKey(stockHoldingReasonFieldKey),
+        '클라우드 매출 흐름을 믿고 조금 들고 있어요.',
+      );
+      await tester.enterText(
+        find.byKey(stockHoldingWatchFieldKey),
+        'Azure 성장률',
+      );
+      await tester.enterText(
+        find.byKey(stockHoldingConcernFieldKey),
+        'AI 투자 비용 부담',
+      );
+      await tester.enterText(
+        find.byKey(stockHoldingQuestionFieldKey),
+        '다음 실적에서 어떤 숫자를 같이 보면 좋을까요?',
+      );
+      await tester.ensureVisible(find.byKey(stockHoldingSubmitButtonKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(stockHoldingSubmitButtonKey));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Microsoft'), findsOneWidget);
+      expect(find.textContaining('클라우드 매출'), findsOneWidget);
+      expect(find.text('보유 중'), findsWidgets);
+      expect(find.text('매수'), findsNothing);
+      expect(find.text('매도'), findsNothing);
+      expect(find.text('수익률'), findsNothing);
+    },
+  );
 
   testWidgets('home focused question card fits mobile unanswered state', (
     tester,
@@ -2017,6 +2073,9 @@ class _FailingCommentRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveStockStory(String spaceId, StockStory story) async {}
+
+  @override
+  Future<void> saveStockHolding(String spaceId, StockHolding holding) async {}
 
   @override
   Future<void> saveProfileSlot(

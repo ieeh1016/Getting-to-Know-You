@@ -1384,7 +1384,6 @@ void main() {
               stockStories: [
                 StockStory(
                   id: 'stock_partner',
-                  symbol: 'AAPL',
                   name: 'Apple',
                   reason: '서비스 매출 흐름을 같이 보고 싶어요.',
                   upside: '구독 매출과 생태계 유지력',
@@ -1399,7 +1398,7 @@ void main() {
           repository: repository,
         );
 
-        expect(controller.stockStories.single.symbol, 'AAPL');
+        expect(controller.stockStories.single.name, 'Apple');
         expect(
           controller.stockStories.single.createdByProfileId,
           'minyoungUid',
@@ -1407,7 +1406,6 @@ void main() {
 
         controller.startStockStoryDraft();
         controller.updateStockStoryDraft(
-          symbol: '005930',
           name: '삼성전자',
           reason: '실적 발표 전에 같이 살펴보고 싶어요.',
           upside: '메모리 업황 회복',
@@ -1421,14 +1419,13 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         expect(repository.savedStockStories.single.spaceId, 'main');
-        expect(repository.savedStockStories.single.story.symbol, '005930');
         expect(repository.savedStockStories.single.story.name, '삼성전자');
         expect(
           repository.savedStockStories.single.story.createdByProfileId,
           'youngwooUid',
         );
         expect(controller.state.stockStoryDraftVisible, isFalse);
-        expect(controller.stockStories.first.symbol, '005930');
+        expect(controller.stockStories.first.name, '삼성전자');
       },
     );
 
@@ -1442,7 +1439,6 @@ void main() {
               stockStories: [
                 StockStory(
                   id: 'stock_partner',
-                  symbol: 'AAPL',
                   name: 'Apple',
                   reason: '서비스 매출 흐름을 같이 보고 싶어요.',
                   upside: '구독 매출과 생태계 유지력',
@@ -1477,6 +1473,119 @@ void main() {
         expect(repository.savedStockStories, hasLength(1));
         expect(repository.savedStockStories.single.story.id, 'stock_partner');
         expect(repository.savedStockStories.single.story.replyTone, '조심해요');
+      },
+    );
+
+    test(
+      'stock holdings load from session data and save only on submit',
+      () async {
+        final repository = RecordingAlagagiRepository();
+        final controller = AlagagiController.forSession(
+          firebaseSessionWithData(
+            const AlagagiSpaceData(
+              stockHoldings: [
+                StockHolding(
+                  id: 'holding_partner',
+                  name: 'Apple',
+                  status: '보유 중',
+                  weightLabel: '보통',
+                  reason: '서비스 매출을 믿고 들고 있어요.',
+                  watchPoint: '서비스 매출 성장률',
+                  concern: '기기 교체 수요 둔화',
+                  question: '다음 실적에서 어떤 숫자를 같이 보면 좋을까요?',
+                  createdByProfileId: 'minyoungUid',
+                  createdLabel: '오늘',
+                ),
+              ],
+            ),
+          ),
+          repository: repository,
+        );
+
+        expect(controller.stockHoldings.single.name, 'Apple');
+        expect(
+          controller.stockHoldings.single.createdByProfileId,
+          'minyoungUid',
+        );
+
+        controller.startStockHoldingDraft();
+        controller.updateStockHoldingDraft(
+          name: '삼성전자',
+          reason: '반도체 업황을 같이 보려고 들고 있어요.',
+          watchPoint: '메모리 수요 회복',
+          concern: '기대가 너무 빨리 반영됐는지',
+          question: '다음 실적에서 어떤 숫자를 같이 보면 좋을까요?',
+        );
+
+        expect(repository.savedStockHoldings, isEmpty);
+
+        controller.submitStockHoldingDraft();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(repository.savedStockHoldings.single.spaceId, 'main');
+        expect(repository.savedStockHoldings.single.holding.name, '삼성전자');
+        expect(repository.savedStockHoldings.single.holding.status, '보유 중');
+        expect(
+          repository.savedStockHoldings.single.holding.createdByProfileId,
+          'youngwooUid',
+        );
+        expect(controller.state.stockHoldingDraftVisible, isFalse);
+        expect(controller.stockHoldings.first.name, '삼성전자');
+      },
+    );
+
+    test(
+      'stock holding reply updates the existing partner holding document',
+      () async {
+        final repository = RecordingAlagagiRepository();
+        final controller = AlagagiController.forSession(
+          firebaseSessionWithData(
+            AlagagiSpaceData(
+              stockHoldings: [
+                StockHolding(
+                  id: 'holding_partner',
+                  name: 'Apple',
+                  status: '보유 중',
+                  weightLabel: '보통',
+                  reason: '서비스 매출을 믿고 들고 있어요.',
+                  watchPoint: '서비스 매출 성장률',
+                  concern: '기기 교체 수요 둔화',
+                  question: '다음 실적에서 어떤 숫자를 같이 보면 좋을까요?',
+                  createdByProfileId: 'minyoungUid',
+                  createdLabel: '오늘',
+                  updatedAt: DateTime.parse('2026-06-09T09:00:00.000Z'),
+                ),
+              ],
+            ),
+          ),
+          repository: repository,
+        );
+
+        controller.setStockHoldingReplyTone('holding_partner', '같이 볼래요');
+        controller.updateStockHoldingReplyDraft(
+          holdingId: 'holding_partner',
+          value: '실적 발표 후에 같이 다시 볼게요.',
+        );
+        controller.submitStockHoldingReply('holding_partner');
+        await Future<void>.delayed(Duration.zero);
+
+        expect(controller.stockHoldings, hasLength(1));
+        expect(controller.stockHoldings.single.id, 'holding_partner');
+        expect(controller.stockHoldings.single.replyTone, '같이 볼래요');
+        expect(controller.stockHoldings.single.reply, '실적 발표 후에 같이 다시 볼게요.');
+        expect(
+          controller.stockHoldings.single.repliedByProfileId,
+          'youngwooUid',
+        );
+        expect(repository.savedStockHoldings, hasLength(1));
+        expect(
+          repository.savedStockHoldings.single.holding.id,
+          'holding_partner',
+        );
+        expect(
+          repository.savedStockHoldings.single.holding.replyTone,
+          '같이 볼래요',
+        );
       },
     );
 
@@ -1580,6 +1689,7 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   final List<({String spaceId, WishItem wish})> savedWishes = [];
   final List<({String spaceId, MusicNote note})> savedMusicNotes = [];
   final List<({String spaceId, StockStory story})> savedStockStories = [];
+  final List<({String spaceId, StockHolding holding})> savedStockHoldings = [];
   final List<({String spaceId, AnswerComment comment})> savedAnswerComments =
       [];
   final List<({String spaceId, CuriosityCard card})> savedCuriosityCards = [];
@@ -1640,6 +1750,11 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   @override
   Future<void> saveStockStory(String spaceId, StockStory story) async {
     savedStockStories.add((spaceId: spaceId, story: story));
+  }
+
+  @override
+  Future<void> saveStockHolding(String spaceId, StockHolding holding) async {
+    savedStockHoldings.add((spaceId: spaceId, holding: holding));
   }
 
   @override

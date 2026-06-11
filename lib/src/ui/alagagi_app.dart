@@ -61,13 +61,21 @@ const myProfileCardActionButtonKey = Key('my-profile-card-action-button');
 const myMusicActionButtonKey = Key('my-music-action-button');
 const myFirstVisitGuideButtonKey = Key('my-first-visit-guide-button');
 const stockStoryAddButtonKey = Key('stock-story-add-button');
-const stockStorySymbolFieldKey = Key('stock-story-symbol-field');
 const stockStoryNameFieldKey = Key('stock-story-name-field');
 const stockStoryReasonFieldKey = Key('stock-story-reason-field');
 const stockStoryUpsideFieldKey = Key('stock-story-upside-field');
 const stockStoryRiskFieldKey = Key('stock-story-risk-field');
 const stockStoryQuestionFieldKey = Key('stock-story-question-field');
 const stockStorySubmitButtonKey = Key('stock-story-submit-button');
+const stockStoryTabStoriesKey = Key('stock-story-tab-stories');
+const stockStoryTabHoldingsKey = Key('stock-story-tab-holdings');
+const stockHoldingAddButtonKey = Key('stock-holding-add-button');
+const stockHoldingNameFieldKey = Key('stock-holding-name-field');
+const stockHoldingReasonFieldKey = Key('stock-holding-reason-field');
+const stockHoldingWatchFieldKey = Key('stock-holding-watch-field');
+const stockHoldingConcernFieldKey = Key('stock-holding-concern-field');
+const stockHoldingQuestionFieldKey = Key('stock-holding-question-field');
+const stockHoldingSubmitButtonKey = Key('stock-holding-submit-button');
 Key stockStoryCardKey(String storyId) => Key('stock-story-card-$storyId');
 Key stockStoryReplyFieldKey(String storyId) =>
     Key('stock-story-reply-field-$storyId');
@@ -75,6 +83,16 @@ Key stockStoryReplySubmitButtonKey(String storyId) =>
     Key('stock-story-reply-submit-$storyId');
 Key stockStoryReplyToneKey(String storyId, String tone) =>
     Key('stock-story-reply-tone-$storyId-$tone');
+Key stockHoldingCardKey(String holdingId) =>
+    Key('stock-holding-card-$holdingId');
+Key stockHoldingStatusKey(String status) => Key('stock-holding-status-$status');
+Key stockHoldingWeightKey(String weight) => Key('stock-holding-weight-$weight');
+Key stockHoldingReplyFieldKey(String holdingId) =>
+    Key('stock-holding-reply-field-$holdingId');
+Key stockHoldingReplySubmitButtonKey(String holdingId) =>
+    Key('stock-holding-reply-submit-$holdingId');
+Key stockHoldingReplyToneKey(String holdingId, String tone) =>
+    Key('stock-holding-reply-tone-$holdingId-$tone');
 const alagagiShellKey = Key('alagagi-shell');
 const bottomNavigationKey = Key('bottom-navigation');
 const archiveCalendarKey = Key('archive-question-calendar');
@@ -8259,7 +8277,7 @@ class StockStoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stories = controller.stockStories;
+    final activeTab = controller.state.stockStoryTab;
     return _ScreenScroll(
       bottomNavigation: _BottomNav(controller: controller),
       children: [
@@ -8275,11 +8293,113 @@ class StockStoryScreen extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         const _StockStoryHeroCard(),
-        if (controller.state.stockStoryDraftVisible) ...[
-          const SizedBox(height: 16),
-          _StockStoryDraftCard(controller: controller),
+        const SizedBox(height: 14),
+        _StockStoryTabs(controller: controller),
+        const SizedBox(height: 16),
+        if (activeTab == StockStoryTab.stories)
+          _StockStoriesPane(controller: controller)
+        else
+          _StockHoldingsPane(controller: controller),
+      ],
+    );
+  }
+}
+
+class _StockStoryTabs extends StatelessWidget {
+  const _StockStoryTabs({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final activeTab = controller.state.stockStoryTab;
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFCFCFA),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      padding: const EdgeInsets.all(5),
+      child: Row(
+        children: [
+          Expanded(
+            child: _StockStoryTabButton(
+              buttonKey: stockStoryTabStoriesKey,
+              label: '이야기',
+              selected: activeTab == StockStoryTab.stories,
+              onTap: () => controller.setStockStoryTab(StockStoryTab.stories),
+            ),
+          ),
+          const SizedBox(width: 5),
+          Expanded(
+            child: _StockStoryTabButton(
+              buttonKey: stockStoryTabHoldingsKey,
+              label: '보유',
+              selected: activeTab == StockStoryTab.holdings,
+              onTap: () => controller.setStockStoryTab(StockStoryTab.holdings),
+            ),
+          ),
         ],
-        const SizedBox(height: 18),
+      ),
+    );
+  }
+}
+
+class _StockStoryTabButton extends StatelessWidget {
+  const _StockStoryTabButton({
+    required this.buttonKey,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final Key buttonKey;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? AlagagiColors.sageDeep : Colors.transparent,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        key: buttonKey,
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: SizedBox(
+          height: 38,
+          child: Center(
+            child: Text(
+              label,
+              style: sans(
+                size: 12.5,
+                weight: FontWeight.w800,
+                color: selected ? Colors.white : AlagagiColors.muted,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StockStoriesPane extends StatelessWidget {
+  const _StockStoriesPane({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final stories = controller.stockStories;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (controller.state.stockStoryDraftVisible) ...[
+          _StockStoryDraftCard(controller: controller),
+          const SizedBox(height: 18),
+        ],
         Row(
           children: [
             const Expanded(child: _SectionLabel('같이 볼 이야기')),
@@ -8407,32 +8527,13 @@ class _StockStoryDraftCard extends StatelessWidget {
             style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _StockStoryTextField(
-                  fieldKey: stockStorySymbolFieldKey,
-                  label: 'TICKER',
-                  hint: '예: AAPL',
-                  initialValue: controller.state.stockStoryDraftSymbol,
-                  maxLength: 24,
-                  onChanged: (value) =>
-                      controller.updateStockStoryDraft(symbol: value),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _StockStoryTextField(
-                  fieldKey: stockStoryNameFieldKey,
-                  label: 'NAME',
-                  hint: '종목 이름',
-                  initialValue: controller.state.stockStoryDraftName,
-                  maxLength: 40,
-                  onChanged: (value) =>
-                      controller.updateStockStoryDraft(name: value),
-                ),
-              ),
-            ],
+          _StockStoryTextField(
+            fieldKey: stockStoryNameFieldKey,
+            label: '종목명',
+            hint: '예: 삼성전자, Apple',
+            initialValue: controller.state.stockStoryDraftName,
+            maxLength: 40,
+            onChanged: (value) => controller.updateStockStoryDraft(name: value),
           ),
           const SizedBox(height: 10),
           _StockStoryTextField(
@@ -8581,7 +8682,7 @@ class _StockStoryCard extends StatelessWidget {
       onTap: () => _showReadableDetailSheet(
         context,
         label: '주식 이야기',
-        title: '${story.symbol} · ${story.name}',
+        title: story.name,
         meta: '$creator · ${story.createdLabel}',
         body: detailBody,
       ),
@@ -8594,7 +8695,7 @@ class _StockStoryCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _StockStoryMark(symbol: story.symbol, isMine: isMine),
+                _StockStoryMark(name: story.name, isMine: isMine),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -8604,7 +8705,7 @@ class _StockStoryCard extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              story.symbol,
+                              story.name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: sans(
@@ -8621,7 +8722,7 @@ class _StockStoryCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '$creator · ${story.name}',
+                        creator,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: sans(size: 11.6, color: AlagagiColors.muted),
@@ -8678,9 +8779,9 @@ class _StockStoryCard extends StatelessWidget {
 }
 
 class _StockStoryMark extends StatelessWidget {
-  const _StockStoryMark({required this.symbol, required this.isMine});
+  const _StockStoryMark({required this.name, required this.isMine});
 
-  final String symbol;
+  final String name;
   final bool isMine;
 
   @override
@@ -8694,7 +8795,7 @@ class _StockStoryMark extends StatelessWidget {
       ),
       alignment: Alignment.center,
       child: Text(
-        symbol.characters.first.toUpperCase(),
+        name.characters.first.toUpperCase(),
         style: sans(
           size: 15,
           weight: FontWeight.w900,
@@ -8890,6 +8991,540 @@ class _StockStoryReplyComposer extends StatelessWidget {
             label: '관점 남기기',
             buttonKey: stockStoryReplySubmitButtonKey(story.id),
             onPressed: () => controller.submitStockStoryReply(story.id),
+            color: AlagagiColors.sageDeep,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StockHoldingsPane extends StatelessWidget {
+  const _StockHoldingsPane({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final holdings = controller.stockHoldings;
+    final mineCount = holdings
+        .where(
+          (holding) => holding.createdByProfileId == controller.state.me.id,
+        )
+        .length;
+    final partnerCount = holdings.length - mineCount;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _StockHoldingSummaryCard(
+          mineCount: mineCount,
+          partnerCount: partnerCount,
+        ),
+        if (controller.state.stockHoldingDraftVisible) ...[
+          const SizedBox(height: 16),
+          _StockHoldingDraftCard(controller: controller),
+        ],
+        const SizedBox(height: 18),
+        Row(
+          children: [
+            const Expanded(child: _SectionLabel('공유한 보유 종목')),
+            if (!controller.state.stockHoldingDraftVisible)
+              _StockHoldingAddButton(controller: controller),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (holdings.isEmpty)
+          const _EmptyStateCard(text: '들고 있는 종목을 부담 없이 하나만 공유해볼까요?')
+        else
+          for (final holding in holdings) ...[
+            _StockHoldingCard(controller: controller, holding: holding),
+            const SizedBox(height: 12),
+          ],
+      ],
+    );
+  }
+}
+
+class _StockHoldingSummaryCard extends StatelessWidget {
+  const _StockHoldingSummaryCard({
+    required this.mineCount,
+    required this.partnerCount,
+  });
+
+  final int mineCount;
+  final int partnerCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return _PaperCard(
+      radius: 20,
+      padding: const EdgeInsets.all(15),
+      child: Row(
+        children: [
+          Expanded(
+            child: _StockStoryMiniBox(label: '내가 공유한 종목', body: '$mineCount개'),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _StockStoryMiniBox(
+              label: '상대가 공유한 종목',
+              body: '$partnerCount개',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StockHoldingAddButton extends StatelessWidget {
+  const _StockHoldingAddButton({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 38,
+      child: OutlinedButton.icon(
+        key: stockHoldingAddButtonKey,
+        onPressed: controller.startStockHoldingDraft,
+        icon: const Icon(Icons.add_rounded, size: 16),
+        label: const Text('보유 공유'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AlagagiColors.sageDeep,
+          side: const BorderSide(color: Color(0x338A9A7E)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          textStyle: sans(size: 12, weight: FontWeight.w800),
+        ),
+      ),
+    );
+  }
+}
+
+class _StockHoldingDraftCard extends StatelessWidget {
+  const _StockHoldingDraftCard({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = controller.state;
+    return _PaperCard(
+      radius: 22,
+      padding: const EdgeInsets.all(18),
+      highlightedBorder: AlagagiColors.sage,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '들고 있는 이유를\n숫자보다 먼저 나눠요.',
+            style: serif(
+              context,
+              size: 20,
+              weight: FontWeight.w800,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            '수량이나 금액 없이도 보유 상태와 지켜볼 점만 공유할 수 있어요.',
+            style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
+          ),
+          const SizedBox(height: 16),
+          _StockStoryTextField(
+            fieldKey: stockHoldingNameFieldKey,
+            label: '종목명',
+            hint: '예: 삼성전자, Apple',
+            initialValue: state.stockHoldingDraftName,
+            maxLength: 40,
+            onChanged: (value) =>
+                controller.updateStockHoldingDraft(name: value),
+          ),
+          const SizedBox(height: 12),
+          _StockHoldingChoiceGroup(
+            label: '보유 상태',
+            options: stockHoldingStatusOptions,
+            selected: state.stockHoldingDraftStatus,
+            keyBuilder: stockHoldingStatusKey,
+            onSelected: (value) =>
+                controller.updateStockHoldingDraft(status: value),
+          ),
+          const SizedBox(height: 12),
+          _StockHoldingChoiceGroup(
+            label: '비중 느낌',
+            options: stockHoldingWeightOptions,
+            selected: state.stockHoldingDraftWeightLabel,
+            keyBuilder: stockHoldingWeightKey,
+            onSelected: (value) =>
+                controller.updateStockHoldingDraft(weightLabel: value),
+          ),
+          const SizedBox(height: 10),
+          _StockStoryTextField(
+            fieldKey: stockHoldingReasonFieldKey,
+            label: '보유 이유',
+            hint: '왜 들고 있는지',
+            initialValue: state.stockHoldingDraftReason,
+            maxLength: 120,
+            maxLines: 2,
+            onChanged: (value) =>
+                controller.updateStockHoldingDraft(reason: value),
+          ),
+          const SizedBox(height: 10),
+          _StockStoryTextField(
+            fieldKey: stockHoldingWatchFieldKey,
+            label: '보고 싶은 점',
+            hint: '앞으로 확인할 지점',
+            initialValue: state.stockHoldingDraftWatchPoint,
+            maxLength: 80,
+            onChanged: (value) =>
+                controller.updateStockHoldingDraft(watchPoint: value),
+          ),
+          const SizedBox(height: 10),
+          _StockStoryTextField(
+            fieldKey: stockHoldingConcernFieldKey,
+            label: '걱정 포인트',
+            hint: '조심해서 볼 점',
+            initialValue: state.stockHoldingDraftConcern,
+            maxLength: 80,
+            onChanged: (value) =>
+                controller.updateStockHoldingDraft(concern: value),
+          ),
+          const SizedBox(height: 10),
+          _StockStoryTextField(
+            fieldKey: stockHoldingQuestionFieldKey,
+            label: '물어보고 싶은 점',
+            hint: '상대에게 묻고 싶은 것',
+            initialValue: state.stockHoldingDraftQuestion,
+            maxLength: 100,
+            maxLines: 2,
+            onChanged: (value) =>
+                controller.updateStockHoldingDraft(question: value),
+          ),
+          if (state.stockHoldingDraftError != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              state.stockHoldingDraftError!,
+              style: sans(size: 12, color: AlagagiColors.sageDeep),
+            ),
+          ],
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              TextButton(
+                onPressed: controller.cancelStockHoldingDraft,
+                child: Text(
+                  '취소',
+                  style: sans(size: 13, color: AlagagiColors.muted),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _PrimaryButton(
+                  label: '보유 공유하기',
+                  onPressed: controller.submitStockHoldingDraft,
+                  color: AlagagiColors.sageDeep,
+                  buttonKey: stockHoldingSubmitButtonKey,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StockHoldingChoiceGroup extends StatelessWidget {
+  const _StockHoldingChoiceGroup({
+    required this.label,
+    required this.options,
+    required this.selected,
+    required this.keyBuilder,
+    required this.onSelected,
+  });
+
+  final String label;
+  final List<String> options;
+  final String selected;
+  final Key Function(String value) keyBuilder;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: sans(
+            size: 10.5,
+            weight: FontWeight.w800,
+            color: AlagagiColors.sageDeep,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 7,
+          runSpacing: 7,
+          children: [
+            for (final option in options)
+              _FilterPill(
+                key: keyBuilder(option),
+                label: option,
+                selected: selected == option,
+                onTap: () => onSelected(option),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _StockHoldingCard extends StatelessWidget {
+  const _StockHoldingCard({required this.controller, required this.holding});
+
+  final AlagagiController controller;
+  final StockHolding holding;
+
+  @override
+  Widget build(BuildContext context) {
+    final isMine = holding.createdByProfileId == controller.state.me.id;
+    final creator = isMine
+        ? controller.state.me.nickname
+        : controller.state.partner.nickname;
+    final isShared = controller.stockHoldingSharedByBoth(holding.name);
+    final detailBody = [
+      '보유 이유\n${holding.reason}',
+      '보고 싶은 점\n${holding.watchPoint}',
+      '걱정 포인트\n${holding.concern}',
+      '물어보고 싶은 점\n${holding.question}',
+      if (holding.hasReply)
+        '${holding.replyTone ?? '답장'}\n${holding.reply!.trim()}',
+    ].join('\n\n');
+    return GestureDetector(
+      key: stockHoldingCardKey(holding.id),
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _showReadableDetailSheet(
+        context,
+        label: '보유 주식',
+        title: holding.name,
+        meta: '$creator · ${holding.status} · ${holding.weightLabel}',
+        body: detailBody,
+      ),
+      child: _PaperCard(
+        radius: 19,
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _StockStoryMark(name: holding.name, isMine: isMine),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              holding.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: sans(
+                                size: 14.2,
+                                weight: FontWeight.w800,
+                                color: const Color(0xFF33332F),
+                              ),
+                            ),
+                          ),
+                          if (isShared)
+                            const _SmallBadge(label: '함께 보유 중')
+                          else
+                            _SmallBadge(label: holding.status),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$creator · ${holding.weightLabel}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: sans(size: 11.6, color: AlagagiColors.muted),
+                      ),
+                      const SizedBox(height: 7),
+                      Text(
+                        holding.reason,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: sans(
+                          size: 12.3,
+                          color: const Color(0xFF6F6C65),
+                          height: 1.45,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _StockStoryMiniBox(
+                    label: '볼 점',
+                    body: holding.watchPoint,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _StockStoryMiniBox(label: '걱정', body: holding.concern),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            _StockStoryQuestion(text: holding.question),
+            if (holding.hasReply) ...[
+              const SizedBox(height: 10),
+              _StockHoldingReplyBlock(holding: holding),
+            ] else if (!isMine) ...[
+              const SizedBox(height: 12),
+              _StockHoldingReplyComposer(
+                controller: controller,
+                holding: holding,
+              ),
+            ],
+            if (controller.state.stockHoldingReplyError != null && !isMine) ...[
+              const SizedBox(height: 8),
+              Text(
+                controller.state.stockHoldingReplyError!,
+                style: sans(size: 12, color: AlagagiColors.sageDeep),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StockHoldingReplyBlock extends StatelessWidget {
+  const _StockHoldingReplyBlock({required this.holding});
+
+  final StockHolding holding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEF2EA),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            holding.replyTone ?? '답장',
+            style: sans(
+              size: 10.5,
+              weight: FontWeight.w800,
+              color: AlagagiColors.sageDeep,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(holding.reply ?? '', style: sans(size: 12.5, height: 1.5)),
+        ],
+      ),
+    );
+  }
+}
+
+class _StockHoldingReplyComposer extends StatelessWidget {
+  const _StockHoldingReplyComposer({
+    required this.controller,
+    required this.holding,
+  });
+
+  final AlagagiController controller;
+  final StockHolding holding;
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedTone = controller.stockHoldingReplyToneFor(holding.id);
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFEFA),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(17),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '내 관점 남기기',
+            style: sans(
+              size: 11.5,
+              weight: FontWeight.w800,
+              color: AlagagiColors.sageDeep,
+            ),
+          ),
+          const SizedBox(height: 9),
+          Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            children: [
+              for (final tone in stockStoryReplyToneOptions)
+                _FilterPill(
+                  key: stockHoldingReplyToneKey(holding.id, tone),
+                  label: tone,
+                  selected: selectedTone == tone,
+                  onTap: () =>
+                      controller.setStockHoldingReplyTone(holding.id, tone),
+                ),
+            ],
+          ),
+          const SizedBox(height: 9),
+          TextField(
+            key: stockHoldingReplyFieldKey(holding.id),
+            minLines: 2,
+            maxLines: 3,
+            maxLength: 160,
+            onChanged: (value) => controller.updateStockHoldingReplyDraft(
+              holdingId: holding.id,
+              value: value,
+            ),
+            decoration: InputDecoration(
+              hintText: '같이 볼 숫자나 걱정되는 점만 남겨도 괜찮아요.',
+              hintStyle: sans(size: 12.2, color: AlagagiColors.muted),
+              counterText: '',
+              filled: true,
+              fillColor: const Color(0xFFF8F8F4),
+              contentPadding: const EdgeInsets.all(12),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: AlagagiColors.line),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: AlagagiColors.sageDeep),
+              ),
+            ),
+            style: sans(size: 13, height: 1.45),
+          ),
+          const SizedBox(height: 9),
+          _PrimaryButton(
+            label: '관점 남기기',
+            buttonKey: stockHoldingReplySubmitButtonKey(holding.id),
+            onPressed: () => controller.submitStockHoldingReply(holding.id),
             color: AlagagiColors.sageDeep,
           ),
         ],

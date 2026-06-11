@@ -302,7 +302,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         .doc(story.id)
         .set({
           'id': story.id,
-          'symbol': story.symbol,
+          'symbol': FieldValue.delete(),
           'name': story.name,
           'reason': story.reason,
           'upside': story.upside,
@@ -314,6 +314,33 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           'reply': story.reply ?? '',
           'repliedByProfileId': story.repliedByProfileId ?? '',
           'repliedLabel': story.repliedLabel ?? '',
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> saveStockHolding(String spaceId, StockHolding holding) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('stockHoldings')
+        .doc(holding.id)
+        .set({
+          'id': holding.id,
+          'symbol': FieldValue.delete(),
+          'name': holding.name,
+          'status': holding.status,
+          'weightLabel': holding.weightLabel,
+          'reason': holding.reason,
+          'watchPoint': holding.watchPoint,
+          'concern': holding.concern,
+          'question': holding.question,
+          'createdByProfileId': holding.createdByProfileId,
+          'createdLabel': holding.createdLabel,
+          'replyTone': holding.replyTone ?? '',
+          'reply': holding.reply ?? '',
+          'repliedByProfileId': holding.repliedByProfileId ?? '',
+          'repliedLabel': holding.repliedLabel ?? '',
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
   }
@@ -334,6 +361,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         .collection('curiosityCards')
         .get();
     final stockStoriesSnapshot = await space.collection('stockStories').get();
+    final stockHoldingsSnapshot = await space.collection('stockHoldings').get();
     final progressSnapshot = await space
         .collection('progress')
         .doc('daily')
@@ -382,6 +410,10 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           .toList(),
       stockStories: stockStoriesSnapshot.docs
           .map((doc) => _stockStoryFromData(doc.id, doc.data()))
+          .nonNulls
+          .toList(),
+      stockHoldings: stockHoldingsSnapshot.docs
+          .map((doc) => _stockHoldingFromData(doc.id, doc.data()))
           .nonNulls
           .toList(),
       dailyProgress: _dailyProgressFromData(progressSnapshot.data()),
@@ -547,15 +579,13 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     String fallbackId,
     Map<String, dynamic> data,
   ) {
-    final symbol = _readString(data, 'symbol');
     final name = _readString(data, 'name');
     final reason = _readString(data, 'reason');
     final upside = _readString(data, 'upside');
     final risk = _readString(data, 'risk');
     final question = _readString(data, 'question');
     final createdByProfileId = _readString(data, 'createdByProfileId');
-    if (symbol == null ||
-        name == null ||
+    if (name == null ||
         reason == null ||
         upside == null ||
         risk == null ||
@@ -565,11 +595,51 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     }
     return StockStory(
       id: _readString(data, 'id') ?? fallbackId,
-      symbol: symbol,
       name: name,
       reason: reason,
       upside: upside,
       risk: risk,
+      question: question,
+      createdByProfileId: createdByProfileId,
+      createdLabel: _readString(data, 'createdLabel') ?? '오늘',
+      replyTone: _readString(data, 'replyTone'),
+      reply: _readString(data, 'reply'),
+      repliedByProfileId: _readString(data, 'repliedByProfileId'),
+      repliedLabel: _readString(data, 'repliedLabel'),
+      updatedAt: _readDateTime(data, 'updatedAt'),
+    );
+  }
+
+  StockHolding? _stockHoldingFromData(
+    String fallbackId,
+    Map<String, dynamic> data,
+  ) {
+    final name = _readString(data, 'name');
+    final status = _readString(data, 'status');
+    final weightLabel = _readString(data, 'weightLabel');
+    final reason = _readString(data, 'reason');
+    final watchPoint = _readString(data, 'watchPoint');
+    final concern = _readString(data, 'concern');
+    final question = _readString(data, 'question');
+    final createdByProfileId = _readString(data, 'createdByProfileId');
+    if (name == null ||
+        status == null ||
+        weightLabel == null ||
+        reason == null ||
+        watchPoint == null ||
+        concern == null ||
+        question == null ||
+        createdByProfileId == null) {
+      return null;
+    }
+    return StockHolding(
+      id: _readString(data, 'id') ?? fallbackId,
+      name: name,
+      status: status,
+      weightLabel: weightLabel,
+      reason: reason,
+      watchPoint: watchPoint,
+      concern: concern,
       question: question,
       createdByProfileId: createdByProfileId,
       createdLabel: _readString(data, 'createdLabel') ?? '오늘',

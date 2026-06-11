@@ -548,20 +548,37 @@ This batch follows `docs/design/stock_talk_entry_options.html` and `docs/design/
   - `궁금함 한 장` is accessed from this menu instead of a separate home card.
   - `주식 이야기` opens a dedicated screen without adding a new bottom navigation tab.
 - Stock story data:
-  - Each story stores `id`, `symbol`, `name`, `reason`, `upside`, `risk`, `question`, `createdByProfileId`, `createdLabel`, optional `replyTone`, optional `reply`, optional `repliedByProfileId`, optional `repliedLabel`, and `updatedAt`.
+  - Each story stores `id`, `name`, `reason`, `upside`, `risk`, `question`, `createdByProfileId`, `createdLabel`, optional `replyTone`, optional `reply`, optional `repliedByProfileId`, optional `repliedLabel`, and `updatedAt`.
   - Draft input is local state only; Firestore writes happen only on explicit story submit or explicit reply submit.
   - MVP does not integrate realtime market prices, brokerage APIs, quote APIs, price alerts, return rankings, or trading actions.
 - Stock story UX:
+  - The `주식 이야기` screen has two tabs: `이야기` and `보유`.
+  - `이야기` keeps the existing observation/question thread flow.
   - Empty state says that one stock can be left lightly for a shared conversation.
-  - Add form includes ticker/name, interest reason, expectation point, risk point, and one question.
+  - Add form includes stock name, interest reason, expectation point, risk point, and one question.
   - Saved stories show who left the story, expectation/risk preview, and reply state.
   - A user can reply only to a partner-created story that does not already have their reply.
   - Reply uses one of `같이 볼래요`, `더 찾아볼게요`, `조심해요` plus a short note.
   - Tapping a saved story opens a readable detail sheet with the full reason, expectation, risk, question, and reply if present.
+- Stock holding data:
+  - `보유` tab stores voluntarily shared holdings, not brokerage-linked positions.
+  - Each holding stores `id`, `name`, `status`, `weightLabel`, `reason`, `watchPoint`, `concern`, `question`, `createdByProfileId`, `createdLabel`, optional `replyTone`, optional `reply`, optional `repliedByProfileId`, optional `repliedLabel`, and `updatedAt`.
+  - `status` is one of `보유 중`, `정리 고민 중`, `최근 정리함`.
+  - `weightLabel` is one of `작게`, `보통`, `크게`; exact share count, average price, evaluated amount, profit/loss, and account sync are out of scope.
+  - Draft input is local state only; Firestore writes happen only on explicit holding submit or explicit reply submit.
+- Stock holding UX:
+  - `보유` tab shows a soft summary that separates `내가 공유한 종목`, `상대가 공유한 종목`, and holdings shared by both people through a `함께 보유 중` badge.
+  - Add form includes stock name, status, weight label, holding reason, watch point, concern, and one question for the partner.
+  - A user can reply only to a partner-created holding that does not already have their reply.
+  - Reply uses one of `같이 볼래요`, `더 찾아볼게요`, `조심해요` plus a short note.
+  - Tapping a saved holding opens a readable detail sheet with the full reason, watch point, concern, question, and reply if present.
 - Firestore:
   - Store stories under `spaces/{spaceId}/stockStories/{storyId}`.
+  - Store shared holdings under `spaces/{spaceId}/stockHoldings/{holdingId}`.
   - Creating a story writes one document only when a user submits the story.
+  - Creating a holding writes one document only when a user submits the holding.
   - Replying to a story updates the existing `stockStories/{storyId}` document.
+  - Replying to a holding updates the existing `stockHoldings/{holdingId}` document.
   - Draft typing, opening the menu, route changes, and reading a story do not create Firestore writes.
 
 ### MVP v0.14 Quiet Home Progress & Save Stability
@@ -1898,7 +1915,6 @@ Rules:
 ```json
 {
   "id": "stock_{uid}_{timestamp}",
-  "symbol": "AAPL",
   "name": "Apple",
   "reason": "서비스 매출 흐름을 같이 보고 싶어요.",
   "upside": "구독 매출과 생태계 유지력",
@@ -1914,10 +1930,32 @@ Rules:
 }
 ```
 
+`spaces/{spaceId}/stockHoldings/{holdingId}`
+
+```json
+{
+  "id": "holding_{uid}_{timestamp}",
+  "name": "Apple",
+  "status": "보유 중",
+  "weightLabel": "보통",
+  "reason": "서비스 매출을 믿고 조금 들고 있어요.",
+  "watchPoint": "다음 실적의 서비스 매출 흐름",
+  "concern": "기기 교체 수요 둔화",
+  "question": "계속 들고 가도 괜찮아 보이는지 같이 봐줄래요?",
+  "createdByProfileId": "{uid}",
+  "createdLabel": "오늘",
+  "replyTone": "같이 볼래요",
+  "reply": "실적 숫자를 같이 본 뒤 다시 이야기해요.",
+  "repliedByProfileId": "{partnerUid}",
+  "repliedLabel": "오늘",
+  "updatedAt": "serverTimestamp"
+}
+```
+
 Rules:
 
 - Document ID remains the generated `id` so one story submit creates one document.
-- Draft symbol/name/reason/upside/risk/question are local state only.
+- Draft name/reason/upside/risk/question are local state only.
 - Reply updates the existing story document and does not create a chat collection.
 - No realtime quote, price alert, brokerage, trading, or return ranking state is written in MVP v0.14.
 
