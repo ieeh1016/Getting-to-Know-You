@@ -157,16 +157,19 @@ void main() {
       );
     });
 
-    test('meeting draft stores private memo separately from shared memo', () {
+    test('meeting draft stores detailed schedule and shared note', () {
       final controller = AlagagiController()..enterSpace('영우');
 
       controller.selectMeetingDate('2026-06-21');
       controller.setMeetingAvailability(MeetingAvailability.available);
       controller.toggleMeetingTimeSlot(MeetingTimeSlot.morning);
-      controller.updateMeetingDraft(
-        privateMemo: '점심 전까지 가족 약속',
-        sharedMemo: '오후나 저녁은 괜찮아요.',
+      controller.updateMeetingDraft(sharedMemo: '오후나 저녁은 괜찮아요.');
+      controller.updateMeetingTimeBlockDraft(
+        start: '14:00',
+        end: '16:30',
+        title: '병원 예약',
       );
+      controller.addMeetingTimeBlock();
       controller.submitMeetingDraft();
 
       final entry = controller.scheduleEntryFor(
@@ -175,9 +178,10 @@ void main() {
       );
 
       expect(entry, isNotNull);
-      expect(entry!.privateMemo, '점심 전까지 가족 약속');
-      expect(entry.sharedMemo, '오후나 저녁은 괜찮아요.');
+      expect(entry!.sharedMemo, '오후나 저녁은 괜찮아요.');
       expect(entry.timeSlots, contains(MeetingTimeSlot.evening));
+      expect(entry.timeBlocks.single.timeLabel, '14:00-16:30');
+      expect(entry.timeBlocks.single.title, '병원 예약');
     });
 
     test('place board saves a place and ignores duplicate interest', () {

@@ -238,13 +238,13 @@ If the app grows, bottom navigation may become:
 - 각 탭 label은 2글자 중심으로 유지해 390px 모바일 viewport에서 텍스트가 줄바꿈되지 않게 한다.
 - 일정 조율은 `약속` 화면에서 제공한다.
 - 일정 조율은 실시간 캘린더 연동이 아니라 앱 안에 사용자가 직접 남긴 가능 여부를 기반으로 한다.
-- 월간 캘린더는 `서로 가능`, `내 약속 메모 있음`, `상대 표시 있음`을 낮은 대비의 점/색상으로 구분한다.
+- 월간 캘린더는 `서로 가능`, `내 상세 일정 있음`, `상대 표시 있음`을 낮은 대비의 점/색상으로 구분한다.
 - 날짜 선택, 월간 캘린더 계산, 화면 전환은 local UI state이며 Firestore write를 만들지 않는다.
-- 사용자가 `가능 시간 남기기`를 누를 때만 schedule entry를 저장한다.
-- schedule entry는 `dateKey`, `profileId`, `availability`, `timeSlots`, `sharedMemo`, `updatedAt`을 공유 공간에 저장한다.
-- `privateMemo`는 상대에게 보이지 않는 내 약속 메모이며 `users/{uid}/privateScheduleMemos/{spaceId_dateKey}`에 분리 저장한다.
-- 개인 약속 메모에는 `회사 일정`, `가족 약속`, `병원 예약`처럼 내가 기억할 내용을 적을 수 있지만 상대 화면에는 노출하지 않는다.
-- 상대에게 보여도 되는 조율 내용은 `sharedMemo`에 따로 남긴다.
+- 사용자가 `일정 저장하기`를 누를 때만 schedule entry를 저장한다.
+- schedule entry는 `dateKey`, `profileId`, `availability`, `timeSlots`, `timeBlocks`, `sharedMemo`, `updatedAt`을 공유 공간에 저장한다.
+- `timeSlots`는 `오전/오후/저녁` 빠른 가능 시간이며, `timeBlocks`는 `startMinute`, `endMinute`, `title`을 가진 상세 공유 일정이다.
+- 사용자는 한 날짜에 여러 상세 일정을 추가할 수 있으며 `14:00-16:30 병원 예약`처럼 몇 시부터 몇 시까지 무슨 일정인지 상대에게 공유할 수 있다.
+- 상대에게 보여도 되는 조율 내용은 `상대에게 남길 한마디`인 `sharedMemo`와 `timeBlocks`에 따로 남긴다.
 - 둘 다 `available`이고 겹치는 `timeSlots`가 있으면 meeting candidate로 강조한다.
 - `maybe`가 포함된 날은 확정 후보가 아니라 조율 필요 상태로 둔다.
 - 장소 보드는 `장소` 화면에서 제공한다.
@@ -1943,18 +1943,14 @@ Rules:
   "profileId": "{uid}",
   "availability": "available",
   "timeSlots": ["evening"],
+  "timeBlocks": [
+    {
+      "startMinute": 840,
+      "endMinute": 990,
+      "title": "병원 예약"
+    }
+  ],
   "sharedMemo": "19:30 이후면 괜찮아요.",
-  "updatedAt": "serverTimestamp"
-}
-```
-
-`users/{uid}/privateScheduleMemos/{spaceId_dateKey}`
-
-```json
-{
-  "spaceId": "main",
-  "dateKey": "2026-06-11",
-  "privateMemo": "18:30까지 회사 쪽 일정",
   "updatedAt": "serverTimestamp"
 }
 ```
@@ -1964,7 +1960,7 @@ Rules:
 - Shared schedule documents never include private appointment titles.
 - Private memo documents are read only for the signed-in user.
 - Keystrokes, date selection, and calendar rendering do not write documents.
-- `가능 시간 남기기` writes the shared entry and the private memo document together.
+- `일정 저장하기` writes the shared entry and the private memo document together.
 
 `spaces/{spaceId}/sharedPlaces/{placeId}`
 

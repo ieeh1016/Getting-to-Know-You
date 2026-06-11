@@ -26,11 +26,16 @@ const musicAddButtonKey = Key('music-add-button');
 Key musicEditButtonKey(String noteId) => Key('music-edit-button-$noteId');
 Key musicLinkButtonKey(String noteId) => Key('music-link-button-$noteId');
 const meetingCalendarKey = Key('meeting-calendar');
-const meetingPrivateMemoFieldKey = Key('meeting-private-memo-field');
 const meetingSharedMemoFieldKey = Key('meeting-shared-memo-field');
 const meetingSubmitButtonKey = Key('meeting-submit-button');
+const meetingTimeBlockStartFieldKey = Key('meeting-time-block-start-field');
+const meetingTimeBlockEndFieldKey = Key('meeting-time-block-end-field');
+const meetingTimeBlockTitleFieldKey = Key('meeting-time-block-title-field');
+const meetingTimeBlockAddButtonKey = Key('meeting-time-block-add-button');
 Key meetingDateButtonKey(String dateKey) => Key('meeting-date-$dateKey');
 Key meetingTimeSlotButtonKey(String slot) => Key('meeting-time-slot-$slot');
+Key meetingTimeBlockRemoveButtonKey(String blockId) =>
+    Key('meeting-time-block-remove-$blockId');
 const placeBoardKey = Key('place-board');
 const placeAddButtonKey = Key('place-add-button');
 const placeNameFieldKey = Key('place-name-field');
@@ -8374,7 +8379,7 @@ class _MeetingHeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 9),
           Text(
-            '내 약속 이름은 나만 보고, 상대에게는 만날 수 있는 여유와 짧은 조율 메모만 보여요.',
+            '상대에게 보여도 괜찮은 일정과 만날 수 있는 여유만 남겨요.',
             style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
           ),
         ],
@@ -8420,7 +8425,7 @@ class _MeetingCalendar extends StatelessWidget {
                 ),
               ),
               Text(
-                '메모는 나만 보기',
+                '상세 일정 표시',
                 style: sans(size: 11.5, color: AlagagiColors.muted),
               ),
             ],
@@ -8476,14 +8481,14 @@ class _MeetingCalendar extends StatelessWidget {
                       .intersection(partnerEntry!.timeSlots)
                       .isNotEmpty;
               final busy = myEntry?.availability == MeetingAvailability.busy;
-              final hasPrivateMemo = (myEntry?.privateMemo ?? '').isNotEmpty;
+              final hasMyDetails = myEntry?.timeBlocks.isNotEmpty ?? false;
               return _MeetingDateCell(
                 dateKey: dateKey,
                 day: date.day,
                 selected: selected,
                 mutual: mutual,
                 busy: busy,
-                hasPrivateMemo: hasPrivateMemo,
+                hasMyDetails: hasMyDetails,
                 hasPartner: partnerEntry != null,
                 onTap: () => controller.selectMeetingDate(dateKey),
               );
@@ -8495,7 +8500,7 @@ class _MeetingCalendar extends StatelessWidget {
             runSpacing: 8,
             children: const [
               _LegendDot(color: AlagagiColors.sageDeep, label: '서로 가능'),
-              _LegendDot(color: Color(0xFFC8AD6D), label: '내 약속 메모'),
+              _LegendDot(color: Color(0xFFC8AD6D), label: '내 상세 일정'),
               _LegendDot(color: Color(0xFFB18472), label: '상대 표시'),
             ],
           ),
@@ -8512,7 +8517,7 @@ class _MeetingDateCell extends StatelessWidget {
     required this.selected,
     required this.mutual,
     required this.busy,
-    required this.hasPrivateMemo,
+    required this.hasMyDetails,
     required this.hasPartner,
     required this.onTap,
   });
@@ -8522,7 +8527,7 @@ class _MeetingDateCell extends StatelessWidget {
   final bool selected;
   final bool mutual;
   final bool busy;
-  final bool hasPrivateMemo;
+  final bool hasMyDetails;
   final bool hasPartner;
   final VoidCallback onTap;
 
@@ -8532,14 +8537,14 @@ class _MeetingDateCell extends StatelessWidget {
         ? AlagagiColors.ink
         : mutual
         ? const Color(0xFFEEF2E8)
-        : busy || hasPrivateMemo
+        : busy || hasMyDetails
         ? const Color(0xFFF4EEDC)
         : Colors.white;
     final foreground = selected
         ? Colors.white
         : mutual
         ? AlagagiColors.sageDeep
-        : busy || hasPrivateMemo
+        : busy || hasMyDetails
         ? const Color(0xFF8A6F2D)
         : const Color(0xFF4D4B45);
     return Material(
@@ -8582,7 +8587,7 @@ class _MeetingDateCell extends StatelessWidget {
                       _TinyDot(
                         color: selected ? Colors.white : AlagagiColors.sageDeep,
                       ),
-                    if (hasPrivateMemo) ...[
+                    if (hasMyDetails) ...[
                       if (mutual) const SizedBox(width: 3),
                       _TinyDot(
                         color: selected
@@ -8591,7 +8596,7 @@ class _MeetingDateCell extends StatelessWidget {
                       ),
                     ],
                     if (hasPartner && !mutual) ...[
-                      if (hasPrivateMemo) const SizedBox(width: 3),
+                      if (hasMyDetails) const SizedBox(width: 3),
                       _TinyDot(
                         color: selected
                             ? Colors.white
@@ -8686,6 +8691,8 @@ class _MeetingDetailCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
+          Text('대략 가능한 시간', style: sans(size: 11.5, weight: FontWeight.w800)),
+          const SizedBox(height: 7),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -8701,25 +8708,100 @@ class _MeetingDetailCard extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 14),
-          _MeetingTextField(
-            fieldKey: meetingPrivateMemoFieldKey,
-            label: '내 약속 메모',
-            hint: '예: 18:30까지 회사 일정',
-            initialValue: controller.state.meetingDraftPrivateMemo,
-            maxLength: 80,
-            helperText: '나만 볼 수 있어요.',
-            onChanged: (value) =>
-                controller.updateMeetingDraft(privateMemo: value),
+          const SizedBox(height: 16),
+          Text('상대에게 보이는 일정', style: sans(size: 11.5, weight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          Text(
+            '몇 시부터 몇 시까지 어떤 일정인지, 보여도 괜찮은 것만 남겨요.',
+            style: sans(size: 11.2, color: AlagagiColors.muted),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _MeetingTextField(
+                  fieldKey: meetingTimeBlockStartFieldKey,
+                  label: '시작',
+                  hint: '14:00',
+                  initialValue: controller.state.meetingBlockStartDraft,
+                  maxLength: 5,
+                  helperText: '',
+                  minLines: 1,
+                  maxLines: 1,
+                  keyboardType: TextInputType.datetime,
+                  onChanged: (value) =>
+                      controller.updateMeetingTimeBlockDraft(start: value),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _MeetingTextField(
+                  fieldKey: meetingTimeBlockEndFieldKey,
+                  label: '종료',
+                  hint: '16:00',
+                  initialValue: controller.state.meetingBlockEndDraft,
+                  maxLength: 5,
+                  helperText: '',
+                  minLines: 1,
+                  maxLines: 1,
+                  keyboardType: TextInputType.datetime,
+                  onChanged: (value) =>
+                      controller.updateMeetingTimeBlockDraft(end: value),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 10),
           _MeetingTextField(
+            fieldKey: meetingTimeBlockTitleFieldKey,
+            label: '일정 내용',
+            hint: '예: 병원 예약, 친구 약속',
+            initialValue: controller.state.meetingBlockTitleDraft,
+            maxLength: 40,
+            helperText: '',
+            minLines: 1,
+            maxLines: 1,
+            onChanged: (value) =>
+                controller.updateMeetingTimeBlockDraft(title: value),
+          ),
+          const SizedBox(height: 9),
+          SizedBox(
+            height: 38,
+            child: OutlinedButton.icon(
+              key: meetingTimeBlockAddButtonKey,
+              onPressed: controller.addMeetingTimeBlock,
+              icon: const Icon(Icons.add_rounded, size: 17),
+              label: const Text('상세 일정 추가'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AlagagiColors.sageDeep,
+                side: const BorderSide(color: Color(0x338A9A7E)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                textStyle: sans(size: 12.5, weight: FontWeight.w800),
+              ),
+            ),
+          ),
+          if (controller.state.meetingDraftTimeBlocks.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Column(
+              children: [
+                for (final block in controller.state.meetingDraftTimeBlocks)
+                  _MeetingTimeBlockRow(
+                    block: block,
+                    onRemove: () => controller.removeMeetingTimeBlock(block.id),
+                  ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 14),
+          _MeetingTextField(
             fieldKey: meetingSharedMemoFieldKey,
-            label: '공유용 조율 메모',
-            hint: '예: 19:30 이후 가능해요',
+            label: '상대에게 남길 한마디',
+            hint: '예: 19:30 이후면 편해요',
             initialValue: controller.state.meetingDraftSharedMemo,
             maxLength: 120,
-            helperText: '상대에게 보여도 되는 내용만 남겨요.',
+            helperText: '시간표에 덧붙일 짧은 조율 메시지예요.',
             onChanged: (value) =>
                 controller.updateMeetingDraft(sharedMemo: value),
           ),
@@ -8732,7 +8814,7 @@ class _MeetingDetailCard extends StatelessWidget {
           ],
           const SizedBox(height: 14),
           _PrimaryButton(
-            label: '가능 시간 남기기',
+            label: '일정 저장하기',
             buttonKey: meetingSubmitButtonKey,
             onPressed: controller.submitMeetingDraft,
             color: AlagagiColors.sageDeep,
@@ -8759,7 +8841,7 @@ class _MeetingPersonRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = _meetingAvailabilityLabel(entry?.availability);
-    final memo = isMe ? entry?.privateMemo : entry?.sharedMemo;
+    final sharedMemo = entry?.sharedMemo.trim() ?? '';
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFF8F8F4),
@@ -8782,9 +8864,8 @@ class _MeetingPersonRow extends StatelessWidget {
                     status,
                     if (entry != null && entry!.timeSlots.isNotEmpty)
                       entry!.timeSlots.map(_meetingTimeSlotLabel).join(', '),
-                    if ((memo ?? '').trim().isNotEmpty) memo!.trim(),
                   ].join(' · '),
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: sans(
                     size: 11.2,
@@ -8792,7 +8873,83 @@ class _MeetingPersonRow extends StatelessWidget {
                     height: 1.4,
                   ),
                 ),
+                if (entry != null && entry!.timeBlocks.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  for (final block in entry!.timeBlocks.take(3))
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        _meetingTimeBlockLabel(block),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: sans(
+                          size: 11,
+                          color: const Color(0xFF6B675F),
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                ],
+                if (sharedMemo.isNotEmpty) ...[
+                  const SizedBox(height: 5),
+                  Text(
+                    isMe ? '상대에게: $sharedMemo' : sharedMemo,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: sans(
+                      size: 11,
+                      color: const Color(0xFF6B675F),
+                      height: 1.35,
+                    ),
+                  ),
+                ],
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MeetingTimeBlockRow extends StatelessWidget {
+  const _MeetingTimeBlockRow({required this.block, required this.onRemove});
+
+  final ScheduleTimeBlock block;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.fromLTRB(11, 8, 6, 8),
+      child: Row(
+        children: [
+          Icon(Icons.schedule_rounded, size: 16, color: AlagagiColors.sageDeep),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _meetingTimeBlockLabel(block),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: sans(size: 12.2, color: const Color(0xFF56544D)),
+            ),
+          ),
+          SizedBox(
+            width: 30,
+            height: 30,
+            child: IconButton(
+              key: meetingTimeBlockRemoveButtonKey(block.id),
+              onPressed: onRemove,
+              icon: const Icon(Icons.close_rounded, size: 16),
+              color: AlagagiColors.muted,
+              padding: EdgeInsets.zero,
+              tooltip: '삭제',
             ),
           ),
         ],
@@ -8808,6 +8965,9 @@ class _MeetingCandidateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final detailCount =
+        (candidate.myEntry?.timeBlocks.length ?? 0) +
+        (candidate.partnerEntry?.timeBlocks.length ?? 0);
     return _PaperCard(
       radius: 18,
       padding: const EdgeInsets.all(14),
@@ -8841,7 +9001,10 @@ class _MeetingCandidateCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '${candidate.sharedSlots.map(_meetingTimeSlotLabel).join(', ')}에 겹쳐요',
+                  [
+                    '${candidate.sharedSlots.map(_meetingTimeSlotLabel).join(', ')}에 겹쳐요',
+                    if (detailCount > 0) '상세 일정 $detailCount개',
+                  ].join(' · '),
                   style: sans(size: 11.5, color: AlagagiColors.muted),
                 ),
               ],
@@ -8863,6 +9026,9 @@ class _MeetingTextField extends StatelessWidget {
     required this.maxLength,
     required this.helperText,
     required this.onChanged,
+    this.minLines = 2,
+    this.maxLines = 3,
+    this.keyboardType,
   });
 
   final Key fieldKey;
@@ -8872,6 +9038,9 @@ class _MeetingTextField extends StatelessWidget {
   final int maxLength;
   final String helperText;
   final ValueChanged<String> onChanged;
+  final int minLines;
+  final int maxLines;
+  final TextInputType? keyboardType;
 
   @override
   Widget build(BuildContext context) {
@@ -8886,14 +9055,16 @@ class _MeetingTextField extends StatelessWidget {
         key: fieldKey,
         initialValue: initialValue,
         maxLength: maxLength,
-        minLines: 2,
-        maxLines: 3,
+        minLines: minLines,
+        maxLines: maxLines,
+        keyboardType: keyboardType,
         onChanged: onChanged,
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
-          helperText: helperText,
+          helperText: helperText.isEmpty ? null : helperText,
           counterText: '',
+          isDense: true,
           border: InputBorder.none,
         ),
         style: sans(size: 13, height: 1.45),
@@ -9637,6 +9808,10 @@ String _meetingTimeSlotLabel(MeetingTimeSlot slot) {
     MeetingTimeSlot.afternoon => '오후',
     MeetingTimeSlot.evening => '저녁',
   };
+}
+
+String _meetingTimeBlockLabel(ScheduleTimeBlock block) {
+  return '${block.timeLabel} · ${block.title}';
 }
 
 String _placeCategoryLabel(PlaceCategory category) {

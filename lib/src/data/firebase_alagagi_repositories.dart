@@ -275,8 +275,8 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
   }
 
   @override
-  Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry) async {
-    final sharedWrite = _firestore
+  Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry) {
+    return _firestore
         .collection('spaces')
         .doc(spaceId)
         .collection('scheduleEntries')
@@ -286,23 +286,10 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           'profileId': entry.profileId,
           'availability': _availabilityToData(entry.availability),
           'timeSlots': entry.timeSlots.map(_timeSlotToData).toList(),
+          'timeBlocks': entry.timeBlocks.map(_timeBlockToData).toList(),
           'sharedMemo': entry.sharedMemo,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
-
-    final privateWrite = _firestore
-        .collection('users')
-        .doc(entry.profileId)
-        .collection('privateScheduleMemos')
-        .doc('${spaceId}_${entry.dateKey}')
-        .set({
-          'spaceId': spaceId,
-          'dateKey': entry.dateKey,
-          'privateMemo': entry.privateMemo,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-
-    await Future.wait([sharedWrite, privateWrite]);
   }
 
   @override
@@ -415,11 +402,6 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     final scheduleEntriesSnapshot = await space
         .collection('scheduleEntries')
         .get();
-    final privateScheduleMemosSnapshot = await _firestore
-        .collection('users')
-        .doc(meId)
-        .collection('privateScheduleMemos')
-        .get();
     final sharedPlacesSnapshot = await space.collection('sharedPlaces').get();
     final curiosityCardsSnapshot = await space
         .collection('curiosityCards')
@@ -469,18 +451,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           .nonNulls
           .toList(),
       scheduleEntries: scheduleEntriesSnapshot.docs
-          .map(
-            (doc) => _scheduleEntryFromData(
-              doc.id,
-              doc.data(),
-              privateMemosByDateKey: _privateMemosByDateKey(
-                privateScheduleMemosSnapshot.docs
-                    .map((doc) => doc.data())
-                    .where((data) => _readString(data, 'spaceId') == spaceId),
-              ),
-              meId: meId,
-            ),
-          )
+          .map((doc) => _scheduleEntryFromData(doc.id, doc.data()))
           .nonNulls
           .toList(),
       sharedPlaces: sharedPlacesSnapshot.docs
@@ -638,10 +609,8 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
 
   ScheduleEntry? _scheduleEntryFromData(
     String fallbackId,
-    Map<String, dynamic> data, {
-    required Map<String, String> privateMemosByDateKey,
-    required String meId,
-  }) {
+    Map<String, dynamic> data,
+  ) {
     final dateKey = _readString(data, 'dateKey');
     final profileId = _readString(data, 'profileId');
     if (dateKey == null || profileId == null) {
@@ -656,9 +625,10 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       profileId: profileId,
       availability: _availabilityFromData(_readString(data, 'availability')),
       timeSlots: timeSlots,
-      privateMemo: profileId == meId
-          ? privateMemosByDateKey[dateKey] ?? ''
-          : '',
+      timeBlocks: _readMapList(
+        data,
+        'timeBlocks',
+      ).map(_timeBlockFromData).nonNulls.toList(),
       sharedMemo: _readString(data, 'sharedMemo') ?? '',
       updatedAt: _readDateTime(data, 'updatedAt'),
     );
@@ -830,16 +800,6 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     };
   }
 
-  Map<String, String> _privateMemosByDateKey(
-    Iterable<Map<String, dynamic>> docs,
-  ) {
-    return {
-      for (final data in docs)
-        if (_readString(data, 'dateKey') != null)
-          _readString(data, 'dateKey')!: _readString(data, 'privateMemo') ?? '',
-    };
-  }
-
   String _availabilityToData(MeetingAvailability availability) {
     return switch (availability) {
       MeetingAvailability.available => 'available',
@@ -872,6 +832,31 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       'evening' => MeetingTimeSlot.evening,
       _ => null,
     };
+  }
+
+  Map<String, Object?> _timeBlockToData(ScheduleTimeBlock block) {
+    return {
+      'startMinute': block.startMinute,
+      'endMinute': block.endMinute,
+      'title': block.title,
+    };
+  }
+
+  ScheduleTimeBlock? _timeBlockFromData(Map<String, dynamic> data) {
+    final startMinute = _readInt(data, 'startMinute');
+    final endMinute = _readInt(data, 'endMinute');
+    final title = _readString(data, 'title');
+    if (startMinute == null ||
+        endMinute == null ||
+        title == null ||
+        endMinute <= startMinute) {
+      return null;
+    }
+    return ScheduleTimeBlock(
+      startMinute: startMinute,
+      endMinute: endMinute,
+      title: title,
+    );
   }
 
   String _mapApiProviderToData(MapApiProvider provider) {
@@ -924,6 +909,20 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     return const [];
   }
 
+  List<Map<String, dynamic>> _readMapList(
+    Map<String, dynamic> data,
+    String key,
+  ) {
+    final value = data[key];
+    if (value is Iterable) {
+      return value
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+    }
+    return const [];
+  }
+
   double? _readDouble(Map<String, dynamic> data, String key) {
     final value = data[key];
     if (value is double) {
@@ -934,6 +933,20 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     }
     if (value is String) {
       return double.tryParse(value);
+    }
+    return null;
+  }
+
+  int? _readInt(Map<String, dynamic> data, String key) {
+    final value = data[key];
+    if (value is int) {
+      return value;
+    }
+    if (value is double && value.roundToDouble() == value) {
+      return value.toInt();
+    }
+    if (value is String) {
+      return int.tryParse(value);
     }
     return null;
   }

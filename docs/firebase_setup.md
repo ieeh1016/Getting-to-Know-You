@@ -453,6 +453,7 @@ service cloud.firestore {
           'profileId',
           'availability',
           'timeSlots',
+          'timeBlocks',
           'sharedMemo',
           'updatedAt'
         ])
@@ -464,25 +465,10 @@ service cloud.firestore {
         && request.resource.data.timeSlots is list
         && request.resource.data.timeSlots.size() <= 3
         && request.resource.data.timeSlots.hasOnly(['morning', 'afternoon', 'evening'])
+        && request.resource.data.timeBlocks is list
+        && request.resource.data.timeBlocks.size() <= 6
         && request.resource.data.sharedMemo is string
         && request.resource.data.sharedMemo.size() <= 120;
-    }
-
-    function validPrivateScheduleMemo(userId, memoId) {
-      return userId == request.auth.uid
-        && request.resource.data.keys().hasOnly([
-          'spaceId',
-          'dateKey',
-          'privateMemo',
-          'updatedAt'
-        ])
-        && request.resource.data.spaceId is string
-        && request.resource.data.dateKey is string
-        && request.resource.data.dateKey.size() <= 16
-        && memoId == request.resource.data.spaceId + '_' + request.resource.data.dateKey
-        && isSpaceMember(request.resource.data.spaceId)
-        && request.resource.data.privateMemo is string
-        && request.resource.data.privateMemo.size() <= 120;
     }
 
     function validSharedPlace(spaceId, placeId) {
@@ -537,12 +523,6 @@ service cloud.firestore {
           )
         );
       allow write: if false;
-
-      match /privateScheduleMemos/{memoId} {
-        allow read: if request.auth.uid == userId;
-        allow create, update: if validPrivateScheduleMemo(userId, memoId);
-        allow delete: if false;
-      }
     }
 
     match /spaces/{spaceId} {

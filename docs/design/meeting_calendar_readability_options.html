@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>조금씩 · 약속 달력 재제안</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&amp;family=Noto+Sans+KR:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --outer:#e9e8e2;
+    --bg:#f4f3ef;
+    --paper:#fcfcfa;
+    --ink:#30302d;
+    --text:#4b4943;
+    --muted:#8d887e;
+    --soft:#f8f8f4;
+    --line:#e8e5dd;
+    --sage:#8a9a7e;
+    --sage-deep:#68785e;
+    --sage-soft:#eef3e9;
+    --warm:#f3eddf;
+    --gold:#c8ad6d;
+    --clay:#b18472;
+    --clay-soft:#f4e9e4;
+    --blue:#8296a8;
+    --blue-soft:#e9eef1;
+    --shadow:0 28px 70px rgba(62,60,52,.16);
+  }
+  body{
+    min-height:100vh;
+    background:var(--outer);
+    color:var(--ink);
+    font-family:'Noto Sans KR',sans-serif;
+    font-weight:300;
+    padding:38px 18px 58px;
+  }
+  h1,h2,h3,h4{font-family:'Nanum Myeongjo',serif;font-weight:800}
+  button{font:inherit}
+  .wrap{max-width:1120px;margin:0 auto}
+  .page-title{
+    max-width:760px;
+    margin:0 auto 28px;
+    text-align:center;
+  }
+  .eyebrow{
+    display:block;
+    margin-bottom:8px;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:800;
+    letter-spacing:2px;
+  }
+  .page-title h1{font-size:31px;line-height:1.35}
+  .page-title p{
+    margin-top:11px;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.75;
+  }
+  .why{
+    max-width:980px;
+    margin:0 auto 34px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  .why article{
+    border:1px solid rgba(232,229,221,.92);
+    border-radius:22px;
+    background:rgba(252,252,250,.72);
+    padding:19px 20px;
+  }
+  .why h2{font-size:19px;line-height:1.42}
+  .why p,.why li{
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.78;
+  }
+  .why ul{margin:10px 0 0 18px}
+  .stage{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(320px,390px));
+    gap:28px;
+    justify-content:center;
+    align-items:start;
+  }
+  .caption{margin:0 0 13px 2px}
+  .tag{
+    display:inline-flex;
+    align-items:center;
+    min-height:24px;
+    padding:0 10px;
+    border-radius:999px;
+    border:1px solid rgba(104,120,94,.24);
+    background:rgba(252,252,250,.8);
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:800;
+  }
+  .caption h3{
+    margin-top:8px;
+    font-size:20px;
+    line-height:1.35;
+  }
+  .caption p{
+    margin-top:5px;
+    color:var(--muted);
+    font-size:12.7px;
+    line-height:1.66;
+  }
+  .phone{
+    width:min(390px,100%);
+    min-height:844px;
+    position:relative;
+    overflow:hidden;
+    border:8px solid #fff;
+    border-radius:40px;
+    background:var(--bg);
+    box-shadow:var(--shadow);
+  }
+  .screen{padding:27px 24px 102px}
+  .topbar{
+    min-height:42px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .side{width:48px;display:flex}
+  .side.right{justify-content:flex-end}
+  .paper-btn{
+    width:38px;
+    height:38px;
+    border:1px solid var(--line);
+    border-radius:50%;
+    background:rgba(252,252,250,.84);
+    color:var(--text);
+  }
+  .paper-btn span{display:block;font-size:20px;line-height:36px;text-align:center}
+  .title-serif{font-family:'Nanum Myeongjo',serif;font-size:20px;font-weight:800}
+  .summary{
+    border:1px solid var(--line);
+    border-radius:24px;
+    background:var(--paper);
+    padding:18px 18px 16px;
+    margin-bottom:14px;
+  }
+  .summary small{
+    display:block;
+    color:var(--sage-deep);
+    font-size:10.4px;
+    font-weight:800;
+    letter-spacing:1.4px;
+  }
+  .summary h4{
+    margin-top:8px;
+    font-size:23px;
+    line-height:1.36;
+  }
+  .summary p{
+    margin-top:8px;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.65;
+  }
+  .best-card{
+    margin-top:14px;
+    border-radius:20px;
+    background:var(--ink);
+    color:#fff;
+    padding:16px;
+  }
+  .best-top{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .best-top strong{display:block;font-size:17px;line-height:1.4}
+  .best-top span{
+    display:block;
+    margin-top:4px;
+    color:rgba(255,255,255,.68);
+    font-size:11.5px;
+    line-height:1.45;
+  }
+  .score{
+    width:44px;
+    min-width:44px;
+    height:44px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:15px;
+    background:rgba(255,255,255,.12);
+    font-size:16px;
+    font-weight:800;
+  }
+  .timeline{
+    margin-top:14px;
+  }
+  .time-labels{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    color:rgba(255,255,255,.56);
+    font-size:10.5px;
+    font-weight:700;
+  }
+  .time-labels span{text-align:center}
+  .track{
+    height:10px;
+    margin-top:7px;
+    border-radius:999px;
+    background:rgba(255,255,255,.14);
+    overflow:hidden;
+  }
+  .track i{
+    display:block;
+    height:100%;
+    width:58%;
+    margin-left:32%;
+    border-radius:999px;
+    background:var(--sage);
+  }
+  .people{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    margin-top:13px;
+    color:rgba(255,255,255,.72);
+    font-size:11.5px;
+    font-weight:600;
+  }
+  .avatar{
+    width:25px;
+    height:25px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    background:rgba(255,255,255,.16);
+    color:#fff;
+    font-size:12px;
+    font-weight:800;
+  }
+  .tabs{
+    display:flex;
+    gap:7px;
+    margin-bottom:12px;
+  }
+  .tabs span{
+    min-height:32px;
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:rgba(252,252,250,.8);
+    color:var(--muted);
+    font-size:11.5px;
+    font-weight:800;
+  }
+  .tabs span.active{
+    border-color:var(--ink);
+    background:var(--ink);
+    color:#fff;
+  }
+  .calendar{
+    border:1px solid var(--line);
+    border-radius:24px;
+    background:var(--paper);
+    padding:15px 14px 13px;
+  }
+  .month-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:12px;
+  }
+  .month-head strong{font-size:18px;font-weight:800}
+  .month-head span{color:var(--muted);font-size:11.3px;font-weight:600}
+  .weekdays,.dates{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .weekdays span{
+    color:var(--muted);
+    text-align:center;
+    font-size:10.5px;
+    font-weight:700;
+  }
+  .date{
+    min-height:44px;
+    position:relative;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:#fff;
+    color:var(--text);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12px;
+    font-weight:800;
+  }
+  .date.dim{opacity:.32}
+  .date.best{
+    background:var(--sage-soft);
+    border-color:rgba(138,154,126,.5);
+    color:var(--sage-deep);
+    box-shadow:inset 0 -5px 0 var(--sage);
+  }
+  .date.maybe{
+    background:var(--warm);
+    border-color:rgba(200,173,109,.46);
+    color:#8a6f2d;
+    box-shadow:inset 0 -5px 0 var(--gold);
+  }
+  .date.has-detail{
+    background:var(--blue-soft);
+    border-color:rgba(130,150,168,.4);
+    color:#607686;
+  }
+  .date.partner{
+    background:var(--clay-soft);
+    border-color:rgba(177,132,114,.38);
+    color:#8f5f50;
+  }
+  .date.selected{
+    border-color:var(--ink);
+    background:var(--ink);
+    color:#fff;
+    box-shadow:none;
+  }
+  .date .mark{
+    position:absolute;
+    bottom:5px;
+    left:50%;
+    width:5px;
+    height:5px;
+    border-radius:50%;
+    transform:translateX(-50%);
+    background:currentColor;
+  }
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px 12px;
+    margin-top:12px;
+  }
+  .legend span{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    color:var(--muted);
+    font-size:10.4px;
+    font-weight:600;
+  }
+  .legend i{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:var(--sage);
+  }
+  .legend .gold{background:var(--gold)}
+  .legend .blue{background:var(--blue)}
+  .legend .clay{background:var(--clay)}
+  .candidate-list{margin-top:12px;display:grid;gap:9px}
+  .candidate{
+    display:grid;
+    grid-template-columns:45px 1fr auto;
+    align-items:center;
+    gap:10px;
+    min-height:68px;
+    padding:10px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:rgba(252,252,250,.82);
+  }
+  .day-chip{
+    width:42px;
+    height:42px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:15px;
+    background:var(--ink);
+    color:#fff;
+    font-size:16px;
+    font-weight:800;
+  }
+  .candidate h5{font-size:12.8px;font-weight:800;line-height:1.35}
+  .candidate p{margin-top:4px;color:var(--muted);font-size:11px;line-height:1.45}
+  .pill{
+    min-height:25px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:999px;
+    padding:0 9px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    font-size:10.4px;
+    font-weight:800;
+    white-space:nowrap;
+  }
+  .pill.gold{background:var(--warm);color:#8a6f2d}
+  .week-board{
+    border:1px solid var(--line);
+    border-radius:24px;
+    background:var(--paper);
+    padding:15px 14px;
+  }
+  .board-head{
+    display:grid;
+    grid-template-columns:45px repeat(3,1fr);
+    gap:7px;
+    margin-bottom:8px;
+    color:var(--muted);
+    font-size:10.5px;
+    font-weight:800;
+    text-align:center;
+  }
+  .board-row{
+    display:grid;
+    grid-template-columns:45px repeat(3,1fr);
+    gap:7px;
+    align-items:center;
+    margin-top:7px;
+  }
+  .day-name{
+    min-height:40px;
+    border-radius:14px;
+    background:var(--soft);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    border:1px solid var(--line);
+  }
+  .day-name strong{font-size:12px;line-height:1}
+  .day-name span{margin-top:4px;color:var(--muted);font-size:9.5px;font-weight:700}
+  .slot{
+    min-height:40px;
+    position:relative;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+  }
+  .slot.good{background:var(--sage-soft);border-color:rgba(138,154,126,.5)}
+  .slot.maybe{background:var(--warm);border-color:rgba(200,173,109,.48)}
+  .slot.busy{background:#f2f1ed;color:#b9b3a9}
+  .slot .dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:var(--sage);
+  }
+  .slot .dot.me{background:var(--blue)}
+  .slot .dot.you{background:var(--clay)}
+  .slot .dash{
+    width:14px;
+    height:2px;
+    border-radius:999px;
+    background:#c9c5bc;
+  }
+  .week-summary{
+    margin-top:13px;
+    display:grid;
+    gap:9px;
+  }
+  .week-card{
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:rgba(252,252,250,.82);
+    padding:13px;
+  }
+  .week-card-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .week-card h5{font-size:13px;font-weight:800}
+  .week-card p{margin-top:6px;color:var(--muted);font-size:11.5px;line-height:1.5}
+  .bottom-nav{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    height:78px;
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    border-top:1px solid var(--line);
+    background:rgba(252,252,250,.95);
+  }
+  .nav-item{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:5px;
+    color:var(--muted);
+    font-size:10.5px;
+    font-weight:700;
+  }
+  .nav-icon{
+    width:20px;
+    height:20px;
+    border:1.6px solid currentColor;
+    border-radius:7px;
+  }
+  .nav-item.active{color:var(--sage-deep)}
+  .nav-item.active .nav-icon{background:var(--sage-soft)}
+  .takeaway{
+    max-width:980px;
+    margin:28px auto 0;
+    border:1px solid rgba(232,229,221,.92);
+    border-radius:22px;
+    background:rgba(252,252,250,.74);
+    padding:19px 20px;
+  }
+  .takeaway h2{font-size:19px}
+  .takeaway p{
+    margin-top:8px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.75;
+  }
+  @media (max-width:900px){
+    .why{grid-template-columns:1fr}
+    .stage{grid-template-columns:minmax(0,1fr)}
+    .phone{margin:0 auto}
+  }
+  @media (max-width:520px){
+    body{padding:26px 14px 44px}
+    .page-title h1{font-size:26px}
+    .screen{padding-left:20px;padding-right:20px}
+  }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="page-title">
+      <span class="eyebrow">MEETING CALENDAR REWORK</span>
+      <h1>달력을 더 복잡하게 하지 않고<br>약속 후보가 먼저 보이게 하기</h1>
+      <p>이전 안은 상태를 많이 보여주려다 오히려 읽어야 할 것이 많아졌습니다. 이번 안은 색상과 범례를 줄이고, 사용자가 바로 알고 싶은 “언제 만나면 좋은지”를 먼저 보여줍니다.</p>
+    </header>
+
+    <section class="why" aria-label="개선 방향">
+      <article>
+        <h2>기존 안이 별로였던 이유</h2>
+        <ul>
+          <li>날짜마다 배지와 색이 많아져 달력이 작고 답답해졌습니다.</li>
+          <li>추천 날짜보다 범례와 상태 해석이 먼저 보였습니다.</li>
+          <li>앱의 조용한 톤보다 업무용 대시보드에 가까웠습니다.</li>
+        </ul>
+      </article>
+      <article>
+        <h2>다시 잡은 원칙</h2>
+        <ul>
+          <li>달력은 보조, 추천 후보는 주인공으로 둡니다.</li>
+          <li>상태는 네 가지 이하로 줄이고, 문장으로 한번 더 풀어줍니다.</li>
+          <li>시간대가 중요할 때만 주간 표로 전환합니다.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="stage" aria-label="재제안 화면">
+      <article>
+        <div class="caption">
+          <span class="tag">Proposal A · 추천</span>
+          <h3>후보 먼저, 달력은 확인용</h3>
+          <p>첫 화면에서 가장 좋은 날짜를 카드로 크게 보여주고, 달력은 월간 맥락을 확인하는 보조 영역으로 둡니다.</p>
+        </div>
+
+        <div class="phone">
+          <div class="screen">
+            <div class="topbar">
+              <div class="side"><button class="paper-btn" aria-label="뒤로"><span>&lt;</span></button></div>
+              <div class="title-serif">만날 수 있는 날</div>
+              <div class="side right"><button class="paper-btn" aria-label="필터"><span>=</span></button></div>
+            </div>
+
+            <section class="summary">
+              <small>BEST DAY</small>
+              <h4>6월 11일 목요일<br>저녁이 가장 편해요</h4>
+              <p>둘 다 저녁 가능이고, 내 상세 일정은 18:30에 끝나요.</p>
+
+              <div class="best-card">
+                <div class="best-top">
+                  <div>
+                    <strong>19:30 이후 추천</strong>
+                    <span>이동 시간을 감안해도 여유가 있어요.</span>
+                  </div>
+                  <div class="score">1순위</div>
+                </div>
+                <div class="timeline">
+                  <div class="time-labels">
+                    <span>18</span><span>19</span><span>20</span><span>21</span>
+                  </div>
+                  <div class="track"><i></i></div>
+                </div>
+                <div class="people">
+                  <span class="avatar">민</span>
+                  <span class="avatar">영</span>
+                  <span>둘 다 저녁 가능</span>
+                </div>
+              </div>
+            </section>
+
+            <div class="tabs">
+              <span class="active">추천</span>
+              <span>전체</span>
+              <span>조율</span>
+            </div>
+
+            <section class="calendar">
+              <div class="month-head">
+                <strong>2026년 6월</strong>
+                <span>짙을수록 만나기 쉬움</span>
+              </div>
+              <div class="weekdays">
+                <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+              </div>
+              <div class="dates" style="margin-top:8px">
+                <div class="date">1</div><div class="date">2</div><div class="date has-detail">3<span class="mark"></span></div><div class="date">4</div><div class="date partner">5<span class="mark"></span></div><div class="date">6</div><div class="date">7</div>
+                <div class="date maybe">8<span class="mark"></span></div><div class="date">9</div><div class="date has-detail">10<span class="mark"></span></div><div class="date selected">11</div><div class="date">12</div><div class="date partner">13<span class="mark"></span></div><div class="date">14</div>
+                <div class="date has-detail">15<span class="mark"></span></div><div class="date">16</div><div class="date maybe">17<span class="mark"></span></div><div class="date">18</div><div class="date has-detail">19<span class="mark"></span></div><div class="date">20</div><div class="date">21</div>
+                <div class="date">22</div><div class="date has-detail">23<span class="mark"></span></div><div class="date">24</div><div class="date partner">25<span class="mark"></span></div><div class="date best">26<span class="mark"></span></div><div class="date">27</div><div class="date">28</div>
+                <div class="date">29</div><div class="date">30</div><div class="date dim">1</div><div class="date dim">2</div><div class="date dim">3</div><div class="date dim">4</div><div class="date dim">5</div>
+              </div>
+              <div class="legend">
+                <span><i></i>추천</span>
+                <span><i class="gold"></i>조율</span>
+                <span><i class="blue"></i>내 상세 일정</span>
+                <span><i class="clay"></i>상대 표시</span>
+              </div>
+            </section>
+
+            <div class="candidate-list">
+              <div class="candidate">
+                <div class="day-chip">17</div>
+                <div>
+                  <h5>다음 후보 · 수요일 오후</h5>
+                  <p>오후 가능성이 있지만 한쪽 일정이 유동적이에요.</p>
+                </div>
+                <span class="pill gold">조율</span>
+              </div>
+            </div>
+          </div>
+
+          <nav class="bottom-nav" aria-label="하단 탭">
+            <div class="nav-item"><span class="nav-icon"></span><span>홈</span></div>
+            <div class="nav-item"><span class="nav-icon"></span><span>질문</span></div>
+            <div class="nav-item"><span class="nav-icon"></span><span>음악</span></div>
+            <div class="nav-item active"><span class="nav-icon"></span><span>약속</span></div>
+            <div class="nav-item"><span class="nav-icon"></span><span>장소</span></div>
+            <div class="nav-item"><span class="nav-icon"></span><span>마이</span></div>
+          </nav>
+        </div>
+      </article>
+
+      <article>
+        <div class="caption">
+          <span class="tag">Proposal B</span>
+          <h3>이번 주 시간표로 보기</h3>
+          <p>월간 달력보다 “이번 주 언제 비는지”가 중요할 때 쓰는 화면입니다. 오전/오후/저녁을 표로 보여줍니다.</p>
+        </div>
+
+        <div class="phone">
+          <div class="screen">
+            <div class="topbar">
+              <div class="side"><button class="paper-btn" aria-label="뒤로"><span>&lt;</span></button></div>
+              <div class="title-serif">만날 수 있는 날</div>
+              <div class="side right"><button class="paper-btn" aria-label="필터"><span>=</span></button></div>
+            </div>
+
+            <section class="summary">
+              <small>WEEK VIEW</small>
+              <h4>이번 주는<br>목요일 저녁이 좋아요</h4>
+              <p>날짜보다 시간대가 먼저 보이면, 약속을 더 빨리 정할 수 있어요.</p>
+            </section>
+
+            <div class="tabs">
+              <span>월간</span>
+              <span class="active">이번 주</span>
+              <span>후보</span>
+            </div>
+
+            <section class="week-board">
+              <div class="month-head">
+                <strong>6월 8일-14일</strong>
+                <span>민영 · 영우</span>
+              </div>
+              <div class="board-head">
+                <span></span><span>오전</span><span>오후</span><span>저녁</span>
+              </div>
+              <div class="board-row">
+                <div class="day-name"><strong>8</strong><span>월</span></div>
+                <div class="slot busy"><i class="dash"></i></div>
+                <div class="slot maybe"><i class="dot me"></i></div>
+                <div class="slot good"><i class="dot me"></i><i class="dot you"></i></div>
+              </div>
+              <div class="board-row">
+                <div class="day-name"><strong>9</strong><span>화</span></div>
+                <div class="slot busy"><i class="dash"></i></div>
+                <div class="slot busy"><i class="dash"></i></div>
+                <div class="slot busy"><i class="dash"></i></div>
+              </div>
+              <div class="board-row">
+                <div class="day-name"><strong>10</strong><span>수</span></div>
+                <div class="slot busy"><i class="dash"></i></div>
+                <div class="slot maybe"><i class="dot me"></i></div>
+                <div class="slot busy"><i class="dash"></i></div>
+              </div>
+              <div class="board-row">
+                <div class="day-name"><strong>11</strong><span>목</span></div>
+                <div class="slot busy"><i class="dash"></i></div>
+                <div class="slot busy"><i class="dash"></i></div>
+                <div class="slot good"><i class="dot me"></i><i class="dot you"></i></div>
+              </div>
+              <div class="board-row">
+                <div class="day-name"><strong>12</strong><span>금</span></div>
+                <div class="slot busy"><i class="dash"></i></div>
+                <div class="slot busy"><i class="dash"></i></div>
+                <div class="slot maybe"><i class="dot you"></i></div>
+              </div>
+              <div class="board-row">
+                <div class="day-name"><strong>13</strong><span>토</span></div>
+                <div class="slot maybe"><i class="dot you"></i></div>
+                <div class="slot maybe"><i class="dot you"></i></div>
+                <div class="slot good"><i class="dot me"></i><i class="dot you"></i></div>
+              </div>
+              <div class="board-row">
+                <div class="day-name"><strong>14</strong><span>일</span></div>
+                <div class="slot busy"><i class="dash"></i></div>
+                <div class="slot busy"><i class="dash"></i></div>
+                <div class="slot busy"><i class="dash"></i></div>
+              </div>
+              <div class="legend">
+                <span><i></i>둘 다 가능</span>
+                <span><i class="blue"></i>내 표시</span>
+                <span><i class="clay"></i>상대 표시</span>
+              </div>
+            </section>
+
+            <div class="week-summary">
+              <div class="week-card">
+                <div class="week-card-top">
+                  <h5>목요일 저녁</h5>
+                  <span class="pill">가장 선명</span>
+                </div>
+                <p>상세 일정 18:00-18:30 이후라 19:30부터 편해요.</p>
+              </div>
+              <div class="week-card">
+                <div class="week-card-top">
+                  <h5>토요일 저녁</h5>
+                  <span class="pill gold">확인 필요</span>
+                </div>
+                <p>둘 다 가능 표시는 있지만 한마디가 아직 없어요.</p>
+              </div>
+            </div>
+          </div>
+
+          <nav class="bottom-nav" aria-label="하단 탭">
+            <div class="nav-item"><span class="nav-icon"></span><span>홈</span></div>
+            <div class="nav-item"><span class="nav-icon"></span><span>질문</span></div>
+            <div class="nav-item"><span class="nav-icon"></span><span>음악</span></div>
+            <div class="nav-item active"><span class="nav-icon"></span><span>약속</span></div>
+            <div class="nav-item"><span class="nav-icon"></span><span>장소</span></div>
+            <div class="nav-item"><span class="nav-icon"></span><span>마이</span></div>
+          </nav>
+        </div>
+      </article>
+    </section>
+
+    <section class="takeaway">
+      <h2>이번엔 이렇게 가는 게 좋아 보여요</h2>
+      <p>앱에는 Proposal A를 먼저 적용하는 게 맞습니다. “이번 달 추천 후보”가 먼저 보이고, 달력은 그 이유를 확인하는 역할만 하게 됩니다. Proposal B는 사용자가 날짜를 눌렀을 때 하단 상세나 `이번 주` 탭으로 확장하면 좋아요.</p>
+    </section>
+  </main>
+</body>
+</html>

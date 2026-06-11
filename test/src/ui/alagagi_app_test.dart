@@ -1545,7 +1545,7 @@ void main() {
     expect(find.text('답변 속 공통점이 조금씩 보여요'), findsOneWidget);
   });
 
-  testWidgets('meeting tab saves private and shared schedule memos', (
+  testWidgets('meeting tab saves detailed schedule and shared note', (
     tester,
   ) async {
     final controller = AlagagiController()..enterSpace('영우');
@@ -1558,21 +1558,28 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(meetingCalendarKey), findsOneWidget);
-    await tester.ensureVisible(find.byKey(meetingPrivateMemoFieldKey));
-    await tester.enterText(
-      find.byKey(meetingPrivateMemoFieldKey),
-      '저녁 전 개인 일정',
-    );
+    await tester.ensureVisible(find.byKey(meetingTimeBlockStartFieldKey));
+    await tester.enterText(find.byKey(meetingTimeBlockStartFieldKey), '14:00');
+    await tester.enterText(find.byKey(meetingTimeBlockEndFieldKey), '16:30');
+    await tester.enterText(find.byKey(meetingTimeBlockTitleFieldKey), '병원 예약');
+    await tester.ensureVisible(find.byKey(meetingTimeBlockAddButtonKey));
+    await tester.tap(find.byKey(meetingTimeBlockAddButtonKey));
+    await tester.pumpAndSettle();
+    expect(find.text('14:00-16:30 · 병원 예약'), findsOneWidget);
+
     await tester.enterText(
       find.byKey(meetingSharedMemoFieldKey),
-      '8시 이후 가능해요.',
+      '19:30 이후면 편해요.',
     );
     await tester.ensureVisible(find.byKey(meetingSubmitButtonKey));
     await tester.tap(find.byKey(meetingSubmitButtonKey));
     await tester.pumpAndSettle();
 
-    expect(controller.mySelectedScheduleEntry?.privateMemo, '저녁 전 개인 일정');
-    expect(controller.mySelectedScheduleEntry?.sharedMemo, '8시 이후 가능해요.');
+    expect(controller.mySelectedScheduleEntry?.sharedMemo, '19:30 이후면 편해요.');
+    expect(
+      controller.mySelectedScheduleEntry?.timeBlocks.single.title,
+      '병원 예약',
+    );
   });
 
   testWidgets('place tab adds a shared place without location tracking copy', (

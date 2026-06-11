@@ -787,13 +787,36 @@ class MusicNote {
   }
 }
 
+class ScheduleTimeBlock {
+  const ScheduleTimeBlock({
+    required this.startMinute,
+    required this.endMinute,
+    required this.title,
+  });
+
+  final int startMinute;
+  final int endMinute;
+  final String title;
+
+  String get id => '$startMinute-$endMinute-$title';
+
+  String get timeLabel =>
+      '${minuteLabel(startMinute)}-${minuteLabel(endMinute)}';
+
+  static String minuteLabel(int minuteOfDay) {
+    final hour = minuteOfDay ~/ 60;
+    final minute = minuteOfDay % 60;
+    return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+  }
+}
+
 class ScheduleEntry {
   const ScheduleEntry({
     required this.dateKey,
     required this.profileId,
     required this.availability,
     required this.timeSlots,
-    this.privateMemo = '',
+    this.timeBlocks = const [],
     this.sharedMemo = '',
     this.updatedAt,
   });
@@ -802,7 +825,7 @@ class ScheduleEntry {
   final String profileId;
   final MeetingAvailability availability;
   final Set<MeetingTimeSlot> timeSlots;
-  final String privateMemo;
+  final List<ScheduleTimeBlock> timeBlocks;
   final String sharedMemo;
   final DateTime? updatedAt;
 
@@ -814,7 +837,7 @@ class ScheduleEntry {
   ScheduleEntry copyWith({
     MeetingAvailability? availability,
     Set<MeetingTimeSlot>? timeSlots,
-    String? privateMemo,
+    List<ScheduleTimeBlock>? timeBlocks,
     String? sharedMemo,
     DateTime? updatedAt,
   }) {
@@ -823,7 +846,7 @@ class ScheduleEntry {
       profileId: profileId,
       availability: availability ?? this.availability,
       timeSlots: timeSlots ?? this.timeSlots,
-      privateMemo: privateMemo ?? this.privateMemo,
+      timeBlocks: timeBlocks ?? this.timeBlocks,
       sharedMemo: sharedMemo ?? this.sharedMemo,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -1195,7 +1218,10 @@ class AlagagiState {
     this.selectedMeetingDateKey,
     this.meetingDraftAvailability = MeetingAvailability.available,
     this.meetingDraftTimeSlots = const {MeetingTimeSlot.evening},
-    this.meetingDraftPrivateMemo = '',
+    this.meetingDraftTimeBlocks = const [],
+    this.meetingBlockStartDraft = '',
+    this.meetingBlockEndDraft = '',
+    this.meetingBlockTitleDraft = '',
     this.meetingDraftSharedMemo = '',
     this.meetingDraftError,
     this.placeDraftVisible = false,
@@ -1278,7 +1304,10 @@ class AlagagiState {
   final String? selectedMeetingDateKey;
   final MeetingAvailability meetingDraftAvailability;
   final Set<MeetingTimeSlot> meetingDraftTimeSlots;
-  final String meetingDraftPrivateMemo;
+  final List<ScheduleTimeBlock> meetingDraftTimeBlocks;
+  final String meetingBlockStartDraft;
+  final String meetingBlockEndDraft;
+  final String meetingBlockTitleDraft;
   final String meetingDraftSharedMemo;
   final String? meetingDraftError;
   final bool placeDraftVisible;
@@ -1362,7 +1391,10 @@ class AlagagiState {
     String? selectedMeetingDateKey,
     MeetingAvailability? meetingDraftAvailability,
     Set<MeetingTimeSlot>? meetingDraftTimeSlots,
-    String? meetingDraftPrivateMemo,
+    List<ScheduleTimeBlock>? meetingDraftTimeBlocks,
+    String? meetingBlockStartDraft,
+    String? meetingBlockEndDraft,
+    String? meetingBlockTitleDraft,
     String? meetingDraftSharedMemo,
     String? meetingDraftError,
     bool clearMeetingDraftError = false,
@@ -1470,8 +1502,13 @@ class AlagagiState {
           meetingDraftAvailability ?? this.meetingDraftAvailability,
       meetingDraftTimeSlots:
           meetingDraftTimeSlots ?? this.meetingDraftTimeSlots,
-      meetingDraftPrivateMemo:
-          meetingDraftPrivateMemo ?? this.meetingDraftPrivateMemo,
+      meetingDraftTimeBlocks:
+          meetingDraftTimeBlocks ?? this.meetingDraftTimeBlocks,
+      meetingBlockStartDraft:
+          meetingBlockStartDraft ?? this.meetingBlockStartDraft,
+      meetingBlockEndDraft: meetingBlockEndDraft ?? this.meetingBlockEndDraft,
+      meetingBlockTitleDraft:
+          meetingBlockTitleDraft ?? this.meetingBlockTitleDraft,
       meetingDraftSharedMemo:
           meetingDraftSharedMemo ?? this.meetingDraftSharedMemo,
       meetingDraftError: clearMeetingDraftError
@@ -1886,7 +1923,7 @@ class AlagagiController extends ChangeNotifier {
             profileId: _mapSeedProfileId(entry.profileId),
             availability: entry.availability,
             timeSlots: entry.timeSlots,
-            privateMemo: entry.profileId == 'me' ? entry.privateMemo : '',
+            timeBlocks: entry.timeBlocks,
             sharedMemo: entry.sharedMemo,
             updatedAt: entry.updatedAt,
           );
@@ -2981,6 +3018,34 @@ class AlagagiController extends ChangeNotifier {
       }
     }
     return latest;
+  }
+
+  int? _parseMeetingTimeInput(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    final normalized = trimmed.replaceAll('：', ':');
+    final parts = normalized.contains(':')
+        ? normalized.split(':')
+        : normalized.length <= 2
+        ? [normalized, '0']
+        : [
+            normalized.substring(0, normalized.length - 2),
+            normalized.substring(normalized.length - 2),
+          ];
+    if (parts.length != 2) {
+      return null;
+    }
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    if (hour == null || minute == null) {
+      return null;
+    }
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      return null;
+    }
+    return hour * 60 + minute;
   }
 
   void _sortMusicNotesByUpdatedAt() {
@@ -4106,7 +4171,10 @@ class AlagagiController extends ChangeNotifier {
           entry?.availability ?? MeetingAvailability.available,
       meetingDraftTimeSlots:
           entry?.timeSlots ?? const {MeetingTimeSlot.evening},
-      meetingDraftPrivateMemo: entry?.privateMemo ?? '',
+      meetingDraftTimeBlocks: entry?.timeBlocks ?? const [],
+      meetingBlockStartDraft: '',
+      meetingBlockEndDraft: '',
+      meetingBlockTitleDraft: '',
       meetingDraftSharedMemo: entry?.sharedMemo ?? '',
       clearMeetingDraftError: true,
     );
@@ -4146,9 +4214,77 @@ class AlagagiController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateMeetingDraft({String? privateMemo, String? sharedMemo}) {
+  void updateMeetingTimeBlockDraft({
+    String? start,
+    String? end,
+    String? title,
+  }) {
     _state = _state.copyWith(
-      meetingDraftPrivateMemo: privateMemo,
+      meetingBlockStartDraft: start,
+      meetingBlockEndDraft: end,
+      meetingBlockTitleDraft: title,
+      clearMeetingDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void addMeetingTimeBlock() {
+    final start = _parseMeetingTimeInput(_state.meetingBlockStartDraft);
+    final end = _parseMeetingTimeInput(_state.meetingBlockEndDraft);
+    final title = _state.meetingBlockTitleDraft.trim();
+    if (start == null || end == null) {
+      _state = _state.copyWith(meetingDraftError: '시간은 14:00처럼 적어주세요.');
+      notifyListeners();
+      return;
+    }
+    if (end <= start) {
+      _state = _state.copyWith(meetingDraftError: '끝나는 시간은 시작 시간보다 늦어야 해요.');
+      notifyListeners();
+      return;
+    }
+    if (title.isEmpty) {
+      _state = _state.copyWith(meetingDraftError: '무슨 일정인지 한 줄로 적어주세요.');
+      notifyListeners();
+      return;
+    }
+    if (title.length > 40) {
+      _state = _state.copyWith(meetingDraftError: '일정 이름은 40자 안으로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    if (_state.meetingDraftTimeBlocks.length >= 6) {
+      _state = _state.copyWith(meetingDraftError: '하루 일정은 6개까지만 남길 수 있어요.');
+      notifyListeners();
+      return;
+    }
+
+    final blocks = [
+      ..._state.meetingDraftTimeBlocks,
+      ScheduleTimeBlock(startMinute: start, endMinute: end, title: title),
+    ]..sort((a, b) => a.startMinute.compareTo(b.startMinute));
+    _state = _state.copyWith(
+      meetingDraftTimeBlocks: List<ScheduleTimeBlock>.unmodifiable(blocks),
+      meetingBlockStartDraft: '',
+      meetingBlockEndDraft: '',
+      meetingBlockTitleDraft: '',
+      clearMeetingDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void removeMeetingTimeBlock(String blockId) {
+    final blocks = _state.meetingDraftTimeBlocks
+        .where((block) => block.id != blockId)
+        .toList(growable: false);
+    _state = _state.copyWith(
+      meetingDraftTimeBlocks: List<ScheduleTimeBlock>.unmodifiable(blocks),
+      clearMeetingDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void updateMeetingDraft({String? sharedMemo}) {
+    _state = _state.copyWith(
       meetingDraftSharedMemo: sharedMemo,
       clearMeetingDraftError: true,
     );
@@ -4156,19 +4292,16 @@ class AlagagiController extends ChangeNotifier {
   }
 
   void submitMeetingDraft() {
-    final privateMemo = _state.meetingDraftPrivateMemo.trim();
     final sharedMemo = _state.meetingDraftSharedMemo.trim();
     final availability = _state.meetingDraftAvailability;
+    final timeBlocks = _state.meetingDraftTimeBlocks;
     final timeSlots = availability == MeetingAvailability.busy
         ? <MeetingTimeSlot>{}
         : _state.meetingDraftTimeSlots;
-    if (privateMemo.length > 80) {
-      _state = _state.copyWith(meetingDraftError: '내 약속 메모는 80자 안으로 남겨주세요.');
-      notifyListeners();
-      return;
-    }
     if (sharedMemo.length > 120) {
-      _state = _state.copyWith(meetingDraftError: '공유 메모는 120자 안으로 남겨주세요.');
+      _state = _state.copyWith(
+        meetingDraftError: '상대에게 남길 한마디는 120자 안으로 남겨주세요.',
+      );
       notifyListeners();
       return;
     }
@@ -4183,8 +4316,8 @@ class AlagagiController extends ChangeNotifier {
       profileId: _state.me.id,
       availability: availability,
       timeSlots: Set<MeetingTimeSlot>.unmodifiable(timeSlots),
-      privateMemo: privateMemo,
       sharedMemo: sharedMemo,
+      timeBlocks: List<ScheduleTimeBlock>.unmodifiable(timeBlocks),
       updatedAt: DateTime.now(),
     );
     final index = _scheduleEntries.indexWhere(
@@ -5541,7 +5674,13 @@ const seedScheduleEntries = [
     profileId: 'me',
     availability: MeetingAvailability.available,
     timeSlots: {MeetingTimeSlot.evening},
-    privateMemo: '18:30까지 회사 쪽 일정',
+    timeBlocks: [
+      ScheduleTimeBlock(
+        startMinute: 18 * 60,
+        endMinute: 18 * 60 + 30,
+        title: '회사 일정',
+      ),
+    ],
     sharedMemo: '19:30 이후면 괜찮아요.',
   ),
   ScheduleEntry(
@@ -5556,7 +5695,13 @@ const seedScheduleEntries = [
     profileId: 'me',
     availability: MeetingAvailability.maybe,
     timeSlots: {MeetingTimeSlot.afternoon, MeetingTimeSlot.evening},
-    privateMemo: '오후 일정이 유동적이에요.',
+    timeBlocks: [
+      ScheduleTimeBlock(
+        startMinute: 15 * 60,
+        endMinute: 17 * 60,
+        title: '외부 미팅',
+      ),
+    ],
     sharedMemo: '오후는 조율 가능해요.',
   ),
   ScheduleEntry(
@@ -5571,7 +5716,6 @@ const seedScheduleEntries = [
     profileId: 'me',
     availability: MeetingAvailability.busy,
     timeSlots: {},
-    privateMemo: '가족 약속',
     sharedMemo: '이 날은 어려워요.',
   ),
 ];
