@@ -1605,6 +1605,67 @@ void main() {
     );
   });
 
+  testWidgets('music note link action opens a normalized external link', (
+    tester,
+  ) async {
+    final openedLinks = <String>[];
+    final controller = AlagagiController.forSession(
+      AlagagiSession(
+        spaceId: 'main',
+        me: const AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: const AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          musicNotes: [
+            MusicNote(
+              id: 'music_mine',
+              title: '밤 산책',
+              artist: '영우의 추천',
+              link: 'music.example/night',
+              note: '퇴근길에 들으면 차분해져요.',
+              mood: '밤',
+              createdByProfileId: 'youngwooUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-09T09:00:00.000Z'),
+            ),
+          ],
+        ),
+      ),
+    )..goTo(AlagagiRoute.music);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AlagagiRoot(
+          controller: controller,
+          onOpenExternalLink: openedLinks.add,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(musicLinkButtonKey('music_mine')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(musicLinkButtonKey('music_mine')));
+    await tester.pumpAndSettle();
+
+    expect(openedLinks, ['https://music.example/night']);
+    expect(find.byKey(readableDetailSheetKey), findsNothing);
+
+    await tester.tap(find.byKey(musicNoteCardKey('music_mine')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(readableDetailSheetKey), findsOneWidget);
+  });
+
   testWidgets('home summary marks new partner music until music tab is seen', (
     tester,
   ) async {

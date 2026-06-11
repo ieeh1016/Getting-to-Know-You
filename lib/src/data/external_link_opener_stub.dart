@@ -1,0 +1,1 @@
+void openExternalBrowserLink(String url) {}

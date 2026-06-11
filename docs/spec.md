@@ -518,6 +518,8 @@ This batch follows `docs/design/music_tab_navigation_concept.html` and `docs/des
   - Add form includes title, artist, link, note, and mood chips.
   - Submit CTA label is `노래 남기기`.
   - Saved notes show who left the song and the short note.
+  - A saved note with an http/https link exposes a distinct `링크 열기` action that opens the link immediately without opening the full-detail sheet.
+  - Link actions normalize bare domains to `https://...`; unsupported schemes stay stored as text but are not opened from the card action.
   - A user can edit only music notes they created.
   - Own note edit opens the same draft panel with title, artist, link, note, and mood prefilled.
   - Edit mode uses clear copy such as `음악 노트 다듬기` and submit CTA `수정 저장`.

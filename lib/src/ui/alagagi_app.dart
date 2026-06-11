@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/external_link_opener.dart';
 import '../data/first_visit_guide_store.dart';
 import '../data/firebase_alagagi_repositories.dart';
 import '../data/music_note_seen_store.dart';
@@ -22,6 +23,7 @@ const musicNoteFieldKey = Key('music-note-field');
 const musicSubmitButtonKey = Key('music-submit-button');
 const musicAddButtonKey = Key('music-add-button');
 Key musicEditButtonKey(String noteId) => Key('music-edit-button-$noteId');
+Key musicLinkButtonKey(String noteId) => Key('music-link-button-$noteId');
 const homeProgressSummaryKey = Key('home-progress-summary');
 const homeProgressSummaryCtaKey = Key('home-progress-summary-cta');
 const editAnswerButtonKey = Key('edit-answer-button');
@@ -100,6 +102,27 @@ bool _showsReadableCue(
   bool expanded = false,
 }) => !expanded && body.trim().length > threshold;
 
+String? _normalizedOpenableLink(String rawLink) {
+  final trimmed = rawLink.trim();
+  if (trimmed.isEmpty) {
+    return null;
+  }
+
+  final hasScheme = RegExp(r'^[a-zA-Z][a-zA-Z0-9+.-]*:').hasMatch(trimmed);
+  final candidate = hasScheme ? trimmed : 'https://$trimmed';
+  final uri = Uri.tryParse(candidate);
+  if (uri == null || uri.host.trim().isEmpty) {
+    return null;
+  }
+
+  final scheme = uri.scheme.toLowerCase();
+  if (scheme != 'http' && scheme != 'https') {
+    return null;
+  }
+
+  return uri.toString();
+}
+
 class AlagagiApp extends StatelessWidget {
   const AlagagiApp({
     super.key,
@@ -108,6 +131,7 @@ class AlagagiApp extends StatelessWidget {
     this.dataRepository,
     this.musicNoteSeenStore,
     this.firstVisitGuideStore,
+    this.onOpenExternalLink,
   });
 
   final bool firebaseEnabled;
@@ -115,6 +139,7 @@ class AlagagiApp extends StatelessWidget {
   final AlagagiDataRepository? dataRepository;
   final MusicNoteSeenStore? musicNoteSeenStore;
   final FirstVisitGuideStore? firstVisitGuideStore;
+  final ValueChanged<String>? onOpenExternalLink;
 
   @override
   Widget build(BuildContext context) {
@@ -127,9 +152,13 @@ class AlagagiApp extends StatelessWidget {
         dataRepository: data,
         musicNoteSeenStore: musicNoteSeenStore,
         firstVisitGuideStore: firstVisitGuideStore,
+        onOpenExternalLink: onOpenExternalLink,
       );
     } else {
-      home = AlagagiRoot(musicNoteSeenStore: musicNoteSeenStore);
+      home = AlagagiRoot(
+        musicNoteSeenStore: musicNoteSeenStore,
+        onOpenExternalLink: onOpenExternalLink,
+      );
     }
 
     return MaterialApp(
@@ -161,12 +190,14 @@ class AlagagiRoot extends StatefulWidget {
     this.onSignOut,
     this.musicNoteSeenStore,
     this.firstVisitGuideStore,
+    this.onOpenExternalLink,
   });
 
   final AlagagiController? controller;
   final VoidCallback? onSignOut;
   final MusicNoteSeenStore? musicNoteSeenStore;
   final FirstVisitGuideStore? firstVisitGuideStore;
+  final ValueChanged<String>? onOpenExternalLink;
 
   @override
   State<AlagagiRoot> createState() => _AlagagiRootState();
@@ -223,7 +254,10 @@ class _AlagagiRootState extends State<AlagagiRoot> {
       AlagagiRoute.answer => AnswerScreen(controller: _controller),
       AlagagiRoute.archive => ArchiveScreen(controller: _controller),
       AlagagiRoute.records => RecordsScreen(controller: _controller),
-      AlagagiRoute.music => MusicScreen(controller: _controller),
+      AlagagiRoute.music => MusicScreen(
+        controller: _controller,
+        onOpenExternalLink: widget.onOpenExternalLink ?? openExternalLink,
+      ),
       AlagagiRoute.balance => BalanceScreen(controller: _controller),
       AlagagiRoute.profileCard => ProfileCardScreen(controller: _controller),
       AlagagiRoute.wishlist => WishlistScreen(controller: _controller),
@@ -411,12 +445,14 @@ class AlagagiAuthGate extends StatelessWidget {
     required this.dataRepository,
     this.musicNoteSeenStore,
     this.firstVisitGuideStore,
+    this.onOpenExternalLink,
   });
 
   final AlagagiAuthRepository authRepository;
   final AlagagiDataRepository dataRepository;
   final MusicNoteSeenStore? musicNoteSeenStore;
   final FirstVisitGuideStore? firstVisitGuideStore;
+  final ValueChanged<String>? onOpenExternalLink;
 
   @override
   Widget build(BuildContext context) {
@@ -442,6 +478,7 @@ class AlagagiAuthGate extends StatelessWidget {
           dataRepository: dataRepository,
           musicNoteSeenStore: musicNoteSeenStore,
           firstVisitGuideStore: firstVisitGuideStore,
+          onOpenExternalLink: onOpenExternalLink,
         );
       },
     );
@@ -456,6 +493,7 @@ class _SessionGate extends StatefulWidget {
     required this.dataRepository,
     this.musicNoteSeenStore,
     this.firstVisitGuideStore,
+    this.onOpenExternalLink,
   });
 
   final AlagagiAuthUser user;
@@ -463,6 +501,7 @@ class _SessionGate extends StatefulWidget {
   final AlagagiDataRepository dataRepository;
   final MusicNoteSeenStore? musicNoteSeenStore;
   final FirstVisitGuideStore? firstVisitGuideStore;
+  final ValueChanged<String>? onOpenExternalLink;
 
   @override
   State<_SessionGate> createState() => _SessionGateState();
@@ -526,6 +565,7 @@ class _SessionGateState extends State<_SessionGate> {
         return AlagagiRoot(
           controller: _controller,
           onSignOut: widget.authRepository.signOut,
+          onOpenExternalLink: widget.onOpenExternalLink,
         );
       },
     );
@@ -8129,9 +8169,14 @@ class _InterestBadge extends StatelessWidget {
 }
 
 class MusicScreen extends StatelessWidget {
-  const MusicScreen({super.key, required this.controller});
+  const MusicScreen({
+    super.key,
+    required this.controller,
+    required this.onOpenExternalLink,
+  });
 
   final AlagagiController controller;
+  final ValueChanged<String> onOpenExternalLink;
 
   @override
   Widget build(BuildContext context) {
@@ -8169,7 +8214,11 @@ class MusicScreen extends StatelessWidget {
           const _EmptyStateCard(text: '요즘 듣는 노래를 한 곡만 가볍게 남겨볼까요?')
         else
           for (final note in notes) ...[
-            _MusicNoteCard(controller: controller, note: note),
+            _MusicNoteCard(
+              controller: controller,
+              note: note,
+              onOpenExternalLink: onOpenExternalLink,
+            ),
             const SizedBox(height: 12),
           ],
       ],
@@ -8444,10 +8493,15 @@ class _MusicTextField extends StatelessWidget {
 }
 
 class _MusicNoteCard extends StatelessWidget {
-  const _MusicNoteCard({required this.controller, required this.note});
+  const _MusicNoteCard({
+    required this.controller,
+    required this.note,
+    required this.onOpenExternalLink,
+  });
 
   final AlagagiController controller;
   final MusicNote note;
+  final ValueChanged<String> onOpenExternalLink;
 
   @override
   Widget build(BuildContext context) {
@@ -8462,6 +8516,7 @@ class _MusicNoteCard extends StatelessWidget {
     final showReadableCue =
         note.link.trim().isNotEmpty ||
         _showsReadableCue(detailBody, threshold: _compactReadablePreviewLength);
+    final openableLink = _normalizedOpenableLink(note.link);
     return GestureDetector(
       key: musicNoteCardKey(note.id),
       behavior: HitTestBehavior.opaque,
@@ -8550,10 +8605,19 @@ class _MusicNoteCard extends StatelessWidget {
                       spacing: 8,
                       runSpacing: 6,
                       children: [
-                        Text(
-                          '링크가 저장되어 있어요',
-                          style: sans(size: 11, color: AlagagiColors.sageDeep),
-                        ),
+                        if (openableLink == null)
+                          Text(
+                            '링크가 저장되어 있어요',
+                            style: sans(
+                              size: 11,
+                              color: AlagagiColors.sageDeep,
+                            ),
+                          )
+                        else
+                          _MusicLinkButton(
+                            key: musicLinkButtonKey(note.id),
+                            onPressed: () => onOpenExternalLink(openableLink),
+                          ),
                         if (showReadableCue) const _FullTextCue(),
                       ],
                     ),
@@ -8565,6 +8629,35 @@ class _MusicNoteCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MusicLinkButton extends StatelessWidget {
+  const _MusicLinkButton({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 30,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: const Icon(Icons.open_in_new_rounded, size: 13),
+        label: const Text('링크 열기', softWrap: false),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AlagagiColors.sageDeep,
+          minimumSize: const Size(0, 30),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          side: const BorderSide(color: Color(0x336F7F63)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 9),
+          textStyle: sans(size: 11.5, weight: FontWeight.w800),
         ),
       ),
     );
