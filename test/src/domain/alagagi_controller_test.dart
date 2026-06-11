@@ -157,6 +157,54 @@ void main() {
       );
     });
 
+    test('meeting draft stores private memo separately from shared memo', () {
+      final controller = AlagagiController()..enterSpace('영우');
+
+      controller.selectMeetingDate('2026-06-21');
+      controller.setMeetingAvailability(MeetingAvailability.available);
+      controller.toggleMeetingTimeSlot(MeetingTimeSlot.morning);
+      controller.updateMeetingDraft(
+        privateMemo: '점심 전까지 가족 약속',
+        sharedMemo: '오후나 저녁은 괜찮아요.',
+      );
+      controller.submitMeetingDraft();
+
+      final entry = controller.scheduleEntryFor(
+        controller.state.me.id,
+        '2026-06-21',
+      );
+
+      expect(entry, isNotNull);
+      expect(entry!.privateMemo, '점심 전까지 가족 약속');
+      expect(entry.sharedMemo, '오후나 저녁은 괜찮아요.');
+      expect(entry.timeSlots, contains(MeetingTimeSlot.evening));
+    });
+
+    test('place board saves a place and ignores duplicate interest', () {
+      final controller = AlagagiController()..enterSpace('영우');
+
+      controller.startPlaceDraft();
+      controller.updatePlaceDraft(
+        name: '조용한 카페',
+        address: '서울 성동구',
+        note: '저녁에 이야기하기 좋아 보여요.',
+      );
+      controller.setPlaceDraftCategory(PlaceCategory.cafe);
+      controller.submitPlaceDraft();
+
+      final place = controller.sharedPlaces.first;
+      expect(place.name, '조용한 카페');
+      expect(place.interestedByProfileIds, contains(controller.state.me.id));
+
+      controller.togglePlaceInterest(place.id);
+      expect(
+        controller.sharedPlaces.first.interestedByProfileIds.where(
+          (id) => id == controller.state.me.id,
+        ),
+        hasLength(1),
+      );
+    });
+
     test(
       'question and balance catalogs avoid romantic commitment language',
       () {

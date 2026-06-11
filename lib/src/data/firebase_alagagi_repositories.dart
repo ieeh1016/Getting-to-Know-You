@@ -275,6 +275,61 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
   }
 
   @override
+  Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry) async {
+    final sharedWrite = _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('scheduleEntries')
+        .doc(entry.id)
+        .set({
+          'dateKey': entry.dateKey,
+          'profileId': entry.profileId,
+          'availability': _availabilityToData(entry.availability),
+          'timeSlots': entry.timeSlots.map(_timeSlotToData).toList(),
+          'sharedMemo': entry.sharedMemo,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+
+    final privateWrite = _firestore
+        .collection('users')
+        .doc(entry.profileId)
+        .collection('privateScheduleMemos')
+        .doc('${spaceId}_${entry.dateKey}')
+        .set({
+          'spaceId': spaceId,
+          'dateKey': entry.dateKey,
+          'privateMemo': entry.privateMemo,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+
+    await Future.wait([sharedWrite, privateWrite]);
+  }
+
+  @override
+  Future<void> saveSharedPlace(String spaceId, SharedPlace place) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('sharedPlaces')
+        .doc(place.id)
+        .set({
+          'id': place.id,
+          'name': place.name,
+          'address': place.address,
+          'category': _placeCategoryToData(place.category),
+          'provider': _mapApiProviderToData(place.provider),
+          'providerPlaceId': place.providerPlaceId,
+          'latitude': place.latitude,
+          'longitude': place.longitude,
+          'note': place.note,
+          'createdByProfileId': place.createdByProfileId,
+          'interestedByProfileIds': place.interestedByProfileIds.toList(),
+          'linkedDateKey': place.linkedDateKey ?? '',
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+  }
+
+  @override
   Future<void> saveCuriosityCard(String spaceId, CuriosityCard card) {
     return _firestore
         .collection('spaces')
@@ -357,6 +412,15 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     final balanceSnapshot = await space.collection('balanceSelections').get();
     final wishesSnapshot = await space.collection('wishes').get();
     final musicNotesSnapshot = await space.collection('musicNotes').get();
+    final scheduleEntriesSnapshot = await space
+        .collection('scheduleEntries')
+        .get();
+    final privateScheduleMemosSnapshot = await _firestore
+        .collection('users')
+        .doc(meId)
+        .collection('privateScheduleMemos')
+        .get();
+    final sharedPlacesSnapshot = await space.collection('sharedPlaces').get();
     final curiosityCardsSnapshot = await space
         .collection('curiosityCards')
         .get();
@@ -402,6 +466,25 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           .toList(),
       musicNotes: musicNotesSnapshot.docs
           .map((doc) => _musicNoteFromData(doc.id, doc.data()))
+          .nonNulls
+          .toList(),
+      scheduleEntries: scheduleEntriesSnapshot.docs
+          .map(
+            (doc) => _scheduleEntryFromData(
+              doc.id,
+              doc.data(),
+              privateMemosByDateKey: _privateMemosByDateKey(
+                privateScheduleMemosSnapshot.docs
+                    .map((doc) => doc.data())
+                    .where((data) => _readString(data, 'spaceId') == spaceId),
+              ),
+              meId: meId,
+            ),
+          )
+          .nonNulls
+          .toList(),
+      sharedPlaces: sharedPlacesSnapshot.docs
+          .map((doc) => _sharedPlaceFromData(doc.id, doc.data()))
           .nonNulls
           .toList(),
       curiosityCards: curiosityCardsSnapshot.docs
@@ -553,6 +636,62 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     );
   }
 
+  ScheduleEntry? _scheduleEntryFromData(
+    String fallbackId,
+    Map<String, dynamic> data, {
+    required Map<String, String> privateMemosByDateKey,
+    required String meId,
+  }) {
+    final dateKey = _readString(data, 'dateKey');
+    final profileId = _readString(data, 'profileId');
+    if (dateKey == null || profileId == null) {
+      return null;
+    }
+    final timeSlots = _readStringList(
+      data,
+      'timeSlots',
+    ).map(_timeSlotFromData).nonNulls.toSet();
+    return ScheduleEntry(
+      dateKey: dateKey,
+      profileId: profileId,
+      availability: _availabilityFromData(_readString(data, 'availability')),
+      timeSlots: timeSlots,
+      privateMemo: profileId == meId
+          ? privateMemosByDateKey[dateKey] ?? ''
+          : '',
+      sharedMemo: _readString(data, 'sharedMemo') ?? '',
+      updatedAt: _readDateTime(data, 'updatedAt'),
+    );
+  }
+
+  SharedPlace? _sharedPlaceFromData(
+    String fallbackId,
+    Map<String, dynamic> data,
+  ) {
+    final name = _readString(data, 'name');
+    if (name == null) {
+      return null;
+    }
+    return SharedPlace(
+      id: _readString(data, 'id') ?? fallbackId,
+      name: name,
+      address: _readString(data, 'address') ?? '',
+      category: _placeCategoryFromData(_readString(data, 'category')),
+      provider: _mapApiProviderFromData(_readString(data, 'provider')),
+      providerPlaceId: _readString(data, 'providerPlaceId') ?? '',
+      latitude: _readDouble(data, 'latitude'),
+      longitude: _readDouble(data, 'longitude'),
+      note: _readString(data, 'note') ?? '',
+      createdByProfileId: _readString(data, 'createdByProfileId') ?? '',
+      interestedByProfileIds: _readStringList(
+        data,
+        'interestedByProfileIds',
+      ).toSet(),
+      linkedDateKey: _readString(data, 'linkedDateKey'),
+      updatedAt: _readDateTime(data, 'updatedAt'),
+    );
+  }
+
   CuriosityCard? _curiosityCardFromData(
     String fallbackId,
     Map<String, dynamic> data,
@@ -689,6 +828,114 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       'inviteLine': personalization.inviteLine,
       'accentEmoji': personalization.accentEmoji,
     };
+  }
+
+  Map<String, String> _privateMemosByDateKey(
+    Iterable<Map<String, dynamic>> docs,
+  ) {
+    return {
+      for (final data in docs)
+        if (_readString(data, 'dateKey') != null)
+          _readString(data, 'dateKey')!: _readString(data, 'privateMemo') ?? '',
+    };
+  }
+
+  String _availabilityToData(MeetingAvailability availability) {
+    return switch (availability) {
+      MeetingAvailability.available => 'available',
+      MeetingAvailability.maybe => 'maybe',
+      MeetingAvailability.busy => 'busy',
+    };
+  }
+
+  MeetingAvailability _availabilityFromData(String? value) {
+    return switch (value) {
+      'available' => MeetingAvailability.available,
+      'maybe' => MeetingAvailability.maybe,
+      'busy' => MeetingAvailability.busy,
+      _ => MeetingAvailability.busy,
+    };
+  }
+
+  String _timeSlotToData(MeetingTimeSlot slot) {
+    return switch (slot) {
+      MeetingTimeSlot.morning => 'morning',
+      MeetingTimeSlot.afternoon => 'afternoon',
+      MeetingTimeSlot.evening => 'evening',
+    };
+  }
+
+  MeetingTimeSlot? _timeSlotFromData(String value) {
+    return switch (value) {
+      'morning' => MeetingTimeSlot.morning,
+      'afternoon' => MeetingTimeSlot.afternoon,
+      'evening' => MeetingTimeSlot.evening,
+      _ => null,
+    };
+  }
+
+  String _mapApiProviderToData(MapApiProvider provider) {
+    return switch (provider) {
+      MapApiProvider.kakao => 'kakao',
+      MapApiProvider.naver => 'naver',
+      MapApiProvider.manual => 'manual',
+    };
+  }
+
+  MapApiProvider _mapApiProviderFromData(String? value) {
+    return switch (value) {
+      'kakao' => MapApiProvider.kakao,
+      'naver' => MapApiProvider.naver,
+      'manual' => MapApiProvider.manual,
+      _ => MapApiProvider.manual,
+    };
+  }
+
+  String _placeCategoryToData(PlaceCategory category) {
+    return switch (category) {
+      PlaceCategory.cafe => 'cafe',
+      PlaceCategory.food => 'food',
+      PlaceCategory.exhibition => 'exhibition',
+      PlaceCategory.walk => 'walk',
+      PlaceCategory.activity => 'activity',
+    };
+  }
+
+  PlaceCategory _placeCategoryFromData(String? value) {
+    return switch (value) {
+      'cafe' => PlaceCategory.cafe,
+      'food' => PlaceCategory.food,
+      'exhibition' => PlaceCategory.exhibition,
+      'walk' => PlaceCategory.walk,
+      'activity' => PlaceCategory.activity,
+      _ => PlaceCategory.activity,
+    };
+  }
+
+  List<String> _readStringList(Map<String, dynamic> data, String key) {
+    final value = data[key];
+    if (value is Iterable) {
+      return value
+          .whereType<String>()
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList();
+    }
+    return const [];
+  }
+
+  double? _readDouble(Map<String, dynamic> data, String key) {
+    final value = data[key];
+    if (value is double) {
+      return value;
+    }
+    if (value is int) {
+      return value.toDouble();
+    }
+    if (value is String) {
+      return double.tryParse(value);
+    }
+    return null;
   }
 
   String? _readString(Map<String, dynamic> data, String key) {

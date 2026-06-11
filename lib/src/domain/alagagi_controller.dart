@@ -9,6 +9,8 @@ enum AlagagiRoute {
   archive,
   records,
   music,
+  meetings,
+  places,
   stockStory,
   balance,
   profileCard,
@@ -23,6 +25,14 @@ enum ProfileCardTab { partner, me }
 enum WishlistFilter { all, mutual, places, activities }
 
 enum WishKind { place, activity }
+
+enum MeetingAvailability { available, maybe, busy }
+
+enum MeetingTimeSlot { morning, afternoon, evening }
+
+enum MapApiProvider { kakao, naver, manual }
+
+enum PlaceCategory { cafe, food, exhibition, walk, activity }
 
 enum StockStoryTab { stories, holdings }
 
@@ -109,6 +119,8 @@ class AlagagiSpaceData {
     this.profileSlots = const [],
     this.wishes = const [],
     this.musicNotes = const [],
+    this.scheduleEntries = const [],
+    this.sharedPlaces = const [],
     this.curiosityCards = const [],
     this.stockStories = const [],
     this.stockHoldings = const [],
@@ -122,6 +134,8 @@ class AlagagiSpaceData {
   final List<ProfileSlotValue> profileSlots;
   final List<WishItem> wishes;
   final List<MusicNote> musicNotes;
+  final List<ScheduleEntry> scheduleEntries;
+  final List<SharedPlace> sharedPlaces;
   final List<CuriosityCard> curiosityCards;
   final List<StockStory> stockStories;
   final List<StockHolding> stockHoldings;
@@ -176,6 +190,10 @@ abstract class AlagagiDataRepository {
   Future<void> saveWish(String spaceId, WishItem wish);
 
   Future<void> saveMusicNote(String spaceId, MusicNote note);
+
+  Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry);
+
+  Future<void> saveSharedPlace(String spaceId, SharedPlace place);
 
   Future<void> saveCuriosityCard(String spaceId, CuriosityCard card);
 
@@ -769,6 +787,131 @@ class MusicNote {
   }
 }
 
+class ScheduleEntry {
+  const ScheduleEntry({
+    required this.dateKey,
+    required this.profileId,
+    required this.availability,
+    required this.timeSlots,
+    this.privateMemo = '',
+    this.sharedMemo = '',
+    this.updatedAt,
+  });
+
+  final String dateKey;
+  final String profileId;
+  final MeetingAvailability availability;
+  final Set<MeetingTimeSlot> timeSlots;
+  final String privateMemo;
+  final String sharedMemo;
+  final DateTime? updatedAt;
+
+  String get id => '${dateKey}_$profileId';
+
+  bool get canMeet =>
+      availability == MeetingAvailability.available && timeSlots.isNotEmpty;
+
+  ScheduleEntry copyWith({
+    MeetingAvailability? availability,
+    Set<MeetingTimeSlot>? timeSlots,
+    String? privateMemo,
+    String? sharedMemo,
+    DateTime? updatedAt,
+  }) {
+    return ScheduleEntry(
+      dateKey: dateKey,
+      profileId: profileId,
+      availability: availability ?? this.availability,
+      timeSlots: timeSlots ?? this.timeSlots,
+      privateMemo: privateMemo ?? this.privateMemo,
+      sharedMemo: sharedMemo ?? this.sharedMemo,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+}
+
+class MeetingCandidate {
+  const MeetingCandidate({
+    required this.dateKey,
+    required this.sharedSlots,
+    this.myEntry,
+    this.partnerEntry,
+  });
+
+  final String dateKey;
+  final Set<MeetingTimeSlot> sharedSlots;
+  final ScheduleEntry? myEntry;
+  final ScheduleEntry? partnerEntry;
+}
+
+class SharedPlace {
+  const SharedPlace({
+    required this.id,
+    required this.name,
+    required this.address,
+    required this.category,
+    required this.provider,
+    required this.createdByProfileId,
+    required this.interestedByProfileIds,
+    this.providerPlaceId = '',
+    this.latitude,
+    this.longitude,
+    this.note = '',
+    this.linkedDateKey,
+    this.updatedAt,
+  });
+
+  final String id;
+  final String name;
+  final String address;
+  final PlaceCategory category;
+  final MapApiProvider provider;
+  final String providerPlaceId;
+  final double? latitude;
+  final double? longitude;
+  final String note;
+  final String createdByProfileId;
+  final Set<String> interestedByProfileIds;
+  final String? linkedDateKey;
+  final DateTime? updatedAt;
+
+  bool get isMutual => interestedByProfileIds.length >= 2;
+
+  SharedPlace copyWith({
+    String? name,
+    String? address,
+    PlaceCategory? category,
+    MapApiProvider? provider,
+    String? providerPlaceId,
+    double? latitude,
+    double? longitude,
+    String? note,
+    Set<String>? interestedByProfileIds,
+    String? linkedDateKey,
+    bool clearLinkedDateKey = false,
+    DateTime? updatedAt,
+  }) {
+    return SharedPlace(
+      id: id,
+      name: name ?? this.name,
+      address: address ?? this.address,
+      category: category ?? this.category,
+      provider: provider ?? this.provider,
+      providerPlaceId: providerPlaceId ?? this.providerPlaceId,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      note: note ?? this.note,
+      createdByProfileId: createdByProfileId,
+      interestedByProfileIds:
+          interestedByProfileIds ?? this.interestedByProfileIds,
+      linkedDateKey: clearLinkedDateKey
+          ? null
+          : linkedDateKey ?? this.linkedDateKey,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+}
+
 class CuriosityCard {
   const CuriosityCard({
     required this.id,
@@ -1049,6 +1192,19 @@ class AlagagiState {
     this.musicDraftNote = '',
     this.musicDraftMood = '차분한',
     this.editingMusicNoteId,
+    this.selectedMeetingDateKey,
+    this.meetingDraftAvailability = MeetingAvailability.available,
+    this.meetingDraftTimeSlots = const {MeetingTimeSlot.evening},
+    this.meetingDraftPrivateMemo = '',
+    this.meetingDraftSharedMemo = '',
+    this.meetingDraftError,
+    this.placeDraftVisible = false,
+    this.placeDraftName = '',
+    this.placeDraftAddress = '',
+    this.placeDraftNote = '',
+    this.placeDraftCategory = PlaceCategory.cafe,
+    this.placeDraftProvider = MapApiProvider.kakao,
+    this.placeDraftError,
     this.stockStoryTab = StockStoryTab.stories,
     this.stockStoryDraftVisible = false,
     this.stockStoryDraftName = '',
@@ -1119,6 +1275,19 @@ class AlagagiState {
   final String musicDraftNote;
   final String musicDraftMood;
   final String? editingMusicNoteId;
+  final String? selectedMeetingDateKey;
+  final MeetingAvailability meetingDraftAvailability;
+  final Set<MeetingTimeSlot> meetingDraftTimeSlots;
+  final String meetingDraftPrivateMemo;
+  final String meetingDraftSharedMemo;
+  final String? meetingDraftError;
+  final bool placeDraftVisible;
+  final String placeDraftName;
+  final String placeDraftAddress;
+  final String placeDraftNote;
+  final PlaceCategory placeDraftCategory;
+  final MapApiProvider placeDraftProvider;
+  final String? placeDraftError;
   final StockStoryTab stockStoryTab;
   final bool stockStoryDraftVisible;
   final String stockStoryDraftName;
@@ -1190,6 +1359,21 @@ class AlagagiState {
     String? musicDraftMood,
     String? editingMusicNoteId,
     bool clearEditingMusicNoteId = false,
+    String? selectedMeetingDateKey,
+    MeetingAvailability? meetingDraftAvailability,
+    Set<MeetingTimeSlot>? meetingDraftTimeSlots,
+    String? meetingDraftPrivateMemo,
+    String? meetingDraftSharedMemo,
+    String? meetingDraftError,
+    bool clearMeetingDraftError = false,
+    bool? placeDraftVisible,
+    String? placeDraftName,
+    String? placeDraftAddress,
+    String? placeDraftNote,
+    PlaceCategory? placeDraftCategory,
+    MapApiProvider? placeDraftProvider,
+    String? placeDraftError,
+    bool clearPlaceDraftError = false,
     StockStoryTab? stockStoryTab,
     bool? stockStoryDraftVisible,
     String? stockStoryDraftName,
@@ -1280,6 +1464,28 @@ class AlagagiState {
       editingMusicNoteId: clearEditingMusicNoteId
           ? null
           : editingMusicNoteId ?? this.editingMusicNoteId,
+      selectedMeetingDateKey:
+          selectedMeetingDateKey ?? this.selectedMeetingDateKey,
+      meetingDraftAvailability:
+          meetingDraftAvailability ?? this.meetingDraftAvailability,
+      meetingDraftTimeSlots:
+          meetingDraftTimeSlots ?? this.meetingDraftTimeSlots,
+      meetingDraftPrivateMemo:
+          meetingDraftPrivateMemo ?? this.meetingDraftPrivateMemo,
+      meetingDraftSharedMemo:
+          meetingDraftSharedMemo ?? this.meetingDraftSharedMemo,
+      meetingDraftError: clearMeetingDraftError
+          ? null
+          : meetingDraftError ?? this.meetingDraftError,
+      placeDraftVisible: placeDraftVisible ?? this.placeDraftVisible,
+      placeDraftName: placeDraftName ?? this.placeDraftName,
+      placeDraftAddress: placeDraftAddress ?? this.placeDraftAddress,
+      placeDraftNote: placeDraftNote ?? this.placeDraftNote,
+      placeDraftCategory: placeDraftCategory ?? this.placeDraftCategory,
+      placeDraftProvider: placeDraftProvider ?? this.placeDraftProvider,
+      placeDraftError: clearPlaceDraftError
+          ? null
+          : placeDraftError ?? this.placeDraftError,
       stockStoryTab: stockStoryTab ?? this.stockStoryTab,
       stockStoryDraftVisible:
           stockStoryDraftVisible ?? this.stockStoryDraftVisible,
@@ -1483,6 +1689,8 @@ class AlagagiController extends ChangeNotifier {
   final List<ProfileCardData> _profileCards = [];
   final List<WishItem> _wishes = [];
   final List<MusicNote> _musicNotes = [];
+  final List<ScheduleEntry> _scheduleEntries = [];
+  final List<SharedPlace> _sharedPlaces = [];
   final List<CuriosityCard> _curiosityCards = [];
   final List<StockStory> _stockStories = [];
   final List<StockHolding> _stockHoldings = [];
@@ -1669,6 +1877,46 @@ class AlagagiController extends ChangeNotifier {
         }),
       );
     _sortMusicNotesByUpdatedAt();
+    _scheduleEntries
+      ..clear()
+      ..addAll(
+        seedScheduleEntries.map((entry) {
+          return ScheduleEntry(
+            dateKey: entry.dateKey,
+            profileId: _mapSeedProfileId(entry.profileId),
+            availability: entry.availability,
+            timeSlots: entry.timeSlots,
+            privateMemo: entry.profileId == 'me' ? entry.privateMemo : '',
+            sharedMemo: entry.sharedMemo,
+            updatedAt: entry.updatedAt,
+          );
+        }),
+      );
+    _sortScheduleEntriesByDate();
+    _sharedPlaces
+      ..clear()
+      ..addAll(
+        seedSharedPlaces.map((place) {
+          return SharedPlace(
+            id: place.id,
+            name: place.name,
+            address: place.address,
+            category: place.category,
+            provider: place.provider,
+            providerPlaceId: place.providerPlaceId,
+            latitude: place.latitude,
+            longitude: place.longitude,
+            note: place.note,
+            createdByProfileId: _mapSeedProfileId(place.createdByProfileId),
+            interestedByProfileIds: _mapSeedProfileIds(
+              place.interestedByProfileIds,
+            ),
+            linkedDateKey: place.linkedDateKey,
+            updatedAt: place.updatedAt,
+          );
+        }),
+      );
+    _sortSharedPlacesByUpdatedAt();
     _curiosityCards
       ..clear()
       ..addAll(
@@ -1807,6 +2055,14 @@ class AlagagiController extends ChangeNotifier {
       ..clear()
       ..addAll(data.musicNotes);
     _sortMusicNotesByUpdatedAt();
+    _scheduleEntries
+      ..clear()
+      ..addAll(data.scheduleEntries);
+    _sortScheduleEntriesByDate();
+    _sharedPlaces
+      ..clear()
+      ..addAll(data.sharedPlaces);
+    _sortSharedPlacesByUpdatedAt();
     _curiosityCards
       ..clear()
       ..addAll(data.curiosityCards);
@@ -2058,6 +2314,24 @@ class AlagagiController extends ChangeNotifier {
       return;
     }
     unawaited(repository.saveMusicNote(spaceId, note).catchError((_) {}));
+  }
+
+  void _persistScheduleEntry(ScheduleEntry entry) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      return;
+    }
+    unawaited(repository.saveScheduleEntry(spaceId, entry).catchError((_) {}));
+  }
+
+  void _persistSharedPlace(SharedPlace place) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      return;
+    }
+    unawaited(repository.saveSharedPlace(spaceId, place).catchError((_) {}));
   }
 
   void _persistCuriosityCard(CuriosityCard card) {
@@ -2476,6 +2750,55 @@ class AlagagiController extends ChangeNotifier {
 
   List<MusicNote> get musicNotes => List<MusicNote>.unmodifiable(_musicNotes);
 
+  List<ScheduleEntry> get scheduleEntries =>
+      List<ScheduleEntry>.unmodifiable(_scheduleEntries);
+
+  List<SharedPlace> get sharedPlaces =>
+      List<SharedPlace>.unmodifiable(_sharedPlaces);
+
+  String get selectedMeetingDateKey =>
+      _state.selectedMeetingDateKey ?? _todayDateKey();
+
+  ScheduleEntry? get mySelectedScheduleEntry =>
+      scheduleEntryFor(_state.me.id, selectedMeetingDateKey);
+
+  ScheduleEntry? get partnerSelectedScheduleEntry =>
+      scheduleEntryFor(_state.partner.id, selectedMeetingDateKey);
+
+  List<MeetingCandidate> get meetingCandidates {
+    final keys = _scheduleEntries.map((entry) => entry.dateKey).toSet().toList()
+      ..sort();
+    final candidates = <MeetingCandidate>[];
+    for (final dateKey in keys) {
+      final myEntry = scheduleEntryFor(_state.me.id, dateKey);
+      final partnerEntry = scheduleEntryFor(_state.partner.id, dateKey);
+      if (myEntry == null || partnerEntry == null) {
+        continue;
+      }
+      final sharedSlots = myEntry.timeSlots.intersection(
+        partnerEntry.timeSlots,
+      );
+      if (myEntry.canMeet && partnerEntry.canMeet && sharedSlots.isNotEmpty) {
+        candidates.add(
+          MeetingCandidate(
+            dateKey: dateKey,
+            sharedSlots: sharedSlots,
+            myEntry: myEntry,
+            partnerEntry: partnerEntry,
+          ),
+        );
+      }
+    }
+    return List<MeetingCandidate>.unmodifiable(candidates);
+  }
+
+  ScheduleEntry? scheduleEntryFor(String profileId, String dateKey) {
+    return _scheduleEntries.cast<ScheduleEntry?>().firstWhere(
+      (entry) => entry?.profileId == profileId && entry?.dateKey == dateKey,
+      orElse: () => null,
+    );
+  }
+
   List<CuriosityCard> get curiosityCards =>
       List<CuriosityCard>.unmodifiable(_curiosityCards);
 
@@ -2666,6 +2989,33 @@ class AlagagiController extends ChangeNotifier {
       final bUpdatedAt = b.updatedAt;
       if (aUpdatedAt == null && bUpdatedAt == null) {
         return 0;
+      }
+      if (aUpdatedAt == null) {
+        return 1;
+      }
+      if (bUpdatedAt == null) {
+        return -1;
+      }
+      return bUpdatedAt.compareTo(aUpdatedAt);
+    });
+  }
+
+  void _sortScheduleEntriesByDate() {
+    _scheduleEntries.sort((a, b) {
+      final dateCompare = a.dateKey.compareTo(b.dateKey);
+      if (dateCompare != 0) {
+        return dateCompare;
+      }
+      return a.profileId.compareTo(b.profileId);
+    });
+  }
+
+  void _sortSharedPlacesByUpdatedAt() {
+    _sharedPlaces.sort((a, b) {
+      final aUpdatedAt = a.updatedAt;
+      final bUpdatedAt = b.updatedAt;
+      if (aUpdatedAt == null && bUpdatedAt == null) {
+        return b.id.compareTo(a.id);
       }
       if (aUpdatedAt == null) {
         return 1;
@@ -3745,6 +4095,248 @@ class AlagagiController extends ChangeNotifier {
       clearEditingMusicNoteId: true,
       clearMusicDraftError: true,
     );
+    notifyListeners();
+  }
+
+  void selectMeetingDate(String dateKey) {
+    final entry = scheduleEntryFor(_state.me.id, dateKey);
+    _state = _state.copyWith(
+      selectedMeetingDateKey: dateKey,
+      meetingDraftAvailability:
+          entry?.availability ?? MeetingAvailability.available,
+      meetingDraftTimeSlots:
+          entry?.timeSlots ?? const {MeetingTimeSlot.evening},
+      meetingDraftPrivateMemo: entry?.privateMemo ?? '',
+      meetingDraftSharedMemo: entry?.sharedMemo ?? '',
+      clearMeetingDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void setMeetingAvailability(MeetingAvailability availability) {
+    final timeSlots = availability == MeetingAvailability.busy
+        ? <MeetingTimeSlot>{}
+        : _state.meetingDraftTimeSlots.isEmpty
+        ? {MeetingTimeSlot.evening}
+        : _state.meetingDraftTimeSlots;
+    _state = _state.copyWith(
+      meetingDraftAvailability: availability,
+      meetingDraftTimeSlots: timeSlots,
+      clearMeetingDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void toggleMeetingTimeSlot(MeetingTimeSlot slot) {
+    final slots = Set<MeetingTimeSlot>.from(_state.meetingDraftTimeSlots);
+    if (slots.contains(slot)) {
+      slots.remove(slot);
+    } else {
+      slots.add(slot);
+    }
+    _state = _state.copyWith(
+      meetingDraftAvailability: slots.isEmpty
+          ? MeetingAvailability.busy
+          : _state.meetingDraftAvailability == MeetingAvailability.busy
+          ? MeetingAvailability.available
+          : _state.meetingDraftAvailability,
+      meetingDraftTimeSlots: Set<MeetingTimeSlot>.unmodifiable(slots),
+      clearMeetingDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void updateMeetingDraft({String? privateMemo, String? sharedMemo}) {
+    _state = _state.copyWith(
+      meetingDraftPrivateMemo: privateMemo,
+      meetingDraftSharedMemo: sharedMemo,
+      clearMeetingDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void submitMeetingDraft() {
+    final privateMemo = _state.meetingDraftPrivateMemo.trim();
+    final sharedMemo = _state.meetingDraftSharedMemo.trim();
+    final availability = _state.meetingDraftAvailability;
+    final timeSlots = availability == MeetingAvailability.busy
+        ? <MeetingTimeSlot>{}
+        : _state.meetingDraftTimeSlots;
+    if (privateMemo.length > 80) {
+      _state = _state.copyWith(meetingDraftError: '내 약속 메모는 80자 안으로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    if (sharedMemo.length > 120) {
+      _state = _state.copyWith(meetingDraftError: '공유 메모는 120자 안으로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    if (availability != MeetingAvailability.busy && timeSlots.isEmpty) {
+      _state = _state.copyWith(meetingDraftError: '가능한 시간대를 하나 골라주세요.');
+      notifyListeners();
+      return;
+    }
+
+    final entry = ScheduleEntry(
+      dateKey: selectedMeetingDateKey,
+      profileId: _state.me.id,
+      availability: availability,
+      timeSlots: Set<MeetingTimeSlot>.unmodifiable(timeSlots),
+      privateMemo: privateMemo,
+      sharedMemo: sharedMemo,
+      updatedAt: DateTime.now(),
+    );
+    final index = _scheduleEntries.indexWhere(
+      (candidate) => candidate.id == entry.id,
+    );
+    if (index == -1) {
+      _scheduleEntries.add(entry);
+    } else {
+      _scheduleEntries[index] = entry;
+    }
+    _sortScheduleEntriesByDate();
+    _persistScheduleEntry(entry);
+    _state = _state.copyWith(clearMeetingDraftError: true);
+    notifyListeners();
+  }
+
+  void startPlaceDraft() {
+    _state = _state.copyWith(
+      route: AlagagiRoute.places,
+      placeDraftVisible: true,
+      placeDraftName: '',
+      placeDraftAddress: '',
+      placeDraftNote: '',
+      placeDraftCategory: PlaceCategory.cafe,
+      placeDraftProvider: MapApiProvider.kakao,
+      clearPlaceDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void cancelPlaceDraft() {
+    _state = _state.copyWith(
+      placeDraftVisible: false,
+      placeDraftName: '',
+      placeDraftAddress: '',
+      placeDraftNote: '',
+      placeDraftCategory: PlaceCategory.cafe,
+      placeDraftProvider: MapApiProvider.kakao,
+      clearPlaceDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void updatePlaceDraft({String? name, String? address, String? note}) {
+    _state = _state.copyWith(
+      placeDraftName: name,
+      placeDraftAddress: address,
+      placeDraftNote: note,
+      clearPlaceDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void setPlaceDraftCategory(PlaceCategory category) {
+    _state = _state.copyWith(
+      placeDraftCategory: category,
+      clearPlaceDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void setPlaceDraftProvider(MapApiProvider provider) {
+    _state = _state.copyWith(
+      placeDraftProvider: provider,
+      clearPlaceDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void submitPlaceDraft() {
+    final name = _state.placeDraftName.trim();
+    final address = _state.placeDraftAddress.trim();
+    final note = _state.placeDraftNote.trim();
+    if (name.isEmpty) {
+      _state = _state.copyWith(placeDraftError: '장소 이름을 한 줄로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    if (name.length > 60) {
+      _state = _state.copyWith(placeDraftError: '장소 이름은 60자 안으로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    if (address.length > 90) {
+      _state = _state.copyWith(placeDraftError: '주소는 90자 안으로 담아주세요.');
+      notifyListeners();
+      return;
+    }
+    if (note.length > 120) {
+      _state = _state.copyWith(placeDraftError: '메모는 120자 안으로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+
+    final now = DateTime.now();
+    final place = SharedPlace(
+      id: 'place_${_state.me.id}_${now.microsecondsSinceEpoch}',
+      name: name,
+      address: address.isEmpty ? '주소는 지도 API 연결 후 자동 입력' : address,
+      category: _state.placeDraftCategory,
+      provider: _state.placeDraftProvider,
+      note: note,
+      createdByProfileId: _state.me.id,
+      interestedByProfileIds: {_state.me.id},
+      updatedAt: now,
+    );
+    _sharedPlaces.insert(0, place);
+    _sortSharedPlacesByUpdatedAt();
+    _persistSharedPlace(place);
+    _state = _state.copyWith(
+      placeDraftVisible: false,
+      placeDraftName: '',
+      placeDraftAddress: '',
+      placeDraftNote: '',
+      placeDraftCategory: PlaceCategory.cafe,
+      placeDraftProvider: MapApiProvider.kakao,
+      clearPlaceDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void togglePlaceInterest(String placeId) {
+    final index = _sharedPlaces.indexWhere((place) => place.id == placeId);
+    if (index == -1) {
+      return;
+    }
+    final place = _sharedPlaces[index];
+    if (place.interestedByProfileIds.contains(_state.me.id)) {
+      return;
+    }
+    final updatedPlace = place.copyWith(
+      interestedByProfileIds: {...place.interestedByProfileIds, _state.me.id},
+      updatedAt: DateTime.now(),
+    );
+    _sharedPlaces[index] = updatedPlace;
+    _sortSharedPlacesByUpdatedAt();
+    _persistSharedPlace(updatedPlace);
+    notifyListeners();
+  }
+
+  void linkPlaceToSelectedMeeting(String placeId) {
+    final index = _sharedPlaces.indexWhere((place) => place.id == placeId);
+    if (index == -1) {
+      return;
+    }
+    final updatedPlace = _sharedPlaces[index].copyWith(
+      linkedDateKey: selectedMeetingDateKey,
+      updatedAt: DateTime.now(),
+    );
+    _sharedPlaces[index] = updatedPlace;
+    _sortSharedPlacesByUpdatedAt();
+    _persistSharedPlace(updatedPlace);
     notifyListeners();
   }
 
@@ -4940,6 +5532,87 @@ const seedMusicNotes = [
     mood: '카페',
     createdByProfileId: 'me',
     createdLabel: '오늘',
+  ),
+];
+
+const seedScheduleEntries = [
+  ScheduleEntry(
+    dateKey: '2026-06-11',
+    profileId: 'me',
+    availability: MeetingAvailability.available,
+    timeSlots: {MeetingTimeSlot.evening},
+    privateMemo: '18:30까지 회사 쪽 일정',
+    sharedMemo: '19:30 이후면 괜찮아요.',
+  ),
+  ScheduleEntry(
+    dateKey: '2026-06-11',
+    profileId: 'partner',
+    availability: MeetingAvailability.available,
+    timeSlots: {MeetingTimeSlot.evening},
+    sharedMemo: '저녁이면 좋아요.',
+  ),
+  ScheduleEntry(
+    dateKey: '2026-06-17',
+    profileId: 'me',
+    availability: MeetingAvailability.maybe,
+    timeSlots: {MeetingTimeSlot.afternoon, MeetingTimeSlot.evening},
+    privateMemo: '오후 일정이 유동적이에요.',
+    sharedMemo: '오후는 조율 가능해요.',
+  ),
+  ScheduleEntry(
+    dateKey: '2026-06-17',
+    profileId: 'partner',
+    availability: MeetingAvailability.available,
+    timeSlots: {MeetingTimeSlot.afternoon},
+    sharedMemo: '전시 보기 좋은 시간이에요.',
+  ),
+  ScheduleEntry(
+    dateKey: '2026-06-19',
+    profileId: 'me',
+    availability: MeetingAvailability.busy,
+    timeSlots: {},
+    privateMemo: '가족 약속',
+    sharedMemo: '이 날은 어려워요.',
+  ),
+];
+
+const seedSharedPlaces = [
+  SharedPlace(
+    id: 'place_exhibition',
+    name: '작은 전시 공간',
+    address: '서울 성동구 성수동',
+    category: PlaceCategory.exhibition,
+    provider: MapApiProvider.kakao,
+    providerPlaceId: 'sample-kakao-exhibition',
+    latitude: 37.5446,
+    longitude: 127.0557,
+    note: '전시 보고 근처에서 커피 마시면 좋을 것 같아요.',
+    createdByProfileId: 'me',
+    interestedByProfileIds: {'me', 'partner'},
+    linkedDateKey: '2026-06-11',
+  ),
+  SharedPlace(
+    id: 'place_cafe',
+    name: '느린 커피 성수',
+    address: '서울 성동구 연무장길',
+    category: PlaceCategory.cafe,
+    provider: MapApiProvider.naver,
+    providerPlaceId: 'sample-naver-cafe',
+    latitude: 37.5428,
+    longitude: 127.0542,
+    note: '사람이 많지 않은 시간에 가면 좋겠어요.',
+    createdByProfileId: 'partner',
+    interestedByProfileIds: {'partner'},
+  ),
+  SharedPlace(
+    id: 'place_table',
+    name: '골목 식탁',
+    address: '서울 성동구 아차산로',
+    category: PlaceCategory.food,
+    provider: MapApiProvider.manual,
+    note: '늦게까지 해서 저녁 후보로 괜찮아요.',
+    createdByProfileId: 'me',
+    interestedByProfileIds: {'me'},
   ),
 ];
 

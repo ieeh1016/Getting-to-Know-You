@@ -145,6 +145,8 @@ void main() {
     expect(find.text('홈'), findsOneWidget);
     expect(find.text('질문'), findsOneWidget);
     expect(find.text('음악'), findsOneWidget);
+    expect(find.text('약속'), findsOneWidget);
+    expect(find.text('장소'), findsOneWidget);
     expect(find.text('마이'), findsOneWidget);
   });
 
@@ -342,7 +344,9 @@ void main() {
   testWidgets('expands and collapses a long today answer preview', (
     tester,
   ) async {
-    final controller = AlagagiController()..enterSpace('영우');
+    final controller = AlagagiController()
+      ..enterSpace('영우')
+      ..completeFirstVisitGuide();
     const tail = '마지막문장';
     final longAnswer = '${'차분하게 이어지는 생각을 적어둡니다. ' * 8}$tail';
     controller
@@ -371,7 +375,9 @@ void main() {
   testWidgets('opens a full detail sheet from a long today answer preview', (
     tester,
   ) async {
-    final controller = AlagagiController()..enterSpace('영우');
+    final controller = AlagagiController()
+      ..enterSpace('영우')
+      ..completeFirstVisitGuide();
     const tail = '끝까지 읽히는 마지막 문장';
     final longAnswer = '${'오늘 생각을 천천히 적어둡니다. ' * 8}$tail';
     controller
@@ -1539,6 +1545,69 @@ void main() {
     expect(find.text('답변 속 공통점이 조금씩 보여요'), findsOneWidget);
   });
 
+  testWidgets('meeting tab saves private and shared schedule memos', (
+    tester,
+  ) async {
+    final controller = AlagagiController()..enterSpace('영우');
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('약속'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(meetingCalendarKey), findsOneWidget);
+    await tester.ensureVisible(find.byKey(meetingPrivateMemoFieldKey));
+    await tester.enterText(
+      find.byKey(meetingPrivateMemoFieldKey),
+      '저녁 전 개인 일정',
+    );
+    await tester.enterText(
+      find.byKey(meetingSharedMemoFieldKey),
+      '8시 이후 가능해요.',
+    );
+    await tester.ensureVisible(find.byKey(meetingSubmitButtonKey));
+    await tester.tap(find.byKey(meetingSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(controller.mySelectedScheduleEntry?.privateMemo, '저녁 전 개인 일정');
+    expect(controller.mySelectedScheduleEntry?.sharedMemo, '8시 이후 가능해요.');
+  });
+
+  testWidgets('place tab adds a shared place without location tracking copy', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1000, 1200);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+    });
+    final controller = AlagagiController()..enterSpace('영우');
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('장소'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(placeBoardKey), findsOneWidget);
+    expect(find.textContaining('위치 추적'), findsNothing);
+
+    expect(find.byKey(placeAddButtonKey), findsOneWidget);
+    controller.startPlaceDraft();
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(placeNameFieldKey), '작은 서점');
+    await tester.enterText(find.byKey(placeAddressFieldKey), '서울 성동구');
+    await tester.enterText(find.byKey(placeNoteFieldKey), '조용히 둘러보기 좋아 보여요.');
+    await tester.pumpAndSettle();
+    controller.submitPlaceDraft();
+    await tester.pumpAndSettle();
+
+    expect(controller.sharedPlaces.first.name, '작은 서점');
+    expect(controller.sharedPlaces.first.note, '조용히 둘러보기 좋아 보여요.');
+  });
+
   testWidgets('music tab adds a lightweight song note', (tester) async {
     await tester.pumpWidget(const AlagagiApp());
     await enterSpace(tester);
@@ -2067,6 +2136,12 @@ class _FailingCommentRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveMusicNote(String spaceId, MusicNote note) async {}
+
+  @override
+  Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry) async {}
+
+  @override
+  Future<void> saveSharedPlace(String spaceId, SharedPlace place) async {}
 
   @override
   Future<void> saveCuriosityCard(String spaceId, CuriosityCard card) async {}

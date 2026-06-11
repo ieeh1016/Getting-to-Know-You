@@ -188,7 +188,7 @@ If the app grows, bottom navigation may become:
 
 ### MVP v0.13 Navigation Direction
 
-- 하단 탭은 `홈 / 질문 / 음악 / 마이` 4개로 유지한다.
+- v0.13 기준 하단 탭은 `홈 / 질문 / 음악 / 마이` 4개로 유지한다.
 - 기존 `기록` 하단 탭은 제거하고 `질문` 탭 안의 `달력 / 기록` segmented view로 합친다.
 - 모바일 하단 탭은 콘텐츠를 과하게 가리지 않도록 compact 높이를 유지한다.
 - 홈은 오늘의 질문과 가벼운 다음 행동 중심으로 유지하며, 음악 기능을 큰 홈 카드로 추가하지 않는다.
@@ -231,6 +231,31 @@ If the app grows, bottom navigation may become:
 - 내가 보낸 질문 중 답장을 기다리는 문서가 하나라도 있으면 새 질문 작성 UI를 잠그고, `답장을 기다리는 질문이 있어요` 안내를 보여준다.
 - `나중에 보기`는 sheet를 닫는 읽기 전용 UI interaction이며 Firestore write를 만들지 않는다.
 - 390px 모바일 viewport에서 `Today's Question`, `궁금함` 상태 카드, 하단 내비게이션이 서로 겹치거나 잘리지 않아야 한다.
+
+### MVP v0.18 Meeting Schedule and Place Board
+
+- 하단 탭은 `홈 / 질문 / 음악 / 약속 / 장소 / 마이`로 확장한다.
+- 각 탭 label은 2글자 중심으로 유지해 390px 모바일 viewport에서 텍스트가 줄바꿈되지 않게 한다.
+- 일정 조율은 `약속` 화면에서 제공한다.
+- 일정 조율은 실시간 캘린더 연동이 아니라 앱 안에 사용자가 직접 남긴 가능 여부를 기반으로 한다.
+- 월간 캘린더는 `서로 가능`, `내 약속 메모 있음`, `상대 표시 있음`을 낮은 대비의 점/색상으로 구분한다.
+- 날짜 선택, 월간 캘린더 계산, 화면 전환은 local UI state이며 Firestore write를 만들지 않는다.
+- 사용자가 `가능 시간 남기기`를 누를 때만 schedule entry를 저장한다.
+- schedule entry는 `dateKey`, `profileId`, `availability`, `timeSlots`, `sharedMemo`, `updatedAt`을 공유 공간에 저장한다.
+- `privateMemo`는 상대에게 보이지 않는 내 약속 메모이며 `users/{uid}/privateScheduleMemos/{spaceId_dateKey}`에 분리 저장한다.
+- 개인 약속 메모에는 `회사 일정`, `가족 약속`, `병원 예약`처럼 내가 기억할 내용을 적을 수 있지만 상대 화면에는 노출하지 않는다.
+- 상대에게 보여도 되는 조율 내용은 `sharedMemo`에 따로 남긴다.
+- 둘 다 `available`이고 겹치는 `timeSlots`가 있으면 meeting candidate로 강조한다.
+- `maybe`가 포함된 날은 확정 후보가 아니라 조율 필요 상태로 둔다.
+- 장소 보드는 `장소` 화면에서 제공한다.
+- 장소 보드는 현재 위치 공유 기능이 아니며, 사용자가 저장한 장소만 둘에게 보인다.
+- 지도 API 연결 전에도 `manual` provider로 장소명/주소/메모를 직접 저장할 수 있다.
+- 지도 API 연결 후에는 Kakao/Naver 검색 결과를 `provider`, `providerPlaceId`, `name`, `address`, `latitude`, `longitude`, `category`로 정규화해 저장한다.
+- 현재 위치, 이동 경로, 검색 API raw payload, 사진 blob은 Firestore에 저장하지 않는다.
+- 장소 관심 표시는 위시리스트처럼 중복 탭을 no-op으로 처리하고 `interestedByProfileIds`에 내 profile id를 추가한다.
+- 장소는 선택한 일정 날짜에 연결할 수 있으며, 이 MVP에서는 place document의 `linkedDateKey`로 가볍게 연결한다.
+- Open API 준비/운영 가이드는 `docs/map_open_api_guide.md`를 따른다.
+- Selected design: `docs/design/schedule_place_coordination_concept.html`.
 
 ### MVP v0.16 First Visit Guide
 
@@ -1909,6 +1934,64 @@ Rules:
 - Draft title/artist/link/note/mood are local state only.
 - No playback state, realtime presence, or search API cache is written in MVP v0.13.
 - `note` is limited to 80 characters and `mood` is one of the fixed mood labels.
+
+`spaces/{spaceId}/scheduleEntries/{dateKey_uid}`
+
+```json
+{
+  "dateKey": "2026-06-11",
+  "profileId": "{uid}",
+  "availability": "available",
+  "timeSlots": ["evening"],
+  "sharedMemo": "19:30 이후면 괜찮아요.",
+  "updatedAt": "serverTimestamp"
+}
+```
+
+`users/{uid}/privateScheduleMemos/{spaceId_dateKey}`
+
+```json
+{
+  "spaceId": "main",
+  "dateKey": "2026-06-11",
+  "privateMemo": "18:30까지 회사 쪽 일정",
+  "updatedAt": "serverTimestamp"
+}
+```
+
+Rules:
+
+- Shared schedule documents never include private appointment titles.
+- Private memo documents are read only for the signed-in user.
+- Keystrokes, date selection, and calendar rendering do not write documents.
+- `가능 시간 남기기` writes the shared entry and the private memo document together.
+
+`spaces/{spaceId}/sharedPlaces/{placeId}`
+
+```json
+{
+  "id": "place_{uid}_{timestamp}",
+  "name": "작은 전시 공간",
+  "address": "서울 성동구 성수동",
+  "category": "exhibition",
+  "provider": "kakao",
+  "providerPlaceId": "12345",
+  "latitude": 37.5446,
+  "longitude": 127.0557,
+  "note": "전시 보고 근처에서 커피 마시면 좋을 것 같아요.",
+  "createdByProfileId": "{uid}",
+  "interestedByProfileIds": ["{uid}"],
+  "linkedDateKey": "2026-06-11",
+  "updatedAt": "serverTimestamp"
+}
+```
+
+Rules:
+
+- Places are normalized before storage; provider-specific raw payloads are not stored.
+- Current location, movement path, and route history are not stored.
+- Duplicate interest from the same profile is a no-op.
+- `provider` is one of `kakao`, `naver`, or `manual`.
 
 `spaces/{spaceId}/stockStories/{storyId}`
 

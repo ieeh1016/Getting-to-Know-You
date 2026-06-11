@@ -5,6 +5,7 @@ import '../data/first_visit_guide_store.dart';
 import '../data/firebase_alagagi_repositories.dart';
 import '../data/music_note_seen_store.dart';
 import '../domain/alagagi_controller.dart';
+import 'kakao_map_panel.dart';
 
 const inviteNicknameFieldKey = Key('invite-nickname-field');
 const loginIdFieldKey = Key('login-id-field');
@@ -24,6 +25,22 @@ const musicSubmitButtonKey = Key('music-submit-button');
 const musicAddButtonKey = Key('music-add-button');
 Key musicEditButtonKey(String noteId) => Key('music-edit-button-$noteId');
 Key musicLinkButtonKey(String noteId) => Key('music-link-button-$noteId');
+const meetingCalendarKey = Key('meeting-calendar');
+const meetingPrivateMemoFieldKey = Key('meeting-private-memo-field');
+const meetingSharedMemoFieldKey = Key('meeting-shared-memo-field');
+const meetingSubmitButtonKey = Key('meeting-submit-button');
+Key meetingDateButtonKey(String dateKey) => Key('meeting-date-$dateKey');
+Key meetingTimeSlotButtonKey(String slot) => Key('meeting-time-slot-$slot');
+const placeBoardKey = Key('place-board');
+const placeAddButtonKey = Key('place-add-button');
+const placeNameFieldKey = Key('place-name-field');
+const placeAddressFieldKey = Key('place-address-field');
+const placeNoteFieldKey = Key('place-note-field');
+const placeSubmitButtonKey = Key('place-submit-button');
+Key placeInterestButtonKey(String placeId) =>
+    Key('place-interest-button-$placeId');
+Key placeLinkMeetingButtonKey(String placeId) =>
+    Key('place-link-meeting-button-$placeId');
 const homeProgressSummaryKey = Key('home-progress-summary');
 const homeProgressSummaryCtaKey = Key('home-progress-summary-cta');
 const editAnswerButtonKey = Key('edit-answer-button');
@@ -62,6 +79,9 @@ const myMusicActionButtonKey = Key('my-music-action-button');
 const myFirstVisitGuideButtonKey = Key('my-first-visit-guide-button');
 const stockStoryAddButtonKey = Key('stock-story-add-button');
 const stockStoryNameFieldKey = Key('stock-story-name-field');
+
+const _mapCenterLatitude = 37.5665;
+const _mapCenterLongitude = 126.9780;
 const stockStoryReasonFieldKey = Key('stock-story-reason-field');
 const stockStoryUpsideFieldKey = Key('stock-story-upside-field');
 const stockStoryRiskFieldKey = Key('stock-story-risk-field');
@@ -296,6 +316,8 @@ class _AlagagiRootState extends State<AlagagiRoot> {
         controller: _controller,
         onOpenExternalLink: widget.onOpenExternalLink ?? openExternalLink,
       ),
+      AlagagiRoute.meetings => MeetingScreen(controller: _controller),
+      AlagagiRoute.places => PlaceBoardScreen(controller: _controller),
       AlagagiRoute.stockStory => StockStoryScreen(controller: _controller),
       AlagagiRoute.balance => BalanceScreen(controller: _controller),
       AlagagiRoute.profileCard => ProfileCardScreen(controller: _controller),
@@ -8270,6 +8292,1381 @@ class _InterestBadge extends StatelessWidget {
   }
 }
 
+class MeetingScreen extends StatelessWidget {
+  const MeetingScreen({super.key, required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final candidates = controller.meetingCandidates;
+    return _ScreenScroll(
+      bottomNavigation: _BottomNav(controller: controller),
+      children: [
+        _TopBar(
+          title: '만날 수 있는 날',
+          trailing: '',
+          onBack: () => controller.goTo(AlagagiRoute.home),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '각자의 일정 내용은 지키면서 겹치는 여유만 맞춰요',
+          style: sans(size: 12.5, color: AlagagiColors.muted),
+        ),
+        const SizedBox(height: 16),
+        _MeetingHeroCard(candidateCount: candidates.length),
+        const SizedBox(height: 14),
+        _MeetingCalendar(controller: controller),
+        const SizedBox(height: 14),
+        _MeetingDetailCard(
+          key: ValueKey('meeting-detail-${controller.selectedMeetingDateKey}'),
+          controller: controller,
+        ),
+        const SizedBox(height: 18),
+        const _SectionLabel('서로 괜찮은 후보'),
+        const SizedBox(height: 10),
+        if (candidates.isEmpty)
+          const _EmptyStateCard(text: '둘 다 가능하다고 남긴 날이 생기면 여기에 모여요.')
+        else
+          for (final candidate in candidates.take(3)) ...[
+            _MeetingCandidateCard(candidate: candidate),
+            const SizedBox(height: 10),
+          ],
+      ],
+    );
+  }
+}
+
+class _MeetingHeroCard extends StatelessWidget {
+  const _MeetingHeroCard({required this.candidateCount});
+
+  final int candidateCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return _PaperCard(
+      radius: 24,
+      padding: const EdgeInsets.all(20),
+      highlightedBorder: const Color(0x228A9A7E),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'NEXT MEETING',
+            style: sans(
+              size: 10.5,
+              weight: FontWeight.w800,
+              color: AlagagiColors.sageDeep,
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            candidateCount == 0
+                ? '가능한 날을\n하나씩 남겨볼까요?'
+                : '이번 달엔\n$candidateCount일이 서로 괜찮아요',
+            style: serif(
+              context,
+              size: 22,
+              weight: FontWeight.w800,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 9),
+          Text(
+            '내 약속 이름은 나만 보고, 상대에게는 만날 수 있는 여유와 짧은 조율 메모만 보여요.',
+            style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MeetingCalendar extends StatelessWidget {
+  const _MeetingCalendar({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedDate =
+        DateTime.tryParse(controller.selectedMeetingDateKey) ?? DateTime.now();
+    final firstDay = DateTime(selectedDate.year, selectedDate.month);
+    final daysInMonth = DateTime(
+      selectedDate.year,
+      selectedDate.month + 1,
+      0,
+    ).day;
+    final leading = firstDay.weekday % 7;
+    final cells = <DateTime?>[
+      for (var i = 0; i < leading; i++) null,
+      for (var day = 1; day <= daysInMonth; day++)
+        DateTime(selectedDate.year, selectedDate.month, day),
+    ];
+
+    return _PaperCard(
+      radius: 22,
+      padding: const EdgeInsets.all(15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${selectedDate.year}년 ${selectedDate.month}월',
+                  style: serif(context, size: 18, weight: FontWeight.w800),
+                ),
+              ),
+              Text(
+                '메모는 나만 보기',
+                style: sans(size: 11.5, color: AlagagiColors.muted),
+              ),
+            ],
+          ),
+          const SizedBox(height: 13),
+          Row(
+            children: [
+              for (final label in const ['일', '월', '화', '수', '목', '금', '토'])
+                Expanded(
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: sans(
+                      size: 10.5,
+                      color: AlagagiColors.muted,
+                      weight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 7),
+          GridView.builder(
+            key: meetingCalendarKey,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: cells.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7,
+              mainAxisSpacing: 6,
+              crossAxisSpacing: 6,
+              childAspectRatio: 0.92,
+            ),
+            itemBuilder: (context, index) {
+              final date = cells[index];
+              if (date == null) {
+                return const SizedBox.shrink();
+              }
+              final dateKey = _dateKeyForUi(date);
+              final myEntry = controller.scheduleEntryFor(
+                controller.state.me.id,
+                dateKey,
+              );
+              final partnerEntry = controller.scheduleEntryFor(
+                controller.state.partner.id,
+                dateKey,
+              );
+              final selected = dateKey == controller.selectedMeetingDateKey;
+              final mutual =
+                  myEntry?.canMeet == true &&
+                  partnerEntry?.canMeet == true &&
+                  myEntry!.timeSlots
+                      .intersection(partnerEntry!.timeSlots)
+                      .isNotEmpty;
+              final busy = myEntry?.availability == MeetingAvailability.busy;
+              final hasPrivateMemo = (myEntry?.privateMemo ?? '').isNotEmpty;
+              return _MeetingDateCell(
+                dateKey: dateKey,
+                day: date.day,
+                selected: selected,
+                mutual: mutual,
+                busy: busy,
+                hasPrivateMemo: hasPrivateMemo,
+                hasPartner: partnerEntry != null,
+                onTap: () => controller.selectMeetingDate(dateKey),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            children: const [
+              _LegendDot(color: AlagagiColors.sageDeep, label: '서로 가능'),
+              _LegendDot(color: Color(0xFFC8AD6D), label: '내 약속 메모'),
+              _LegendDot(color: Color(0xFFB18472), label: '상대 표시'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MeetingDateCell extends StatelessWidget {
+  const _MeetingDateCell({
+    required this.dateKey,
+    required this.day,
+    required this.selected,
+    required this.mutual,
+    required this.busy,
+    required this.hasPrivateMemo,
+    required this.hasPartner,
+    required this.onTap,
+  });
+
+  final String dateKey;
+  final int day;
+  final bool selected;
+  final bool mutual;
+  final bool busy;
+  final bool hasPrivateMemo;
+  final bool hasPartner;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final background = selected
+        ? AlagagiColors.ink
+        : mutual
+        ? const Color(0xFFEEF2E8)
+        : busy || hasPrivateMemo
+        ? const Color(0xFFF4EEDC)
+        : Colors.white;
+    final foreground = selected
+        ? Colors.white
+        : mutual
+        ? AlagagiColors.sageDeep
+        : busy || hasPrivateMemo
+        ? const Color(0xFF8A6F2D)
+        : const Color(0xFF4D4B45);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: meetingDateButtonKey(dateKey),
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: background,
+            border: Border.all(
+              color: selected
+                  ? AlagagiColors.ink
+                  : mutual
+                  ? const Color(0x668A9A7E)
+                  : AlagagiColors.line,
+            ),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Center(
+                child: Text(
+                  '$day',
+                  style: sans(
+                    size: 12,
+                    weight: FontWeight.w800,
+                    color: foreground,
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 5,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (mutual)
+                      _TinyDot(
+                        color: selected ? Colors.white : AlagagiColors.sageDeep,
+                      ),
+                    if (hasPrivateMemo) ...[
+                      if (mutual) const SizedBox(width: 3),
+                      _TinyDot(
+                        color: selected
+                            ? Colors.white
+                            : const Color(0xFFC8AD6D),
+                      ),
+                    ],
+                    if (hasPartner && !mutual) ...[
+                      if (hasPrivateMemo) const SizedBox(width: 3),
+                      _TinyDot(
+                        color: selected
+                            ? Colors.white
+                            : const Color(0xFFB18472),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MeetingDetailCard extends StatelessWidget {
+  const _MeetingDetailCard({super.key, required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final myEntry = controller.mySelectedScheduleEntry;
+    final partnerEntry = controller.partnerSelectedScheduleEntry;
+    return _PaperCard(
+      radius: 24,
+      padding: const EdgeInsets.all(18),
+      highlightedBorder: AlagagiColors.sage,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _meetingDateLabel(controller.selectedMeetingDateKey),
+                  style: serif(context, size: 21, weight: FontWeight.w800),
+                ),
+              ),
+              _SmallBadge(
+                label: _meetingAvailabilityLabel(myEntry?.availability),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _MeetingPersonRow(
+            name: controller.state.me.nickname,
+            avatar: controller.state.me.avatar,
+            entry: myEntry,
+            isMe: true,
+          ),
+          const SizedBox(height: 8),
+          _MeetingPersonRow(
+            name: controller.state.partner.nickname,
+            avatar: controller.state.partner.avatar,
+            entry: partnerEntry,
+            isMe: false,
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _FilterPill(
+                label: '가능해요',
+                selected:
+                    controller.state.meetingDraftAvailability ==
+                    MeetingAvailability.available,
+                onTap: () => controller.setMeetingAvailability(
+                  MeetingAvailability.available,
+                ),
+              ),
+              _FilterPill(
+                label: '조율 필요',
+                selected:
+                    controller.state.meetingDraftAvailability ==
+                    MeetingAvailability.maybe,
+                onTap: () => controller.setMeetingAvailability(
+                  MeetingAvailability.maybe,
+                ),
+              ),
+              _FilterPill(
+                label: '어려워요',
+                selected:
+                    controller.state.meetingDraftAvailability ==
+                    MeetingAvailability.busy,
+                onTap: () =>
+                    controller.setMeetingAvailability(MeetingAvailability.busy),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final slot in MeetingTimeSlot.values)
+                _FilterPill(
+                  key: meetingTimeSlotButtonKey(slot.name),
+                  label: _meetingTimeSlotLabel(slot),
+                  selected: controller.state.meetingDraftTimeSlots.contains(
+                    slot,
+                  ),
+                  onTap: () => controller.toggleMeetingTimeSlot(slot),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _MeetingTextField(
+            fieldKey: meetingPrivateMemoFieldKey,
+            label: '내 약속 메모',
+            hint: '예: 18:30까지 회사 일정',
+            initialValue: controller.state.meetingDraftPrivateMemo,
+            maxLength: 80,
+            helperText: '나만 볼 수 있어요.',
+            onChanged: (value) =>
+                controller.updateMeetingDraft(privateMemo: value),
+          ),
+          const SizedBox(height: 10),
+          _MeetingTextField(
+            fieldKey: meetingSharedMemoFieldKey,
+            label: '공유용 조율 메모',
+            hint: '예: 19:30 이후 가능해요',
+            initialValue: controller.state.meetingDraftSharedMemo,
+            maxLength: 120,
+            helperText: '상대에게 보여도 되는 내용만 남겨요.',
+            onChanged: (value) =>
+                controller.updateMeetingDraft(sharedMemo: value),
+          ),
+          if (controller.state.meetingDraftError != null) ...[
+            const SizedBox(height: 9),
+            Text(
+              controller.state.meetingDraftError!,
+              style: sans(size: 12, color: AlagagiColors.sageDeep),
+            ),
+          ],
+          const SizedBox(height: 14),
+          _PrimaryButton(
+            label: '가능 시간 남기기',
+            buttonKey: meetingSubmitButtonKey,
+            onPressed: controller.submitMeetingDraft,
+            color: AlagagiColors.sageDeep,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MeetingPersonRow extends StatelessWidget {
+  const _MeetingPersonRow({
+    required this.name,
+    required this.avatar,
+    required this.entry,
+    required this.isMe,
+  });
+
+  final String name;
+  final String avatar;
+  final ScheduleEntry? entry;
+  final bool isMe;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = _meetingAvailabilityLabel(entry?.availability);
+    final memo = isMe ? entry?.privateMemo : entry?.sharedMemo;
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.all(11),
+      child: Row(
+        children: [
+          _AvatarBubble(label: avatar),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: sans(size: 12.5, weight: FontWeight.w800)),
+                const SizedBox(height: 3),
+                Text(
+                  [
+                    status,
+                    if (entry != null && entry!.timeSlots.isNotEmpty)
+                      entry!.timeSlots.map(_meetingTimeSlotLabel).join(', '),
+                    if ((memo ?? '').trim().isNotEmpty) memo!.trim(),
+                  ].join(' · '),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: sans(
+                    size: 11.2,
+                    color: AlagagiColors.muted,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MeetingCandidateCard extends StatelessWidget {
+  const _MeetingCandidateCard({required this.candidate});
+
+  final MeetingCandidate candidate;
+
+  @override
+  Widget build(BuildContext context) {
+    return _PaperCard(
+      radius: 18,
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AlagagiColors.ink,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              DateTime.tryParse(candidate.dateKey)?.day.toString() ?? '',
+              style: sans(
+                size: 15,
+                weight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _meetingDateLabel(candidate.dateKey),
+                  style: sans(size: 13.5, weight: FontWeight.w800),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${candidate.sharedSlots.map(_meetingTimeSlotLabel).join(', ')}에 겹쳐요',
+                  style: sans(size: 11.5, color: AlagagiColors.muted),
+                ),
+              ],
+            ),
+          ),
+          const _SmallBadge(label: '추천'),
+        ],
+      ),
+    );
+  }
+}
+
+class _MeetingTextField extends StatelessWidget {
+  const _MeetingTextField({
+    required this.fieldKey,
+    required this.label,
+    required this.hint,
+    required this.initialValue,
+    required this.maxLength,
+    required this.helperText,
+    required this.onChanged,
+  });
+
+  final Key fieldKey;
+  final String label;
+  final String hint;
+  final String initialValue;
+  final int maxLength;
+  final String helperText;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 7, 14, 7),
+      child: TextFormField(
+        key: fieldKey,
+        initialValue: initialValue,
+        maxLength: maxLength,
+        minLines: 2,
+        maxLines: 3,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          helperText: helperText,
+          counterText: '',
+          border: InputBorder.none,
+        ),
+        style: sans(size: 13, height: 1.45),
+      ),
+    );
+  }
+}
+
+class PlaceBoardScreen extends StatelessWidget {
+  const PlaceBoardScreen({super.key, required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final places = controller.sharedPlaces;
+    final mutualCount = places.where((place) => place.isMutual).length;
+    return _ScreenScroll(
+      bottomNavigation: _BottomNav(controller: controller),
+      children: [
+        _TopBar(
+          title: '가보고 싶은 곳',
+          trailing: '',
+          onBack: () => controller.goTo(AlagagiRoute.home),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '지도에서 찾은 장소를 둘만의 보드에 모아요',
+          style: sans(size: 12.5, color: AlagagiColors.muted),
+        ),
+        const SizedBox(height: 16),
+        _PlaceMapPreview(
+          mutualCount: mutualCount,
+          totalCount: places.length,
+          places: places,
+        ),
+        const SizedBox(height: 14),
+        if (controller.state.placeDraftVisible)
+          _PlaceDraftCard(controller: controller)
+        else
+          _PlaceAddButton(controller: controller),
+        const SizedBox(height: 18),
+        Row(
+          children: [
+            const Expanded(child: _SectionLabel('장소 보드')),
+            _SmallBadge(label: '지도 보드'),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (places.isEmpty)
+          const _EmptyStateCard(text: '가보고 싶은 곳을 하나만 담아볼까요?')
+        else
+          Column(
+            key: placeBoardKey,
+            children: [
+              for (final place in places) ...[
+                _PlaceCard(controller: controller, place: place),
+                const SizedBox(height: 12),
+              ],
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+class _PlaceMapPreview extends StatelessWidget {
+  const _PlaceMapPreview({
+    required this.mutualCount,
+    required this.totalCount,
+    required this.places,
+  });
+
+  final int mutualCount;
+  final int totalCount;
+  final List<SharedPlace> places;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 220,
+      decoration: BoxDecoration(
+        color: const Color(0xFFE9EEE8),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: KakaoMapPanel(
+              centerLatitude: _mapCenterLatitude,
+              centerLongitude: _mapCenterLongitude,
+              markers: [
+                for (final place in places)
+                  if (place.latitude != null && place.longitude != null)
+                    KakaoMapMarkerData(
+                      id: place.id,
+                      title: place.name,
+                      latitude: place.latitude!,
+                      longitude: place.longitude!,
+                    ),
+              ],
+              fallbackBuilder: (context, _) => _PlaceMapFallback(
+                mutualCount: mutualCount,
+                totalCount: totalCount,
+              ),
+            ),
+          ),
+          Positioned(
+            left: 18,
+            top: 18,
+            right: 18,
+            child: Container(
+              decoration: BoxDecoration(
+                color: AlagagiColors.paper.withValues(alpha: 0.9),
+                border: Border.all(color: AlagagiColors.line),
+                borderRadius: BorderRadius.circular(17),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.search_rounded,
+                    size: 17,
+                    color: AlagagiColors.sageDeep,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '카카오 지도에서 장소 보기',
+                      style: sans(size: 12, color: AlagagiColors.muted),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            left: 18,
+            right: 18,
+            bottom: 16,
+            child: Row(
+              children: [
+                _MapSummaryPill(label: '서로 관심 $mutualCount'),
+                const SizedBox(width: 8),
+                _MapSummaryPill(label: '담은 곳 $totalCount'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlaceMapFallback extends StatelessWidget {
+  const _PlaceMapFallback({
+    required this.mutualCount,
+    required this.totalCount,
+  });
+
+  final int mutualCount;
+  final int totalCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned.fill(child: CustomPaint(painter: _QuietMapPainter())),
+        const _MapPin(left: 238, top: 94, color: AlagagiColors.sageDeep),
+        const _MapPin(left: 92, top: 126, color: AlagagiColors.lavender),
+        const _MapPin(left: 174, top: 156, color: Color(0xFFB18472)),
+        Positioned(
+          left: 18,
+          right: 18,
+          bottom: 58,
+          child: Text(
+            '카카오 지도를 준비하고 있어요.',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: sans(size: 10.5, color: const Color(0xFF7B7870)),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PlaceAddButton extends StatelessWidget {
+  const _PlaceAddButton({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: OutlinedButton.icon(
+        key: placeAddButtonKey,
+        onPressed: controller.startPlaceDraft,
+        icon: const Icon(Icons.add_location_alt_outlined, size: 17),
+        label: const Text('장소 담기'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AlagagiColors.sageDeep,
+          side: const BorderSide(color: Color(0x338A9A7E)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: sans(size: 13, weight: FontWeight.w800),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlaceDraftCard extends StatelessWidget {
+  const _PlaceDraftCard({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return _PaperCard(
+      radius: 22,
+      padding: const EdgeInsets.all(18),
+      highlightedBorder: AlagagiColors.sage,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '가보고 싶은 곳을\n보드에 담아요.',
+            style: serif(
+              context,
+              size: 20,
+              weight: FontWeight.w800,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            '실제 API 연결 후에는 검색 결과에서 장소명, 주소, 좌표가 자동으로 들어와요.',
+            style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _FilterPill(
+                label: '카카오 지도',
+                selected:
+                    controller.state.placeDraftProvider == MapApiProvider.kakao,
+                onTap: () =>
+                    controller.setPlaceDraftProvider(MapApiProvider.kakao),
+              ),
+              _FilterPill(
+                label: '네이버 지도',
+                selected:
+                    controller.state.placeDraftProvider == MapApiProvider.naver,
+                onTap: () =>
+                    controller.setPlaceDraftProvider(MapApiProvider.naver),
+              ),
+              _FilterPill(
+                label: '직접 입력',
+                selected:
+                    controller.state.placeDraftProvider ==
+                    MapApiProvider.manual,
+                onTap: () =>
+                    controller.setPlaceDraftProvider(MapApiProvider.manual),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _PlaceTextField(
+            fieldKey: placeNameFieldKey,
+            label: 'PLACE',
+            hint: '예: 작은 전시 공간',
+            initialValue: controller.state.placeDraftName,
+            maxLength: 60,
+            onChanged: (value) => controller.updatePlaceDraft(name: value),
+          ),
+          const SizedBox(height: 10),
+          _PlaceTextField(
+            fieldKey: placeAddressFieldKey,
+            label: 'ADDRESS',
+            hint: '예: 서울 성동구 성수동',
+            initialValue: controller.state.placeDraftAddress,
+            maxLength: 90,
+            onChanged: (value) => controller.updatePlaceDraft(address: value),
+          ),
+          const SizedBox(height: 10),
+          _PlaceTextField(
+            fieldKey: placeNoteFieldKey,
+            label: 'NOTE',
+            hint: '왜 같이 가보고 싶은지 한 줄로',
+            initialValue: controller.state.placeDraftNote,
+            maxLength: 120,
+            minLines: 2,
+            maxLines: 3,
+            onChanged: (value) => controller.updatePlaceDraft(note: value),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final category in PlaceCategory.values)
+                _FilterPill(
+                  label: _placeCategoryLabel(category),
+                  selected: controller.state.placeDraftCategory == category,
+                  onTap: () => controller.setPlaceDraftCategory(category),
+                ),
+            ],
+          ),
+          if (controller.state.placeDraftError != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              controller.state.placeDraftError!,
+              style: sans(size: 12, color: AlagagiColors.sageDeep),
+            ),
+          ],
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              TextButton(
+                onPressed: controller.cancelPlaceDraft,
+                child: Text(
+                  '취소',
+                  style: sans(size: 13, color: AlagagiColors.muted),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _PrimaryButton(
+                  label: '장소 보드에 담기',
+                  buttonKey: placeSubmitButtonKey,
+                  onPressed: controller.submitPlaceDraft,
+                  color: AlagagiColors.sageDeep,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlaceTextField extends StatelessWidget {
+  const _PlaceTextField({
+    required this.fieldKey,
+    required this.label,
+    required this.hint,
+    required this.initialValue,
+    required this.maxLength,
+    required this.onChanged,
+    this.minLines = 1,
+    this.maxLines = 1,
+  });
+
+  final Key fieldKey;
+  final String label;
+  final String hint;
+  final String initialValue;
+  final int maxLength;
+  final ValueChanged<String> onChanged;
+  final int minLines;
+  final int maxLines;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 7, 14, 7),
+      child: TextFormField(
+        key: fieldKey,
+        initialValue: initialValue,
+        maxLength: maxLength,
+        minLines: minLines,
+        maxLines: maxLines,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          counterText: '',
+          border: InputBorder.none,
+        ),
+        style: sans(size: 13.5, height: 1.45),
+      ),
+    );
+  }
+}
+
+class _PlaceCard extends StatelessWidget {
+  const _PlaceCard({required this.controller, required this.place});
+
+  final AlagagiController controller;
+  final SharedPlace place;
+
+  @override
+  Widget build(BuildContext context) {
+    final isMine = place.createdByProfileId == controller.state.me.id;
+    final likedByMe = place.interestedByProfileIds.contains(
+      controller.state.me.id,
+    );
+    final creator = isMine
+        ? controller.state.me.nickname
+        : controller.state.partner.nickname;
+    return _PaperCard(
+      radius: 19,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F2EB),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  _placeCategoryIcon(place.category),
+                  size: 22,
+                  color: AlagagiColors.sageDeep,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            place.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: sans(size: 14.5, weight: FontWeight.w800),
+                          ),
+                        ),
+                        const SizedBox(width: 7),
+                        _SmallBadge(
+                          label: place.isMutual
+                              ? '서로 관심'
+                              : _providerLabel(place.provider),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_placeCategoryLabel(place.category)} · $creator 저장',
+                      style: sans(size: 11.3, color: AlagagiColors.muted),
+                    ),
+                    if (place.address.isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      Text(
+                        place.address,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: sans(size: 11.5, color: const Color(0xFF6F6C65)),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (place.note.isNotEmpty) ...[
+            const SizedBox(height: 11),
+            Text(
+              place.note,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: sans(
+                size: 12.3,
+                color: const Color(0xFF5F5D57),
+                height: 1.45,
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              SizedBox(
+                height: 32,
+                child: OutlinedButton.icon(
+                  key: placeInterestButtonKey(place.id),
+                  onPressed: likedByMe
+                      ? null
+                      : () => controller.togglePlaceInterest(place.id),
+                  icon: Icon(
+                    likedByMe
+                        ? Icons.check_rounded
+                        : Icons.add_circle_outline_rounded,
+                    size: 14,
+                  ),
+                  label: Text(likedByMe ? '관심 표시됨' : '관심 표시'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AlagagiColors.sageDeep,
+                    disabledForegroundColor: AlagagiColors.muted,
+                    side: const BorderSide(color: Color(0x336F7F63)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    textStyle: sans(size: 11.5, weight: FontWeight.w800),
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: 32,
+                child: OutlinedButton.icon(
+                  key: placeLinkMeetingButtonKey(place.id),
+                  onPressed: () =>
+                      controller.linkPlaceToSelectedMeeting(place.id),
+                  icon: const Icon(Icons.event_available_outlined, size: 14),
+                  label: Text(
+                    place.linkedDateKey == null
+                        ? '선택한 날에 담기'
+                        : '${_meetingDateLabel(place.linkedDateKey!)} 후보',
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF80672B),
+                    side: const BorderSide(color: Color(0x33C8AD6D)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    textStyle: sans(size: 11.5, weight: FontWeight.w800),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  const _LegendDot({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _TinyDot(color: color),
+        const SizedBox(width: 5),
+        Text(label, style: sans(size: 10.8, color: AlagagiColors.muted)),
+      ],
+    );
+  }
+}
+
+class _TinyDot extends StatelessWidget {
+  const _TinyDot({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 5,
+      height: 5,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+}
+
+class _AvatarBubble extends StatelessWidget {
+  const _AvatarBubble({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 28,
+      height: 28,
+      decoration: const BoxDecoration(
+        color: AlagagiColors.sagePanel,
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Text(label, style: sans(size: 13)),
+    );
+  }
+}
+
+class _MapPin extends StatelessWidget {
+  const _MapPin({required this.left, required this.top, required this.color});
+
+  final double left;
+  final double top;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: left,
+      top: top,
+      child: Transform.rotate(
+        angle: -0.78,
+        child: Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(16),
+              topRight: Radius.circular(16),
+              bottomRight: Radius.circular(16),
+              bottomLeft: Radius.circular(4),
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x26393934),
+                blurRadius: 16,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Container(
+              width: 9,
+              height: 9,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MapSummaryPill extends StatelessWidget {
+  const _MapSummaryPill({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AlagagiColors.paper.withValues(alpha: 0.92),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      child: Text(
+        label,
+        style: sans(
+          size: 11,
+          weight: FontWeight.w800,
+          color: AlagagiColors.sageDeep,
+        ),
+      ),
+    );
+  }
+}
+
+class _QuietMapPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final gridPaint = Paint()
+      ..color = const Color(0x66CDD6C2)
+      ..strokeWidth = 1;
+    for (var x = 0.0; x < size.width; x += 54) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
+    }
+    for (var y = 0.0; y < size.height; y += 54) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+    final roadPaint = Paint()
+      ..color = const Color(0xBFFFFFFA)
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 18;
+    canvas.drawLine(
+      Offset(-20, size.height * .72),
+      Offset(size.width + 20, size.height * .34),
+      roadPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width * .18, -10),
+      Offset(size.width * .78, size.height + 10),
+      roadPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+String _dateKeyForUi(DateTime date) {
+  String twoDigits(int value) => value.toString().padLeft(2, '0');
+  return '${date.year}-${twoDigits(date.month)}-${twoDigits(date.day)}';
+}
+
+String _meetingDateLabel(String dateKey) {
+  final date = DateTime.tryParse(dateKey);
+  if (date == null) {
+    return dateKey;
+  }
+  const weekdays = ['월', '화', '수', '목', '금', '토', '일'];
+  return '${date.month}월 ${date.day}일 ${weekdays[date.weekday - 1]}요일';
+}
+
+String _meetingAvailabilityLabel(MeetingAvailability? availability) {
+  return switch (availability) {
+    MeetingAvailability.available => '가능',
+    MeetingAvailability.maybe => '조율 필요',
+    MeetingAvailability.busy => '어려움',
+    null => '아직 없음',
+  };
+}
+
+String _meetingTimeSlotLabel(MeetingTimeSlot slot) {
+  return switch (slot) {
+    MeetingTimeSlot.morning => '오전',
+    MeetingTimeSlot.afternoon => '오후',
+    MeetingTimeSlot.evening => '저녁',
+  };
+}
+
+String _placeCategoryLabel(PlaceCategory category) {
+  return switch (category) {
+    PlaceCategory.cafe => '카페',
+    PlaceCategory.food => '식사',
+    PlaceCategory.exhibition => '전시',
+    PlaceCategory.walk => '산책',
+    PlaceCategory.activity => '활동',
+  };
+}
+
+IconData _placeCategoryIcon(PlaceCategory category) {
+  return switch (category) {
+    PlaceCategory.cafe => Icons.local_cafe_outlined,
+    PlaceCategory.food => Icons.restaurant_outlined,
+    PlaceCategory.exhibition => Icons.museum_outlined,
+    PlaceCategory.walk => Icons.directions_walk_rounded,
+    PlaceCategory.activity => Icons.auto_awesome_motion_outlined,
+  };
+}
+
+String _providerLabel(MapApiProvider provider) {
+  return switch (provider) {
+    MapApiProvider.kakao => '카카오',
+    MapApiProvider.naver => '네이버',
+    MapApiProvider.manual => '직접 입력',
+  };
+}
+
 class StockStoryScreen extends StatelessWidget {
   const StockStoryScreen({super.key, required this.controller});
 
@@ -10944,6 +12341,22 @@ class _BottomNav extends StatelessWidget {
               selected: controller.state.route == AlagagiRoute.music,
               showBadge: controller.hasNewPartnerMusicNotes,
               onTap: () => controller.goTo(AlagagiRoute.music),
+            ),
+          ),
+          Expanded(
+            child: _NavItem(
+              icon: Icons.event_available_outlined,
+              label: '약속',
+              selected: controller.state.route == AlagagiRoute.meetings,
+              onTap: () => controller.goTo(AlagagiRoute.meetings),
+            ),
+          ),
+          Expanded(
+            child: _NavItem(
+              icon: Icons.place_outlined,
+              label: '장소',
+              selected: controller.state.route == AlagagiRoute.places,
+              onTap: () => controller.goTo(AlagagiRoute.places),
             ),
           ),
           Expanded(

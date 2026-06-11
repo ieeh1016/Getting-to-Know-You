@@ -1688,6 +1688,8 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   savedProfileSlots = [];
   final List<({String spaceId, WishItem wish})> savedWishes = [];
   final List<({String spaceId, MusicNote note})> savedMusicNotes = [];
+  final List<({String spaceId, ScheduleEntry entry})> savedScheduleEntries = [];
+  final List<({String spaceId, SharedPlace place})> savedSharedPlaces = [];
   final List<({String spaceId, StockStory story})> savedStockStories = [];
   final List<({String spaceId, StockHolding holding})> savedStockHoldings = [];
   final List<({String spaceId, AnswerComment comment})> savedAnswerComments =
@@ -1740,6 +1742,16 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   @override
   Future<void> saveMusicNote(String spaceId, MusicNote note) async {
     savedMusicNotes.add((spaceId: spaceId, note: note));
+  }
+
+  @override
+  Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry) async {
+    savedScheduleEntries.add((spaceId: spaceId, entry: entry));
+  }
+
+  @override
+  Future<void> saveSharedPlace(String spaceId, SharedPlace place) async {
+    savedSharedPlaces.add((spaceId: spaceId, place: place));
   }
 
   @override
