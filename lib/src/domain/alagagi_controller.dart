@@ -30,7 +30,7 @@ enum MeetingAvailability { available, maybe, busy }
 
 enum MeetingTimeSlot { morning, afternoon, evening }
 
-enum MapApiProvider { kakao, naver, manual }
+enum MapApiProvider { kakao }
 
 enum PlaceCategory { cafe, food, exhibition, walk, activity }
 
@@ -1230,6 +1230,9 @@ class AlagagiState {
     this.placeDraftNote = '',
     this.placeDraftCategory = PlaceCategory.cafe,
     this.placeDraftProvider = MapApiProvider.kakao,
+    this.placeDraftProviderPlaceId = '',
+    this.placeDraftLatitude,
+    this.placeDraftLongitude,
     this.placeDraftError,
     this.stockStoryTab = StockStoryTab.stories,
     this.stockStoryDraftVisible = false,
@@ -1316,6 +1319,9 @@ class AlagagiState {
   final String placeDraftNote;
   final PlaceCategory placeDraftCategory;
   final MapApiProvider placeDraftProvider;
+  final String placeDraftProviderPlaceId;
+  final double? placeDraftLatitude;
+  final double? placeDraftLongitude;
   final String? placeDraftError;
   final StockStoryTab stockStoryTab;
   final bool stockStoryDraftVisible;
@@ -1404,6 +1410,10 @@ class AlagagiState {
     String? placeDraftNote,
     PlaceCategory? placeDraftCategory,
     MapApiProvider? placeDraftProvider,
+    String? placeDraftProviderPlaceId,
+    double? placeDraftLatitude,
+    double? placeDraftLongitude,
+    bool clearPlaceDraftCoordinates = false,
     String? placeDraftError,
     bool clearPlaceDraftError = false,
     StockStoryTab? stockStoryTab,
@@ -1520,6 +1530,14 @@ class AlagagiState {
       placeDraftNote: placeDraftNote ?? this.placeDraftNote,
       placeDraftCategory: placeDraftCategory ?? this.placeDraftCategory,
       placeDraftProvider: placeDraftProvider ?? this.placeDraftProvider,
+      placeDraftProviderPlaceId:
+          placeDraftProviderPlaceId ?? this.placeDraftProviderPlaceId,
+      placeDraftLatitude: clearPlaceDraftCoordinates
+          ? null
+          : placeDraftLatitude ?? this.placeDraftLatitude,
+      placeDraftLongitude: clearPlaceDraftCoordinates
+          ? null
+          : placeDraftLongitude ?? this.placeDraftLongitude,
       placeDraftError: clearPlaceDraftError
           ? null
           : placeDraftError ?? this.placeDraftError,
@@ -4343,6 +4361,8 @@ class AlagagiController extends ChangeNotifier {
       placeDraftNote: '',
       placeDraftCategory: PlaceCategory.cafe,
       placeDraftProvider: MapApiProvider.kakao,
+      placeDraftProviderPlaceId: '',
+      clearPlaceDraftCoordinates: true,
       clearPlaceDraftError: true,
     );
     notifyListeners();
@@ -4356,6 +4376,8 @@ class AlagagiController extends ChangeNotifier {
       placeDraftNote: '',
       placeDraftCategory: PlaceCategory.cafe,
       placeDraftProvider: MapApiProvider.kakao,
+      placeDraftProviderPlaceId: '',
+      clearPlaceDraftCoordinates: true,
       clearPlaceDraftError: true,
     );
     notifyListeners();
@@ -4381,7 +4403,28 @@ class AlagagiController extends ChangeNotifier {
 
   void setPlaceDraftProvider(MapApiProvider provider) {
     _state = _state.copyWith(
-      placeDraftProvider: provider,
+      placeDraftProvider: MapApiProvider.kakao,
+      clearPlaceDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void applyKakaoPlaceResult({
+    required String providerPlaceId,
+    required String name,
+    required String address,
+    required double latitude,
+    required double longitude,
+    PlaceCategory? category,
+  }) {
+    _state = _state.copyWith(
+      placeDraftName: name,
+      placeDraftAddress: address,
+      placeDraftCategory: category,
+      placeDraftProvider: MapApiProvider.kakao,
+      placeDraftProviderPlaceId: providerPlaceId,
+      placeDraftLatitude: latitude,
+      placeDraftLongitude: longitude,
       clearPlaceDraftError: true,
     );
     notifyListeners();
@@ -4391,8 +4434,9 @@ class AlagagiController extends ChangeNotifier {
     final name = _state.placeDraftName.trim();
     final address = _state.placeDraftAddress.trim();
     final note = _state.placeDraftNote.trim();
+    final providerPlaceId = _state.placeDraftProviderPlaceId.trim();
     if (name.isEmpty) {
-      _state = _state.copyWith(placeDraftError: '장소 이름을 한 줄로 남겨주세요.');
+      _state = _state.copyWith(placeDraftError: '카카오 지도에서 장소를 검색해 선택해주세요.');
       notifyListeners();
       return;
     }
@@ -4411,14 +4455,24 @@ class AlagagiController extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    if (providerPlaceId.isEmpty ||
+        _state.placeDraftLatitude == null ||
+        _state.placeDraftLongitude == null) {
+      _state = _state.copyWith(placeDraftError: '카카오 지도 검색 결과를 선택해주세요.');
+      notifyListeners();
+      return;
+    }
 
     final now = DateTime.now();
     final place = SharedPlace(
       id: 'place_${_state.me.id}_${now.microsecondsSinceEpoch}',
       name: name,
-      address: address.isEmpty ? '주소는 지도 API 연결 후 자동 입력' : address,
+      address: address,
       category: _state.placeDraftCategory,
-      provider: _state.placeDraftProvider,
+      provider: MapApiProvider.kakao,
+      providerPlaceId: providerPlaceId,
+      latitude: _state.placeDraftLatitude,
+      longitude: _state.placeDraftLongitude,
       note: note,
       createdByProfileId: _state.me.id,
       interestedByProfileIds: {_state.me.id},
@@ -4434,6 +4488,8 @@ class AlagagiController extends ChangeNotifier {
       placeDraftNote: '',
       placeDraftCategory: PlaceCategory.cafe,
       placeDraftProvider: MapApiProvider.kakao,
+      placeDraftProviderPlaceId: '',
+      clearPlaceDraftCoordinates: true,
       clearPlaceDraftError: true,
     );
     notifyListeners();
@@ -5740,8 +5796,8 @@ const seedSharedPlaces = [
     name: '느린 커피 성수',
     address: '서울 성동구 연무장길',
     category: PlaceCategory.cafe,
-    provider: MapApiProvider.naver,
-    providerPlaceId: 'sample-naver-cafe',
+    provider: MapApiProvider.kakao,
+    providerPlaceId: 'sample-kakao-cafe',
     latitude: 37.5428,
     longitude: 127.0542,
     note: '사람이 많지 않은 시간에 가면 좋겠어요.',
@@ -5753,7 +5809,10 @@ const seedSharedPlaces = [
     name: '골목 식탁',
     address: '서울 성동구 아차산로',
     category: PlaceCategory.food,
-    provider: MapApiProvider.manual,
+    provider: MapApiProvider.kakao,
+    providerPlaceId: 'sample-kakao-table',
+    latitude: 37.5462,
+    longitude: 127.0576,
     note: '늦게까지 해서 저녁 후보로 괜찮아요.',
     createdByProfileId: 'me',
     interestedByProfileIds: {'me'},

@@ -862,17 +862,13 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
   String _mapApiProviderToData(MapApiProvider provider) {
     return switch (provider) {
       MapApiProvider.kakao => 'kakao',
-      MapApiProvider.naver => 'naver',
-      MapApiProvider.manual => 'manual',
     };
   }
 
   MapApiProvider _mapApiProviderFromData(String? value) {
     return switch (value) {
       'kakao' => MapApiProvider.kakao,
-      'naver' => MapApiProvider.naver,
-      'manual' => MapApiProvider.manual,
-      _ => MapApiProvider.manual,
+      _ => MapApiProvider.kakao,
     };
   }
 

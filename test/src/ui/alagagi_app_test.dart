@@ -1604,14 +1604,26 @@ void main() {
     expect(find.byKey(placeAddButtonKey), findsOneWidget);
     controller.startPlaceDraft();
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(placeNameFieldKey), '작은 서점');
-    await tester.enterText(find.byKey(placeAddressFieldKey), '서울 성동구');
+    expect(find.text('네이버 지도'), findsNothing);
+    expect(find.text('직접 입력'), findsNothing);
+    expect(find.byKey(placeSearchFieldKey), findsOneWidget);
+    controller.applyKakaoPlaceResult(
+      providerPlaceId: 'kakao-bookstore-1',
+      name: '작은 서점',
+      address: '서울 성동구',
+      latitude: 37.5446,
+      longitude: 127.0557,
+      category: PlaceCategory.activity,
+    );
+    await tester.pumpAndSettle();
     await tester.enterText(find.byKey(placeNoteFieldKey), '조용히 둘러보기 좋아 보여요.');
     await tester.pumpAndSettle();
     controller.submitPlaceDraft();
     await tester.pumpAndSettle();
 
     expect(controller.sharedPlaces.first.name, '작은 서점');
+    expect(controller.sharedPlaces.first.provider, MapApiProvider.kakao);
+    expect(controller.sharedPlaces.first.providerPlaceId, 'kakao-bookstore-1');
     expect(controller.sharedPlaces.first.note, '조용히 둘러보기 좋아 보여요.');
   });
 

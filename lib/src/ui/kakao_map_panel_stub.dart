@@ -10,7 +10,7 @@ class KakaoMapPanel extends StatelessWidget {
     this.centerLatitude = 37.5665,
     this.centerLongitude = 126.9780,
     this.level = 6,
-    this.appKey = '',
+    this.appKey = defaultKakaoMapJsKey,
   });
 
   final List<KakaoMapMarkerData> markers;
@@ -24,4 +24,11 @@ class KakaoMapPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return fallbackBuilder(context, '카카오 지도는 웹 빌드에서 표시돼요.');
   }
+}
+
+Future<List<KakaoPlaceSearchResult>> searchKakaoPlaces(
+  String keyword, {
+  String appKey = defaultKakaoMapJsKey,
+}) async {
+  return const [];
 }

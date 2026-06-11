@@ -249,8 +249,8 @@ If the app grows, bottom navigation may become:
 - `maybe`가 포함된 날은 확정 후보가 아니라 조율 필요 상태로 둔다.
 - 장소 보드는 `장소` 화면에서 제공한다.
 - 장소 보드는 현재 위치 공유 기능이 아니며, 사용자가 저장한 장소만 둘에게 보인다.
-- 지도 API 연결 전에도 `manual` provider로 장소명/주소/메모를 직접 저장할 수 있다.
-- 지도 API 연결 후에는 Kakao/Naver 검색 결과를 `provider`, `providerPlaceId`, `name`, `address`, `latitude`, `longitude`, `category`로 정규화해 저장한다.
+- 장소 추가는 카카오 지도 검색 결과 선택을 기반으로 하며, 다른 지도 provider와 직접 입력 provider는 제공하지 않는다.
+- 카카오 검색 결과는 `provider`, `providerPlaceId`, `name`, `address`, `latitude`, `longitude`, `category`로 정규화해 저장한다.
 - 현재 위치, 이동 경로, 검색 API raw payload, 사진 blob은 Firestore에 저장하지 않는다.
 - 장소 관심 표시는 위시리스트처럼 중복 탭을 no-op으로 처리하고 `interestedByProfileIds`에 내 profile id를 추가한다.
 - 장소는 선택한 일정 날짜에 연결할 수 있으며, 이 MVP에서는 place document의 `linkedDateKey`로 가볍게 연결한다.
@@ -1987,7 +1987,7 @@ Rules:
 - Places are normalized before storage; provider-specific raw payloads are not stored.
 - Current location, movement path, and route history are not stored.
 - Duplicate interest from the same profile is a no-op.
-- `provider` is one of `kakao`, `naver`, or `manual`.
+- `provider` is always `kakao`.
 
 `spaces/{spaceId}/stockStories/{storyId}`
 

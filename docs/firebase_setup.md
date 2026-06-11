@@ -494,15 +494,12 @@ service cloud.firestore {
         && request.resource.data.address is string
         && request.resource.data.address.size() <= 90
         && request.resource.data.category in ['cafe', 'food', 'exhibition', 'walk', 'activity']
-        && request.resource.data.provider in ['kakao', 'naver', 'manual']
+        && request.resource.data.provider == 'kakao'
         && request.resource.data.providerPlaceId is string
+        && request.resource.data.providerPlaceId.size() > 0
         && request.resource.data.providerPlaceId.size() <= 80
-        && (!request.resource.data.keys().hasAny(['latitude'])
-          || request.resource.data.latitude == null
-          || request.resource.data.latitude is number)
-        && (!request.resource.data.keys().hasAny(['longitude'])
-          || request.resource.data.longitude == null
-          || request.resource.data.longitude is number)
+        && request.resource.data.latitude is number
+        && request.resource.data.longitude is number
         && request.resource.data.note is string
         && request.resource.data.note.size() <= 120
         && request.resource.data.createdByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds

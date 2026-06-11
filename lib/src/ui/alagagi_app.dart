@@ -38,10 +38,14 @@ Key meetingTimeBlockRemoveButtonKey(String blockId) =>
     Key('meeting-time-block-remove-$blockId');
 const placeBoardKey = Key('place-board');
 const placeAddButtonKey = Key('place-add-button');
+const placeSearchFieldKey = Key('place-search-field');
+const placeSearchButtonKey = Key('place-search-button');
 const placeNameFieldKey = Key('place-name-field');
 const placeAddressFieldKey = Key('place-address-field');
 const placeNoteFieldKey = Key('place-note-field');
 const placeSubmitButtonKey = Key('place-submit-button');
+Key placeSearchResultButtonKey(String placeId) =>
+    Key('place-search-result-$placeId');
 Key placeInterestButtonKey(String placeId) =>
     Key('place-interest-button-$placeId');
 Key placeLinkMeetingButtonKey(String placeId) =>
@@ -9307,55 +9311,24 @@ class _PlaceDraftCard extends StatelessWidget {
           ),
           const SizedBox(height: 7),
           Text(
-            '실제 API 연결 후에는 검색 결과에서 장소명, 주소, 좌표가 자동으로 들어와요.',
+            '카카오 지도에서 장소를 검색하고 결과를 선택하면 주소와 좌표가 함께 저장돼요.',
             style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
           ),
           const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _FilterPill(
-                label: '카카오 지도',
-                selected:
-                    controller.state.placeDraftProvider == MapApiProvider.kakao,
-                onTap: () =>
-                    controller.setPlaceDraftProvider(MapApiProvider.kakao),
-              ),
-              _FilterPill(
-                label: '네이버 지도',
-                selected:
-                    controller.state.placeDraftProvider == MapApiProvider.naver,
-                onTap: () =>
-                    controller.setPlaceDraftProvider(MapApiProvider.naver),
-              ),
-              _FilterPill(
-                label: '직접 입력',
-                selected:
-                    controller.state.placeDraftProvider ==
-                    MapApiProvider.manual,
-                onTap: () =>
-                    controller.setPlaceDraftProvider(MapApiProvider.manual),
-              ),
-            ],
-          ),
+          _KakaoPlaceSearchPanel(controller: controller),
           const SizedBox(height: 12),
-          _PlaceTextField(
+          _SelectedPlaceField(
             fieldKey: placeNameFieldKey,
-            label: 'PLACE',
-            hint: '예: 작은 전시 공간',
-            initialValue: controller.state.placeDraftName,
-            maxLength: 60,
-            onChanged: (value) => controller.updatePlaceDraft(name: value),
+            label: '선택한 장소',
+            value: controller.state.placeDraftName,
+            emptyText: '카카오 검색 결과를 선택해주세요.',
           ),
           const SizedBox(height: 10),
-          _PlaceTextField(
+          _SelectedPlaceField(
             fieldKey: placeAddressFieldKey,
-            label: 'ADDRESS',
-            hint: '예: 서울 성동구 성수동',
-            initialValue: controller.state.placeDraftAddress,
-            maxLength: 90,
-            onChanged: (value) => controller.updatePlaceDraft(address: value),
+            label: '주소',
+            value: controller.state.placeDraftAddress,
+            emptyText: '선택하면 자동으로 들어와요.',
           ),
           const SizedBox(height: 10),
           _PlaceTextField(
@@ -9408,6 +9381,290 @@ class _PlaceDraftCard extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _KakaoPlaceSearchPanel extends StatefulWidget {
+  const _KakaoPlaceSearchPanel({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  State<_KakaoPlaceSearchPanel> createState() => _KakaoPlaceSearchPanelState();
+}
+
+class _KakaoPlaceSearchPanelState extends State<_KakaoPlaceSearchPanel> {
+  final TextEditingController _queryController = TextEditingController();
+  List<KakaoPlaceSearchResult> _results = const [];
+  bool _searching = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _queryController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search() async {
+    final keyword = _queryController.text.trim();
+    if (keyword.length < 2) {
+      setState(() {
+        _results = const [];
+        _error = '두 글자 이상 입력해주세요.';
+      });
+      return;
+    }
+
+    setState(() {
+      _searching = true;
+      _error = null;
+    });
+    try {
+      final results = await searchKakaoPlaces(keyword);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _results = results;
+        _error = results.isEmpty ? '검색 결과가 없어요.' : null;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _results = const [];
+        _error = '카카오 장소 검색을 불러오지 못했어요.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _searching = false);
+      }
+    }
+  }
+
+  void _select(KakaoPlaceSearchResult result) {
+    widget.controller.applyKakaoPlaceResult(
+      providerPlaceId: result.id,
+      name: result.name,
+      address: result.roadAddress.isNotEmpty
+          ? result.roadAddress
+          : result.address,
+      latitude: result.latitude,
+      longitude: result.longitude,
+      category: _placeCategoryFromKakaoResult(result),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedPlaceId = widget.controller.state.placeDraftProviderPlaceId;
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(17),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  key: placeSearchFieldKey,
+                  controller: _queryController,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (_) => _search(),
+                  decoration: InputDecoration(
+                    hintText: '장소명 검색',
+                    prefixIcon: const Icon(Icons.search_rounded, size: 18),
+                    isDense: true,
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 11,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: AlagagiColors.line),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: AlagagiColors.line),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                        color: AlagagiColors.sageDeep,
+                      ),
+                    ),
+                  ),
+                  style: sans(size: 13.2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                height: 44,
+                child: FilledButton(
+                  key: placeSearchButtonKey,
+                  onPressed: _searching ? null : _search,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AlagagiColors.sageDeep,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    textStyle: sans(size: 12.5, weight: FontWeight.w800),
+                  ),
+                  child: Text(_searching ? '검색중' : '검색'),
+                ),
+              ),
+            ],
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 9),
+            Text(_error!, style: sans(size: 11.5, color: AlagagiColors.muted)),
+          ],
+          if (_results.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Column(
+              children: [
+                for (final result in _results)
+                  _KakaoPlaceResultRow(
+                    result: result,
+                    selected: result.id == selectedPlaceId,
+                    onTap: () => _select(result),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _KakaoPlaceResultRow extends StatelessWidget {
+  const _KakaoPlaceResultRow({
+    required this.result,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final KakaoPlaceSearchResult result;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final address = result.roadAddress.isNotEmpty
+        ? result.roadAddress
+        : result.address;
+    return Padding(
+      padding: const EdgeInsets.only(top: 7),
+      child: InkWell(
+        key: placeSearchResultButtonKey(result.id),
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: selected ? AlagagiColors.sagePanel : Colors.white,
+            border: Border.all(
+              color: selected ? const Color(0x668A9A7E) : AlagagiColors.line,
+            ),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
+          child: Row(
+            children: [
+              Icon(
+                selected ? Icons.check_circle_rounded : Icons.place_outlined,
+                size: 18,
+                color: AlagagiColors.sageDeep,
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      result.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: sans(size: 12.7, weight: FontWeight.w800),
+                    ),
+                    if (address.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        address,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: sans(size: 10.8, color: AlagagiColors.muted),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SelectedPlaceField extends StatelessWidget {
+  const _SelectedPlaceField({
+    required this.fieldKey,
+    required this.label,
+    required this.value,
+    required this.emptyText,
+  });
+
+  final Key fieldKey;
+  final String label;
+  final String value;
+  final String emptyText;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasValue = value.trim().isNotEmpty;
+    return Container(
+      key: fieldKey,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 11),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: sans(
+              size: 10.5,
+              weight: FontWeight.w800,
+              color: AlagagiColors.sageDeep,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            hasValue ? value : emptyText,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: sans(
+              size: 13.3,
+              color: hasValue ? const Color(0xFF4D4B45) : AlagagiColors.muted,
+              height: 1.4,
+            ),
           ),
         ],
       ),
@@ -9836,10 +10093,38 @@ IconData _placeCategoryIcon(PlaceCategory category) {
 
 String _providerLabel(MapApiProvider provider) {
   return switch (provider) {
-    MapApiProvider.kakao => '카카오',
-    MapApiProvider.naver => '네이버',
-    MapApiProvider.manual => '직접 입력',
+    MapApiProvider.kakao => '카카오 지도',
   };
+}
+
+PlaceCategory _placeCategoryFromKakaoResult(KakaoPlaceSearchResult result) {
+  final text =
+      '${result.categoryGroupCode} ${result.categoryName} ${result.name}'
+          .toLowerCase();
+  if (text.contains('ce7') || text.contains('카페') || text.contains('cafe')) {
+    return PlaceCategory.cafe;
+  }
+  if (text.contains('fd6') ||
+      text.contains('음식') ||
+      text.contains('식당') ||
+      text.contains('restaurant')) {
+    return PlaceCategory.food;
+  }
+  if (text.contains('ct1') ||
+      text.contains('문화') ||
+      text.contains('전시') ||
+      text.contains('미술') ||
+      text.contains('museum') ||
+      text.contains('gallery')) {
+    return PlaceCategory.exhibition;
+  }
+  if (text.contains('at4') ||
+      text.contains('관광') ||
+      text.contains('공원') ||
+      text.contains('산책')) {
+    return PlaceCategory.walk;
+  }
+  return PlaceCategory.activity;
 }
 
 class StockStoryScreen extends StatelessWidget {

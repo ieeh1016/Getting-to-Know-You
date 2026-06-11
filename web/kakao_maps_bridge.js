@@ -121,8 +121,55 @@
     });
   }
 
+  function normalizePlace(place) {
+    return {
+      id: place.id || '',
+      name: place.place_name || '',
+      address: place.road_address_name || place.address_name || '',
+      roadAddress: place.road_address_name || '',
+      latitude: toNumber(place.y, null),
+      longitude: toNumber(place.x, null),
+      categoryName: place.category_name || '',
+      categoryGroupCode: place.category_group_code || '',
+    };
+  }
+
+  function searchPlaces(options) {
+    const keyword = String(options.keyword || '').trim();
+    if (keyword.length < 2) {
+      return Promise.resolve([]);
+    }
+
+    return loadSdk(options.appKey).then(() => {
+      const kakao = window.kakao;
+      return new Promise((resolve, reject) => {
+        const places = new kakao.maps.services.Places();
+        places.keywordSearch(
+          keyword,
+          (data, status) => {
+            if (status === kakao.maps.services.Status.OK) {
+              resolve(data.slice(0, 8).map(normalizePlace));
+              return;
+            }
+            if (status === kakao.maps.services.Status.ZERO_RESULT) {
+              resolve([]);
+              return;
+            }
+            reject(new Error('Kakao place search failed: ' + status));
+          },
+          { size: 8 }
+        );
+      });
+    });
+  }
+
   window.jogeumssikKakaoMaps = {
     renderMap,
     renderMapFromJson: (optionsJson) => renderMap(JSON.parse(optionsJson)),
+    searchPlaces,
+    searchPlacesFromJson: (optionsJson) =>
+      searchPlaces(JSON.parse(optionsJson)).then((results) =>
+        JSON.stringify(results)
+      ),
   };
 })();

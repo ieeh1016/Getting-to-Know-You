@@ -188,16 +188,23 @@ void main() {
       final controller = AlagagiController()..enterSpace('영우');
 
       controller.startPlaceDraft();
-      controller.updatePlaceDraft(
+      controller.applyKakaoPlaceResult(
+        providerPlaceId: 'kakao-cafe-1',
         name: '조용한 카페',
         address: '서울 성동구',
-        note: '저녁에 이야기하기 좋아 보여요.',
+        latitude: 37.5446,
+        longitude: 127.0557,
+        category: PlaceCategory.cafe,
       );
-      controller.setPlaceDraftCategory(PlaceCategory.cafe);
+      controller.updatePlaceDraft(note: '저녁에 이야기하기 좋아 보여요.');
       controller.submitPlaceDraft();
 
       final place = controller.sharedPlaces.first;
       expect(place.name, '조용한 카페');
+      expect(place.provider, MapApiProvider.kakao);
+      expect(place.providerPlaceId, 'kakao-cafe-1');
+      expect(place.latitude, 37.5446);
+      expect(place.longitude, 127.0557);
       expect(place.interestedByProfileIds, contains(controller.state.me.id));
 
       controller.togglePlaceInterest(place.id);

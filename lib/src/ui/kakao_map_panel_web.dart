@@ -13,6 +13,7 @@ Future<void>? _kakaoBridgeLoadFuture;
 
 extension type _KakaoMapBridge(JSObject _) implements JSObject {
   external JSPromise<JSAny?> renderMapFromJson(JSString optionsJson);
+  external JSPromise<JSString> searchPlacesFromJson(JSString optionsJson);
 }
 
 class KakaoMapPanel extends StatefulWidget {
@@ -23,7 +24,7 @@ class KakaoMapPanel extends StatefulWidget {
     this.centerLatitude = 37.5665,
     this.centerLongitude = 126.9780,
     this.level = 6,
-    this.appKey = const String.fromEnvironment('KAKAO_MAP_JS_KEY'),
+    this.appKey = defaultKakaoMapJsKey,
   });
 
   final List<KakaoMapMarkerData> markers;
@@ -66,7 +67,7 @@ class _KakaoMapPanelState extends State<KakaoMapPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final appKey = widget.appKey.trim();
+    final appKey = effectiveKakaoMapJsKey(widget.appKey);
     if (appKey.isEmpty) {
       return widget.fallbackBuilder(context, 'KAKAO_MAP_JS_KEY가 비어 있어요.');
     }
@@ -91,7 +92,7 @@ class _KakaoMapPanelState extends State<KakaoMapPanel> {
   }
 
   Future<void> _renderMap() async {
-    final appKey = widget.appKey.trim();
+    final appKey = effectiveKakaoMapJsKey(widget.appKey);
     if (appKey.isEmpty) {
       return;
     }
@@ -164,4 +165,65 @@ Future<void> _loadKakaoBridgeScript() {
   script.addEventListener('error', errorListener);
   web.document.head?.append(script);
   return completer.future;
+}
+
+Future<List<KakaoPlaceSearchResult>> searchKakaoPlaces(
+  String keyword, {
+  String appKey = defaultKakaoMapJsKey,
+}) async {
+  final trimmed = keyword.trim();
+  if (trimmed.length < 2) {
+    return const [];
+  }
+  await _ensureKakaoBridgeLoaded();
+  final bridge = web.window.getProperty<JSObject?>('jogeumssikKakaoMaps'.toJS);
+  if (bridge == null) {
+    throw StateError('카카오 지도 브릿지를 찾을 수 없어요.');
+  }
+  final optionsJson = jsonEncode({
+    'appKey': effectiveKakaoMapJsKey(appKey),
+    'keyword': trimmed,
+  });
+  final resultJson = await _KakaoMapBridge(
+    bridge,
+  ).searchPlacesFromJson(optionsJson.toJS).toDart;
+  final decoded = jsonDecode(resultJson.toDart);
+  if (decoded is! List) {
+    return const [];
+  }
+  return decoded
+      .whereType<Map<String, Object?>>()
+      .map(_placeSearchResultFromMap)
+      .whereType<KakaoPlaceSearchResult>()
+      .toList(growable: false);
+}
+
+KakaoPlaceSearchResult? _placeSearchResultFromMap(Map<String, Object?> data) {
+  final id = data['id']?.toString() ?? '';
+  final name = data['name']?.toString() ?? '';
+  final latitude = _readDouble(data['latitude']);
+  final longitude = _readDouble(data['longitude']);
+  if (id.isEmpty || name.isEmpty || latitude == null || longitude == null) {
+    return null;
+  }
+  return KakaoPlaceSearchResult(
+    id: id,
+    name: name,
+    address: data['address']?.toString() ?? '',
+    roadAddress: data['roadAddress']?.toString() ?? '',
+    latitude: latitude,
+    longitude: longitude,
+    categoryName: data['categoryName']?.toString() ?? '',
+    categoryGroupCode: data['categoryGroupCode']?.toString() ?? '',
+  );
+}
+
+double? _readDouble(Object? value) {
+  if (value is num) {
+    return value.toDouble();
+  }
+  if (value is String) {
+    return double.tryParse(value);
+  }
+  return null;
 }
