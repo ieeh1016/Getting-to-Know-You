@@ -533,6 +533,37 @@ This batch follows `docs/design/music_tab_navigation_concept.html` and `docs/des
   - Load all notes with the rest of the space session data.
   - This scope stays within Firebase free plan assumptions because it does not write on draft changes or playback interactions.
 
+### MVP v0.14 주식 이야기
+
+This batch follows `docs/design/stock_talk_entry_options.html` and `docs/design/stock_talk_concepts.html`.
+
+- Naming and tone:
+  - Feature name is `주식 이야기`, not `종목 대화`.
+  - Copy must frame the feature as sharing observations, questions, and risk notes, not as investment advice.
+  - Avoid direct buy/sell CTA copy such as `매수`, `매도`, `추천 매수`, or return-ranking language.
+- Entry:
+  - Home must not add another full-width feature card for this scope.
+  - Home header exposes a compact menu button that opens `조금씩 메뉴` as a bottom sheet.
+  - The menu sheet contains `궁금함 한 장`, `주식 이야기`, and `처음 안내`.
+  - `궁금함 한 장` is accessed from this menu instead of a separate home card.
+  - `주식 이야기` opens a dedicated screen without adding a new bottom navigation tab.
+- Stock story data:
+  - Each story stores `id`, `symbol`, `name`, `reason`, `upside`, `risk`, `question`, `createdByProfileId`, `createdLabel`, optional `replyTone`, optional `reply`, optional `repliedByProfileId`, optional `repliedLabel`, and `updatedAt`.
+  - Draft input is local state only; Firestore writes happen only on explicit story submit or explicit reply submit.
+  - MVP does not integrate realtime market prices, brokerage APIs, quote APIs, price alerts, return rankings, or trading actions.
+- Stock story UX:
+  - Empty state says that one stock can be left lightly for a shared conversation.
+  - Add form includes ticker/name, interest reason, expectation point, risk point, and one question.
+  - Saved stories show who left the story, expectation/risk preview, and reply state.
+  - A user can reply only to a partner-created story that does not already have their reply.
+  - Reply uses one of `같이 볼래요`, `더 찾아볼게요`, `조심해요` plus a short note.
+  - Tapping a saved story opens a readable detail sheet with the full reason, expectation, risk, question, and reply if present.
+- Firestore:
+  - Store stories under `spaces/{spaceId}/stockStories/{storyId}`.
+  - Creating a story writes one document only when a user submits the story.
+  - Replying to a story updates the existing `stockStories/{storyId}` document.
+  - Draft typing, opening the menu, route changes, and reading a story do not create Firestore writes.
+
 ### MVP v0.14 Quiet Home Progress & Save Stability
 
 This batch covers the next two practical improvements: a quiet progress summary on Home and clearer save/offline failure handling. It must be implemented in SDD/TDD order and should not add new Firestore collections.
@@ -1861,6 +1892,34 @@ Rules:
 - Draft title/artist/link/note/mood are local state only.
 - No playback state, realtime presence, or search API cache is written in MVP v0.13.
 - `note` is limited to 80 characters and `mood` is one of the fixed mood labels.
+
+`spaces/{spaceId}/stockStories/{storyId}`
+
+```json
+{
+  "id": "stock_{uid}_{timestamp}",
+  "symbol": "AAPL",
+  "name": "Apple",
+  "reason": "서비스 매출 흐름을 같이 보고 싶어요.",
+  "upside": "구독 매출과 생태계 유지력",
+  "risk": "기기 교체 수요 둔화",
+  "question": "다음 실적에서 어떤 숫자를 먼저 볼까요?",
+  "createdByProfileId": "{uid}",
+  "createdLabel": "오늘",
+  "replyTone": "같이 볼래요",
+  "reply": "마진이 유지되는지 먼저 보고 싶어요.",
+  "repliedByProfileId": "{partnerUid}",
+  "repliedLabel": "오늘",
+  "updatedAt": "serverTimestamp"
+}
+```
+
+Rules:
+
+- Document ID remains the generated `id` so one story submit creates one document.
+- Draft symbol/name/reason/upside/risk/question are local state only.
+- Reply updates the existing story document and does not create a chat collection.
+- No realtime quote, price alert, brokerage, trading, or return ranking state is written in MVP v0.14.
 
 `spaces/{spaceId}/answerComments/{questionId_answerOwnerUid_commenterUid}`
 

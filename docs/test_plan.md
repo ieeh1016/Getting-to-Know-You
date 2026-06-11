@@ -163,6 +163,11 @@
 - 음악 탭에서 상대 음악 노트에는 edit action이 보이지 않는다.
 - 음악 노트 카드는 긴 제목/아티스트/메모를 preview로 유지하고 tap 시 전체 곡 정보와 메모를 bottom sheet에서 보여준다.
 - 음악 노트 카드의 `링크 열기` action은 bare domain을 `https://`로 보정해 즉시 외부 링크로 열고, 카드의 전체보기 tap 동작과 충돌하지 않는다.
+- 홈은 `주식 이야기` 추가 후에도 별도 feature card를 늘리지 않고, 상단 메뉴 sheet에서 `궁금함 한 장`, `주식 이야기`, `처음 안내`로 진입한다.
+- `주식 이야기`는 별도 bottom navigation tab을 추가하지 않고 menu sheet에서 dedicated screen으로 이동한다.
+- 주식 이야기 draft 입력은 local state only이며 submit 시 `spaces/{spaceId}/stockStories/{storyId}` 1 document 이하로 저장한다.
+- 상대가 남긴 주식 이야기에는 답장 action이 보이고, 답장 submit은 기존 stock story document를 1회 이하로 갱신한다.
+- 주식 이야기 화면은 매수/매도, 수익률 랭킹, 실시간 시세, 가격 알림 UI를 제공하지 않는다.
 
 ## Manual Checks
 
@@ -194,7 +199,7 @@
 - 캘린더 월 이동, 날짜 선택, 오늘 shortcut은 Firestore write를 만들지 않는다.
 - 월간 캘린더 grid 계산은 별도 calendar collection을 읽거나 쓰지 않는다.
 - 늦게 답하기 submit은 기존 answer document 1 write 이하로 저장한다.
-- 답변 submit/edit, answer comment save/edit, balance select, profile slot fill/edit, wish add/interest/done, music note add/edit은 각각 1 document write 이하.
+- 답변 submit/edit, answer comment save/edit, balance select, profile slot fill/edit, wish add/interest/done, music note add/edit, stock story add/reply는 각각 1 document write 이하.
 - 질문 캘린더는 별도 calendar collection 없이 progress 문서와 bounded answer reads로 렌더링한다.
 - Summary/current 갱신이 필요한 action만 2 writes까지 허용한다.
 - Home은 전체 answer/wish/profile slot subcollection hydration 없이 summary/progress/today docs로 렌더링 가능해야 한다.

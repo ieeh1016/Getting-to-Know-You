@@ -9,6 +9,7 @@ enum AlagagiRoute {
   archive,
   records,
   music,
+  stockStory,
   balance,
   profileCard,
   wishlist,
@@ -24,6 +25,7 @@ enum WishlistFilter { all, mutual, places, activities }
 enum WishKind { place, activity }
 
 const musicMoodOptions = ['차분한', '산책', '카페', '밤', '가벼운', '집중'];
+const stockStoryReplyToneOptions = ['같이 볼래요', '더 찾아볼게요', '조심해요'];
 
 enum QuestionDepth { light, daily, beliefs, inner }
 
@@ -104,6 +106,7 @@ class AlagagiSpaceData {
     this.wishes = const [],
     this.musicNotes = const [],
     this.curiosityCards = const [],
+    this.stockStories = const [],
     this.dailyProgress,
     this.personalization = const SpacePersonalization(),
   });
@@ -115,6 +118,7 @@ class AlagagiSpaceData {
   final List<WishItem> wishes;
   final List<MusicNote> musicNotes;
   final List<CuriosityCard> curiosityCards;
+  final List<StockStory> stockStories;
   final DailyQuestionProgress? dailyProgress;
   final SpacePersonalization personalization;
 }
@@ -168,6 +172,8 @@ abstract class AlagagiDataRepository {
   Future<void> saveMusicNote(String spaceId, MusicNote note);
 
   Future<void> saveCuriosityCard(String spaceId, CuriosityCard card);
+
+  Future<void> saveStockStory(String spaceId, StockStory story);
 }
 
 class AppProfile {
@@ -797,6 +803,73 @@ class CuriosityCard {
   }
 }
 
+class StockStory {
+  const StockStory({
+    required this.id,
+    required this.symbol,
+    required this.name,
+    required this.reason,
+    required this.upside,
+    required this.risk,
+    required this.question,
+    required this.createdByProfileId,
+    required this.createdLabel,
+    this.replyTone,
+    this.reply,
+    this.repliedByProfileId,
+    this.repliedLabel,
+    this.updatedAt,
+  });
+
+  final String id;
+  final String symbol;
+  final String name;
+  final String reason;
+  final String upside;
+  final String risk;
+  final String question;
+  final String createdByProfileId;
+  final String createdLabel;
+  final String? replyTone;
+  final String? reply;
+  final String? repliedByProfileId;
+  final String? repliedLabel;
+  final DateTime? updatedAt;
+
+  bool get hasReply => reply != null && reply!.trim().isNotEmpty;
+
+  StockStory copyWith({
+    String? symbol,
+    String? name,
+    String? reason,
+    String? upside,
+    String? risk,
+    String? question,
+    String? replyTone,
+    String? reply,
+    String? repliedByProfileId,
+    String? repliedLabel,
+    DateTime? updatedAt,
+  }) {
+    return StockStory(
+      id: id,
+      symbol: symbol ?? this.symbol,
+      name: name ?? this.name,
+      reason: reason ?? this.reason,
+      upside: upside ?? this.upside,
+      risk: risk ?? this.risk,
+      question: question ?? this.question,
+      createdByProfileId: createdByProfileId,
+      createdLabel: createdLabel,
+      replyTone: replyTone ?? this.replyTone,
+      reply: reply ?? this.reply,
+      repliedByProfileId: repliedByProfileId ?? this.repliedByProfileId,
+      repliedLabel: repliedLabel ?? this.repliedLabel,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+}
+
 class HomeProgressSummary {
   const HomeProgressSummary({required this.items, this.primaryAction});
 
@@ -901,6 +974,17 @@ class AlagagiState {
     this.musicDraftNote = '',
     this.musicDraftMood = '차분한',
     this.editingMusicNoteId,
+    this.stockStoryDraftVisible = false,
+    this.stockStoryDraftSymbol = '',
+    this.stockStoryDraftName = '',
+    this.stockStoryDraftReason = '',
+    this.stockStoryDraftUpside = '',
+    this.stockStoryDraftRisk = '',
+    this.stockStoryDraftQuestion = '',
+    this.stockStoryDraftError,
+    this.stockStoryReplyDraftsByStoryId = const {},
+    this.stockStoryReplyTonesByStoryId = const {},
+    this.stockStoryReplyError,
     this.curiosityQuestionDraft = '',
     this.curiosityReplyDraftsByCardId = const {},
     this.curiosityError,
@@ -948,6 +1032,17 @@ class AlagagiState {
   final String musicDraftNote;
   final String musicDraftMood;
   final String? editingMusicNoteId;
+  final bool stockStoryDraftVisible;
+  final String stockStoryDraftSymbol;
+  final String stockStoryDraftName;
+  final String stockStoryDraftReason;
+  final String stockStoryDraftUpside;
+  final String stockStoryDraftRisk;
+  final String stockStoryDraftQuestion;
+  final String? stockStoryDraftError;
+  final Map<String, String> stockStoryReplyDraftsByStoryId;
+  final Map<String, String> stockStoryReplyTonesByStoryId;
+  final String? stockStoryReplyError;
   final String curiosityQuestionDraft;
   final Map<String, String> curiosityReplyDraftsByCardId;
   final String? curiosityError;
@@ -996,6 +1091,19 @@ class AlagagiState {
     String? musicDraftMood,
     String? editingMusicNoteId,
     bool clearEditingMusicNoteId = false,
+    bool? stockStoryDraftVisible,
+    String? stockStoryDraftSymbol,
+    String? stockStoryDraftName,
+    String? stockStoryDraftReason,
+    String? stockStoryDraftUpside,
+    String? stockStoryDraftRisk,
+    String? stockStoryDraftQuestion,
+    String? stockStoryDraftError,
+    bool clearStockStoryDraftError = false,
+    Map<String, String>? stockStoryReplyDraftsByStoryId,
+    Map<String, String>? stockStoryReplyTonesByStoryId,
+    String? stockStoryReplyError,
+    bool clearStockStoryReplyError = false,
     String? curiosityQuestionDraft,
     Map<String, String>? curiosityReplyDraftsByCardId,
     String? curiosityError,
@@ -1059,6 +1167,28 @@ class AlagagiState {
       editingMusicNoteId: clearEditingMusicNoteId
           ? null
           : editingMusicNoteId ?? this.editingMusicNoteId,
+      stockStoryDraftVisible:
+          stockStoryDraftVisible ?? this.stockStoryDraftVisible,
+      stockStoryDraftSymbol:
+          stockStoryDraftSymbol ?? this.stockStoryDraftSymbol,
+      stockStoryDraftName: stockStoryDraftName ?? this.stockStoryDraftName,
+      stockStoryDraftReason:
+          stockStoryDraftReason ?? this.stockStoryDraftReason,
+      stockStoryDraftUpside:
+          stockStoryDraftUpside ?? this.stockStoryDraftUpside,
+      stockStoryDraftRisk: stockStoryDraftRisk ?? this.stockStoryDraftRisk,
+      stockStoryDraftQuestion:
+          stockStoryDraftQuestion ?? this.stockStoryDraftQuestion,
+      stockStoryDraftError: clearStockStoryDraftError
+          ? null
+          : stockStoryDraftError ?? this.stockStoryDraftError,
+      stockStoryReplyDraftsByStoryId:
+          stockStoryReplyDraftsByStoryId ?? this.stockStoryReplyDraftsByStoryId,
+      stockStoryReplyTonesByStoryId:
+          stockStoryReplyTonesByStoryId ?? this.stockStoryReplyTonesByStoryId,
+      stockStoryReplyError: clearStockStoryReplyError
+          ? null
+          : stockStoryReplyError ?? this.stockStoryReplyError,
       curiosityQuestionDraft:
           curiosityQuestionDraft ?? this.curiosityQuestionDraft,
       curiosityReplyDraftsByCardId:
@@ -1214,6 +1344,7 @@ class AlagagiController extends ChangeNotifier {
   final List<WishItem> _wishes = [];
   final List<MusicNote> _musicNotes = [];
   final List<CuriosityCard> _curiosityCards = [];
+  final List<StockStory> _stockStories = [];
   Answer? _lastFailedAnswer;
   AnswerComment? _lastFailedAnswerComment;
   CuriosityCard? _lastFailedCuriosityCard;
@@ -1414,6 +1545,31 @@ class AlagagiController extends ChangeNotifier {
         }),
       );
     _sortCuriosityCardsByUpdatedAt();
+    _stockStories
+      ..clear()
+      ..addAll(
+        seedStockStories.map((story) {
+          return StockStory(
+            id: story.id,
+            symbol: story.symbol,
+            name: story.name,
+            reason: story.reason,
+            upside: story.upside,
+            risk: story.risk,
+            question: story.question,
+            createdByProfileId: _mapSeedProfileId(story.createdByProfileId),
+            createdLabel: story.createdLabel,
+            replyTone: story.replyTone,
+            reply: story.reply,
+            repliedByProfileId: story.repliedByProfileId == null
+                ? null
+                : _mapSeedProfileId(story.repliedByProfileId!),
+            repliedLabel: story.repliedLabel,
+            updatedAt: story.updatedAt,
+          );
+        }),
+      );
+    _sortStockStoriesByUpdatedAt();
   }
 
   void _applySessionData(AlagagiSpaceData data) {
@@ -1489,6 +1645,10 @@ class AlagagiController extends ChangeNotifier {
       ..clear()
       ..addAll(data.curiosityCards);
     _sortCuriosityCardsByUpdatedAt();
+    _stockStories
+      ..clear()
+      ..addAll(data.stockStories);
+    _sortStockStoriesByUpdatedAt();
   }
 
   static DailyQuestionProgress _resolveDailyQuestionProgress(
@@ -1768,6 +1928,15 @@ class AlagagiController extends ChangeNotifier {
             notifyListeners();
           }),
     );
+  }
+
+  void _persistStockStory(StockStory story) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      return;
+    }
+    unawaited(repository.saveStockStory(spaceId, story).catchError((_) {}));
   }
 
   void _persistAnswerComment(AnswerComment comment) {
@@ -2131,6 +2300,9 @@ class AlagagiController extends ChangeNotifier {
   List<CuriosityCard> get curiosityCards =>
       List<CuriosityCard>.unmodifiable(_curiosityCards);
 
+  List<StockStory> get stockStories =>
+      List<StockStory>.unmodifiable(_stockStories);
+
   CuriosityCard? get latestReceivedCuriosityCard {
     return _firstCuriosityCardWhere((card) => card.toProfileId == _state.me.id);
   }
@@ -2313,6 +2485,23 @@ class AlagagiController extends ChangeNotifier {
 
   void _sortCuriosityCardsByUpdatedAt() {
     _curiosityCards.sort((a, b) {
+      final aUpdatedAt = a.updatedAt;
+      final bUpdatedAt = b.updatedAt;
+      if (aUpdatedAt == null && bUpdatedAt == null) {
+        return b.id.compareTo(a.id);
+      }
+      if (aUpdatedAt == null) {
+        return 1;
+      }
+      if (bUpdatedAt == null) {
+        return -1;
+      }
+      return bUpdatedAt.compareTo(aUpdatedAt);
+    });
+  }
+
+  void _sortStockStoriesByUpdatedAt() {
+    _stockStories.sort((a, b) {
       final aUpdatedAt = a.updatedAt;
       final bUpdatedAt = b.updatedAt;
       if (aUpdatedAt == null && bUpdatedAt == null) {
@@ -3347,6 +3536,206 @@ class AlagagiController extends ChangeNotifier {
     );
     notifyListeners();
   }
+
+  void startStockStoryDraft() {
+    _state = _state.copyWith(
+      route: AlagagiRoute.stockStory,
+      stockStoryDraftVisible: true,
+      stockStoryDraftSymbol: '',
+      stockStoryDraftName: '',
+      stockStoryDraftReason: '',
+      stockStoryDraftUpside: '',
+      stockStoryDraftRisk: '',
+      stockStoryDraftQuestion: '',
+      clearStockStoryDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void cancelStockStoryDraft() {
+    _state = _state.copyWith(
+      stockStoryDraftVisible: false,
+      stockStoryDraftSymbol: '',
+      stockStoryDraftName: '',
+      stockStoryDraftReason: '',
+      stockStoryDraftUpside: '',
+      stockStoryDraftRisk: '',
+      stockStoryDraftQuestion: '',
+      clearStockStoryDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void updateStockStoryDraft({
+    String? symbol,
+    String? name,
+    String? reason,
+    String? upside,
+    String? risk,
+    String? question,
+  }) {
+    _state = _state.copyWith(
+      stockStoryDraftSymbol: symbol,
+      stockStoryDraftName: name,
+      stockStoryDraftReason: reason,
+      stockStoryDraftUpside: upside,
+      stockStoryDraftRisk: risk,
+      stockStoryDraftQuestion: question,
+      clearStockStoryDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  void submitStockStoryDraft() {
+    final symbol = _state.stockStoryDraftSymbol.trim().toUpperCase();
+    final name = _state.stockStoryDraftName.trim();
+    final reason = _state.stockStoryDraftReason.trim();
+    final upside = _state.stockStoryDraftUpside.trim();
+    final risk = _state.stockStoryDraftRisk.trim();
+    final question = _state.stockStoryDraftQuestion.trim();
+
+    String? error;
+    if (symbol.isEmpty) {
+      error = '종목 코드나 이름을 한 줄로 남겨주세요.';
+    } else if (symbol.length > 24) {
+      error = '종목 표기는 24자 안으로 남겨주세요.';
+    } else if (name.isEmpty) {
+      error = '같이 알아볼 이름을 남겨주세요.';
+    } else if (name.length > 40) {
+      error = '이름은 40자 안으로 남겨주세요.';
+    } else if (reason.isEmpty) {
+      error = '관심 이유를 한 줄만 남겨주세요.';
+    } else if (reason.length > 120) {
+      error = '관심 이유는 120자 안으로 남겨주세요.';
+    } else if (upside.isEmpty || risk.isEmpty) {
+      error = '기대와 걱정을 함께 남겨주세요.';
+    } else if (upside.length > 80 || risk.length > 80) {
+      error = '기대와 걱정은 각각 80자 안으로 남겨주세요.';
+    } else if (question.isEmpty) {
+      error = '상대에게 묻고 싶은 점을 남겨주세요.';
+    } else if (question.length > 100) {
+      error = '질문은 100자 안으로 남겨주세요.';
+    }
+    if (error != null) {
+      _state = _state.copyWith(stockStoryDraftError: error);
+      notifyListeners();
+      return;
+    }
+
+    final now = DateTime.now();
+    final story = StockStory(
+      id: 'stock_${_state.me.id}_${now.microsecondsSinceEpoch}',
+      symbol: symbol,
+      name: name,
+      reason: reason,
+      upside: upside,
+      risk: risk,
+      question: question,
+      createdByProfileId: _state.me.id,
+      createdLabel: '오늘',
+      updatedAt: now,
+    );
+    _stockStories.insert(0, story);
+    _sortStockStoriesByUpdatedAt();
+    _persistStockStory(story);
+    _state = _state.copyWith(
+      stockStoryDraftVisible: false,
+      stockStoryDraftSymbol: '',
+      stockStoryDraftName: '',
+      stockStoryDraftReason: '',
+      stockStoryDraftUpside: '',
+      stockStoryDraftRisk: '',
+      stockStoryDraftQuestion: '',
+      clearStockStoryDraftError: true,
+    );
+    notifyListeners();
+  }
+
+  String stockStoryReplyDraftFor(String storyId) {
+    return _state.stockStoryReplyDraftsByStoryId[storyId] ?? '';
+  }
+
+  String stockStoryReplyToneFor(String storyId) {
+    return _state.stockStoryReplyTonesByStoryId[storyId] ??
+        stockStoryReplyToneOptions.first;
+  }
+
+  void updateStockStoryReplyDraft({
+    required String storyId,
+    required String value,
+  }) {
+    final drafts = Map<String, String>.of(_state.stockStoryReplyDraftsByStoryId)
+      ..[storyId] = value;
+    _state = _state.copyWith(
+      stockStoryReplyDraftsByStoryId: Map<String, String>.unmodifiable(drafts),
+      clearStockStoryReplyError: true,
+    );
+    notifyListeners();
+  }
+
+  void setStockStoryReplyTone(String storyId, String tone) {
+    if (!stockStoryReplyToneOptions.contains(tone)) {
+      return;
+    }
+    final tones = Map<String, String>.of(_state.stockStoryReplyTonesByStoryId)
+      ..[storyId] = tone;
+    _state = _state.copyWith(
+      stockStoryReplyTonesByStoryId: Map<String, String>.unmodifiable(tones),
+      clearStockStoryReplyError: true,
+    );
+    notifyListeners();
+  }
+
+  void submitStockStoryReply(String storyId) {
+    final index = _stockStories.indexWhere((story) => story.id == storyId);
+    if (index == -1) {
+      _state = _state.copyWith(stockStoryReplyError: '답장할 이야기를 찾지 못했어요.');
+      notifyListeners();
+      return;
+    }
+    final story = _stockStories[index];
+    if (story.createdByProfileId == _state.me.id) {
+      _state = _state.copyWith(stockStoryReplyError: '상대가 남긴 이야기에만 답장할 수 있어요.');
+      notifyListeners();
+      return;
+    }
+    if (story.hasReply) {
+      _state = _state.copyWith(stockStoryReplyError: '이미 답장을 남긴 이야기예요.');
+      notifyListeners();
+      return;
+    }
+    final reply = stockStoryReplyDraftFor(storyId).trim();
+    if (reply.isEmpty) {
+      _state = _state.copyWith(stockStoryReplyError: '짧게라도 관점을 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    if (reply.length > 160) {
+      _state = _state.copyWith(stockStoryReplyError: '답장은 160자 안으로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    final updatedStory = story.copyWith(
+      replyTone: stockStoryReplyToneFor(storyId),
+      reply: reply,
+      repliedByProfileId: _state.me.id,
+      repliedLabel: '오늘',
+      updatedAt: DateTime.now(),
+    );
+    _stockStories[index] = updatedStory;
+    _sortStockStoriesByUpdatedAt();
+    _persistStockStory(updatedStory);
+    final drafts = Map<String, String>.of(_state.stockStoryReplyDraftsByStoryId)
+      ..remove(storyId);
+    final tones = Map<String, String>.of(_state.stockStoryReplyTonesByStoryId)
+      ..remove(storyId);
+    _state = _state.copyWith(
+      stockStoryReplyDraftsByStoryId: Map<String, String>.unmodifiable(drafts),
+      stockStoryReplyTonesByStoryId: Map<String, String>.unmodifiable(tones),
+      clearStockStoryReplyError: true,
+    );
+    notifyListeners();
+  }
 }
 
 const seedQuestions = [
@@ -4125,5 +4514,34 @@ const seedCuriosityCards = [
     toProfileId: 'me',
     question: '요즘 제일 자주 생각나는 건 뭐예요?',
     createdLabel: '오늘',
+  ),
+];
+
+const seedStockStories = [
+  StockStory(
+    id: 'stock_seed_1',
+    symbol: 'AAPL',
+    name: 'Apple',
+    reason: '서비스 매출 흐름을 같이 살펴보고 싶어요.',
+    upside: '구독 매출과 생태계 유지력',
+    risk: '기기 교체 수요가 둔해질 가능성',
+    question: '다음 실적에서 어떤 숫자를 먼저 보면 좋을까요?',
+    createdByProfileId: 'partner',
+    createdLabel: '오늘',
+  ),
+  StockStory(
+    id: 'stock_seed_2',
+    symbol: '005930',
+    name: '삼성전자',
+    reason: '반도체 업황을 차분히 관찰해보고 싶어요.',
+    upside: '메모리 수요 회복',
+    risk: '기대가 너무 빨리 반영됐는지',
+    question: '실적 발표 전에는 어떤 점을 확인하면 좋을까요?',
+    createdByProfileId: 'me',
+    createdLabel: '오늘',
+    replyTone: '더 찾아볼게요',
+    reply: '뉴스보다 실적 숫자를 먼저 보자는 쪽이 편해요.',
+    repliedByProfileId: 'partner',
+    repliedLabel: '오늘',
   ),
 ];

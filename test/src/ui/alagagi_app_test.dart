@@ -36,8 +36,9 @@ void main() {
     expect(find.text('아직 내 답을 남기지 않았어요.'), findsOneWidget);
     expect(find.textContaining('답을 남기면'), findsOneWidget);
     expect(find.byKey(homeQuestionAnswerButtonKey), findsOneWidget);
-    expect(find.byKey(homeCuriosityEntryKey), findsOneWidget);
-    expect(find.textContaining('궁금함 한 장'), findsOneWidget);
+    expect(find.byKey(homeMenuButtonKey), findsOneWidget);
+    expect(find.byKey(homeCuriosityEntryKey), findsNothing);
+    expect(find.textContaining('궁금함 한 장'), findsNothing);
     expect(find.text('지금의 마음을 한 줄로...'), findsNothing);
     expect(find.text('9:41'), findsNothing);
     expect(find.textContaining('🔋'), findsNothing);
@@ -47,9 +48,13 @@ void main() {
     await tester.pumpWidget(const AlagagiApp());
     await enterSpace(tester);
 
-    await tester.ensureVisible(find.byKey(homeCuriosityEntryKey));
+    await tester.tap(find.byKey(homeMenuButtonKey));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(homeCuriosityEntryKey));
+    expect(find.byKey(homeMenuSheetKey), findsOneWidget);
+    expect(find.byKey(homeMenuCuriosityButtonKey), findsOneWidget);
+    expect(find.byKey(homeMenuStockStoryButtonKey), findsOneWidget);
+
+    await tester.tap(find.byKey(homeMenuCuriosityButtonKey));
     await tester.pumpAndSettle();
 
     expect(find.byKey(homeCuriositySheetKey), findsOneWidget);
@@ -75,9 +80,9 @@ void main() {
     await tester.pumpWidget(const AlagagiApp());
     await enterSpace(tester);
 
-    await tester.ensureVisible(find.byKey(homeCuriosityEntryKey));
+    await tester.tap(find.byKey(homeMenuButtonKey));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(homeCuriosityEntryKey));
+    await tester.tap(find.byKey(homeMenuCuriosityButtonKey));
     await tester.pumpAndSettle();
 
     await tester.enterText(
@@ -115,6 +120,72 @@ void main() {
     expect(find.text('답장 기다리는 중'), findsWidgets);
   });
 
+  testWidgets('opens stock story from the home menu without a home card', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const AlagagiApp());
+    await enterSpace(tester);
+
+    expect(find.byKey(homeCuriosityEntryKey), findsNothing);
+    expect(find.text('주식 이야기'), findsNothing);
+
+    await tester.tap(find.byKey(homeMenuButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(homeMenuSheetKey), findsOneWidget);
+    expect(find.text('궁금함 한 장'), findsOneWidget);
+    expect(find.text('주식 이야기'), findsOneWidget);
+
+    await tester.tap(find.byKey(homeMenuStockStoryButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('주식 이야기'), findsOneWidget);
+    expect(find.byKey(stockStoryAddButtonKey), findsOneWidget);
+    expect(find.text('주식'), findsNothing);
+    expect(find.text('홈'), findsOneWidget);
+    expect(find.text('질문'), findsOneWidget);
+    expect(find.text('음악'), findsOneWidget);
+    expect(find.text('마이'), findsOneWidget);
+  });
+
+  testWidgets('stock story screen adds a quiet stock story', (tester) async {
+    await tester.pumpWidget(const AlagagiApp());
+    await enterSpace(tester);
+
+    await tester.tap(find.byKey(homeMenuButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(homeMenuStockStoryButtonKey));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(stockStoryAddButtonKey));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(stockStorySymbolFieldKey), 'NVDA');
+    await tester.enterText(find.byKey(stockStoryNameFieldKey), 'Nvidia');
+    await tester.enterText(
+      find.byKey(stockStoryReasonFieldKey),
+      '데이터센터 매출 흐름을 같이 보고 싶어요.',
+    );
+    await tester.enterText(
+      find.byKey(stockStoryUpsideFieldKey),
+      '구독 매출과 생태계 유지력',
+    );
+    await tester.enterText(find.byKey(stockStoryRiskFieldKey), '기기 교체 수요 둔화');
+    await tester.enterText(
+      find.byKey(stockStoryQuestionFieldKey),
+      '다음 실적에서 어떤 숫자를 먼저 볼까요?',
+    );
+    await tester.ensureVisible(find.byKey(stockStorySubmitButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(stockStorySubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('NVDA'), findsOneWidget);
+    expect(find.textContaining('데이터센터 매출'), findsOneWidget);
+    expect(find.text('매수'), findsNothing);
+    expect(find.text('매도'), findsNothing);
+    expect(find.text('수익률'), findsNothing);
+  });
+
   testWidgets('home focused question card fits mobile unanswered state', (
     tester,
   ) async {
@@ -133,7 +204,8 @@ void main() {
     expect(find.byKey(homeQuestionCardKey), findsOneWidget);
     expect(find.byKey(homeQuestionAnswerButtonKey), findsOneWidget);
     expect(find.byKey(homeBrandLogoKey), findsOneWidget);
-    expect(find.byKey(homeCuriosityEntryKey), findsOneWidget);
+    expect(find.byKey(homeMenuButtonKey), findsOneWidget);
+    expect(find.byKey(homeCuriosityEntryKey), findsNothing);
     expect(
       tester.getSize(find.byKey(bottomNavigationKey)).height,
       lessThanOrEqualTo(72),
@@ -1942,6 +2014,9 @@ class _FailingCommentRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveCuriosityCard(String spaceId, CuriosityCard card) async {}
+
+  @override
+  Future<void> saveStockStory(String spaceId, StockStory story) async {}
 
   @override
   Future<void> saveProfileSlot(

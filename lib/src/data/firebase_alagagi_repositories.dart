@@ -293,6 +293,31 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         }, SetOptions(merge: true));
   }
 
+  @override
+  Future<void> saveStockStory(String spaceId, StockStory story) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('stockStories')
+        .doc(story.id)
+        .set({
+          'id': story.id,
+          'symbol': story.symbol,
+          'name': story.name,
+          'reason': story.reason,
+          'upside': story.upside,
+          'risk': story.risk,
+          'question': story.question,
+          'createdByProfileId': story.createdByProfileId,
+          'createdLabel': story.createdLabel,
+          'replyTone': story.replyTone ?? '',
+          'reply': story.reply ?? '',
+          'repliedByProfileId': story.repliedByProfileId ?? '',
+          'repliedLabel': story.repliedLabel ?? '',
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+  }
+
   Future<AlagagiSpaceData> _loadSpaceData({
     required String spaceId,
     required String meId,
@@ -308,6 +333,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     final curiosityCardsSnapshot = await space
         .collection('curiosityCards')
         .get();
+    final stockStoriesSnapshot = await space.collection('stockStories').get();
     final progressSnapshot = await space
         .collection('progress')
         .doc('daily')
@@ -352,6 +378,10 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           .toList(),
       curiosityCards: curiosityCardsSnapshot.docs
           .map((doc) => _curiosityCardFromData(doc.id, doc.data()))
+          .nonNulls
+          .toList(),
+      stockStories: stockStoriesSnapshot.docs
+          .map((doc) => _stockStoryFromData(doc.id, doc.data()))
           .nonNulls
           .toList(),
       dailyProgress: _dailyProgressFromData(progressSnapshot.data()),
@@ -508,6 +538,44 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       question: question,
       createdLabel: _readString(data, 'createdLabel') ?? '오늘',
       reply: _readString(data, 'reply'),
+      repliedLabel: _readString(data, 'repliedLabel'),
+      updatedAt: _readDateTime(data, 'updatedAt'),
+    );
+  }
+
+  StockStory? _stockStoryFromData(
+    String fallbackId,
+    Map<String, dynamic> data,
+  ) {
+    final symbol = _readString(data, 'symbol');
+    final name = _readString(data, 'name');
+    final reason = _readString(data, 'reason');
+    final upside = _readString(data, 'upside');
+    final risk = _readString(data, 'risk');
+    final question = _readString(data, 'question');
+    final createdByProfileId = _readString(data, 'createdByProfileId');
+    if (symbol == null ||
+        name == null ||
+        reason == null ||
+        upside == null ||
+        risk == null ||
+        question == null ||
+        createdByProfileId == null) {
+      return null;
+    }
+    return StockStory(
+      id: _readString(data, 'id') ?? fallbackId,
+      symbol: symbol,
+      name: name,
+      reason: reason,
+      upside: upside,
+      risk: risk,
+      question: question,
+      createdByProfileId: createdByProfileId,
+      createdLabel: _readString(data, 'createdLabel') ?? '오늘',
+      replyTone: _readString(data, 'replyTone'),
+      reply: _readString(data, 'reply'),
+      repliedByProfileId: _readString(data, 'repliedByProfileId'),
       repliedLabel: _readString(data, 'repliedLabel'),
       updatedAt: _readDateTime(data, 'updatedAt'),
     );

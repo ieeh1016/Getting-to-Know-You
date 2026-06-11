@@ -1,7 +1,7 @@
 # Firebase Setup Guide
 
 > Spec source: [spec.md](spec.md) section `MVP v0.3 Firebase Private`.
-> 작성 기준일: 2026-06-08.
+> 작성 기준일: 2026-06-11.
 
 이 앱은 Firebase Auth의 Email/Password 로그인을 사용하지만, 화면에는 이메일 대신 짧은 아이디만 보여준다.
 
@@ -108,7 +108,7 @@ minyoung@gettoknow.local
 
 Firestore Console에서 배열은 `array` 타입으로 넣는다.
 
-`spaces/main/curiosityCards` 하위 컬렉션은 앱에서 처음 `질문 보내기`를 누를 때 자동으로 만들어진다. Console에서 빈 컬렉션을 미리 만들 필요는 없지만, 아래 Security Rules에는 `curiosityCards` 규칙이 포함되어 있어야 한다.
+`spaces/main/curiosityCards` 하위 컬렉션은 앱에서 처음 `질문 보내기`를 누를 때 자동으로 만들어진다. `spaces/main/stockStories` 하위 컬렉션도 `주식 이야기`에서 처음 `이야기 남기기`를 누를 때 자동으로 만들어진다. Console에서 빈 컬렉션을 미리 만들 필요는 없지만, 아래 Security Rules에는 `curiosityCards`와 `stockStories` 규칙이 포함되어 있어야 한다.
 
 ## 6. Firestore Security Rules
 
@@ -277,6 +277,93 @@ service cloud.firestore {
         && request.resource.data.reply.size() > 0;
     }
 
+    function validStockStoryShape(spaceId, storyId) {
+      return request.resource.data.keys().hasOnly([
+          'id',
+          'symbol',
+          'name',
+          'reason',
+          'upside',
+          'risk',
+          'question',
+          'createdByProfileId',
+          'createdLabel',
+          'replyTone',
+          'reply',
+          'repliedByProfileId',
+          'repliedLabel',
+          'updatedAt'
+        ])
+        && request.resource.data.id == storyId
+        && request.resource.data.symbol is string
+        && request.resource.data.symbol.size() > 0
+        && request.resource.data.symbol.size() <= 24
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 40
+        && request.resource.data.reason is string
+        && request.resource.data.reason.size() > 0
+        && request.resource.data.reason.size() <= 120
+        && request.resource.data.upside is string
+        && request.resource.data.upside.size() > 0
+        && request.resource.data.upside.size() <= 80
+        && request.resource.data.risk is string
+        && request.resource.data.risk.size() > 0
+        && request.resource.data.risk.size() <= 80
+        && request.resource.data.question is string
+        && request.resource.data.question.size() > 0
+        && request.resource.data.question.size() <= 100
+        && request.resource.data.createdByProfileId is string
+        && request.resource.data.createdByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        && request.resource.data.createdLabel is string
+        && request.resource.data.createdLabel.size() <= 16
+        && request.resource.data.replyTone is string
+        && request.resource.data.replyTone.size() <= 16
+        && request.resource.data.reply is string
+        && request.resource.data.reply.size() <= 160
+        && request.resource.data.repliedByProfileId is string
+        && (request.resource.data.repliedByProfileId == ''
+          || request.resource.data.repliedByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds)
+        && request.resource.data.repliedLabel is string
+        && request.resource.data.repliedLabel.size() <= 16;
+    }
+
+    function validNewStockStory(spaceId, storyId) {
+      return validStockStoryShape(spaceId, storyId)
+        && request.resource.data.createdByProfileId == request.auth.uid
+        && request.resource.data.replyTone == ''
+        && request.resource.data.reply == ''
+        && request.resource.data.repliedByProfileId == ''
+        && request.resource.data.repliedLabel == '';
+    }
+
+    function validStockStoryReply(spaceId, storyId) {
+      return validStockStoryShape(spaceId, storyId)
+        && resource.data.createdByProfileId != request.auth.uid
+        && resource.data.reply == ''
+        && resource.data.repliedByProfileId == ''
+        && request.resource.data.createdByProfileId == resource.data.createdByProfileId
+        && request.resource.data.symbol == resource.data.symbol
+        && request.resource.data.name == resource.data.name
+        && request.resource.data.reason == resource.data.reason
+        && request.resource.data.upside == resource.data.upside
+        && request.resource.data.risk == resource.data.risk
+        && request.resource.data.question == resource.data.question
+        && request.resource.data.createdLabel == resource.data.createdLabel
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'replyTone',
+          'reply',
+          'repliedByProfileId',
+          'repliedLabel',
+          'updatedAt'
+        ])
+        && request.resource.data.replyTone in ['같이 볼래요', '더 찾아볼게요', '조심해요']
+        && request.resource.data.reply.size() > 0
+        && request.resource.data.repliedByProfileId == request.auth.uid
+        && request.resource.data.repliedLabel is string
+        && request.resource.data.repliedLabel.size() <= 16;
+    }
+
     match /users/{userId} {
       allow read: if signedIn()
         && (
@@ -373,6 +460,15 @@ service cloud.firestore {
           && validNewCuriosityCard(spaceId, cardId);
         allow update: if isSpaceMember(spaceId)
           && validCuriosityReply(spaceId, cardId);
+        allow delete: if false;
+      }
+
+      match /stockStories/{storyId} {
+        allow read: if isSpaceMember(spaceId);
+        allow create: if isSpaceMember(spaceId)
+          && validNewStockStory(spaceId, storyId);
+        allow update: if isSpaceMember(spaceId)
+          && validStockStoryReply(spaceId, storyId);
         allow delete: if false;
       }
     }

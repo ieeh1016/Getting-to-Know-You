@@ -38,6 +38,11 @@ const answerCommentSubmitButtonKey = Key('answer-comment-submit-button');
 const readableDetailSheetKey = Key('readable-detail-sheet');
 const readableDetailBodyKey = Key('readable-detail-body');
 const homeBrandLogoKey = Key('home-brand-logo');
+const homeMenuButtonKey = Key('home-menu-button');
+const homeMenuSheetKey = Key('home-menu-sheet');
+const homeMenuCuriosityButtonKey = Key('home-menu-curiosity-button');
+const homeMenuStockStoryButtonKey = Key('home-menu-stock-story-button');
+const homeMenuGuideButtonKey = Key('home-menu-guide-button');
 const homeCuriosityEntryKey = Key('home-curiosity-entry');
 const homeCuriositySheetKey = Key('home-curiosity-sheet');
 const curiosityQuestionFieldKey = Key('curiosity-question-field');
@@ -55,6 +60,21 @@ const myNextPrimaryButtonKey = Key('my-next-primary-button');
 const myProfileCardActionButtonKey = Key('my-profile-card-action-button');
 const myMusicActionButtonKey = Key('my-music-action-button');
 const myFirstVisitGuideButtonKey = Key('my-first-visit-guide-button');
+const stockStoryAddButtonKey = Key('stock-story-add-button');
+const stockStorySymbolFieldKey = Key('stock-story-symbol-field');
+const stockStoryNameFieldKey = Key('stock-story-name-field');
+const stockStoryReasonFieldKey = Key('stock-story-reason-field');
+const stockStoryUpsideFieldKey = Key('stock-story-upside-field');
+const stockStoryRiskFieldKey = Key('stock-story-risk-field');
+const stockStoryQuestionFieldKey = Key('stock-story-question-field');
+const stockStorySubmitButtonKey = Key('stock-story-submit-button');
+Key stockStoryCardKey(String storyId) => Key('stock-story-card-$storyId');
+Key stockStoryReplyFieldKey(String storyId) =>
+    Key('stock-story-reply-field-$storyId');
+Key stockStoryReplySubmitButtonKey(String storyId) =>
+    Key('stock-story-reply-submit-$storyId');
+Key stockStoryReplyToneKey(String storyId, String tone) =>
+    Key('stock-story-reply-tone-$storyId-$tone');
 const alagagiShellKey = Key('alagagi-shell');
 const bottomNavigationKey = Key('bottom-navigation');
 const archiveCalendarKey = Key('archive-question-calendar');
@@ -258,6 +278,7 @@ class _AlagagiRootState extends State<AlagagiRoot> {
         controller: _controller,
         onOpenExternalLink: widget.onOpenExternalLink ?? openExternalLink,
       ),
+      AlagagiRoute.stockStory => StockStoryScreen(controller: _controller),
       AlagagiRoute.balance => BalanceScreen(controller: _controller),
       AlagagiRoute.profileCard => ProfileCardScreen(controller: _controller),
       AlagagiRoute.wishlist => WishlistScreen(controller: _controller),
@@ -1184,8 +1205,6 @@ class HomeScreen extends StatelessWidget {
         const _SectionLabel('오늘의 질문'),
         const SizedBox(height: 12),
         _QuestionCard(controller: controller),
-        const SizedBox(height: 12),
-        _HomeCuriosityEntry(controller: controller),
         const SizedBox(height: 16),
         _HomeProgressSummaryCard(controller: controller),
         const SizedBox(height: 22),
@@ -1468,34 +1487,243 @@ class _HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      key: homeBrandLogoKey,
-      label: '${controller.state.personalization.appTitle} 로고',
-      child: Row(
-        children: [
-          const _BrandLeafMark(),
-          const SizedBox(width: 11),
-          Expanded(
+    return Row(
+      children: [
+        Expanded(
+          child: Semantics(
+            key: homeBrandLogoKey,
+            label: '${controller.state.personalization.appTitle} 로고',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  controller.state.personalization.appTitle,
-                  style: serif(context, size: 24, weight: FontWeight.w800),
+                Row(
+                  children: [
+                    const _BrandLeafMark(),
+                    const SizedBox(width: 11),
+                    Expanded(
+                      child: Text(
+                        controller.state.personalization.appTitle,
+                        style: serif(
+                          context,
+                          size: 24,
+                          weight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 3),
-                Text(
-                  _brandKicker,
-                  style: sans(
-                    size: 10.5,
-                    weight: FontWeight.w800,
-                    color: AlagagiColors.sageDeep,
+                Padding(
+                  padding: const EdgeInsets.only(left: 53),
+                  child: Text(
+                    _brandKicker,
+                    style: sans(
+                      size: 10.5,
+                      weight: FontWeight.w800,
+                      color: AlagagiColors.sageDeep,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
+        const SizedBox(width: 10),
+        Tooltip(
+          message: '조금씩 메뉴',
+          child: IconButton(
+            key: homeMenuButtonKey,
+            onPressed: () => _showHomeMenuSheet(context, controller),
+            icon: const Icon(Icons.menu_rounded, size: 20),
+            color: AlagagiColors.sageDeep,
+            style: IconButton.styleFrom(
+              backgroundColor: AlagagiColors.paper,
+              shape: RoundedRectangleBorder(
+                side: const BorderSide(color: AlagagiColors.line),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              fixedSize: const Size(42, 42),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+void _showHomeMenuSheet(BuildContext context, AlagagiController controller) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return SafeArea(
+        child: Container(
+          key: homeMenuSheetKey,
+          margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+          decoration: BoxDecoration(
+            color: AlagagiColors.paper,
+            border: Border.all(color: AlagagiColors.line),
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x2E2C2B25),
+                blurRadius: 44,
+                offset: Offset(0, 18),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.fromLTRB(18, 11, 18, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD7D5CC),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 17),
+              Text(
+                '조금씩 메뉴',
+                style: serif(context, size: 21, weight: FontWeight.w800),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '오늘 질문을 방해하지 않는 선에서, 가끔 꺼내볼 기능만 모아뒀어요.',
+                style: sans(
+                  size: 12.3,
+                  color: AlagagiColors.muted,
+                  height: 1.55,
+                ),
+              ),
+              const SizedBox(height: 14),
+              _HomeMenuRow(
+                rowKey: homeMenuCuriosityButtonKey,
+                icon: Icons.question_answer_outlined,
+                title: '궁금함 한 장',
+                subtitle: '상대에게 짧게 물어보기',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _showCuriosityMenuSheet(context, controller);
+                  });
+                },
+              ),
+              const SizedBox(height: 8),
+              _HomeMenuRow(
+                rowKey: homeMenuStockStoryButtonKey,
+                icon: Icons.bar_chart_rounded,
+                title: '주식 이야기',
+                subtitle: '관심 종목과 걱정 포인트를 함께 보기',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  controller.goTo(AlagagiRoute.stockStory);
+                },
+              ),
+              const SizedBox(height: 8),
+              _HomeMenuRow(
+                rowKey: homeMenuGuideButtonKey,
+                icon: Icons.info_outline_rounded,
+                title: '처음 안내',
+                subtitle: '조금씩 사용하는 방법 다시 보기',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _showFirstVisitGuideBook(context);
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+class _HomeMenuRow extends StatelessWidget {
+  const _HomeMenuRow({
+    required this.rowKey,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final Key rowKey;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: rowKey,
+        borderRadius: BorderRadius.circular(17),
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 64),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8F8F4),
+            border: Border.all(color: AlagagiColors.line),
+            borderRadius: BorderRadius.circular(17),
+          ),
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEF2EA),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                alignment: Alignment.center,
+                child: Icon(icon, size: 19, color: AlagagiColors.sageDeep),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      title,
+                      style: sans(
+                        size: 13.1,
+                        weight: FontWeight.w800,
+                        color: const Color(0xFF46443F),
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: sans(
+                        size: 11.2,
+                        color: AlagagiColors.muted,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: AlagagiColors.muted,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1795,153 +2023,6 @@ class _QuestionCard extends StatelessWidget {
             _AnswerSaveStatus(controller: controller, questionId: question.id),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _HomeCuriosityEntry extends StatelessWidget {
-  const _HomeCuriosityEntry({required this.controller});
-
-  final AlagagiController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final partnerName = controller.state.partner.nickname;
-    final received = controller.latestReceivedCuriosityCard;
-    final sent =
-        controller.pendingSentCuriosityCard ??
-        controller.latestSentCuriosityCard;
-    final receivedCount = controller.unansweredReceivedCuriosityCount;
-    final hasUnreadReceived = received != null && !received.hasReply;
-    final title = hasUnreadReceived
-        ? '$partnerName님의 궁금함 한 장'
-        : sent != null && !sent.hasReply
-        ? '내가 남긴 궁금함 한 장'
-        : '궁금함 한 장';
-    final subtitle = hasUnreadReceived
-        ? received.question
-        : sent != null && !sent.hasReply
-        ? '$partnerName님 답장을 기다리는 중'
-        : received != null && received.hasReply
-        ? '답장 ${controller.curiosityCards.where((card) => card.hasReply).length}장을 보관 중'
-        : '$partnerName님에게 가볍게 물어보기';
-    final countText = hasUnreadReceived
-        ? receivedCount.toString()
-        : sent != null && !sent.hasReply
-        ? '1'
-        : received != null && received.hasReply
-        ? '✓'
-        : '+';
-    final stateText = hasUnreadReceived
-        ? '받음'
-        : sent != null && !sent.hasReply
-        ? '보냄'
-        : received != null && received.hasReply
-        ? '답함'
-        : '쓰기';
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        key: homeCuriosityEntryKey,
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => _showCuriosityMenuSheet(context, controller),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 76),
-          decoration: BoxDecoration(
-            color: const Color(0xFFEEF2EA),
-            border: Border.all(color: const Color(0x266F7F63)),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0A57624C),
-                blurRadius: 18,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.fromLTRB(14, 13, 12, 13),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AlagagiColors.sageDeep,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                alignment: Alignment.center,
-                child: const Icon(
-                  Icons.question_mark_rounded,
-                  size: 20,
-                  color: AlagagiColors.paper,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: sans(
-                        size: 13.3,
-                        weight: FontWeight.w800,
-                        color: const Color(0xFF454741),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: sans(
-                        size: 11.2,
-                        color: AlagagiColors.muted,
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 27,
-                    height: 27,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      countText,
-                      style: sans(
-                        size: 11,
-                        weight: FontWeight.w800,
-                        color: AlagagiColors.sageDeep,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    stateText,
-                    style: sans(
-                      size: 9.5,
-                      weight: FontWeight.w800,
-                      color: AlagagiColors.sageDeep,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -3761,6 +3842,9 @@ class _ReadableDetailMark extends StatelessWidget {
   IconData _iconForLabel(String label) {
     if (label.contains('음악')) {
       return Icons.music_note_rounded;
+    }
+    if (label.contains('주식')) {
+      return Icons.bar_chart_rounded;
     }
     if (label.contains('댓글')) {
       return Icons.chat_bubble_outline_rounded;
@@ -8168,6 +8252,652 @@ class _InterestBadge extends StatelessWidget {
   }
 }
 
+class StockStoryScreen extends StatelessWidget {
+  const StockStoryScreen({super.key, required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final stories = controller.stockStories;
+    return _ScreenScroll(
+      bottomNavigation: _BottomNav(controller: controller),
+      children: [
+        _TopBar(
+          title: '주식 이야기',
+          trailing: '',
+          onBack: () => controller.goTo(AlagagiRoute.home),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '관심 종목과 걱정 포인트를 조심히 나눠요',
+          style: sans(size: 12.5, color: AlagagiColors.muted),
+        ),
+        const SizedBox(height: 16),
+        const _StockStoryHeroCard(),
+        if (controller.state.stockStoryDraftVisible) ...[
+          const SizedBox(height: 16),
+          _StockStoryDraftCard(controller: controller),
+        ],
+        const SizedBox(height: 18),
+        Row(
+          children: [
+            const Expanded(child: _SectionLabel('같이 볼 이야기')),
+            if (!controller.state.stockStoryDraftVisible)
+              _StockStoryAddButton(controller: controller),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (stories.isEmpty)
+          const _EmptyStateCard(text: '관심 가는 종목을 하나만 가볍게 남겨볼까요?')
+        else
+          for (final story in stories) ...[
+            _StockStoryCard(controller: controller, story: story),
+            const SizedBox(height: 12),
+          ],
+      ],
+    );
+  }
+}
+
+class _StockStoryHeroCard extends StatelessWidget {
+  const _StockStoryHeroCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF2F2F2B),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '관점 노트',
+            style: sans(
+              size: 10.5,
+              weight: FontWeight.w800,
+              color: const Color(0xFFC9C9C2),
+              letterSpacing: 1.8,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '신호보다,\n서로의 생각을 남겨요.',
+            style: serif(
+              context,
+              size: 22,
+              weight: FontWeight.w800,
+              color: Colors.white,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 9),
+          Text(
+            '좋아 보이는 점과 조심할 점을 같이 적어두면 판단이 조금 더 차분해져요.',
+            style: sans(
+              size: 12.5,
+              color: const Color(0xFFD8D8D1),
+              height: 1.58,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StockStoryAddButton extends StatelessWidget {
+  const _StockStoryAddButton({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 38,
+      child: OutlinedButton.icon(
+        key: stockStoryAddButtonKey,
+        onPressed: controller.startStockStoryDraft,
+        icon: const Icon(Icons.add_rounded, size: 16),
+        label: const Text('이야기 남기기'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AlagagiColors.sageDeep,
+          side: const BorderSide(color: Color(0x338A9A7E)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          textStyle: sans(size: 12, weight: FontWeight.w800),
+        ),
+      ),
+    );
+  }
+}
+
+class _StockStoryDraftCard extends StatelessWidget {
+  const _StockStoryDraftCard({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return _PaperCard(
+      radius: 22,
+      padding: const EdgeInsets.all(18),
+      highlightedBorder: AlagagiColors.sage,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '같이 살펴볼 이야기를\n가볍게 남겨요.',
+            style: serif(
+              context,
+              size: 20,
+              weight: FontWeight.w800,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            '결론보다 이유와 걱정을 함께 남기면 충분해요.',
+            style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _StockStoryTextField(
+                  fieldKey: stockStorySymbolFieldKey,
+                  label: 'TICKER',
+                  hint: '예: AAPL',
+                  initialValue: controller.state.stockStoryDraftSymbol,
+                  maxLength: 24,
+                  onChanged: (value) =>
+                      controller.updateStockStoryDraft(symbol: value),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _StockStoryTextField(
+                  fieldKey: stockStoryNameFieldKey,
+                  label: 'NAME',
+                  hint: '종목 이름',
+                  initialValue: controller.state.stockStoryDraftName,
+                  maxLength: 40,
+                  onChanged: (value) =>
+                      controller.updateStockStoryDraft(name: value),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _StockStoryTextField(
+            fieldKey: stockStoryReasonFieldKey,
+            label: 'WHY',
+            hint: '왜 같이 보고 싶은지',
+            initialValue: controller.state.stockStoryDraftReason,
+            maxLength: 120,
+            maxLines: 2,
+            onChanged: (value) =>
+                controller.updateStockStoryDraft(reason: value),
+          ),
+          const SizedBox(height: 10),
+          _StockStoryTextField(
+            fieldKey: stockStoryUpsideFieldKey,
+            label: '기대 포인트',
+            hint: '좋아 보이는 점',
+            initialValue: controller.state.stockStoryDraftUpside,
+            maxLength: 80,
+            onChanged: (value) =>
+                controller.updateStockStoryDraft(upside: value),
+          ),
+          const SizedBox(height: 10),
+          _StockStoryTextField(
+            fieldKey: stockStoryRiskFieldKey,
+            label: '걱정 포인트',
+            hint: '조심해서 볼 점',
+            initialValue: controller.state.stockStoryDraftRisk,
+            maxLength: 80,
+            onChanged: (value) => controller.updateStockStoryDraft(risk: value),
+          ),
+          const SizedBox(height: 10),
+          _StockStoryTextField(
+            fieldKey: stockStoryQuestionFieldKey,
+            label: '궁금한 점',
+            hint: '상대에게 묻고 싶은 것',
+            initialValue: controller.state.stockStoryDraftQuestion,
+            maxLength: 100,
+            maxLines: 2,
+            onChanged: (value) =>
+                controller.updateStockStoryDraft(question: value),
+          ),
+          if (controller.state.stockStoryDraftError != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              controller.state.stockStoryDraftError!,
+              style: sans(size: 12, color: AlagagiColors.sageDeep),
+            ),
+          ],
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              TextButton(
+                onPressed: controller.cancelStockStoryDraft,
+                child: Text(
+                  '취소',
+                  style: sans(size: 13, color: AlagagiColors.muted),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _PrimaryButton(
+                  label: '이야기 남기기',
+                  onPressed: controller.submitStockStoryDraft,
+                  color: AlagagiColors.sageDeep,
+                  buttonKey: stockStorySubmitButtonKey,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StockStoryTextField extends StatelessWidget {
+  const _StockStoryTextField({
+    required this.fieldKey,
+    required this.label,
+    required this.hint,
+    required this.initialValue,
+    required this.maxLength,
+    required this.onChanged,
+    this.maxLines = 1,
+  });
+
+  final Key fieldKey;
+  final String label;
+  final String hint;
+  final String initialValue;
+  final int maxLength;
+  final ValueChanged<String> onChanged;
+  final int maxLines;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 7, 14, 7),
+      child: TextFormField(
+        key: fieldKey,
+        initialValue: initialValue,
+        maxLength: maxLength,
+        minLines: maxLines,
+        maxLines: maxLines,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          counterText: '',
+          border: InputBorder.none,
+        ),
+        style: sans(size: 13.5, height: 1.5),
+      ),
+    );
+  }
+}
+
+class _StockStoryCard extends StatelessWidget {
+  const _StockStoryCard({required this.controller, required this.story});
+
+  final AlagagiController controller;
+  final StockStory story;
+
+  @override
+  Widget build(BuildContext context) {
+    final isMine = story.createdByProfileId == controller.state.me.id;
+    final creator = isMine
+        ? controller.state.me.nickname
+        : controller.state.partner.nickname;
+    final detailBody = [
+      '관심 이유\n${story.reason}',
+      '기대 포인트\n${story.upside}',
+      '걱정 포인트\n${story.risk}',
+      '궁금한 점\n${story.question}',
+      if (story.hasReply) '${story.replyTone ?? '답장'}\n${story.reply!.trim()}',
+    ].join('\n\n');
+    return GestureDetector(
+      key: stockStoryCardKey(story.id),
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _showReadableDetailSheet(
+        context,
+        label: '주식 이야기',
+        title: '${story.symbol} · ${story.name}',
+        meta: '$creator · ${story.createdLabel}',
+        body: detailBody,
+      ),
+      child: _PaperCard(
+        radius: 19,
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _StockStoryMark(symbol: story.symbol, isMine: isMine),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              story.symbol,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: sans(
+                                size: 14.2,
+                                weight: FontWeight.w800,
+                                color: const Color(0xFF33332F),
+                              ),
+                            ),
+                          ),
+                          _SmallBadge(
+                            label: story.hasReply ? '답장 있음' : '기다리는 중',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$creator · ${story.name}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: sans(size: 11.6, color: AlagagiColors.muted),
+                      ),
+                      const SizedBox(height: 7),
+                      Text(
+                        story.reason,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: sans(
+                          size: 12.3,
+                          color: const Color(0xFF6F6C65),
+                          height: 1.45,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _StockStoryMiniBox(label: '기대', body: story.upside),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _StockStoryMiniBox(label: '걱정', body: story.risk),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            _StockStoryQuestion(text: story.question),
+            if (story.hasReply) ...[
+              const SizedBox(height: 10),
+              _StockStoryReplyBlock(story: story),
+            ] else if (!isMine) ...[
+              const SizedBox(height: 12),
+              _StockStoryReplyComposer(controller: controller, story: story),
+            ],
+            if (controller.state.stockStoryReplyError != null && !isMine) ...[
+              const SizedBox(height: 8),
+              Text(
+                controller.state.stockStoryReplyError!,
+                style: sans(size: 12, color: AlagagiColors.sageDeep),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StockStoryMark extends StatelessWidget {
+  const _StockStoryMark({required this.symbol, required this.isMine});
+
+  final String symbol;
+  final bool isMine;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: isMine ? AlagagiColors.softSage : const Color(0xFFF5EFEA),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        symbol.characters.first.toUpperCase(),
+        style: sans(
+          size: 15,
+          weight: FontWeight.w900,
+          color: isMine ? AlagagiColors.sageDeep : const Color(0xFFB18472),
+        ),
+      ),
+    );
+  }
+}
+
+class _StockStoryMiniBox extends StatelessWidget {
+  const _StockStoryMiniBox({required this.label, required this.body});
+
+  final String label;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 70),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      padding: const EdgeInsets.all(11),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: sans(
+              size: 10.5,
+              weight: FontWeight.w800,
+              color: AlagagiColors.sageDeep,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            body,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: sans(size: 11.5, color: AlagagiColors.ink, height: 1.38),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StockStoryQuestion extends StatelessWidget {
+  const _StockStoryQuestion({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AlagagiColors.ink,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '궁금한 점',
+            style: sans(
+              size: 10.5,
+              weight: FontWeight.w800,
+              color: const Color(0xFFC9C9C2),
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            text,
+            style: sans(size: 12.3, color: Colors.white, height: 1.45),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StockStoryReplyBlock extends StatelessWidget {
+  const _StockStoryReplyBlock({required this.story});
+
+  final StockStory story;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEF2EA),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            story.replyTone ?? '답장',
+            style: sans(
+              size: 10.5,
+              weight: FontWeight.w800,
+              color: AlagagiColors.sageDeep,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(story.reply ?? '', style: sans(size: 12.5, height: 1.5)),
+        ],
+      ),
+    );
+  }
+}
+
+class _StockStoryReplyComposer extends StatelessWidget {
+  const _StockStoryReplyComposer({
+    required this.controller,
+    required this.story,
+  });
+
+  final AlagagiController controller;
+  final StockStory story;
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedTone = controller.stockStoryReplyToneFor(story.id);
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFEFA),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(17),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '내 관점 남기기',
+            style: sans(
+              size: 11.5,
+              weight: FontWeight.w800,
+              color: AlagagiColors.sageDeep,
+            ),
+          ),
+          const SizedBox(height: 9),
+          Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            children: [
+              for (final tone in stockStoryReplyToneOptions)
+                _FilterPill(
+                  key: stockStoryReplyToneKey(story.id, tone),
+                  label: tone,
+                  selected: selectedTone == tone,
+                  onTap: () =>
+                      controller.setStockStoryReplyTone(story.id, tone),
+                ),
+            ],
+          ),
+          const SizedBox(height: 9),
+          TextField(
+            key: stockStoryReplyFieldKey(story.id),
+            minLines: 2,
+            maxLines: 3,
+            maxLength: 160,
+            onChanged: (value) => controller.updateStockStoryReplyDraft(
+              storyId: story.id,
+              value: value,
+            ),
+            decoration: InputDecoration(
+              hintText: '숫자 하나나 확인할 점만 남겨도 괜찮아요.',
+              hintStyle: sans(size: 12.2, color: AlagagiColors.muted),
+              counterText: '',
+              filled: true,
+              fillColor: const Color(0xFFF8F8F4),
+              contentPadding: const EdgeInsets.all(12),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: AlagagiColors.line),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: AlagagiColors.sageDeep),
+              ),
+            ),
+            style: sans(size: 13, height: 1.45),
+          ),
+          const SizedBox(height: 9),
+          _PrimaryButton(
+            label: '관점 남기기',
+            buttonKey: stockStoryReplySubmitButtonKey(story.id),
+            onPressed: () => controller.submitStockStoryReply(story.id),
+            color: AlagagiColors.sageDeep,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class MusicScreen extends StatelessWidget {
   const MusicScreen({
     super.key,
@@ -9862,6 +10592,7 @@ class _EmptyStateCard extends StatelessWidget {
 
 class _FilterPill extends StatelessWidget {
   const _FilterPill({
+    super.key,
     required this.label,
     required this.selected,
     required this.onTap,
