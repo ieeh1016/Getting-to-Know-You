@@ -9111,11 +9111,6 @@ class PlaceBoardScreen extends StatelessWidget {
           style: sans(size: 12.5, color: AlagagiColors.muted),
         ),
         const SizedBox(height: 14),
-        if (controller.state.placeDraftVisible)
-          _PlaceDraftCard(controller: controller)
-        else
-          _PlaceSearchEntryCard(controller: controller),
-        const SizedBox(height: 14),
         _PlaceMapPreview(
           controller: controller,
           mutualCount: mutualCount,
@@ -9123,12 +9118,11 @@ class PlaceBoardScreen extends StatelessWidget {
           linkedCount: linkedCount,
           places: places,
         ),
-        const SizedBox(height: 12),
-        _PlaceBoardSummary(
-          totalCount: places.length,
-          mutualCount: mutualCount,
-          linkedCount: linkedCount,
-        ),
+        const SizedBox(height: 14),
+        if (controller.state.placeDraftVisible)
+          _PlaceDraftCard(controller: controller)
+        else
+          _PlaceSearchEntryCard(controller: controller),
         const SizedBox(height: 18),
         Row(
           children: [
@@ -9201,7 +9195,7 @@ class _PlaceMapPreview extends StatelessWidget {
         ),
     ];
     return Container(
-      height: 220,
+      height: 334,
       decoration: BoxDecoration(
         color: const Color(0xFFE9EEE8),
         border: Border.all(color: AlagagiColors.line),
@@ -9229,36 +9223,57 @@ class _PlaceMapPreview extends StatelessWidget {
             ),
           ),
           Positioned(
-            left: 18,
-            top: 18,
-            right: 18,
+            left: 16,
+            top: 16,
+            right: 16,
             child: Container(
               decoration: BoxDecoration(
-                color: AlagagiColors.paper.withValues(alpha: 0.9),
+                color: AlagagiColors.paper.withValues(alpha: 0.93),
                 border: Border.all(color: AlagagiColors.line),
-                borderRadius: BorderRadius.circular(17),
+                borderRadius: BorderRadius.circular(18),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.map_outlined,
-                    size: 17,
-                    color: AlagagiColors.sageDeep,
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: AlagagiColors.softSage,
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.map_outlined,
+                      size: 18,
+                      color: AlagagiColors.sageDeep,
+                    ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: Text(
-                      hasDraftLocation
-                          ? '선택한 장소가 지도에 표시됐어요'
-                          : '저장한 장소를 카카오 지도에 표시해요',
-                      style: sans(
-                        size: 12,
-                        color: hasDraftLocation
-                            ? AlagagiColors.sageDeep
-                            : AlagagiColors.muted,
-                        weight: hasDraftLocation ? FontWeight.w800 : null,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '카카오 장소 지도',
+                          style: sans(size: 12.8, weight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          hasDraftLocation
+                              ? '선택한 장소가 큰 지도에 표시됐어요'
+                              : '저장한 장소를 한눈에 크게 봐요',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: sans(
+                            size: 11.2,
+                            color: hasDraftLocation
+                                ? AlagagiColors.sageDeep
+                                : AlagagiColors.muted,
+                            weight: hasDraftLocation ? FontWeight.w700 : null,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -9266,17 +9281,46 @@ class _PlaceMapPreview extends StatelessWidget {
             ),
           ),
           Positioned(
-            left: 18,
-            right: 18,
+            left: 16,
+            right: 16,
             bottom: 16,
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              children: [
-                _MapSummaryPill(label: '서로 관심 $mutualCount'),
-                _MapSummaryPill(label: '담은 곳 $totalCount'),
-                _MapSummaryPill(label: '약속 연결 $linkedCount'),
-              ],
+            child: Container(
+              decoration: BoxDecoration(
+                color: AlagagiColors.paper.withValues(alpha: 0.94),
+                border: Border.all(color: AlagagiColors.line),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 13),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          totalCount == 0
+                              ? '아직 담은 장소가 없어요'
+                              : '$totalCount곳이 지도에 모였어요',
+                          style: sans(size: 13, weight: FontWeight.w800),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _SmallBadge(label: '카카오'),
+                    ],
+                  ),
+                  const SizedBox(height: 9),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      _MapSummaryPill(label: '서로 관심 $mutualCount'),
+                      _MapSummaryPill(label: '담은 곳 $totalCount'),
+                      _MapSummaryPill(label: '약속 연결 $linkedCount'),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -9307,19 +9351,19 @@ class _PlaceMapFallback extends StatelessWidget {
         const _MapPin(left: 238, top: 94, color: AlagagiColors.sageDeep),
         const _MapPin(left: 92, top: 126, color: AlagagiColors.lavender),
         const _MapPin(left: 174, top: 156, color: Color(0xFFB18472)),
-        Positioned(
-          left: 18,
-          right: 18,
-          bottom: 58,
-          child: Text(
-            message,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: sans(
-              size: 10.5,
-              color: const Color(0xFF7B7870),
-              height: 1.35,
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 36),
+            child: Text(
+              message,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: sans(
+                size: 10.8,
+                color: const Color(0xFF7B7870),
+                height: 1.35,
+              ),
             ),
           ),
         ),
@@ -9380,74 +9424,6 @@ class _PlaceSearchEntryCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
               textStyle: sans(size: 13, weight: FontWeight.w800),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PlaceBoardSummary extends StatelessWidget {
-  const _PlaceBoardSummary({
-    required this.totalCount,
-    required this.mutualCount,
-    required this.linkedCount,
-  });
-
-  final int totalCount;
-  final int mutualCount;
-  final int linkedCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _PlaceMetricCard(label: '담은 곳', value: '$totalCount'),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _PlaceMetricCard(label: '서로 관심', value: '$mutualCount'),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _PlaceMetricCard(label: '약속 연결', value: '$linkedCount'),
-        ),
-      ],
-    );
-  }
-}
-
-class _PlaceMetricCard extends StatelessWidget {
-  const _PlaceMetricCard({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minHeight: 56),
-      decoration: BoxDecoration(
-        color: AlagagiColors.paper,
-        border: Border.all(color: AlagagiColors.line),
-        borderRadius: BorderRadius.circular(17),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(value, style: sans(size: 17, weight: FontWeight.w800)),
-          const SizedBox(height: 5),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: sans(
-              size: 10.6,
-              color: AlagagiColors.muted,
-              weight: FontWeight.w700,
             ),
           ),
         ],
@@ -10043,7 +10019,7 @@ class _SelectedPlaceMiniMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 112,
+      height: 168,
       decoration: BoxDecoration(
         color: const Color(0xFFE9EEE8),
         border: Border.all(color: AlagagiColors.line),
@@ -10065,7 +10041,7 @@ class _SelectedPlaceMiniMap extends StatelessWidget {
         fallbackBuilder: (context, reason) => Stack(
           children: [
             Positioned.fill(child: CustomPaint(painter: _QuietMapPainter())),
-            const _MapPin(left: 154, top: 44, color: AlagagiColors.sageDeep),
+            const _MapPin(left: 154, top: 72, color: AlagagiColors.sageDeep),
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
