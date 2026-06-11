@@ -447,6 +447,86 @@ service cloud.firestore {
         && request.resource.data.repliedLabel.size() <= 16;
     }
 
+    function validScheduleEntry(entryId) {
+      return request.resource.data.keys().hasOnly([
+          'dateKey',
+          'profileId',
+          'availability',
+          'timeSlots',
+          'sharedMemo',
+          'updatedAt'
+        ])
+        && request.resource.data.dateKey is string
+        && request.resource.data.dateKey.size() <= 16
+        && request.resource.data.profileId == request.auth.uid
+        && entryId == request.resource.data.dateKey + '_' + request.auth.uid
+        && request.resource.data.availability in ['available', 'maybe', 'busy']
+        && request.resource.data.timeSlots is list
+        && request.resource.data.timeSlots.size() <= 3
+        && request.resource.data.timeSlots.hasOnly(['morning', 'afternoon', 'evening'])
+        && request.resource.data.sharedMemo is string
+        && request.resource.data.sharedMemo.size() <= 120;
+    }
+
+    function validPrivateScheduleMemo(userId, memoId) {
+      return userId == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'spaceId',
+          'dateKey',
+          'privateMemo',
+          'updatedAt'
+        ])
+        && request.resource.data.spaceId is string
+        && request.resource.data.dateKey is string
+        && request.resource.data.dateKey.size() <= 16
+        && memoId == request.resource.data.spaceId + '_' + request.resource.data.dateKey
+        && isSpaceMember(request.resource.data.spaceId)
+        && request.resource.data.privateMemo is string
+        && request.resource.data.privateMemo.size() <= 120;
+    }
+
+    function validSharedPlace(spaceId, placeId) {
+      return request.resource.data.keys().hasOnly([
+          'id',
+          'name',
+          'address',
+          'category',
+          'provider',
+          'providerPlaceId',
+          'latitude',
+          'longitude',
+          'note',
+          'createdByProfileId',
+          'interestedByProfileIds',
+          'linkedDateKey',
+          'updatedAt'
+        ])
+        && request.resource.data.id == placeId
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 60
+        && request.resource.data.address is string
+        && request.resource.data.address.size() <= 90
+        && request.resource.data.category in ['cafe', 'food', 'exhibition', 'walk', 'activity']
+        && request.resource.data.provider in ['kakao', 'naver', 'manual']
+        && request.resource.data.providerPlaceId is string
+        && request.resource.data.providerPlaceId.size() <= 80
+        && (!request.resource.data.keys().hasAny(['latitude'])
+          || request.resource.data.latitude == null
+          || request.resource.data.latitude is number)
+        && (!request.resource.data.keys().hasAny(['longitude'])
+          || request.resource.data.longitude == null
+          || request.resource.data.longitude is number)
+        && request.resource.data.note is string
+        && request.resource.data.note.size() <= 120
+        && request.resource.data.createdByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        && request.resource.data.interestedByProfileIds is list
+        && request.resource.data.interestedByProfileIds.size() <= 2
+        && request.auth.uid in request.resource.data.interestedByProfileIds
+        && request.resource.data.linkedDateKey is string
+        && request.resource.data.linkedDateKey.size() <= 16;
+    }
+
     match /users/{userId} {
       allow read: if signedIn()
         && (
@@ -457,6 +537,12 @@ service cloud.firestore {
           )
         );
       allow write: if false;
+
+      match /privateScheduleMemos/{memoId} {
+        allow read: if request.auth.uid == userId;
+        allow create, update: if validPrivateScheduleMemo(userId, memoId);
+        allow delete: if false;
+      }
     }
 
     match /spaces/{spaceId} {
@@ -537,6 +623,20 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      match /scheduleEntries/{entryId} {
+        allow read: if isSpaceMember(spaceId);
+        allow create, update: if isSpaceMember(spaceId)
+          && validScheduleEntry(entryId);
+        allow delete: if false;
+      }
+
+      match /sharedPlaces/{placeId} {
+        allow read: if isSpaceMember(spaceId);
+        allow create, update: if isSpaceMember(spaceId)
+          && validSharedPlace(spaceId, placeId);
+        allow delete: if false;
+      }
+
       match /curiosityCards/{cardId} {
         allow read: if isSpaceMember(spaceId);
         allow create: if isSpaceMember(spaceId)
@@ -581,6 +681,7 @@ FIREBASE_MESSAGING_SENDER_ID
 FIREBASE_PROJECT_ID
 FIREBASE_AUTH_DOMAIN
 FIREBASE_STORAGE_BUCKET
+KAKAO_MAP_JS_KEY
 ```
 
 Secrets를 추가한 뒤 `main` 브랜치에 push하면 GitHub Actions가 Flutter Web을 다시 빌드한다.
