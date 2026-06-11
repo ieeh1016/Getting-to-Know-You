@@ -394,6 +394,11 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   }
 
   @override
+  Future<void> saveMusicNoteListenState(String spaceId, MusicNote note) async {
+    savedMusicNotes.add(note);
+  }
+
+  @override
   Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry) async {
     savedScheduleEntries.add(entry);
   }

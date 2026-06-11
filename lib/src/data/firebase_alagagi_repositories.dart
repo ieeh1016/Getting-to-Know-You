@@ -270,8 +270,19 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           'mood': note.mood,
           'createdByProfileId': note.createdByProfileId,
           'createdLabel': note.createdLabel,
+          'listenedByProfileIds': note.listenedByProfileIds.toList(),
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> saveMusicNoteListenState(String spaceId, MusicNote note) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('musicNotes')
+        .doc(note.id)
+        .update({'listenedByProfileIds': note.listenedByProfileIds.toList()});
   }
 
   @override
@@ -604,6 +615,15 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     if (title == null || artist == null) {
       return null;
     }
+    final createdByProfileId = _readString(data, 'createdByProfileId') ?? '';
+    final listenedByProfileIds = _readStringList(
+      data,
+      'listenedByProfileIds',
+    ).toSet();
+    if (!data.containsKey('listenedByProfileIds') &&
+        createdByProfileId.isNotEmpty) {
+      listenedByProfileIds.add(createdByProfileId);
+    }
     return MusicNote(
       id: _readString(data, 'id') ?? fallbackId,
       title: title,
@@ -611,8 +631,9 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       link: _readString(data, 'link') ?? '',
       note: _readString(data, 'note') ?? '',
       mood: _readString(data, 'mood') ?? musicMoodOptions.first,
-      createdByProfileId: _readString(data, 'createdByProfileId') ?? '',
+      createdByProfileId: createdByProfileId,
       createdLabel: _readString(data, 'createdLabel') ?? '오늘',
+      listenedByProfileIds: listenedByProfileIds,
       updatedAt: _readDateTime(data, 'updatedAt'),
     );
   }

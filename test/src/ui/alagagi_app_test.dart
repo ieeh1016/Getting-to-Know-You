@@ -1717,6 +1717,83 @@ void main() {
     expect(find.textContaining('사랑'), findsNothing);
   });
 
+  testWidgets('music listen emoji toggles without opening detail', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      AlagagiSession(
+        spaceId: 'main',
+        me: const AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: const AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          musicNotes: [
+            MusicNote(
+              id: 'music_partner',
+              title: '오후의 문장',
+              artist: '민영의 추천',
+              link: 'https://music.example/afternoon',
+              note: '카페에서 듣기 좋아요.',
+              mood: '카페',
+              createdByProfileId: 'minyoungUid',
+              createdLabel: '오늘',
+              listenedByProfileIds: {'minyoungUid'},
+              updatedAt: DateTime.parse('2026-06-09T10:00:00.000Z'),
+            ),
+          ],
+        ),
+      ),
+    )..goTo(AlagagiRoute.music);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    final listenButton = find.byKey(musicListenedButtonKey('music_partner'));
+    await tester.ensureVisible(listenButton);
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(of: listenButton, matching: find.text('아직')),
+      findsOneWidget,
+    );
+
+    await tester.tap(listenButton);
+    await tester.pumpAndSettle();
+
+    expect(
+      controller.musicNotes.single.listenedByProfileIds,
+      containsAll(['minyoungUid', 'youngwooUid']),
+    );
+    expect(
+      find.descendant(of: listenButton, matching: find.text('둘 다 들음')),
+      findsOneWidget,
+    );
+    expect(find.byKey(readableDetailSheetKey), findsNothing);
+
+    await tester.tap(listenButton);
+    await tester.pumpAndSettle();
+
+    expect(
+      controller.musicNotes.single.listenedByProfileIds,
+      isNot(contains('youngwooUid')),
+    );
+    expect(
+      find.descendant(of: listenButton, matching: find.text('아직')),
+      findsOneWidget,
+    );
+    expect(find.byKey(readableDetailSheetKey), findsNothing);
+  });
+
   testWidgets('music tab edits an existing own song note', (tester) async {
     final controller = AlagagiController.forSession(
       AlagagiSession(
@@ -2207,6 +2284,9 @@ class _FailingSaveRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveMusicNote(String spaceId, MusicNote note) async {}
+
+  @override
+  Future<void> saveMusicNoteListenState(String spaceId, MusicNote note) async {}
 
   @override
   Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry) async {

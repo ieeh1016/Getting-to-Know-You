@@ -1587,10 +1587,63 @@ void main() {
           repository.savedMusicNotes.single.note.createdByProfileId,
           'youngwooUid',
         );
+        expect(
+          repository.savedMusicNotes.single.note.listenedByProfileIds,
+          contains('youngwooUid'),
+        );
+        expect(repository.savedMusicListenStates, isEmpty);
         expect(controller.state.musicDraftVisible, isFalse);
         expect(controller.musicNotes.first.title, '오후의 문장');
       },
     );
+
+    test('music note listen emoji toggles my listen state only', () async {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        firebaseSessionWithData(
+          const AlagagiSpaceData(
+            musicNotes: [
+              MusicNote(
+                id: 'music_partner',
+                title: '밤 산책',
+                artist: '민영의 추천',
+                link: 'https://music.example/night',
+                note: '퇴근길에 들으면 차분해져요.',
+                mood: '밤',
+                createdByProfileId: 'minyoungUid',
+                createdLabel: '오늘',
+                listenedByProfileIds: {'minyoungUid'},
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+      );
+
+      controller.toggleMusicNoteListened('music_partner');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.musicNotes.single.title, '밤 산책');
+      expect(
+        controller.musicNotes.single.listenedByProfileIds,
+        containsAll(['minyoungUid', 'youngwooUid']),
+      );
+      expect(repository.savedMusicNotes, isEmpty);
+      expect(repository.savedMusicListenStates.single.spaceId, 'main');
+      expect(
+        repository.savedMusicListenStates.single.note.listenedByProfileIds,
+        containsAll(['minyoungUid', 'youngwooUid']),
+      );
+
+      controller.toggleMusicNoteListened('music_partner');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        controller.musicNotes.single.listenedByProfileIds,
+        isNot(contains('youngwooUid')),
+      );
+      expect(repository.savedMusicListenStates, hasLength(2));
+    });
 
     test('music note edit overwrites the existing own note document', () async {
       final repository = RecordingAlagagiRepository();
@@ -1958,6 +2011,7 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   savedProfileSlots = [];
   final List<({String spaceId, WishItem wish})> savedWishes = [];
   final List<({String spaceId, MusicNote note})> savedMusicNotes = [];
+  final List<({String spaceId, MusicNote note})> savedMusicListenStates = [];
   final List<({String spaceId, ScheduleEntry entry})> savedScheduleEntries = [];
   final List<({String spaceId, SharedPlace place})> savedSharedPlaces = [];
   final List<({String spaceId, String placeId})> deletedSharedPlaces = [];
@@ -2013,6 +2067,11 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   @override
   Future<void> saveMusicNote(String spaceId, MusicNote note) async {
     savedMusicNotes.add((spaceId: spaceId, note: note));
+  }
+
+  @override
+  Future<void> saveMusicNoteListenState(String spaceId, MusicNote note) async {
+    savedMusicListenStates.add((spaceId: spaceId, note: note));
   }
 
   @override

@@ -533,7 +533,7 @@ This batch follows `docs/design/music_tab_navigation_concept.html` and `docs/des
   - Existing records screen remains available through a segmented control inside the `질문` tab.
   - `음악` tab opens the music note screen and is selected only for the music route.
 - Music note data:
-  - Each music note stores `id`, `title`, `artist`, `link`, `note`, `mood`, `createdByProfileId`, `createdLabel`, `updatedAt`.
+  - Each music note stores `id`, `title`, `artist`, `link`, `note`, `mood`, `createdByProfileId`, `createdLabel`, `listenedByProfileIds`, `updatedAt`.
   - Draft input is local state only; Firestore writes happen only on explicit submit.
   - MVP does not integrate Spotify, Apple Music, YouTube Music, search APIs, playback SDKs, album image uploads, realtime presence, or push notifications.
   - Link values are stored as text and may be opened/copied later; missing links are allowed only if title and artist are present.
@@ -545,6 +545,7 @@ This batch follows `docs/design/music_tab_navigation_concept.html` and `docs/des
   - Add form includes title, artist, link, note, and mood chips.
   - Submit CTA label is `노래 남기기`.
   - Saved notes show who left the song and the short note.
+  - Saved notes show a compact emoji listen-state action: `👀 아직`, `🎧 들었어요`, or `🎧 둘 다 들음`.
   - A saved note with an http/https link exposes a distinct `링크 열기` action that opens the link immediately without opening the full-detail sheet.
   - Link actions normalize bare domains to `https://...`; unsupported schemes stay stored as text but are not opened from the card action.
   - A user can edit only music notes they created.
@@ -554,11 +555,12 @@ This batch follows `docs/design/music_tab_navigation_concept.html` and `docs/des
   - Copy avoids couple/heart/love language and uses `음악 노트`, `한 곡`, `들어볼 곡` tone.
 - Firestore:
   - Store notes under `spaces/{spaceId}/musicNotes/{noteId}`.
-  - Write one document only when a user submits a note.
+  - Write one document only when a user submits/edits a note or explicitly toggles their listen-state emoji.
   - Editing a note updates the existing `musicNotes/{noteId}` document instead of creating a new note.
   - Edit writes refresh `updatedAt` so local new-note summary can notice a partner's edited note.
+  - Listen-state emoji writes update only `listenedByProfileIds`; they do not refresh `updatedAt` or reorder notes.
   - Load all notes with the rest of the space session data.
-  - This scope stays within Firebase free plan assumptions because it does not write on draft changes or playback interactions.
+  - This scope stays within Firebase free plan assumptions because it does not write on draft changes, passive viewing, or playback interactions.
 
 ### MVP v0.14 주식 이야기
 
@@ -1926,6 +1928,7 @@ Rules:
   "mood": "밤",
   "createdByProfileId": "{uid}",
   "createdLabel": "오늘",
+  "listenedByProfileIds": ["{uid}"],
   "updatedAt": "serverTimestamp"
 }
 ```
@@ -1934,7 +1937,9 @@ Rules:
 
 - Document ID remains the generated `id` so one submit creates one document.
 - Draft title/artist/link/note/mood are local state only.
-- No playback state, realtime presence, or search API cache is written in MVP v0.13.
+- `listenedByProfileIds` stores only explicit emoji listen-state checks by space members.
+- Listen-state updates do not change `updatedAt`; the home new-note badge remains based on note creation/edit content changes.
+- No playback history, realtime presence, route/device data, or search API cache is written in MVP v0.13.
 - `note` is limited to 80 characters and `mood` is one of the fixed mood labels.
 
 `spaces/{spaceId}/scheduleEntries/{dateKey_uid}`

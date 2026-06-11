@@ -191,6 +191,8 @@ abstract class AlagagiDataRepository {
 
   Future<void> saveMusicNote(String spaceId, MusicNote note);
 
+  Future<void> saveMusicNoteListenState(String spaceId, MusicNote note);
+
   Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry);
 
   Future<void> saveSharedPlace(String spaceId, SharedPlace place);
@@ -752,6 +754,7 @@ class MusicNote {
     required this.mood,
     required this.createdByProfileId,
     required this.createdLabel,
+    this.listenedByProfileIds = const <String>{},
     this.updatedAt,
   });
 
@@ -763,7 +766,11 @@ class MusicNote {
   final String mood;
   final String createdByProfileId;
   final String createdLabel;
+  final Set<String> listenedByProfileIds;
   final DateTime? updatedAt;
+
+  bool isListenedBy(String profileId) =>
+      listenedByProfileIds.contains(profileId);
 
   MusicNote copyWith({
     String? title,
@@ -773,6 +780,7 @@ class MusicNote {
     String? mood,
     String? createdByProfileId,
     String? createdLabel,
+    Set<String>? listenedByProfileIds,
     DateTime? updatedAt,
   }) {
     return MusicNote(
@@ -784,6 +792,7 @@ class MusicNote {
       mood: mood ?? this.mood,
       createdByProfileId: createdByProfileId ?? this.createdByProfileId,
       createdLabel: createdLabel ?? this.createdLabel,
+      listenedByProfileIds: listenedByProfileIds ?? this.listenedByProfileIds,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -1980,6 +1989,7 @@ class AlagagiController extends ChangeNotifier {
         seedMusicNotes.map((note) {
           return note.copyWith(
             createdByProfileId: _mapSeedProfileId(note.createdByProfileId),
+            listenedByProfileIds: _mapSeedProfileIds(note.listenedByProfileIds),
           );
         }),
       );
@@ -2421,6 +2431,17 @@ class AlagagiController extends ChangeNotifier {
       return;
     }
     unawaited(repository.saveMusicNote(spaceId, note).catchError((_) {}));
+  }
+
+  void _persistMusicNoteListenState(MusicNote note) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      return;
+    }
+    unawaited(
+      repository.saveMusicNoteListenState(spaceId, note).catchError((_) {}),
+    );
   }
 
   void _persistScheduleEntry(ScheduleEntry entry) {
@@ -4239,6 +4260,24 @@ class AlagagiController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void toggleMusicNoteListened(String noteId) {
+    final noteIndex = _musicNotes.indexWhere((note) => note.id == noteId);
+    if (noteIndex == -1) {
+      return;
+    }
+    final note = _musicNotes[noteIndex];
+    final listenedBy = Set<String>.from(note.listenedByProfileIds);
+    if (!listenedBy.add(_state.me.id)) {
+      listenedBy.remove(_state.me.id);
+    }
+    final updatedNote = note.copyWith(
+      listenedByProfileIds: Set<String>.unmodifiable(listenedBy),
+    );
+    _musicNotes[noteIndex] = updatedNote;
+    notifyListeners();
+    _persistMusicNoteListenState(updatedNote);
+  }
+
   void submitMusicDraft() {
     final title = _state.musicDraftTitle.trim();
     final artist = _state.musicDraftArtist.trim();
@@ -4327,6 +4366,7 @@ class AlagagiController extends ChangeNotifier {
       mood: mood,
       createdByProfileId: _state.me.id,
       createdLabel: '오늘',
+      listenedByProfileIds: {_state.me.id},
       updatedAt: now,
     );
     _musicNotes.insert(0, note);
@@ -6120,6 +6160,7 @@ const seedMusicNotes = [
     mood: '밤',
     createdByProfileId: 'partner',
     createdLabel: '오늘',
+    listenedByProfileIds: {'partner'},
   ),
   MusicNote(
     id: 'music_2',
@@ -6130,6 +6171,7 @@ const seedMusicNotes = [
     mood: '카페',
     createdByProfileId: 'me',
     createdLabel: '오늘',
+    listenedByProfileIds: {'me'},
   ),
 ];
 

@@ -25,6 +25,8 @@ const musicSubmitButtonKey = Key('music-submit-button');
 const musicAddButtonKey = Key('music-add-button');
 Key musicEditButtonKey(String noteId) => Key('music-edit-button-$noteId');
 Key musicLinkButtonKey(String noteId) => Key('music-link-button-$noteId');
+Key musicListenedButtonKey(String noteId) =>
+    Key('music-listened-button-$noteId');
 const meetingCalendarKey = Key('meeting-calendar');
 const meetingSharedMemoFieldKey = Key('meeting-shared-memo-field');
 const meetingSubmitButtonKey = Key('meeting-submit-button');
@@ -12539,6 +12541,7 @@ class _MusicNoteCard extends StatelessWidget {
         note.link.trim().isNotEmpty ||
         _showsReadableCue(detailBody, threshold: _compactReadablePreviewLength);
     final openableLink = _normalizedOpenableLink(note.link);
+    final listened = note.isListenedBy(controller.state.me.id);
     return GestureDetector(
       key: musicNoteCardKey(note.id),
       behavior: HitTestBehavior.opaque,
@@ -12621,12 +12624,19 @@ class _MusicNoteCard extends StatelessWidget {
                       ),
                     ),
                   ],
-                  if (note.link.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      children: [
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      _MusicListenedButton(
+                        note: note,
+                        listened: listened,
+                        onPressed: () =>
+                            controller.toggleMusicNoteListened(note.id),
+                      ),
+                      if (note.link.isNotEmpty)
                         if (openableLink == null)
                           Text(
                             '링크가 저장되어 있어요',
@@ -12640,17 +12650,73 @@ class _MusicNoteCard extends StatelessWidget {
                             key: musicLinkButtonKey(note.id),
                             onPressed: () => onOpenExternalLink(openableLink),
                           ),
-                        if (showReadableCue) const _FullTextCue(),
-                      ],
-                    ),
-                  ] else if (showReadableCue) ...[
-                    const SizedBox(height: 8),
-                    const _FullTextCue(),
-                  ],
+                      if (showReadableCue) const _FullTextCue(),
+                    ],
+                  ),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MusicListenedButton extends StatelessWidget {
+  const _MusicListenedButton({
+    required this.note,
+    required this.listened,
+    required this.onPressed,
+  });
+
+  final MusicNote note;
+  final bool listened;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final bothListened = note.listenedByProfileIds.length >= 2;
+    final label = bothListened
+        ? '둘 다 들음'
+        : listened
+        ? '들었어요'
+        : '아직';
+    return Tooltip(
+      message: listened ? '들은 표시 취소' : '들었어요 표시',
+      child: SizedBox(
+        height: 30,
+        child: OutlinedButton(
+          key: musicListenedButtonKey(note.id),
+          onPressed: onPressed,
+          style: OutlinedButton.styleFrom(
+            backgroundColor: listened
+                ? const Color(0xFFF1F4EC)
+                : const Color(0xFFF8F8F4),
+            foregroundColor: listened
+                ? AlagagiColors.sageDeep
+                : AlagagiColors.muted,
+            side: BorderSide(
+              color: listened
+                  ? const Color(0x668A9A7E)
+                  : const Color(0x22000000),
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(999),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            minimumSize: const Size(0, 30),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            textStyle: sans(size: 11.4, weight: FontWeight.w800),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(listened ? '🎧' : '👀', style: sans(size: 12)),
+              const SizedBox(width: 5),
+              Text(label, softWrap: false),
+            ],
+          ),
         ),
       ),
     );

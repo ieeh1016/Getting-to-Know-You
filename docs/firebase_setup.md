@@ -197,7 +197,7 @@ service cloud.firestore {
         && request.resource.data.catalogVersion.size() <= 8;
     }
 
-    function validMusicNote(noteId) {
+    function validMusicNoteShape(spaceId, noteId) {
       return request.resource.data.keys().hasOnly([
           'id',
           'title',
@@ -207,6 +207,7 @@ service cloud.firestore {
           'mood',
           'createdByProfileId',
           'createdLabel',
+          'listenedByProfileIds',
           'updatedAt'
         ])
         && request.resource.data.id == noteId
@@ -221,9 +222,42 @@ service cloud.firestore {
         && request.resource.data.note is string
         && request.resource.data.note.size() <= 80
         && request.resource.data.mood in ['차분한', '산책', '카페', '밤', '가벼운', '집중']
-        && request.resource.data.createdByProfileId == request.auth.uid
+        && request.resource.data.createdByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
         && request.resource.data.createdLabel is string
-        && request.resource.data.createdLabel.size() <= 16;
+        && request.resource.data.createdLabel.size() <= 16
+        && request.resource.data.listenedByProfileIds is list
+        && request.resource.data.listenedByProfileIds.size() <= 2
+        && request.resource.data.listenedByProfileIds.hasOnly(
+          get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        );
+    }
+
+    function validMusicNoteOwnerWrite(spaceId, noteId) {
+      return validMusicNoteShape(spaceId, noteId)
+        && request.resource.data.createdByProfileId == request.auth.uid;
+    }
+
+    function validMusicNoteListenUpdate(spaceId, noteId) {
+      return validMusicNoteShape(spaceId, noteId)
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.title == resource.data.title
+        && request.resource.data.artist == resource.data.artist
+        && request.resource.data.link == resource.data.link
+        && request.resource.data.note == resource.data.note
+        && request.resource.data.mood == resource.data.mood
+        && request.resource.data.createdByProfileId == resource.data.createdByProfileId
+        && request.resource.data.createdLabel == resource.data.createdLabel
+        && request.resource.data.updatedAt == resource.data.updatedAt
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'listenedByProfileIds'
+        ])
+        && (
+          request.auth.uid in request.resource.data.listenedByProfileIds
+          || (
+            resource.data.keys().hasAny(['listenedByProfileIds'])
+            && request.auth.uid in resource.data.listenedByProfileIds
+          )
+        );
     }
 
     function validCuriosityCardShape(spaceId, cardId) {
@@ -634,8 +668,13 @@ service cloud.firestore {
 
       match /musicNotes/{noteId} {
         allow read: if isSpaceMember(spaceId);
-        allow create, update: if isSpaceMember(spaceId)
-          && validMusicNote(noteId);
+        allow create: if isSpaceMember(spaceId)
+          && validMusicNoteOwnerWrite(spaceId, noteId);
+        allow update: if isSpaceMember(spaceId)
+          && (
+            validMusicNoteOwnerWrite(spaceId, noteId)
+            || validMusicNoteListenUpdate(spaceId, noteId)
+          );
         allow delete: if false;
       }
 
