@@ -36,8 +36,12 @@ const meetingTimeBlockEndFieldKey = Key('meeting-time-block-end-field');
 const meetingTimeBlockTitleFieldKey = Key('meeting-time-block-title-field');
 const meetingTimeBlockAddButtonKey = Key('meeting-time-block-add-button');
 Key meetingDateButtonKey(String dateKey) => Key('meeting-date-$dateKey');
+Key meetingMutualIndicatorKey(String dateKey) =>
+    Key('meeting-mutual-indicator-$dateKey');
 Key meetingMyEntryIndicatorKey(String dateKey) =>
     Key('meeting-my-entry-indicator-$dateKey');
+Key meetingPartnerEntryIndicatorKey(String dateKey) =>
+    Key('meeting-partner-entry-indicator-$dateKey');
 Key meetingTimeSlotButtonKey(String slot) => Key('meeting-time-slot-$slot');
 Key meetingTimeBlockRemoveButtonKey(String blockId) =>
     Key('meeting-time-block-remove-$blockId');
@@ -8586,16 +8590,24 @@ class _MeetingDateCell extends StatelessWidget {
         : AlagagiColors.line;
     final indicators = <Widget>[
       if (mutual)
-        _TinyDot(color: selected ? Colors.white : AlagagiColors.sageDeep),
-      if (hasMyEntry && !mutual)
+        _TinyDot(
+          key: meetingMutualIndicatorKey(dateKey),
+          color: selected ? Colors.white : AlagagiColors.sageDeep,
+        ),
+      if (hasMyEntry)
         _TinyDot(
           key: meetingMyEntryIndicatorKey(dateKey),
-          color: selected ? Colors.white : AlagagiColors.sage,
+          color: selected ? const Color(0xFFB8C8A5) : AlagagiColors.sage,
         ),
       if (hasMyDetails)
-        _TinyDot(color: selected ? Colors.white : const Color(0xFFC8AD6D)),
-      if (hasPartner && !mutual)
-        _TinyDot(color: selected ? Colors.white : const Color(0xFFB18472)),
+        _TinyDot(
+          color: selected ? const Color(0xFFE1C77A) : const Color(0xFFC8AD6D),
+        ),
+      if (hasPartner)
+        _TinyDot(
+          key: meetingPartnerEntryIndicatorKey(dateKey),
+          color: selected ? const Color(0xFFD3A28F) : const Color(0xFFB18472),
+        ),
     ];
     return Material(
       color: Colors.transparent,

@@ -1622,6 +1622,59 @@ void main() {
     expect(find.byKey(meetingMyEntryIndicatorKey(dateKey)), findsOneWidget);
   });
 
+  testWidgets('meeting calendar keeps both entry marks on mutual dates', (
+    tester,
+  ) async {
+    const dateKey = '2026-06-11';
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          scheduleEntries: [
+            ScheduleEntry(
+              dateKey: dateKey,
+              profileId: 'youngwooUid',
+              availability: MeetingAvailability.available,
+              timeSlots: {MeetingTimeSlot.evening},
+            ),
+            ScheduleEntry(
+              dateKey: dateKey,
+              profileId: 'minyoungUid',
+              availability: MeetingAvailability.available,
+              timeSlots: {MeetingTimeSlot.evening},
+            ),
+          ],
+        ),
+      ),
+    );
+    controller
+      ..goTo(AlagagiRoute.meetings)
+      ..selectMeetingDate(dateKey);
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(meetingMutualIndicatorKey(dateKey)), findsOneWidget);
+    expect(find.byKey(meetingMyEntryIndicatorKey(dateKey)), findsOneWidget);
+    expect(
+      find.byKey(meetingPartnerEntryIndicatorKey(dateKey)),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('meeting save failure shows retry action', (tester) async {
     final repository = _FailingSaveRepository()..failScheduleSaves = true;
     final controller = AlagagiController.forSession(
