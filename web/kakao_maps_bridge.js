@@ -127,9 +127,15 @@
     const stopWheelPropagation = (event) => {
       event.stopPropagation();
     };
+    const markInteraction = () => {
+      element.dataset.jogeumssikMapInteractedAt = String(Date.now());
+    };
 
     ['wheel', 'mousewheel', 'DOMMouseScroll'].forEach((type) => {
       element.addEventListener(type, stopWheelPropagation, { passive: true });
+    });
+    ['wheel', 'touchstart', 'pointerdown', 'mousedown'].forEach((type) => {
+      element.addEventListener(type, markInteraction, { passive: true });
     });
   }
 
@@ -175,6 +181,29 @@
     }
   }
 
+  function refreshMapInstance(instance, center, level, markerOptions) {
+    instance.map.relayout();
+    instance.map.setCenter(center);
+    instance.map.setLevel(level);
+    drawMarkers(instance, markerOptions);
+  }
+
+  function scheduleOneSettlingRefresh(elementId, instance, renderId, center, level, markerOptions) {
+    const scheduledAt = Date.now();
+    window.setTimeout(() => {
+      const element = document.getElementById(elementId);
+      if (
+        !element ||
+        instances.get(elementId) !== instance ||
+        instance.renderId !== renderId ||
+        Number(element.dataset.jogeumssikMapInteractedAt || 0) > scheduledAt
+      ) {
+        return;
+      }
+      refreshMapInstance(instance, center, level, markerOptions);
+    }, 450);
+  }
+
   function renderMap(options) {
     return loadSdk(options.appKey).then(() => {
       const kakao = window.kakao;
@@ -193,25 +222,26 @@
           toNumber(options.centerLongitude, 126.9780)
         );
         let instance = instances.get(options.elementId);
+        const level = Math.max(1, toNumber(options.level, 6));
+        const markerOptions = Array.isArray(options.markers) ? options.markers : [];
 
         if (!instance) {
           const map = new kakao.maps.Map(element, {
             center,
-            level: Math.max(1, toNumber(options.level, 6)),
+            level,
           });
           map.addControl(
             new kakao.maps.ZoomControl(),
             kakao.maps.ControlPosition.RIGHT
           );
-          instance = { map, markers: [] };
+          instance = { map, markers: [], renderId: 0 };
           instances.set(options.elementId, instance);
-        } else {
-          instance.map.setCenter(center);
-          instance.map.setLevel(Math.max(1, toNumber(options.level, 6)));
         }
 
-        instance.map.relayout();
-        drawMarkers(instance, Array.isArray(options.markers) ? options.markers : []);
+        const renderId = instance.renderId + 1;
+        instance.renderId = renderId;
+        refreshMapInstance(instance, center, level, markerOptions);
+        scheduleOneSettlingRefresh(options.elementId, instance, renderId, center, level, markerOptions);
         return { ready: true };
       } catch (error) {
         throw asKakaoError(

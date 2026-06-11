@@ -42,6 +42,7 @@ class _KakaoMapPanelState extends State<KakaoMapPanel> {
   late final String _elementId;
   late final String _viewType;
   String? _error;
+  int _renderGeneration = 0;
 
   @override
   void initState() {
@@ -91,7 +92,8 @@ class _KakaoMapPanelState extends State<KakaoMapPanel> {
     });
   }
 
-  Future<void> _renderMap() async {
+  Future<void> _renderMap({bool allowAutoRetry = true}) async {
+    final generation = ++_renderGeneration;
     final appKey = effectiveKakaoMapJsKey(widget.appKey);
     if (appKey.isEmpty) {
       return;
@@ -116,10 +118,24 @@ class _KakaoMapPanelState extends State<KakaoMapPanel> {
         'markers': [for (final marker in widget.markers) marker.toBridgeMap()],
       });
       await _KakaoMapBridge(bridge).renderMapFromJson(optionsJson.toJS).toDart;
-      if (mounted && _error != null) {
+      if (!mounted || generation != _renderGeneration) {
+        return;
+      }
+      if (_error != null) {
         setState(() => _error = null);
       }
     } catch (error) {
+      if (!mounted || generation != _renderGeneration) {
+        return;
+      }
+      if (allowAutoRetry) {
+        await Future<void>.delayed(const Duration(milliseconds: 450));
+        if (!mounted || generation != _renderGeneration) {
+          return;
+        }
+        await _renderMap(allowAutoRetry: false);
+        return;
+      }
       if (mounted) {
         setState(() => _error = _kakaoUiMessage('지도 오류', error));
       }
