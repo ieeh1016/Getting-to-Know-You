@@ -66,10 +66,12 @@ https://dapi.kakao.com/v2/maps/sdk.js?appkey=<KAKAO_MAP_JS_KEY>&libraries=servic
   "note": "전시 보고 근처에서 커피 마시면 좋을 것 같아요.",
   "createdByProfileId": "{uid}",
   "interestedByProfileIds": ["{uid}"],
-  "linkedDateKey": "2026-06-11",
+  "linkedDateKey": "",
   "updatedAt": "serverTimestamp"
 }
 ```
+
+`linkedDateKey`는 이전 데이터 호환성을 위해 빈 문자열로 저장하지만, 현재 `장소` 화면에서는 일정 날짜 연결 UI를 제공하지 않는다.
 
 ## 확인 포인트
 
@@ -77,5 +79,5 @@ https://dapi.kakao.com/v2/maps/sdk.js?appkey=<KAKAO_MAP_JS_KEY>&libraries=servic
 - 브라우저 콘솔에 SDK 로드 오류가 없는지 확인한다.
 - 검색 결과 선택 후 저장하면 지도 마커가 추가되는지 확인한다.
 - 같은 장소를 다시 저장해도 카드가 중복 생성되지 않는지 확인한다.
-- 상대가 담은 장소를 날짜에 연결하면 내 관심도 함께 추가되어 Firestore rules를 통과하는지 확인한다.
+- 상대가 담은 장소에 관심을 표시하면 `interestedByProfileIds`만 바뀌고 Firestore rules를 통과하는지 확인한다.
 - Firestore rules에서 `provider == 'kakao'`만 허용되는지 확인한다.

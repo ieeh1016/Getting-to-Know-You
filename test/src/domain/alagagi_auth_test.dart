@@ -311,6 +311,49 @@ void main() {
       );
     });
 
+    test('session meeting save failure exposes retry state', () async {
+      final repository = RecordingAlagagiRepository()
+        ..failScheduleEntrySaves = true;
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+        ),
+        repository: repository,
+      );
+
+      controller.selectMeetingDate('2026-06-21');
+      controller.updateMeetingDraft(sharedMemo: '19:30 이후면 편해요.');
+      controller.submitMeetingDraft();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.state.meetingSaveStatus, SaveStatus.failed);
+      expect(controller.state.meetingDraftError, contains('저장하지 못했어요'));
+      expect(repository.savedScheduleEntries, isEmpty);
+
+      repository.failScheduleEntrySaves = false;
+      controller.retryMeetingSave();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.state.meetingSaveStatus, SaveStatus.saved);
+      expect(repository.savedScheduleEntries.single.spaceId, 'main');
+      expect(
+        repository.savedScheduleEntries.single.entry.sharedMemo,
+        '19:30 이후면 편해요.',
+      );
+    });
+
     test(
       'session place meeting link adds my interest and can unlink',
       () async {
@@ -1904,6 +1947,7 @@ AlagagiSession firebaseSessionWithData(AlagagiSpaceData data) {
 class RecordingAlagagiRepository implements AlagagiDataRepository {
   bool failAnswerSaves = false;
   bool failAnswerCommentSaves = false;
+  bool failScheduleEntrySaves = false;
   bool failSharedPlaceSaves = false;
   Completer<void>? answerSaveCompleter;
   Completer<void>? sharedPlaceSaveCompleter;
@@ -1973,6 +2017,9 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry) async {
+    if (failScheduleEntrySaves) {
+      throw StateError('schedule save failed');
+    }
     savedScheduleEntries.add((spaceId: spaceId, entry: entry));
   }
 

@@ -1226,6 +1226,9 @@ class AlagagiState {
     this.meetingBlockTitleDraft = '',
     this.meetingDraftSharedMemo = '',
     this.meetingDraftError,
+    this.meetingSaveStatus = SaveStatus.idle,
+    this.meetingSaveFeedback,
+    this.meetingSaveTargetId,
     this.placeDraftVisible = false,
     this.placeDraftName = '',
     this.placeDraftAddress = '',
@@ -1320,6 +1323,9 @@ class AlagagiState {
   final String meetingBlockTitleDraft;
   final String meetingDraftSharedMemo;
   final String? meetingDraftError;
+  final SaveStatus meetingSaveStatus;
+  final String? meetingSaveFeedback;
+  final String? meetingSaveTargetId;
   final bool placeDraftVisible;
   final String placeDraftName;
   final String placeDraftAddress;
@@ -1416,6 +1422,11 @@ class AlagagiState {
     String? meetingDraftSharedMemo,
     String? meetingDraftError,
     bool clearMeetingDraftError = false,
+    SaveStatus? meetingSaveStatus,
+    String? meetingSaveFeedback,
+    bool clearMeetingSaveFeedback = false,
+    String? meetingSaveTargetId,
+    bool clearMeetingSaveTargetId = false,
     bool? placeDraftVisible,
     String? placeDraftName,
     String? placeDraftAddress,
@@ -1545,6 +1556,13 @@ class AlagagiState {
       meetingDraftError: clearMeetingDraftError
           ? null
           : meetingDraftError ?? this.meetingDraftError,
+      meetingSaveStatus: meetingSaveStatus ?? this.meetingSaveStatus,
+      meetingSaveFeedback: clearMeetingSaveFeedback
+          ? null
+          : meetingSaveFeedback ?? this.meetingSaveFeedback,
+      meetingSaveTargetId: clearMeetingSaveTargetId
+          ? null
+          : meetingSaveTargetId ?? this.meetingSaveTargetId,
       placeDraftVisible: placeDraftVisible ?? this.placeDraftVisible,
       placeDraftName: placeDraftName ?? this.placeDraftName,
       placeDraftAddress: placeDraftAddress ?? this.placeDraftAddress,
@@ -1783,6 +1801,7 @@ class AlagagiController extends ChangeNotifier {
   final List<StockHolding> _stockHoldings = [];
   Answer? _lastFailedAnswer;
   AnswerComment? _lastFailedAnswerComment;
+  ScheduleEntry? _lastFailedScheduleEntry;
   SharedPlace? _lastFailedSharedPlace;
   CuriosityCard? _lastFailedCuriosityCard;
 
@@ -2408,9 +2427,40 @@ class AlagagiController extends ChangeNotifier {
     final repository = _repository;
     final spaceId = _spaceId;
     if (repository == null || spaceId == null) {
+      _lastFailedScheduleEntry = null;
+      _state = _state.copyWith(
+        meetingSaveStatus: SaveStatus.saved,
+        meetingSaveFeedback: '일정을 저장했어요.',
+        meetingSaveTargetId: entry.id,
+        clearMeetingDraftError: true,
+      );
+      notifyListeners();
       return;
     }
-    unawaited(repository.saveScheduleEntry(spaceId, entry).catchError((_) {}));
+    unawaited(
+      repository
+          .saveScheduleEntry(spaceId, entry)
+          .then<void>((_) {
+            _lastFailedScheduleEntry = null;
+            _state = _state.copyWith(
+              meetingSaveStatus: SaveStatus.saved,
+              meetingSaveFeedback: '일정을 저장했어요.',
+              meetingSaveTargetId: entry.id,
+              clearMeetingDraftError: true,
+            );
+            notifyListeners();
+          })
+          .catchError((Object _) {
+            _lastFailedScheduleEntry = entry;
+            _state = _state.copyWith(
+              meetingDraftError: '일정을 저장하지 못했어요. 다시 시도해 주세요.',
+              meetingSaveStatus: SaveStatus.failed,
+              meetingSaveTargetId: entry.id,
+              clearMeetingSaveFeedback: true,
+            );
+            notifyListeners();
+          }),
+    );
   }
 
   void _persistSharedPlace(SharedPlace place) {
@@ -2920,6 +2970,8 @@ class AlagagiController extends ChangeNotifier {
 
   List<SharedPlace> get sharedPlaces =>
       List<SharedPlace>.unmodifiable(_sharedPlaces);
+
+  bool get canRetryMeetingSave => _lastFailedScheduleEntry != null;
 
   bool get canRetryPlaceSave => _lastFailedSharedPlace != null;
 
@@ -4307,6 +4359,8 @@ class AlagagiController extends ChangeNotifier {
       meetingBlockTitleDraft: '',
       meetingDraftSharedMemo: entry?.sharedMemo ?? '',
       clearMeetingDraftError: true,
+      clearMeetingSaveFeedback: true,
+      clearMeetingSaveTargetId: true,
     );
     notifyListeners();
   }
@@ -4321,6 +4375,7 @@ class AlagagiController extends ChangeNotifier {
       meetingDraftAvailability: availability,
       meetingDraftTimeSlots: timeSlots,
       clearMeetingDraftError: true,
+      clearMeetingSaveFeedback: true,
     );
     notifyListeners();
   }
@@ -4340,6 +4395,7 @@ class AlagagiController extends ChangeNotifier {
           : _state.meetingDraftAvailability,
       meetingDraftTimeSlots: Set<MeetingTimeSlot>.unmodifiable(slots),
       clearMeetingDraftError: true,
+      clearMeetingSaveFeedback: true,
     );
     notifyListeners();
   }
@@ -4354,6 +4410,7 @@ class AlagagiController extends ChangeNotifier {
       meetingBlockEndDraft: end,
       meetingBlockTitleDraft: title,
       clearMeetingDraftError: true,
+      clearMeetingSaveFeedback: true,
     );
     notifyListeners();
   }
@@ -4398,6 +4455,7 @@ class AlagagiController extends ChangeNotifier {
       meetingBlockEndDraft: '',
       meetingBlockTitleDraft: '',
       clearMeetingDraftError: true,
+      clearMeetingSaveFeedback: true,
     );
     notifyListeners();
   }
@@ -4409,6 +4467,7 @@ class AlagagiController extends ChangeNotifier {
     _state = _state.copyWith(
       meetingDraftTimeBlocks: List<ScheduleTimeBlock>.unmodifiable(blocks),
       clearMeetingDraftError: true,
+      clearMeetingSaveFeedback: true,
     );
     notifyListeners();
   }
@@ -4417,11 +4476,15 @@ class AlagagiController extends ChangeNotifier {
     _state = _state.copyWith(
       meetingDraftSharedMemo: sharedMemo,
       clearMeetingDraftError: true,
+      clearMeetingSaveFeedback: true,
     );
     notifyListeners();
   }
 
   void submitMeetingDraft() {
+    if (_state.meetingSaveStatus == SaveStatus.saving) {
+      return;
+    }
     final sharedMemo = _state.meetingDraftSharedMemo.trim();
     final availability = _state.meetingDraftAvailability;
     final timeBlocks = _state.meetingDraftTimeBlocks;
@@ -4459,9 +4522,39 @@ class AlagagiController extends ChangeNotifier {
       _scheduleEntries[index] = entry;
     }
     _sortScheduleEntriesByDate();
-    _persistScheduleEntry(entry);
-    _state = _state.copyWith(clearMeetingDraftError: true);
+    _lastFailedScheduleEntry = null;
+    _state = _state.copyWith(
+      meetingSaveStatus: SaveStatus.saving,
+      meetingSaveTargetId: entry.id,
+      clearMeetingDraftError: true,
+      clearMeetingSaveFeedback: true,
+    );
     notifyListeners();
+    _persistScheduleEntry(entry);
+  }
+
+  void retryMeetingSave() {
+    final entry = _lastFailedScheduleEntry;
+    if (entry == null || _state.meetingSaveStatus == SaveStatus.saving) {
+      return;
+    }
+    final index = _scheduleEntries.indexWhere(
+      (candidate) => candidate.id == entry.id,
+    );
+    if (index == -1) {
+      _scheduleEntries.add(entry);
+      _sortScheduleEntriesByDate();
+    } else {
+      _scheduleEntries[index] = entry;
+    }
+    _state = _state.copyWith(
+      meetingSaveStatus: SaveStatus.saving,
+      meetingSaveTargetId: entry.id,
+      clearMeetingDraftError: true,
+      clearMeetingSaveFeedback: true,
+    );
+    notifyListeners();
+    _persistScheduleEntry(entry);
   }
 
   void startPlaceDraft() {

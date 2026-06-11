@@ -549,29 +549,6 @@ service cloud.firestore {
         );
     }
 
-    function validSharedPlaceLinkUpdate(spaceId, placeId) {
-      return validSharedPlace(spaceId, placeId)
-        && request.resource.data.id == resource.data.id
-        && request.resource.data.createdByProfileId == resource.data.createdByProfileId
-        && request.resource.data.name == resource.data.name
-        && request.resource.data.address == resource.data.address
-        && request.resource.data.category == resource.data.category
-        && request.resource.data.provider == resource.data.provider
-        && request.resource.data.providerPlaceId == resource.data.providerPlaceId
-        && request.resource.data.latitude == resource.data.latitude
-        && request.resource.data.longitude == resource.data.longitude
-        && request.resource.data.note == resource.data.note
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'interestedByProfileIds',
-          'linkedDateKey',
-          'updatedAt'
-        ])
-        && (
-          request.auth.uid in resource.data.interestedByProfileIds
-          || request.auth.uid in request.resource.data.interestedByProfileIds
-        );
-    }
-
     match /users/{userId} {
       allow read: if signedIn()
         && (
@@ -677,7 +654,6 @@ service cloud.firestore {
           && (
             validSharedPlaceOwnerEdit(spaceId, placeId)
             || validSharedPlaceInterestUpdate(spaceId, placeId)
-            || validSharedPlaceLinkUpdate(spaceId, placeId)
           );
         allow delete: if isSpaceMember(spaceId)
           && resource.data.createdByProfileId == request.auth.uid;

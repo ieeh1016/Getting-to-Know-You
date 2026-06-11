@@ -1979,7 +1979,7 @@ Rules:
   "note": "전시 보고 근처에서 커피 마시면 좋을 것 같아요.",
   "createdByProfileId": "{uid}",
   "interestedByProfileIds": ["{uid}"],
-  "linkedDateKey": "2026-06-11",
+  "linkedDateKey": "",
   "updatedAt": "serverTimestamp"
 }
 ```
@@ -1988,6 +1988,7 @@ Rules:
 
 - Places are normalized before storage; provider-specific raw payloads are not stored.
 - Current location, movement path, and route history are not stored.
+- `linkedDateKey` is kept as an empty compatibility field; the current Places UI does not link places to meeting dates.
 - Duplicate Kakao `providerPlaceId` submissions update the existing place instead of creating a second card.
 - Interest is reversible; members can add or remove their own profile id from `interestedByProfileIds`.
 - Creators can edit or delete their own places.

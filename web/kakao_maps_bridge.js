@@ -121,18 +121,38 @@
       return;
     }
     element.dataset.jogeumssikMapScrollContained = 'true';
-    element.style.overscrollBehavior = 'contain';
-    element.style.touchAction = 'none';
 
-    const stopWheelPropagation = (event) => {
+    const applyMapGestureStyles = (target) => {
+      target.style.overscrollBehavior = 'contain';
+      target.style.touchAction = 'none';
+      target.style.userSelect = 'none';
+    };
+    const applyMapGestureStylesDeep = () => {
+      applyMapGestureStyles(element);
+      element.querySelectorAll('*').forEach(applyMapGestureStyles);
+    };
+    const containWheelScroll = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    const stopGestureStartPropagation = (event) => {
       event.stopPropagation();
     };
     const markInteraction = () => {
       element.dataset.jogeumssikMapInteractedAt = String(Date.now());
     };
 
+    applyMapGestureStylesDeep();
+    const styleObserver = new MutationObserver(applyMapGestureStylesDeep);
+    styleObserver.observe(element, { childList: true, subtree: true });
+
     ['wheel', 'mousewheel', 'DOMMouseScroll'].forEach((type) => {
-      element.addEventListener(type, stopWheelPropagation, { passive: true });
+      element.addEventListener(type, containWheelScroll, { passive: false });
+    });
+    // Kakao Maps relies on move events for panning, so only the gesture start is
+    // stopped from reaching the Flutter page scroll layer.
+    ['touchstart', 'pointerdown', 'mousedown'].forEach((type) => {
+      element.addEventListener(type, stopGestureStartPropagation, { passive: true });
     });
     ['wheel', 'touchstart', 'pointerdown', 'mousedown'].forEach((type) => {
       element.addEventListener(type, markInteraction, { passive: true });

@@ -28,6 +28,7 @@ Key musicLinkButtonKey(String noteId) => Key('music-link-button-$noteId');
 const meetingCalendarKey = Key('meeting-calendar');
 const meetingSharedMemoFieldKey = Key('meeting-shared-memo-field');
 const meetingSubmitButtonKey = Key('meeting-submit-button');
+const meetingRetryButtonKey = Key('meeting-retry-button');
 const meetingTimeBlockStartFieldKey = Key('meeting-time-block-start-field');
 const meetingTimeBlockEndFieldKey = Key('meeting-time-block-end-field');
 const meetingTimeBlockTitleFieldKey = Key('meeting-time-block-title-field');
@@ -8821,7 +8822,8 @@ class _MeetingDetailCard extends StatelessWidget {
             onChanged: (value) =>
                 controller.updateMeetingDraft(sharedMemo: value),
           ),
-          if (controller.state.meetingDraftError != null) ...[
+          if (controller.state.meetingDraftError != null &&
+              controller.state.meetingSaveStatus != SaveStatus.failed) ...[
             const SizedBox(height: 9),
             Text(
               controller.state.meetingDraftError!,
@@ -8835,7 +8837,78 @@ class _MeetingDetailCard extends StatelessWidget {
             onPressed: controller.submitMeetingDraft,
             color: AlagagiColors.sageDeep,
           ),
+          _MeetingSaveStatus(controller: controller),
         ],
+      ),
+    );
+  }
+}
+
+class _MeetingSaveStatus extends StatelessWidget {
+  const _MeetingSaveStatus({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = controller.state;
+    final status = state.meetingSaveStatus;
+    final message = switch (status) {
+      SaveStatus.saving => '일정을 저장하고 있어요.',
+      SaveStatus.saved => state.meetingSaveFeedback,
+      SaveStatus.failed => state.meetingDraftError,
+      SaveStatus.idle => null,
+    };
+    if (message == null || message.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final failed = status == SaveStatus.failed;
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: failed ? const Color(0xFFFFF7F3) : const Color(0xFFF7F8F3),
+          border: Border.all(
+            color: failed ? const Color(0x33B18472) : const Color(0x338A9A7E),
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            Icon(
+              failed
+                  ? Icons.error_outline_rounded
+                  : status == SaveStatus.saving
+                  ? Icons.sync_rounded
+                  : Icons.check_circle_outline_rounded,
+              size: 16,
+              color: failed ? const Color(0xFFB18472) : AlagagiColors.sageDeep,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: sans(
+                  size: 12,
+                  color: failed
+                      ? const Color(0xFFB18472)
+                      : AlagagiColors.sageDeep,
+                  weight: FontWeight.w700,
+                ),
+              ),
+            ),
+            if (failed && controller.canRetryMeetingSave)
+              TextButton(
+                key: meetingRetryButtonKey,
+                onPressed: controller.retryMeetingSave,
+                child: Text(
+                  '다시 시도',
+                  style: sans(size: 12, weight: FontWeight.w800),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

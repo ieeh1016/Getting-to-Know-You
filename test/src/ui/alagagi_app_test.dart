@@ -1580,6 +1580,52 @@ void main() {
       controller.mySelectedScheduleEntry?.timeBlocks.single.title,
       '병원 예약',
     );
+    expect(find.text('일정을 저장했어요.'), findsOneWidget);
+  });
+
+  testWidgets('meeting save failure shows retry action', (tester) async {
+    final repository = _FailingSaveRepository()..failScheduleSaves = true;
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+      ),
+      repository: repository,
+    );
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('약속'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(meetingSubmitButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(meetingSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('일정을 저장하지 못했어요. 다시 시도해 주세요.'), findsOneWidget);
+    expect(find.byKey(meetingRetryButtonKey), findsOneWidget);
+    expect(repository.savedScheduleEntries, isEmpty);
+
+    repository.failScheduleSaves = false;
+    await tester.tap(find.byKey(meetingRetryButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(meetingRetryButtonKey), findsNothing);
+    expect(find.text('일정을 저장했어요.'), findsOneWidget);
+    expect(repository.savedScheduleEntries.single.spaceId, 'main');
   });
 
   testWidgets('place tab adds a shared place without location tracking copy', (
@@ -2067,7 +2113,7 @@ void main() {
   testWidgets(
     'comment save failure shows a retry action instead of disappearing',
     (tester) async {
-      final repository = _FailingCommentRepository();
+      final repository = _FailingSaveRepository();
       final controller = AlagagiController.forSession(
         const AlagagiSession(
           spaceId: 'main',
@@ -2126,10 +2172,12 @@ void main() {
   );
 }
 
-class _FailingCommentRepository implements AlagagiDataRepository {
+class _FailingSaveRepository implements AlagagiDataRepository {
   bool failCommentSaves = true;
+  bool failScheduleSaves = false;
   final List<({String spaceId, AnswerComment comment})> savedAnswerComments =
       [];
+  final List<({String spaceId, ScheduleEntry entry})> savedScheduleEntries = [];
 
   @override
   Future<AlagagiSession?> loadSession(AlagagiAuthUser user) async => null;
@@ -2161,7 +2209,12 @@ class _FailingCommentRepository implements AlagagiDataRepository {
   Future<void> saveMusicNote(String spaceId, MusicNote note) async {}
 
   @override
-  Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry) async {}
+  Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry) async {
+    if (failScheduleSaves) {
+      throw StateError('schedule save failed');
+    }
+    savedScheduleEntries.add((spaceId: spaceId, entry: entry));
+  }
 
   @override
   Future<void> saveSharedPlace(String spaceId, SharedPlace place) async {}
