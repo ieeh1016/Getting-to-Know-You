@@ -22,7 +22,7 @@ class KakaoMapPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return fallbackBuilder(context, '카카오 지도는 웹 빌드에서 표시돼요.');
+    return fallbackBuilder(context, '지도는 웹 빌드에서 표시돼요.');
   }
 }
 

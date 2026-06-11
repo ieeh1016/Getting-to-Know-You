@@ -4604,7 +4604,7 @@ class AlagagiController extends ChangeNotifier {
     final note = _state.placeDraftNote.trim();
     final providerPlaceId = _state.placeDraftProviderPlaceId.trim();
     if (name.isEmpty) {
-      _state = _state.copyWith(placeDraftError: '카카오 지도에서 장소를 검색해 선택해주세요.');
+      _state = _state.copyWith(placeDraftError: '지도에서 장소를 검색해 선택해주세요.');
       notifyListeners();
       return;
     }
@@ -4626,7 +4626,7 @@ class AlagagiController extends ChangeNotifier {
     if (providerPlaceId.isEmpty ||
         _state.placeDraftLatitude == null ||
         _state.placeDraftLongitude == null) {
-      _state = _state.copyWith(placeDraftError: '카카오 지도 검색 결과를 선택해주세요.');
+      _state = _state.copyWith(placeDraftError: '지도 검색 결과를 선택해주세요.');
       notifyListeners();
       return;
     }

@@ -48,8 +48,6 @@ Key placeSearchResultButtonKey(String placeId) =>
     Key('place-search-result-$placeId');
 Key placeInterestButtonKey(String placeId) =>
     Key('place-interest-button-$placeId');
-Key placeLinkMeetingButtonKey(String placeId) =>
-    Key('place-link-meeting-button-$placeId');
 Key placeEditButtonKey(String placeId) => Key('place-edit-button-$placeId');
 Key placeDeleteButtonKey(String placeId) => Key('place-delete-button-$placeId');
 const placeRetryButtonKey = Key('place-retry-button');
@@ -94,6 +92,8 @@ const stockStoryNameFieldKey = Key('stock-story-name-field');
 
 const _mapCenterLatitude = 37.5665;
 const _mapCenterLongitude = 126.9780;
+const _placeBoardMapHorizontalBleed = 12.0;
+const _selectedPlaceMiniMapHeight = 204.0;
 const stockStoryReasonFieldKey = Key('stock-story-reason-field');
 const stockStoryUpsideFieldKey = Key('stock-story-upside-field');
 const stockStoryRiskFieldKey = Key('stock-story-risk-field');
@@ -123,6 +123,12 @@ Key stockHoldingReplyFieldKey(String holdingId) =>
     Key('stock-holding-reply-field-$holdingId');
 Key stockHoldingReplySubmitButtonKey(String holdingId) =>
     Key('stock-holding-reply-submit-$holdingId');
+
+double _placeBoardMapHeight(BuildContext context) {
+  final viewportHeight = MediaQuery.sizeOf(context).height;
+  return (viewportHeight * 0.58).clamp(386.0, 440.0).toDouble();
+}
+
 Key stockHoldingReplyToneKey(String holdingId, String tone) =>
     Key('stock-holding-reply-tone-$holdingId-$tone');
 const alagagiShellKey = Key('alagagi-shell');
@@ -9083,7 +9089,7 @@ class _MeetingTextField extends StatelessWidget {
   }
 }
 
-class PlaceBoardScreen extends StatelessWidget {
+class PlaceBoardScreen extends StatefulWidget {
   const PlaceBoardScreen({
     super.key,
     required this.controller,
@@ -9094,12 +9100,18 @@ class PlaceBoardScreen extends StatelessWidget {
   final ValueChanged<String> onOpenExternalLink;
 
   @override
+  State<PlaceBoardScreen> createState() => _PlaceBoardScreenState();
+}
+
+class _PlaceBoardScreenState extends State<PlaceBoardScreen> {
+  bool _mapOverlayVisible = true;
+
+  @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
+    final onOpenExternalLink = widget.onOpenExternalLink;
     final places = controller.sharedPlaces;
     final mutualCount = places.where((place) => place.isMutual).length;
-    final linkedCount = places
-        .where((place) => place.linkedDateKey != null)
-        .length;
     return _ScreenScroll(
       bottomNavigation: _BottomNav(controller: controller),
       children: [
@@ -9109,17 +9121,28 @@ class PlaceBoardScreen extends StatelessWidget {
           onBack: () => controller.goTo(AlagagiRoute.home),
         ),
         const SizedBox(height: 4),
-        Text(
-          '지도에서 찾은 장소를 둘만의 보드에 모아요',
-          style: sans(size: 12.5, color: AlagagiColors.muted),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                '지도에서 찾은 장소를 둘만의 보드에 모아요',
+                style: sans(size: 12.5, color: AlagagiColors.muted),
+              ),
+            ),
+            const SizedBox(width: 8),
+            _PlaceMapOverlayButton(
+              visible: _mapOverlayVisible,
+              onPressed: _toggleMapOverlay,
+            ),
+          ],
         ),
         const SizedBox(height: 14),
         _PlaceMapPreview(
           controller: controller,
           mutualCount: mutualCount,
           totalCount: places.length,
-          linkedCount: linkedCount,
           places: places,
+          overlayVisible: _mapOverlayVisible,
         ),
         _PlaceSaveStatus(controller: controller),
         const SizedBox(height: 14),
@@ -9131,7 +9154,7 @@ class PlaceBoardScreen extends StatelessWidget {
         Row(
           children: [
             const Expanded(child: _SectionLabel('장소 보드')),
-            _SmallBadge(label: '카카오 지도'),
+            _SmallBadge(label: '지도 검색'),
           ],
         ),
         const SizedBox(height: 12),
@@ -9154,25 +9177,39 @@ class PlaceBoardScreen extends StatelessWidget {
       ],
     );
   }
+
+  void _toggleMapOverlay() {
+    setState(() => _mapOverlayVisible = !_mapOverlayVisible);
+  }
 }
 
-class _PlaceMapPreview extends StatelessWidget {
+class _PlaceMapPreview extends StatefulWidget {
   const _PlaceMapPreview({
     required this.controller,
     required this.mutualCount,
     required this.totalCount,
-    required this.linkedCount,
     required this.places,
+    required this.overlayVisible,
   });
 
   final AlagagiController controller;
   final int mutualCount;
   final int totalCount;
-  final int linkedCount;
   final List<SharedPlace> places;
+  final bool overlayVisible;
 
   @override
+  State<_PlaceMapPreview> createState() => _PlaceMapPreviewState();
+}
+
+class _PlaceMapPreviewState extends State<_PlaceMapPreview> {
+  @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
+    final mutualCount = widget.mutualCount;
+    final totalCount = widget.totalCount;
+    final places = widget.places;
+    final overlayVisible = widget.overlayVisible;
     final draftLatitude = controller.state.placeDraftLatitude;
     final draftLongitude = controller.state.placeDraftLongitude;
     final hasDraftLocation =
@@ -9198,136 +9235,202 @@ class _PlaceMapPreview extends StatelessWidget {
           longitude: draftLongitude,
         ),
     ];
-    return Container(
-      height: 334,
-      decoration: BoxDecoration(
-        color: const Color(0xFFE9EEE8),
-        border: Border.all(color: AlagagiColors.line),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: KakaoMapPanel(
-              centerLatitude: hasDraftLocation
-                  ? draftLatitude
-                  : _mapCenterLatitude,
-              centerLongitude: hasDraftLocation
-                  ? draftLongitude
-                  : _mapCenterLongitude,
-              level: hasDraftLocation ? 4 : 6,
-              markers: markers,
-              fallbackBuilder: (context, reason) => _PlaceMapFallback(
-                reason: reason,
-                mutualCount: mutualCount,
-                totalCount: totalCount,
-                linkedCount: linkedCount,
-              ),
-            ),
+    final mapHeight = _placeBoardMapHeight(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final mapFrame = Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFE9EEE8),
+            border: Border.all(color: AlagagiColors.line),
+            borderRadius: BorderRadius.circular(24),
           ),
-          Positioned(
-            left: 16,
-            top: 16,
-            right: 16,
-            child: Container(
-              decoration: BoxDecoration(
-                color: AlagagiColors.paper.withValues(alpha: 0.93),
-                border: Border.all(color: AlagagiColors.line),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              child: Row(
-                children: [
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: AlagagiColors.softSage,
-                      borderRadius: BorderRadius.circular(13),
-                    ),
-                    alignment: Alignment.center,
-                    child: const Icon(
-                      Icons.map_outlined,
-                      size: 18,
-                      color: AlagagiColors.sageDeep,
-                    ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: KakaoMapPanel(
+                  centerLatitude: hasDraftLocation
+                      ? draftLatitude
+                      : _mapCenterLatitude,
+                  centerLongitude: hasDraftLocation
+                      ? draftLongitude
+                      : _mapCenterLongitude,
+                  level: hasDraftLocation ? 4 : 6,
+                  markers: markers,
+                  fallbackBuilder: (context, reason) => _PlaceMapFallback(
+                    reason: reason,
+                    mutualCount: mutualCount,
+                    totalCount: totalCount,
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+              ),
+              if (overlayVisible) ...[
+                Positioned(
+                  left: 16,
+                  top: 16,
+                  right: 16,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AlagagiColors.paper.withValues(alpha: 0.93),
+                      border: Border.all(color: AlagagiColors.line),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    child: Row(
                       children: [
-                        Text(
-                          '카카오 장소 지도',
-                          style: sans(size: 12.8, weight: FontWeight.w800),
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: AlagagiColors.softSage,
+                            borderRadius: BorderRadius.circular(13),
+                          ),
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            Icons.map_outlined,
+                            size: 18,
+                            color: AlagagiColors.sageDeep,
+                          ),
                         ),
-                        const SizedBox(height: 3),
-                        Text(
-                          hasDraftLocation
-                              ? '선택한 장소가 큰 지도에 표시됐어요'
-                              : '저장한 장소를 한눈에 크게 봐요',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: sans(
-                            size: 11.2,
-                            color: hasDraftLocation
-                                ? AlagagiColors.sageDeep
-                                : AlagagiColors.muted,
-                            weight: hasDraftLocation ? FontWeight.w700 : null,
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '장소 지도',
+                                style: sans(
+                                  size: 12.8,
+                                  weight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                hasDraftLocation
+                                    ? '선택한 장소가 큰 지도에 표시됐어요'
+                                    : '저장한 장소를 한눈에 크게 봐요',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: sans(
+                                  size: 11.2,
+                                  color: hasDraftLocation
+                                      ? AlagagiColors.sageDeep
+                                      : AlagagiColors.muted,
+                                  weight: hasDraftLocation
+                                      ? FontWeight.w700
+                                      : null,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 16,
-            child: Container(
-              decoration: BoxDecoration(
-                color: AlagagiColors.paper.withValues(alpha: 0.94),
-                border: Border.all(color: AlagagiColors.line),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 13),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          totalCount == 0
-                              ? '아직 담은 장소가 없어요'
-                              : '$totalCount곳이 지도에 모였어요',
-                          style: sans(size: 13, weight: FontWeight.w800),
+                ),
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 16,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AlagagiColors.paper.withValues(alpha: 0.94),
+                      border: Border.all(color: AlagagiColors.line),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 13),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                totalCount == 0
+                                    ? '아직 담은 장소가 없어요'
+                                    : '$totalCount곳이 지도에 모였어요',
+                                style: sans(size: 13, weight: FontWeight.w800),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            _SmallBadge(label: '지도'),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      _SmallBadge(label: '카카오'),
-                    ],
+                        const SizedBox(height: 9),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: [
+                            _MapSummaryPill(label: '서로 관심 $mutualCount'),
+                            _MapSummaryPill(label: '담은 곳 $totalCount'),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 9),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
-                    children: [
-                      _MapSummaryPill(label: '서로 관심 $mutualCount'),
-                      _MapSummaryPill(label: '담은 곳 $totalCount'),
-                      _MapSummaryPill(label: '약속 연결 $linkedCount'),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ],
+            ],
+          ),
+        );
+        if (!constraints.hasBoundedWidth) {
+          return SizedBox(height: mapHeight, child: mapFrame);
+        }
+        final expandedWidth =
+            constraints.maxWidth + (_placeBoardMapHorizontalBleed * 2);
+        return SizedBox(
+          height: mapHeight,
+          child: OverflowBox(
+            alignment: Alignment.center,
+            minWidth: expandedWidth,
+            maxWidth: expandedWidth,
+            child: SizedBox(
+              width: expandedWidth,
+              height: mapHeight,
+              child: mapFrame,
             ),
           ),
-        ],
+        );
+      },
+    );
+  }
+}
+
+class _PlaceMapOverlayButton extends StatelessWidget {
+  const _PlaceMapOverlayButton({
+    required this.visible,
+    required this.onPressed,
+  });
+
+  final bool visible;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: visible ? '지도 정보 숨기기' : '지도 정보 보기',
+      child: IconButton(
+        onPressed: onPressed,
+        icon: Icon(
+          visible ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+          size: 18,
+        ),
+        style: IconButton.styleFrom(
+          fixedSize: const Size(36, 36),
+          minimumSize: const Size(36, 36),
+          padding: EdgeInsets.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          backgroundColor: AlagagiColors.paper.withValues(alpha: 0.94),
+          foregroundColor: AlagagiColors.sageDeep,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(13),
+            side: const BorderSide(color: AlagagiColors.line),
+          ),
+        ),
       ),
     );
   }
@@ -9408,13 +9511,11 @@ class _PlaceMapFallback extends StatelessWidget {
     required this.reason,
     required this.mutualCount,
     required this.totalCount,
-    required this.linkedCount,
   });
 
   final String reason;
   final int mutualCount;
   final int totalCount;
-  final int linkedCount;
 
   @override
   Widget build(BuildContext context) {
@@ -9461,7 +9562,7 @@ class _PlaceSearchEntryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'KAKAO PLACE SEARCH',
+            'PLACE SEARCH',
             style: sans(
               size: 10.5,
               weight: FontWeight.w800,
@@ -9471,7 +9572,7 @@ class _PlaceSearchEntryCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '카카오에서 찾고\n둘의 보드에 담아요',
+            '지도에서 찾고\n둘의 보드에 담아요',
             style: serif(
               context,
               size: 22,
@@ -9489,7 +9590,7 @@ class _PlaceSearchEntryCard extends StatelessWidget {
             key: placeAddButtonKey,
             onPressed: controller.startPlaceDraft,
             icon: const Icon(Icons.search_rounded, size: 18),
-            label: const Text('카카오 장소 검색하기'),
+            label: const Text('장소 검색하기'),
             style: FilledButton.styleFrom(
               backgroundColor: AlagagiColors.sageDeep,
               foregroundColor: Colors.white,
@@ -9533,8 +9634,8 @@ class _PlaceDraftCard extends StatelessWidget {
           const SizedBox(height: 7),
           Text(
             isEditing
-                ? '메모와 카테고리를 고치거나, 다른 카카오 검색 결과로 장소를 바꿀 수 있어요.'
-                : '카카오 지도에서 장소를 검색하고 결과를 선택하면 주소와 좌표가 함께 저장돼요.',
+                ? '메모와 카테고리를 고치거나, 다른 지도 검색 결과로 장소를 바꿀 수 있어요.'
+                : '지도에서 장소를 검색하고 결과를 선택하면 주소와 좌표가 함께 저장돼요.',
             style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
           ),
           const SizedBox(height: 14),
@@ -9646,7 +9747,7 @@ class _KakaoPlaceSearchPanelState extends State<_KakaoPlaceSearchPanel> {
       }
       setState(() {
         _results = const [];
-        _error = '카카오 장소 검색을 불러오지 못했어요.';
+        _error = '장소 검색을 불러오지 못했어요.';
       });
     } finally {
       if (mounted) {
@@ -9738,7 +9839,7 @@ class _KakaoPlaceSearchPanelState extends State<_KakaoPlaceSearchPanel> {
           ),
           if (_error != null) ...[
             const SizedBox(height: 9),
-            if (_error!.contains('카카오 장소 검색'))
+            if (_error!.contains('장소 검색'))
               _KakaoSearchHelpCard(message: _error!, onRetry: _search)
             else
               Text(
@@ -9821,7 +9922,7 @@ class _KakaoSearchHelpCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Kakao Developers Web 플랫폼에 현재 도메인과 JavaScript Key가 등록되어 있는지 확인해주세요.',
+            '개발자 콘솔의 Web 플랫폼에 현재 도메인과 JavaScript Key가 등록되어 있는지 확인해주세요.',
             style: sans(
               size: 11.4,
               color: const Color(0xFF7B6860),
@@ -10040,7 +10141,7 @@ class _SelectedPlacePreview extends StatelessWidget {
                     Text(
                       hasSelection
                           ? '저장하면 둘의 장소 보드와 지도에 함께 표시됩니다.'
-                          : '카카오 검색 결과를 누르면 주소와 좌표가 자동으로 들어와요.',
+                          : '검색 결과를 누르면 주소와 좌표가 자동으로 들어와요.',
                       style: sans(
                         size: 11.6,
                         color: AlagagiColors.muted,
@@ -10051,7 +10152,7 @@ class _SelectedPlacePreview extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              _SmallBadge(label: hasSelection ? '카카오' : '대기'),
+              _SmallBadge(label: hasSelection ? '지도' : '대기'),
             ],
           ),
           const SizedBox(height: 12),
@@ -10096,7 +10197,7 @@ class _SelectedPlaceMiniMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 168,
+      height: _selectedPlaceMiniMapHeight,
       decoration: BoxDecoration(
         color: const Color(0xFFE9EEE8),
         border: Border.all(color: AlagagiColors.line),
@@ -10302,8 +10403,6 @@ class _PlaceCard extends StatelessWidget {
     final placeBusy =
         controller.state.placeSaveStatus == SaveStatus.saving &&
         controller.isPlaceSaveTarget(place.id);
-    final selectedDateKey = controller.selectedMeetingDateKey;
-    final linkedToSelectedDate = place.linkedDateKey == selectedDateKey;
     final creator = isMine
         ? controller.state.me.nickname
         : controller.state.partner.nickname;
@@ -10386,27 +10485,6 @@ class _PlaceCard extends StatelessWidget {
               ),
             ),
           ],
-          if (place.linkedDateKey != null) ...[
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                const Icon(
-                  Icons.event_available_outlined,
-                  size: 14,
-                  color: Color(0xFF80672B),
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  '${_meetingDateLabel(place.linkedDateKey!)} 후보로 연결됨',
-                  style: sans(
-                    size: 11.5,
-                    color: const Color(0xFF80672B),
-                    weight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ],
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
@@ -10418,7 +10496,7 @@ class _PlaceCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () => onOpenExternalLink(kakaoPlaceUrl),
                     icon: const Icon(Icons.open_in_new_rounded, size: 14),
-                    label: const Text('카카오지도 열기'),
+                    label: const Text('지도에서 열기'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AlagagiColors.sageDeep,
                       side: const BorderSide(color: Color(0x336F7F63)),
@@ -10447,36 +10525,6 @@ class _PlaceCard extends StatelessWidget {
                     foregroundColor: AlagagiColors.sageDeep,
                     disabledForegroundColor: AlagagiColors.muted,
                     side: const BorderSide(color: Color(0x336F7F63)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    textStyle: sans(size: 11.5, weight: FontWeight.w800),
-                  ),
-                ),
-              ),
-              SizedBox(
-                height: 32,
-                child: OutlinedButton.icon(
-                  key: placeLinkMeetingButtonKey(place.id),
-                  onPressed: placeBusy
-                      ? null
-                      : () => controller.linkPlaceToSelectedMeeting(place.id),
-                  icon: Icon(
-                    linkedToSelectedDate
-                        ? Icons.event_busy_outlined
-                        : Icons.event_available_outlined,
-                    size: 14,
-                  ),
-                  label: Text(
-                    linkedToSelectedDate
-                        ? '연결 해제'
-                        : place.linkedDateKey == null
-                        ? '선택한 날에 담기'
-                        : '선택한 날로 변경',
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF80672B),
-                    side: const BorderSide(color: Color(0x33C8AD6D)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(999),
                     ),
@@ -10745,9 +10793,9 @@ String? _kakaoPlaceUrl(SharedPlace place) {
 
 String _kakaoMapFallbackMessage(String reason) {
   if (reason.contains('불러오지') || reason.contains('브릿지')) {
-    return '카카오 지도를 불러오지 못했어요. 도메인 등록과 JavaScript Key를 확인해주세요.';
+    return '지도를 불러오지 못했어요. 도메인 등록과 JavaScript Key를 확인해주세요.';
   }
-  return reason.isEmpty ? '카카오 지도를 준비하고 있어요.' : reason;
+  return reason.isEmpty ? '지도를 준비하고 있어요.' : reason;
 }
 
 String _placeCategoryLabel(PlaceCategory category) {
@@ -10772,7 +10820,7 @@ IconData _placeCategoryIcon(PlaceCategory category) {
 
 String _providerLabel(MapApiProvider provider) {
   return switch (provider) {
-    MapApiProvider.kakao => '카카오 지도',
+    MapApiProvider.kakao => '지도 검색',
   };
 }
 

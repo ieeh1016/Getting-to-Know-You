@@ -255,7 +255,7 @@ If the app grows, bottom navigation may become:
 - 장소 관심 표시는 toggle로 동작하며 `interestedByProfileIds`에 내 profile id를 추가하거나 제거한다.
 - 같은 카카오 `providerPlaceId`를 다시 담으면 새 장소를 만들지 않고 기존 장소를 업데이트한다.
 - 내가 담은 장소는 메모/카테고리/카카오 검색 결과를 수정하거나 삭제할 수 있다.
-- 장소는 선택한 일정 날짜에 연결하거나 다시 눌러 연결 해제할 수 있으며, 이 MVP에서는 place document의 `linkedDateKey`로 가볍게 연결한다.
+- 장소 화면은 일정 날짜 연결을 제공하지 않고, 장소 저장과 서로 관심 표시만 다룬다.
 - Open API 준비/운영 가이드는 `docs/map_open_api_guide.md`를 따른다.
 - Selected design: `docs/design/schedule_place_coordination_concept.html`.
 

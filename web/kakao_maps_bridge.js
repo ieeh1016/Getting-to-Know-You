@@ -116,6 +116,42 @@
     return Number.isFinite(number) ? number : fallback;
   }
 
+  function containMapScroll(element) {
+    if (element.dataset.jogeumssikMapScrollContained === 'true') {
+      return;
+    }
+    element.dataset.jogeumssikMapScrollContained = 'true';
+    element.style.overscrollBehavior = 'contain';
+    element.style.touchAction = 'none';
+
+    const stop = (event) => {
+      event.stopPropagation();
+    };
+    const stopAndPrevent = (event) => {
+      event.stopPropagation();
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+    };
+
+    ['wheel', 'mousewheel', 'DOMMouseScroll', 'touchmove'].forEach((type) => {
+      element.addEventListener(type, stopAndPrevent, { passive: false });
+    });
+    [
+      'touchstart',
+      'touchend',
+      'touchcancel',
+      'pointerdown',
+      'pointermove',
+      'pointerup',
+      'mousedown',
+      'mousemove',
+      'mouseup',
+    ].forEach((type) => {
+      element.addEventListener(type, stop, { passive: true });
+    });
+  }
+
   function clearMarkers(instance) {
     if (!instance || !instance.markers) {
       return;
@@ -168,6 +204,7 @@
           'MAP_CONTAINER_MISSING'
         );
       }
+      containMapScroll(element);
 
       try {
         const center = new kakao.maps.LatLng(

@@ -1625,6 +1625,10 @@ void main() {
     expect(controller.sharedPlaces.first.provider, MapApiProvider.kakao);
     expect(controller.sharedPlaces.first.providerPlaceId, 'kakao-bookstore-1');
     expect(controller.sharedPlaces.first.note, '조용히 둘러보기 좋아 보여요.');
+    expect(find.text('선택한 날에 담기'), findsNothing);
+    expect(find.text('선택한 날로 변경'), findsNothing);
+    expect(find.text('연결 해제'), findsNothing);
+    expect(find.textContaining('약속 연결'), findsNothing);
   });
 
   testWidgets('music tab adds a lightweight song note', (tester) async {

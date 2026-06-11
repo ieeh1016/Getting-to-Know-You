@@ -104,7 +104,7 @@ class _KakaoMapPanelState extends State<KakaoMapPanel> {
       );
       if (bridge == null) {
         throw StateError(
-          '카카오 지도 연결 객체를 찾을 수 없어요. web/kakao_maps_bridge.js 등록 여부를 확인해주세요.',
+          '지도 연결 객체를 찾을 수 없어요. web/kakao_maps_bridge.js 등록 여부를 확인해주세요.',
         );
       }
       final optionsJson = jsonEncode({
@@ -121,7 +121,7 @@ class _KakaoMapPanelState extends State<KakaoMapPanel> {
       }
     } catch (error) {
       if (mounted) {
-        setState(() => _error = _kakaoUiMessage('카카오 지도 오류', error));
+        setState(() => _error = _kakaoUiMessage('지도 오류', error));
       }
     }
   }
@@ -163,7 +163,7 @@ Future<void> _loadKakaoBridgeScript() {
     if (bridge == null) {
       completer.completeError(
         StateError(
-          '카카오 지도 연결 스크립트가 등록되지 않았어요. web/kakao_maps_bridge.js 경로를 확인해주세요.',
+          '지도 연결 스크립트가 등록되지 않았어요. web/kakao_maps_bridge.js 경로를 확인해주세요.',
         ),
       );
     } else {
@@ -175,7 +175,7 @@ Future<void> _loadKakaoBridgeScript() {
 
   errorListener = ((web.Event event) {
     completer.completeError(
-      StateError('카카오 지도 연결 스크립트 로드 실패. 배포 경로 또는 정적 파일 설정을 확인해주세요.'),
+      StateError('지도 연결 스크립트 로드 실패. 배포 경로 또는 정적 파일 설정을 확인해주세요.'),
     );
     script.removeEventListener('load', loadListener);
     script.removeEventListener('error', errorListener);
@@ -203,7 +203,7 @@ Future<List<KakaoPlaceSearchResult>> searchKakaoPlaces(
     );
     if (bridge == null) {
       throw StateError(
-        '카카오 지도 연결 객체를 찾을 수 없어요. web/kakao_maps_bridge.js 등록 여부를 확인해주세요.',
+        '지도 연결 객체를 찾을 수 없어요. web/kakao_maps_bridge.js 등록 여부를 확인해주세요.',
       );
     }
     final optionsJson = jsonEncode({
@@ -215,7 +215,7 @@ Future<List<KakaoPlaceSearchResult>> searchKakaoPlaces(
     ).searchPlacesFromJson(optionsJson.toJS).toDart;
     final decoded = jsonDecode(resultJson.toDart);
     if (decoded is! List) {
-      throw StateError('카카오 장소 검색 응답 형식이 올바르지 않아요.');
+      throw StateError('장소 검색 응답 형식이 올바르지 않아요.');
     }
     return decoded
         .whereType<Map<String, Object?>>()
@@ -224,7 +224,7 @@ Future<List<KakaoPlaceSearchResult>> searchKakaoPlaces(
         .toList(growable: false);
   } catch (error, stackTrace) {
     Error.throwWithStackTrace(
-      StateError(_kakaoUiMessage('카카오 장소 검색 오류', error)),
+      StateError(_kakaoUiMessage('장소 검색 오류', error)),
       stackTrace,
     );
   }
@@ -278,5 +278,14 @@ String _kakaoErrorDetail(Object error) {
       message = message.substring(prefix.length).trim();
     }
   }
+  message = message
+      .replaceAll('Kakao Developers', '개발자 콘솔')
+      .replaceAll('Kakao Maps SDK', '지도 SDK')
+      .replaceAll('Kakao Maps', '지도')
+      .replaceAll('Kakao Places', '장소 검색')
+      .replaceAll('Kakao 장소 검색', '장소 검색')
+      .replaceAll('Kakao 도메인', '지도 도메인')
+      .replaceAll('카카오 장소 검색', '장소 검색')
+      .replaceAll('카카오 지도', '지도');
   return message.isEmpty ? '알 수 없는 오류' : message;
 }
