@@ -238,7 +238,8 @@ If the app grows, bottom navigation may become:
 - 각 탭 label은 2글자 중심으로 유지해 390px 모바일 viewport에서 텍스트가 줄바꿈되지 않게 한다.
 - 일정 조율은 `약속` 화면에서 제공한다.
 - 일정 조율은 실시간 캘린더 연동이 아니라 앱 안에 사용자가 직접 남긴 가능 여부를 기반으로 한다.
-- 월간 캘린더는 `서로 가능`, `내 상세 일정 있음`, `상대 표시 있음`을 낮은 대비의 점/색상으로 구분한다.
+- 월간 캘린더는 `서로 가능`, `내 입력 있음`, `내 상세 일정 있음`, `상대 표시 있음`을 낮은 대비의 점/색상으로 구분한다.
+- 내가 먼저 가능 여부/시간대만 저장한 날짜도 `내 입력` 상태로 표시해 빈 날짜처럼 보이지 않게 한다.
 - 날짜 선택, 월간 캘린더 계산, 화면 전환은 local UI state이며 Firestore write를 만들지 않는다.
 - 사용자가 `일정 저장하기`를 누를 때만 schedule entry를 저장한다.
 - schedule entry는 `dateKey`, `profileId`, `availability`, `timeSlots`, `timeBlocks`, `sharedMemo`, `updatedAt`을 공유 공간에 저장한다.

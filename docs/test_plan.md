@@ -210,6 +210,7 @@
 - Meeting schedule submit은 공유 schedule entry 1개만 저장한다.
 - Meeting date selection, calendar rendering, availability draft changes, detailed time block draft typing, private/shared memo typing은 Firestore write를 만들지 않는다.
 - Meeting detailed time block add/remove is local draft state only; the Firestore write happens only when `일정 저장하기` is submitted.
+- Meeting calendar marks a date as `내 입력` after I save availability/time slots even when the partner has not entered anything yet.
 - Kakao place search typing/result selection, map pan/zoom, detail open, category draft changes는 Firestore write를 만들지 않는다.
 - Place save/interest action은 사용자 명시 action에서만 shared place document를 저장한다.
 - Place board는 현재 위치, 이동 경로, raw API payload, 이미지 blob을 저장하지 않는다.

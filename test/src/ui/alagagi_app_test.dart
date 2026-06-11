@@ -1583,6 +1583,45 @@ void main() {
     expect(find.text('일정을 저장했어요.'), findsOneWidget);
   });
 
+  testWidgets('meeting calendar marks my saved date before partner input', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+      ),
+    )..goTo(AlagagiRoute.meetings);
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    final dateKey = controller.selectedMeetingDateKey;
+    expect(find.text('내 입력'), findsOneWidget);
+    expect(find.byKey(meetingMyEntryIndicatorKey(dateKey)), findsNothing);
+
+    await tester.ensureVisible(find.byKey(meetingSubmitButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(meetingSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(controller.mySelectedScheduleEntry, isNotNull);
+    expect(controller.mySelectedScheduleEntry!.timeBlocks, isEmpty);
+    expect(find.byKey(meetingMyEntryIndicatorKey(dateKey)), findsOneWidget);
+  });
+
   testWidgets('meeting save failure shows retry action', (tester) async {
     final repository = _FailingSaveRepository()..failScheduleSaves = true;
     final controller = AlagagiController.forSession(

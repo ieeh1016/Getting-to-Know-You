@@ -36,6 +36,8 @@ const meetingTimeBlockEndFieldKey = Key('meeting-time-block-end-field');
 const meetingTimeBlockTitleFieldKey = Key('meeting-time-block-title-field');
 const meetingTimeBlockAddButtonKey = Key('meeting-time-block-add-button');
 Key meetingDateButtonKey(String dateKey) => Key('meeting-date-$dateKey');
+Key meetingMyEntryIndicatorKey(String dateKey) =>
+    Key('meeting-my-entry-indicator-$dateKey');
 Key meetingTimeSlotButtonKey(String slot) => Key('meeting-time-slot-$slot');
 Key meetingTimeBlockRemoveButtonKey(String blockId) =>
     Key('meeting-time-block-remove-$blockId');
@@ -8500,6 +8502,7 @@ class _MeetingCalendar extends StatelessWidget {
                       .intersection(partnerEntry!.timeSlots)
                       .isNotEmpty;
               final busy = myEntry?.availability == MeetingAvailability.busy;
+              final hasMyEntry = myEntry != null;
               final hasMyDetails = myEntry?.timeBlocks.isNotEmpty ?? false;
               return _MeetingDateCell(
                 dateKey: dateKey,
@@ -8507,6 +8510,7 @@ class _MeetingCalendar extends StatelessWidget {
                 selected: selected,
                 mutual: mutual,
                 busy: busy,
+                hasMyEntry: hasMyEntry,
                 hasMyDetails: hasMyDetails,
                 hasPartner: partnerEntry != null,
                 onTap: () => controller.selectMeetingDate(dateKey),
@@ -8519,6 +8523,7 @@ class _MeetingCalendar extends StatelessWidget {
             runSpacing: 8,
             children: const [
               _LegendDot(color: AlagagiColors.sageDeep, label: '서로 가능'),
+              _LegendDot(color: AlagagiColors.sage, label: '내 입력'),
               _LegendDot(color: Color(0xFFC8AD6D), label: '내 상세 일정'),
               _LegendDot(color: Color(0xFFB18472), label: '상대 표시'),
             ],
@@ -8536,6 +8541,7 @@ class _MeetingDateCell extends StatelessWidget {
     required this.selected,
     required this.mutual,
     required this.busy,
+    required this.hasMyEntry,
     required this.hasMyDetails,
     required this.hasPartner,
     required this.onTap,
@@ -8546,6 +8552,7 @@ class _MeetingDateCell extends StatelessWidget {
   final bool selected;
   final bool mutual;
   final bool busy;
+  final bool hasMyEntry;
   final bool hasMyDetails;
   final bool hasPartner;
   final VoidCallback onTap;
@@ -8558,6 +8565,8 @@ class _MeetingDateCell extends StatelessWidget {
         ? const Color(0xFFEEF2E8)
         : busy || hasMyDetails
         ? const Color(0xFFF4EEDC)
+        : hasMyEntry
+        ? const Color(0xFFF5F8EF)
         : Colors.white;
     final foreground = selected
         ? Colors.white
@@ -8565,7 +8574,29 @@ class _MeetingDateCell extends StatelessWidget {
         ? AlagagiColors.sageDeep
         : busy || hasMyDetails
         ? const Color(0xFF8A6F2D)
+        : hasMyEntry
+        ? AlagagiColors.sageDeep
         : const Color(0xFF4D4B45);
+    final borderColor = selected
+        ? AlagagiColors.ink
+        : mutual
+        ? const Color(0x668A9A7E)
+        : hasMyEntry
+        ? const Color(0x338A9A7E)
+        : AlagagiColors.line;
+    final indicators = <Widget>[
+      if (mutual)
+        _TinyDot(color: selected ? Colors.white : AlagagiColors.sageDeep),
+      if (hasMyEntry && !mutual)
+        _TinyDot(
+          key: meetingMyEntryIndicatorKey(dateKey),
+          color: selected ? Colors.white : AlagagiColors.sage,
+        ),
+      if (hasMyDetails)
+        _TinyDot(color: selected ? Colors.white : const Color(0xFFC8AD6D)),
+      if (hasPartner && !mutual)
+        _TinyDot(color: selected ? Colors.white : const Color(0xFFB18472)),
+    ];
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -8575,13 +8606,7 @@ class _MeetingDateCell extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color: background,
-            border: Border.all(
-              color: selected
-                  ? AlagagiColors.ink
-                  : mutual
-                  ? const Color(0x668A9A7E)
-                  : AlagagiColors.line,
-            ),
+            border: Border.all(color: borderColor),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Stack(
@@ -8602,25 +8627,9 @@ class _MeetingDateCell extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (mutual)
-                      _TinyDot(
-                        color: selected ? Colors.white : AlagagiColors.sageDeep,
-                      ),
-                    if (hasMyDetails) ...[
-                      if (mutual) const SizedBox(width: 3),
-                      _TinyDot(
-                        color: selected
-                            ? Colors.white
-                            : const Color(0xFFC8AD6D),
-                      ),
-                    ],
-                    if (hasPartner && !mutual) ...[
-                      if (hasMyDetails) const SizedBox(width: 3),
-                      _TinyDot(
-                        color: selected
-                            ? Colors.white
-                            : const Color(0xFFB18472),
-                      ),
+                    for (var index = 0; index < indicators.length; index++) ...[
+                      if (index > 0) const SizedBox(width: 3),
+                      indicators[index],
                     ],
                   ],
                 ),
@@ -10675,7 +10684,7 @@ class _LegendDot extends StatelessWidget {
 }
 
 class _TinyDot extends StatelessWidget {
-  const _TinyDot({required this.color});
+  const _TinyDot({super.key, required this.color});
 
   final Color color;
 
