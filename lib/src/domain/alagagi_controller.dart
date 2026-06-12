@@ -219,6 +219,8 @@ abstract class AlagagiDataRepository {
   Future<void> saveStockStory(String spaceId, StockStory story);
 
   Future<void> saveStockHolding(String spaceId, StockHolding holding);
+
+  Future<void> deleteStockHolding(String spaceId, String holdingId);
 }
 
 class AppProfile {
@@ -1305,6 +1307,7 @@ class AlagagiState {
     this.stockHoldingDraftConcern = '',
     this.stockHoldingDraftQuestion = '',
     this.stockHoldingDraftError,
+    this.editingStockHoldingId,
     this.stockHoldingReplyDraftsByHoldingId = const {},
     this.stockHoldingReplyTonesByHoldingId = const {},
     this.stockHoldingReplyError,
@@ -1408,6 +1411,7 @@ class AlagagiState {
   final String stockHoldingDraftConcern;
   final String stockHoldingDraftQuestion;
   final String? stockHoldingDraftError;
+  final String? editingStockHoldingId;
   final Map<String, String> stockHoldingReplyDraftsByHoldingId;
   final Map<String, String> stockHoldingReplyTonesByHoldingId;
   final String? stockHoldingReplyError;
@@ -1524,6 +1528,8 @@ class AlagagiState {
     String? stockHoldingDraftQuestion,
     String? stockHoldingDraftError,
     bool clearStockHoldingDraftError = false,
+    String? editingStockHoldingId,
+    bool clearEditingStockHoldingId = false,
     Map<String, String>? stockHoldingReplyDraftsByHoldingId,
     Map<String, String>? stockHoldingReplyTonesByHoldingId,
     String? stockHoldingReplyError,
@@ -1693,6 +1699,9 @@ class AlagagiState {
       stockHoldingDraftError: clearStockHoldingDraftError
           ? null
           : stockHoldingDraftError ?? this.stockHoldingDraftError,
+      editingStockHoldingId: clearEditingStockHoldingId
+          ? null
+          : editingStockHoldingId ?? this.editingStockHoldingId,
       stockHoldingReplyDraftsByHoldingId:
           stockHoldingReplyDraftsByHoldingId ??
           this.stockHoldingReplyDraftsByHoldingId,
@@ -2689,6 +2698,17 @@ class AlagagiController extends ChangeNotifier {
       return;
     }
     unawaited(repository.saveStockHolding(spaceId, holding).catchError((_) {}));
+  }
+
+  void _deletePersistedStockHolding(String holdingId) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      return;
+    }
+    unawaited(
+      repository.deleteStockHolding(spaceId, holdingId).catchError((_) {}),
+    );
   }
 
   void _persistAnswerComment(AnswerComment comment) {
@@ -5467,6 +5487,43 @@ class AlagagiController extends ChangeNotifier {
       stockHoldingDraftConcern: '',
       stockHoldingDraftQuestion: '',
       clearStockHoldingDraftError: true,
+      clearEditingStockHoldingId: true,
+    );
+    notifyListeners();
+  }
+
+  void startStockHoldingEdit(String holdingId) {
+    final index = _stockHoldings.indexWhere(
+      (holding) => holding.id == holdingId,
+    );
+    if (index == -1) {
+      _state = _state.copyWith(stockHoldingDraftError: '수정할 보유 종목을 찾지 못했어요.');
+      notifyListeners();
+      return;
+    }
+    final holding = _stockHoldings[index];
+    if (holding.createdByProfileId != _state.me.id) {
+      _state = _state.copyWith(
+        stockHoldingDraftError: '내가 공유한 보유 종목만 수정할 수 있어요.',
+      );
+      notifyListeners();
+      return;
+    }
+    _state = _state.copyWith(
+      route: AlagagiRoute.stockStory,
+      stockStoryTab: StockStoryTab.holdings,
+      stockHoldingListFilter: StockHoldingListFilter.all,
+      stockHoldingDraftVisible: true,
+      editingStockHoldingId: holding.id,
+      stockHoldingDraftName: holding.name,
+      stockHoldingDraftStatus: holding.status,
+      stockHoldingDraftWeightLabel: holding.weightLabel,
+      stockHoldingDraftReason: holding.reason,
+      stockHoldingDraftWatchPoint: holding.watchPoint,
+      stockHoldingDraftConcern: holding.concern,
+      stockHoldingDraftQuestion: holding.question,
+      clearStockHoldingDraftError: true,
+      clearStockHoldingReplyError: true,
     );
     notifyListeners();
   }
@@ -5482,6 +5539,7 @@ class AlagagiController extends ChangeNotifier {
       stockHoldingDraftConcern: '',
       stockHoldingDraftQuestion: '',
       clearStockHoldingDraftError: true,
+      clearEditingStockHoldingId: true,
     );
     notifyListeners();
   }
@@ -5545,21 +5603,56 @@ class AlagagiController extends ChangeNotifier {
       return;
     }
 
+    final editingId = _state.editingStockHoldingId;
+    final editingIndex = editingId == null
+        ? -1
+        : _stockHoldings.indexWhere((holding) => holding.id == editingId);
+    if (editingId != null) {
+      if (editingIndex == -1) {
+        _state = _state.copyWith(stockHoldingDraftError: '수정할 보유 종목을 찾지 못했어요.');
+        notifyListeners();
+        return;
+      }
+      if (_stockHoldings[editingIndex].createdByProfileId != _state.me.id) {
+        _state = _state.copyWith(
+          stockHoldingDraftError: '내가 공유한 보유 종목만 수정할 수 있어요.',
+        );
+        notifyListeners();
+        return;
+      }
+    }
+
     final now = DateTime.now();
-    final holding = StockHolding(
-      id: 'holding_${_state.me.id}_${now.microsecondsSinceEpoch}',
-      name: name,
-      status: status,
-      weightLabel: weightLabel,
-      reason: reason,
-      watchPoint: watchPoint,
-      concern: concern,
-      question: question,
-      createdByProfileId: _state.me.id,
-      createdLabel: '오늘',
-      updatedAt: now,
-    );
-    _stockHoldings.insert(0, holding);
+    final StockHolding holding;
+    if (editingIndex == -1) {
+      holding = StockHolding(
+        id: 'holding_${_state.me.id}_${now.microsecondsSinceEpoch}',
+        name: name,
+        status: status,
+        weightLabel: weightLabel,
+        reason: reason,
+        watchPoint: watchPoint,
+        concern: concern,
+        question: question,
+        createdByProfileId: _state.me.id,
+        createdLabel: '오늘',
+        updatedAt: now,
+      );
+      _stockHoldings.insert(0, holding);
+    } else {
+      final existingHolding = _stockHoldings[editingIndex];
+      holding = existingHolding.copyWith(
+        name: name,
+        status: status,
+        weightLabel: weightLabel,
+        reason: reason,
+        watchPoint: watchPoint,
+        concern: concern,
+        question: question,
+        updatedAt: now,
+      );
+      _stockHoldings[editingIndex] = holding;
+    }
     _sortStockHoldingsByUpdatedAt();
     _persistStockHolding(holding);
     _state = _state.copyWith(
@@ -5572,6 +5665,56 @@ class AlagagiController extends ChangeNotifier {
       stockHoldingDraftConcern: '',
       stockHoldingDraftQuestion: '',
       clearStockHoldingDraftError: true,
+      clearEditingStockHoldingId: true,
+    );
+    notifyListeners();
+  }
+
+  void deleteStockHolding(String holdingId) {
+    final index = _stockHoldings.indexWhere(
+      (holding) => holding.id == holdingId,
+    );
+    if (index == -1) {
+      _state = _state.copyWith(stockHoldingDraftError: '삭제할 보유 종목을 찾지 못했어요.');
+      notifyListeners();
+      return;
+    }
+    final holding = _stockHoldings[index];
+    if (holding.createdByProfileId != _state.me.id) {
+      _state = _state.copyWith(
+        stockHoldingDraftError: '내가 공유한 보유 종목만 삭제할 수 있어요.',
+      );
+      notifyListeners();
+      return;
+    }
+
+    _stockHoldings.removeAt(index);
+    _deletePersistedStockHolding(holdingId);
+    final wasEditing = _state.editingStockHoldingId == holdingId;
+    _state = _state.copyWith(
+      stockHoldingDraftVisible: wasEditing
+          ? false
+          : _state.stockHoldingDraftVisible,
+      stockHoldingDraftName: wasEditing ? '' : _state.stockHoldingDraftName,
+      stockHoldingDraftStatus: wasEditing
+          ? stockHoldingStatusOptions.first
+          : _state.stockHoldingDraftStatus,
+      stockHoldingDraftWeightLabel: wasEditing
+          ? stockHoldingWeightOptions[1]
+          : _state.stockHoldingDraftWeightLabel,
+      stockHoldingDraftReason: wasEditing ? '' : _state.stockHoldingDraftReason,
+      stockHoldingDraftWatchPoint: wasEditing
+          ? ''
+          : _state.stockHoldingDraftWatchPoint,
+      stockHoldingDraftConcern: wasEditing
+          ? ''
+          : _state.stockHoldingDraftConcern,
+      stockHoldingDraftQuestion: wasEditing
+          ? ''
+          : _state.stockHoldingDraftQuestion,
+      clearStockHoldingDraftError: true,
+      clearStockHoldingReplyError: true,
+      clearEditingStockHoldingId: wasEditing,
     );
     notifyListeners();
   }

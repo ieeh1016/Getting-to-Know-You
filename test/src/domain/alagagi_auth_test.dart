@@ -1854,6 +1854,94 @@ void main() {
       },
     );
 
+    test('stock holding owner can edit and delete own holding', () async {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        firebaseSessionWithData(
+          AlagagiSpaceData(
+            stockHoldings: [
+              StockHolding(
+                id: 'holding_mine',
+                name: 'Microsoft',
+                status: '보유 중',
+                weightLabel: '보통',
+                reason: '클라우드 매출을 믿고 들고 있어요.',
+                watchPoint: 'Azure 성장률',
+                concern: 'AI 투자 비용',
+                question: '다음 실적에서 어떤 숫자를 같이 보면 좋을까요?',
+                createdByProfileId: 'youngwooUid',
+                createdLabel: '오늘',
+                replyTone: '같이 볼래요',
+                reply: '답장은 유지돼요.',
+                repliedByProfileId: 'minyoungUid',
+                repliedLabel: '오늘',
+                updatedAt: DateTime.parse('2026-06-09T09:00:00.000Z'),
+              ),
+              StockHolding(
+                id: 'holding_partner',
+                name: 'Apple',
+                status: '보유 중',
+                weightLabel: '작게',
+                reason: '상대가 들고 있는 종목이에요.',
+                watchPoint: '서비스 매출',
+                concern: '교체 수요',
+                question: '같이 봐줄래요?',
+                createdByProfileId: 'minyoungUid',
+                createdLabel: '오늘',
+                updatedAt: DateTime.parse('2026-06-09T08:00:00.000Z'),
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+      );
+
+      controller.startStockHoldingEdit('holding_partner');
+      expect(controller.state.stockHoldingDraftError, contains('내가 공유한'));
+
+      controller.startStockHoldingEdit('holding_mine');
+      expect(controller.state.stockHoldingDraftVisible, isTrue);
+      expect(controller.state.editingStockHoldingId, 'holding_mine');
+      expect(controller.state.stockHoldingDraftName, 'Microsoft');
+
+      controller.updateStockHoldingDraft(
+        status: '정리 고민 중',
+        weightLabel: '크게',
+        reason: 'AI 매출과 클라우드를 다시 보려고 해요.',
+      );
+      controller.submitStockHoldingDraft();
+      await Future<void>.delayed(Duration.zero);
+
+      final editedHolding = controller.stockHoldings.firstWhere(
+        (holding) => holding.id == 'holding_mine',
+      );
+      expect(editedHolding.status, '정리 고민 중');
+      expect(editedHolding.weightLabel, '크게');
+      expect(editedHolding.reason, 'AI 매출과 클라우드를 다시 보려고 해요.');
+      expect(editedHolding.reply, '답장은 유지돼요.');
+      expect(repository.savedStockHoldings.single.holding.id, 'holding_mine');
+
+      controller.deleteStockHolding('holding_partner');
+      expect(controller.state.stockHoldingDraftError, contains('내가 공유한'));
+      expect(repository.deletedStockHoldings, isEmpty);
+      expect(
+        controller.stockHoldings.any(
+          (holding) => holding.id == 'holding_partner',
+        ),
+        isTrue,
+      );
+
+      controller.deleteStockHolding('holding_mine');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        controller.stockHoldings.any((holding) => holding.id == 'holding_mine'),
+        isFalse,
+      );
+      expect(repository.deletedStockHoldings.single.spaceId, 'main');
+      expect(repository.deletedStockHoldings.single.holdingId, 'holding_mine');
+    });
+
     test(
       'stock holding reply updates the existing partner holding document',
       () async {
@@ -2017,6 +2105,7 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   final List<({String spaceId, String placeId})> deletedSharedPlaces = [];
   final List<({String spaceId, StockStory story})> savedStockStories = [];
   final List<({String spaceId, StockHolding holding})> savedStockHoldings = [];
+  final List<({String spaceId, String holdingId})> deletedStockHoldings = [];
   final List<({String spaceId, AnswerComment comment})> savedAnswerComments =
       [];
   final List<({String spaceId, CuriosityCard card})> savedCuriosityCards = [];
@@ -2112,6 +2201,11 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   @override
   Future<void> saveStockHolding(String spaceId, StockHolding holding) async {
     savedStockHoldings.add((spaceId: spaceId, holding: holding));
+  }
+
+  @override
+  Future<void> deleteStockHolding(String spaceId, String holdingId) async {
+    deletedStockHoldings.add((spaceId: spaceId, holdingId: holdingId));
   }
 
   @override

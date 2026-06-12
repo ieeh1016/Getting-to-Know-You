@@ -608,6 +608,7 @@ This batch follows `docs/design/stock_talk_entry_options.html` and `docs/design/
   - `보유` tab shows a soft summary that separates `내가 공유한 종목`, `상대가 공유한 종목`, and holdings shared by both people through a `함께 보유 중` badge.
   - When shared holdings grow, filters include `전체`, `내 종목`, `상대 종목`, `답장 필요`, `함께 보유`, and status filters for `보유 중`, `정리 고민`, `최근 정리`.
   - Add form includes stock name, status, weight label, holding reason, watch point, concern, and one question for the partner.
+  - My own holding cards expose compact edit/delete actions. Editing reuses the holding form, preserves existing partner replies, and updates the same document.
   - A user can reply only to a partner-created holding that does not already have their reply.
   - Reply uses one of `같이 볼래요`, `더 찾아볼게요`, `조심해요` plus a short note.
   - Tapping a saved holding opens a readable detail sheet with the full reason, watch point, concern, question, and reply if present.
@@ -618,6 +619,7 @@ This batch follows `docs/design/stock_talk_entry_options.html` and `docs/design/
   - Creating a holding writes one document only when a user submits the holding.
   - Replying to a story updates the existing `stockStories/{storyId}` document.
   - Replying to a holding updates the existing `stockHoldings/{holdingId}` document.
+  - Editing or deleting a holding is allowed only for the profile that created that holding.
   - Draft typing, opening the menu, route changes, and reading a story do not create Firestore writes.
 
 ### MVP v0.14 Quiet Home Progress & Save Stability
@@ -2059,6 +2061,8 @@ Rules:
 - Document ID remains the generated `id` so one story submit creates one document.
 - Draft name/reason/upside/risk/question are local state only.
 - Reply updates the existing story document and does not create a chat collection.
+- Holding owner edits update the existing holding document and keep any reply fields intact.
+- Holding owner deletes remove the existing holding document.
 - No realtime quote, price alert, brokerage, trading, or return ranking state is written in MVP v0.14.
 
 `spaces/{spaceId}/answerComments/{questionId_answerOwnerUid_commenterUid}`

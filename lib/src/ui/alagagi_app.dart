@@ -139,6 +139,10 @@ Key stockStoryListFilterButtonKey(String filter) =>
     Key('stock-story-list-filter-$filter');
 Key stockHoldingCardKey(String holdingId) =>
     Key('stock-holding-card-$holdingId');
+Key stockHoldingEditButtonKey(String holdingId) =>
+    Key('stock-holding-edit-button-$holdingId');
+Key stockHoldingDeleteButtonKey(String holdingId) =>
+    Key('stock-holding-delete-button-$holdingId');
 Key stockHoldingStatusKey(String status) => Key('stock-holding-status-$status');
 Key stockHoldingWeightKey(String weight) => Key('stock-holding-weight-$weight');
 Key stockHoldingReplyFieldKey(String holdingId) =>
@@ -12298,6 +12302,7 @@ class _StockHoldingDraftCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = controller.state;
+    final isEditing = state.editingStockHoldingId != null;
     return _PaperCard(
       radius: 22,
       padding: const EdgeInsets.all(18),
@@ -12306,7 +12311,7 @@ class _StockHoldingDraftCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            '들고 있는 이유를\n숫자보다 먼저 나눠요.',
+            isEditing ? '보유 종목을\n다시 정리해요.' : '들고 있는 이유를\n숫자보다 먼저 나눠요.',
             style: serif(
               context,
               size: 20,
@@ -12316,7 +12321,9 @@ class _StockHoldingDraftCard extends StatelessWidget {
           ),
           const SizedBox(height: 7),
           Text(
-            '수량이나 금액 없이도 보유 상태와 지켜볼 점만 공유할 수 있어요.',
+            isEditing
+                ? '처음 남긴 답장과 기록은 유지하고, 내가 적은 내용만 고칠 수 있어요.'
+                : '수량이나 금액 없이도 보유 상태와 지켜볼 점만 공유할 수 있어요.',
             style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
           ),
           const SizedBox(height: 16),
@@ -12409,7 +12416,7 @@ class _StockHoldingDraftCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _PrimaryButton(
-                  label: '보유 공유하기',
+                  label: isEditing ? '수정 저장' : '보유 공유하기',
                   onPressed: controller.submitStockHoldingDraft,
                   color: AlagagiColors.sageDeep,
                   buttonKey: stockHoldingSubmitButtonKey,
@@ -12591,6 +12598,47 @@ class _StockHoldingCard extends StatelessWidget {
               Text(
                 controller.state.stockHoldingReplyError!,
                 style: sans(size: 12, color: AlagagiColors.sageDeep),
+              ),
+            ],
+            if (isMine) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    key: stockHoldingEditButtonKey(holding.id),
+                    onPressed: () =>
+                        controller.startStockHoldingEdit(holding.id),
+                    icon: const Icon(Icons.edit_outlined, size: 15),
+                    label: const Text('수정'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AlagagiColors.sageDeep,
+                      side: const BorderSide(color: Color(0x338A9A7E)),
+                      visualDensity: VisualDensity.compact,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      textStyle: sans(size: 12, weight: FontWeight.w800),
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    key: stockHoldingDeleteButtonKey(holding.id),
+                    onPressed: () => controller.deleteStockHolding(holding.id),
+                    icon: const Icon(Icons.delete_outline_rounded, size: 15),
+                    label: const Text('삭제'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF9A5A45),
+                      side: const BorderSide(color: Color(0x339A5A45)),
+                      visualDensity: VisualDensity.compact,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      textStyle: sans(size: 12, weight: FontWeight.w800),
+                    ),
+                  ),
+                ],
               ),
             ],
           ],

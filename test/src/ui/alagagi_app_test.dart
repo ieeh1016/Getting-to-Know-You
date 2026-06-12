@@ -473,6 +473,118 @@ void main() {
     expect(find.byKey(stockHoldingCardKey('holding_mine_msft')), findsNothing);
   });
 
+  testWidgets('stock holding cards allow owners to edit and delete holdings', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      AlagagiSession(
+        spaceId: 'main',
+        me: const AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: const AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          stockHoldings: [
+            StockHolding(
+              id: 'holding_mine_msft',
+              name: 'Microsoft',
+              status: '보유 중',
+              weightLabel: '보통',
+              reason: '클라우드 매출 흐름을 보고 있어요.',
+              watchPoint: 'Azure 성장률',
+              concern: 'AI 투자 비용',
+              question: '다음 실적에서 뭘 볼까요?',
+              createdByProfileId: 'youngwooUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-10T12:00:00.000Z'),
+            ),
+            StockHolding(
+              id: 'holding_partner_aapl',
+              name: 'Apple',
+              status: '보유 중',
+              weightLabel: '작게',
+              reason: '상대가 들고 있는 종목이에요.',
+              watchPoint: '서비스 매출',
+              concern: '교체 수요',
+              question: '같이 봐줄래요?',
+              createdByProfileId: 'minyoungUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-10T13:00:00.000Z'),
+            ),
+          ],
+        ),
+      ),
+    )..goTo(AlagagiRoute.stockStory);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(stockStoryTabHoldingsKey));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(stockHoldingEditButtonKey('holding_mine_msft')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(stockHoldingDeleteButtonKey('holding_mine_msft')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(stockHoldingEditButtonKey('holding_partner_aapl')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(stockHoldingDeleteButtonKey('holding_partner_aapl')),
+      findsNothing,
+    );
+
+    await tester.ensureVisible(
+      find.byKey(stockHoldingEditButtonKey('holding_mine_msft')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(stockHoldingEditButtonKey('holding_mine_msft')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('수정 저장'), findsOneWidget);
+    await tester.enterText(
+      find.byKey(stockHoldingReasonFieldKey),
+      'AI 매출과 클라우드를 다시 보려고 해요.',
+    );
+    await tester.ensureVisible(find.byKey(stockHoldingSubmitButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(stockHoldingSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('AI 매출과 클라우드'), findsOneWidget);
+
+    await tester.ensureVisible(
+      find.byKey(stockHoldingDeleteButtonKey('holding_mine_msft')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(stockHoldingDeleteButtonKey('holding_mine_msft')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(stockHoldingCardKey('holding_mine_msft')), findsNothing);
+    expect(
+      find.byKey(stockHoldingCardKey('holding_partner_aapl')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('home focused question card fits mobile unanswered state', (
     tester,
   ) async {
@@ -2850,6 +2962,9 @@ class _FailingSaveRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveStockHolding(String spaceId, StockHolding holding) async {}
+
+  @override
+  Future<void> deleteStockHolding(String spaceId, String holdingId) async {}
 
   @override
   Future<void> saveProfileSlot(

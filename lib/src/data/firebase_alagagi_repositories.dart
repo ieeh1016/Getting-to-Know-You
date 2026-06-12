@@ -411,6 +411,16 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         }, SetOptions(merge: true));
   }
 
+  @override
+  Future<void> deleteStockHolding(String spaceId, String holdingId) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('stockHoldings')
+        .doc(holdingId)
+        .delete();
+  }
+
   Future<AlagagiSpaceData> _loadSpaceData({
     required String spaceId,
     required String meId,

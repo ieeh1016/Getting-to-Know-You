@@ -425,4 +425,7 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   Future<void> saveStockHolding(String spaceId, StockHolding holding) async {
     savedStockHoldings.add(holding);
   }
+
+  @override
+  Future<void> deleteStockHolding(String spaceId, String holdingId) async {}
 }

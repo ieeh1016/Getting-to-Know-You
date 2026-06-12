@@ -453,6 +453,27 @@ service cloud.firestore {
         && request.resource.data.repliedLabel == '';
     }
 
+    function validStockHoldingOwnerEdit(spaceId, holdingId) {
+      return validStockHoldingShape(spaceId, holdingId)
+        && resource.data.createdByProfileId == request.auth.uid
+        && request.resource.data.createdByProfileId == resource.data.createdByProfileId
+        && request.resource.data.createdLabel == resource.data.createdLabel
+        && request.resource.data.replyTone == resource.data.replyTone
+        && request.resource.data.reply == resource.data.reply
+        && request.resource.data.repliedByProfileId == resource.data.repliedByProfileId
+        && request.resource.data.repliedLabel == resource.data.repliedLabel
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'name',
+          'status',
+          'weightLabel',
+          'reason',
+          'watchPoint',
+          'concern',
+          'question',
+          'updatedAt'
+        ]);
+    }
+
     function validStockHoldingReply(spaceId, holdingId) {
       return validStockHoldingShape(spaceId, holdingId)
         && resource.data.createdByProfileId != request.auth.uid
@@ -729,8 +750,12 @@ service cloud.firestore {
         allow create: if isSpaceMember(spaceId)
           && validNewStockHolding(spaceId, holdingId);
         allow update: if isSpaceMember(spaceId)
-          && validStockHoldingReply(spaceId, holdingId);
-        allow delete: if false;
+          && (
+            validStockHoldingOwnerEdit(spaceId, holdingId)
+            || validStockHoldingReply(spaceId, holdingId)
+          );
+        allow delete: if isSpaceMember(spaceId)
+          && resource.data.createdByProfileId == request.auth.uid;
       }
     }
   }

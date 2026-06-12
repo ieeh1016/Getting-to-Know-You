@@ -174,6 +174,7 @@
 - 상대가 남긴 주식 이야기에는 답장 action이 보이고, 답장 submit은 기존 stock story document를 1회 이하로 갱신한다.
 - `주식 이야기` 화면은 `이야기`와 `보유` 탭을 제공하며, `보유` 탭에서 내가 가진 종목을 공유할 수 있다.
 - 보유 주식 draft 입력은 local state only이며 submit 시 `spaces/{spaceId}/stockHoldings/{holdingId}` 1 document 이하로 저장한다.
+- 내가 공유한 보유 종목은 같은 폼에서 수정할 수 있고, 삭제 시 해당 `stockHoldings/{holdingId}` document를 제거한다.
 - 상대가 공유한 보유 종목에는 답장 action이 보이고, 같은 종목을 둘 다 공유하면 `함께 보유 중` badge가 보인다.
 - 주식 이야기/보유 목록이 늘어나도 작성자, 답장 필요, 답장 있음, 함께 보유, 보유 상태 필터로 빠르게 좁힐 수 있다.
 - 주식 이야기 화면은 매수/매도, 수익률 랭킹, 실시간 시세, 가격 알림 UI를 제공하지 않는다.
