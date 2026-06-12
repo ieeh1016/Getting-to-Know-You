@@ -244,6 +244,202 @@ void main() {
     },
   );
 
+  testWidgets('stock lists filter reply needs shared holdings and status', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      AlagagiSession(
+        spaceId: 'main',
+        me: const AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: const AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          stockStories: [
+            StockStory(
+              id: 'story_mine',
+              name: '내 관심 종목',
+              reason: '내가 흐름을 보고 싶어서 남겼어요.',
+              upside: '구독 매출',
+              risk: '성장 둔화',
+              question: '같이 어떤 숫자를 볼까요?',
+              createdByProfileId: 'youngwooUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-10T09:00:00.000Z'),
+            ),
+            StockStory(
+              id: 'story_partner_waiting',
+              name: '답장 필요한 종목',
+              reason: '상대가 의견을 기다리고 있어요.',
+              upside: '현금흐름',
+              risk: '비용 증가',
+              question: '이 리스크를 어떻게 봐요?',
+              createdByProfileId: 'minyoungUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-10T10:00:00.000Z'),
+            ),
+            StockStory(
+              id: 'story_partner_replied',
+              name: '답장 끝난 종목',
+              reason: '이미 짧게 답한 이야기예요.',
+              upside: '브랜드 힘',
+              risk: '환율',
+              question: '계속 볼까요?',
+              createdByProfileId: 'minyoungUid',
+              createdLabel: '어제',
+              replyTone: '같이 볼래요',
+              reply: '다음 실적까지 같이 봐요.',
+              repliedByProfileId: 'youngwooUid',
+              repliedLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-10T11:00:00.000Z'),
+            ),
+          ],
+          stockHoldings: [
+            StockHolding(
+              id: 'holding_mine_msft',
+              name: 'Microsoft',
+              status: '보유 중',
+              weightLabel: '보통',
+              reason: '클라우드 매출 흐름을 보고 있어요.',
+              watchPoint: 'Azure 성장률',
+              concern: 'AI 투자 비용',
+              question: '다음 실적에서 뭘 볼까요?',
+              createdByProfileId: 'youngwooUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-10T12:00:00.000Z'),
+            ),
+            StockHolding(
+              id: 'holding_partner_msft',
+              name: 'Microsoft',
+              status: '보유 중',
+              weightLabel: '작게',
+              reason: '상대도 같은 종목을 들고 있어요.',
+              watchPoint: '마진',
+              concern: '밸류에이션',
+              question: '비중을 유지해도 될까요?',
+              createdByProfileId: 'minyoungUid',
+              createdLabel: '오늘',
+              replyTone: '더 찾아볼게요',
+              reply: '다음 뉴스까지 같이 체크해요.',
+              repliedByProfileId: 'youngwooUid',
+              repliedLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-10T13:00:00.000Z'),
+            ),
+            StockHolding(
+              id: 'holding_partner_tesla',
+              name: 'Tesla',
+              status: '정리 고민 중',
+              weightLabel: '작게',
+              reason: '변동성이 커져서 고민 중이에요.',
+              watchPoint: '인도량',
+              concern: '가격 경쟁',
+              question: '계속 지켜볼까요?',
+              createdByProfileId: 'minyoungUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-10T14:00:00.000Z'),
+            ),
+          ],
+        ),
+      ),
+    )..goTo(AlagagiRoute.stockStory);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    final needsReplyStoryFilter = find.byKey(
+      stockStoryListFilterButtonKey(StockStoryListFilter.needsReply.name),
+    );
+    await tester.scrollUntilVisible(
+      needsReplyStoryFilter,
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(needsReplyStoryFilter);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(stockStoryCardKey('story_partner_waiting')),
+      findsOneWidget,
+    );
+    expect(find.byKey(stockStoryCardKey('story_mine')), findsNothing);
+    expect(
+      find.byKey(stockStoryCardKey('story_partner_replied')),
+      findsNothing,
+    );
+
+    await tester.tap(
+      find.byKey(
+        stockStoryListFilterButtonKey(StockStoryListFilter.replied.name),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(stockStoryCardKey('story_partner_replied')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(stockStoryCardKey('story_partner_waiting')),
+      findsNothing,
+    );
+
+    await tester.ensureVisible(find.byKey(stockStoryTabHoldingsKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(stockStoryTabHoldingsKey));
+    await tester.pumpAndSettle();
+
+    final sharedHoldingFilter = find.byKey(
+      stockHoldingListFilterButtonKey(StockHoldingListFilter.shared.name),
+    );
+    await tester.scrollUntilVisible(
+      sharedHoldingFilter,
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(sharedHoldingFilter);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(stockHoldingCardKey('holding_mine_msft')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(stockHoldingCardKey('holding_partner_msft')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(stockHoldingCardKey('holding_partner_tesla')),
+      findsNothing,
+    );
+
+    await tester.tap(
+      find.byKey(
+        stockHoldingListFilterButtonKey(
+          StockHoldingListFilter.considering.name,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(stockHoldingCardKey('holding_partner_tesla')),
+      findsOneWidget,
+    );
+    expect(find.byKey(stockHoldingCardKey('holding_mine_msft')), findsNothing);
+  });
+
   testWidgets('home focused question card fits mobile unanswered state', (
     tester,
   ) async {
@@ -1885,6 +2081,111 @@ void main() {
     );
     expect(find.byKey(readableDetailSheetKey), findsNothing);
   });
+
+  testWidgets(
+    'music list prioritizes unlistened songs and filters the library',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final controller = AlagagiController.forSession(
+        AlagagiSession(
+          spaceId: 'main',
+          me: const AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: const AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            musicNotes: [
+              MusicNote(
+                id: 'music_mine_done',
+                title: '퇴근길',
+                artist: '영우의 추천',
+                link: 'https://music.example/after-work',
+                note: '이미 들은 곡이에요.',
+                mood: '밤',
+                createdByProfileId: 'youngwooUid',
+                createdLabel: '어제',
+                listenedByProfileIds: {'youngwooUid'},
+                updatedAt: DateTime.parse('2026-06-09T09:00:00.000Z'),
+              ),
+              MusicNote(
+                id: 'music_partner_new',
+                title: '새벽 편지',
+                artist: '민영의 추천',
+                link: 'https://music.example/dawn',
+                note: '아직 들어봐야 할 곡이에요.',
+                mood: '차분한',
+                createdByProfileId: 'minyoungUid',
+                createdLabel: '오늘',
+                listenedByProfileIds: {'minyoungUid'},
+                updatedAt: DateTime.parse('2026-06-10T10:00:00.000Z'),
+              ),
+              MusicNote(
+                id: 'music_both_done',
+                title: '같이 들은 곡',
+                artist: '민영의 추천',
+                link: 'https://music.example/together',
+                note: '둘 다 들어본 곡이에요.',
+                mood: '카페',
+                createdByProfileId: 'minyoungUid',
+                createdLabel: '오늘',
+                listenedByProfileIds: {'youngwooUid', 'minyoungUid'},
+                updatedAt: DateTime.parse('2026-06-10T11:00:00.000Z'),
+              ),
+            ],
+          ),
+        ),
+      )..goTo(AlagagiRoute.music);
+
+      await tester.pumpWidget(
+        MaterialApp(home: AlagagiRoot(controller: controller)),
+      );
+      await tester.pumpAndSettle();
+
+      Future<void> tapMusicFilter(MusicListFilter filter) async {
+        final filterFinder = find.byKey(musicListFilterButtonKey(filter.name));
+        await tester.ensureVisible(filterFinder);
+        await tester.pumpAndSettle();
+        await tester.tap(filterFinder);
+        await tester.pumpAndSettle();
+      }
+
+      expect(find.text('전체 노트'), findsOneWidget);
+      expect(find.text('둘 다 들음'), findsWidgets);
+      expect(controller.visibleMusicNotes.first.id, 'music_partner_new');
+
+      await tapMusicFilter(MusicListFilter.unlistened);
+
+      expect(find.byKey(musicNoteCardKey('music_partner_new')), findsOneWidget);
+      expect(find.byKey(musicNoteCardKey('music_mine_done')), findsNothing);
+      expect(find.byKey(musicNoteCardKey('music_both_done')), findsNothing);
+
+      await tapMusicFilter(MusicListFilter.listened);
+
+      expect(find.byKey(musicNoteCardKey('music_mine_done')), findsOneWidget);
+      expect(find.byKey(musicNoteCardKey('music_both_done')), findsOneWidget);
+      expect(find.byKey(musicNoteCardKey('music_partner_new')), findsNothing);
+
+      await tapMusicFilter(MusicListFilter.partner);
+
+      expect(find.byKey(musicNoteCardKey('music_partner_new')), findsOneWidget);
+      expect(find.byKey(musicNoteCardKey('music_both_done')), findsOneWidget);
+      expect(find.byKey(musicNoteCardKey('music_mine_done')), findsNothing);
+    },
+  );
 
   testWidgets('music tab edits an existing own song note', (tester) async {
     final controller = AlagagiController.forSession(

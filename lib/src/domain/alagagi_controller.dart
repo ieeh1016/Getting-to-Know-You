@@ -26,6 +26,8 @@ enum WishlistFilter { all, mutual, places, activities }
 
 enum WishKind { place, activity }
 
+enum MusicListFilter { all, unlistened, listened, mine, partner }
+
 enum MeetingAvailability { available, maybe, busy }
 
 enum MeetingTimeSlot { morning, afternoon, evening }
@@ -35,6 +37,19 @@ enum MapApiProvider { kakao }
 enum PlaceCategory { cafe, food, exhibition, walk, activity }
 
 enum StockStoryTab { stories, holdings }
+
+enum StockStoryListFilter { all, mine, partner, needsReply, replied }
+
+enum StockHoldingListFilter {
+  all,
+  mine,
+  partner,
+  needsReply,
+  shared,
+  holding,
+  considering,
+  closed,
+}
 
 const musicMoodOptions = ['차분한', '산책', '카페', '밤', '가벼운', '집중'];
 const stockStoryReplyToneOptions = ['같이 볼래요', '더 찾아볼게요', '조심해요'];
@@ -1225,6 +1240,7 @@ class AlagagiState {
     this.musicDraftLink = '',
     this.musicDraftNote = '',
     this.musicDraftMood = '차분한',
+    this.musicListFilter = MusicListFilter.all,
     this.editingMusicNoteId,
     this.selectedMeetingDateKey,
     this.meetingDraftAvailability = MeetingAvailability.available,
@@ -1254,6 +1270,7 @@ class AlagagiState {
     this.placeSaveTargetId,
     this.placeError,
     this.stockStoryTab = StockStoryTab.stories,
+    this.stockStoryListFilter = StockStoryListFilter.all,
     this.stockStoryDraftVisible = false,
     this.stockStoryDraftName = '',
     this.stockStoryDraftReason = '',
@@ -1276,6 +1293,7 @@ class AlagagiState {
     this.stockHoldingReplyDraftsByHoldingId = const {},
     this.stockHoldingReplyTonesByHoldingId = const {},
     this.stockHoldingReplyError,
+    this.stockHoldingListFilter = StockHoldingListFilter.all,
     this.curiosityQuestionDraft = '',
     this.curiosityReplyDraftsByCardId = const {},
     this.curiosityError,
@@ -1322,6 +1340,7 @@ class AlagagiState {
   final String musicDraftLink;
   final String musicDraftNote;
   final String musicDraftMood;
+  final MusicListFilter musicListFilter;
   final String? editingMusicNoteId;
   final String? selectedMeetingDateKey;
   final MeetingAvailability meetingDraftAvailability;
@@ -1351,6 +1370,7 @@ class AlagagiState {
   final String? placeSaveTargetId;
   final String? placeError;
   final StockStoryTab stockStoryTab;
+  final StockStoryListFilter stockStoryListFilter;
   final bool stockStoryDraftVisible;
   final String stockStoryDraftName;
   final String stockStoryDraftReason;
@@ -1373,6 +1393,7 @@ class AlagagiState {
   final Map<String, String> stockHoldingReplyDraftsByHoldingId;
   final Map<String, String> stockHoldingReplyTonesByHoldingId;
   final String? stockHoldingReplyError;
+  final StockHoldingListFilter stockHoldingListFilter;
   final String curiosityQuestionDraft;
   final Map<String, String> curiosityReplyDraftsByCardId;
   final String? curiosityError;
@@ -1419,6 +1440,7 @@ class AlagagiState {
     String? musicDraftLink,
     String? musicDraftNote,
     String? musicDraftMood,
+    MusicListFilter? musicListFilter,
     String? editingMusicNoteId,
     bool clearEditingMusicNoteId = false,
     String? selectedMeetingDateKey,
@@ -1458,6 +1480,7 @@ class AlagagiState {
     String? placeError,
     bool clearPlaceError = false,
     StockStoryTab? stockStoryTab,
+    StockStoryListFilter? stockStoryListFilter,
     bool? stockStoryDraftVisible,
     String? stockStoryDraftName,
     String? stockStoryDraftReason,
@@ -1484,6 +1507,7 @@ class AlagagiState {
     Map<String, String>? stockHoldingReplyTonesByHoldingId,
     String? stockHoldingReplyError,
     bool clearStockHoldingReplyError = false,
+    StockHoldingListFilter? stockHoldingListFilter,
     String? curiosityQuestionDraft,
     Map<String, String>? curiosityReplyDraftsByCardId,
     String? curiosityError,
@@ -1544,6 +1568,7 @@ class AlagagiState {
       musicDraftLink: musicDraftLink ?? this.musicDraftLink,
       musicDraftNote: musicDraftNote ?? this.musicDraftNote,
       musicDraftMood: musicDraftMood ?? this.musicDraftMood,
+      musicListFilter: musicListFilter ?? this.musicListFilter,
       editingMusicNoteId: clearEditingMusicNoteId
           ? null
           : editingMusicNoteId ?? this.editingMusicNoteId,
@@ -1601,6 +1626,7 @@ class AlagagiState {
           : placeSaveTargetId ?? this.placeSaveTargetId,
       placeError: clearPlaceError ? null : placeError ?? this.placeError,
       stockStoryTab: stockStoryTab ?? this.stockStoryTab,
+      stockStoryListFilter: stockStoryListFilter ?? this.stockStoryListFilter,
       stockStoryDraftVisible:
           stockStoryDraftVisible ?? this.stockStoryDraftVisible,
       stockStoryDraftName: stockStoryDraftName ?? this.stockStoryDraftName,
@@ -1649,6 +1675,8 @@ class AlagagiState {
       stockHoldingReplyError: clearStockHoldingReplyError
           ? null
           : stockHoldingReplyError ?? this.stockHoldingReplyError,
+      stockHoldingListFilter:
+          stockHoldingListFilter ?? this.stockHoldingListFilter,
       curiosityQuestionDraft:
           curiosityQuestionDraft ?? this.curiosityQuestionDraft,
       curiosityReplyDraftsByCardId:
@@ -2986,6 +3014,44 @@ class AlagagiController extends ChangeNotifier {
 
   List<MusicNote> get musicNotes => List<MusicNote>.unmodifiable(_musicNotes);
 
+  List<MusicNote> get visibleMusicNotes {
+    final notes = switch (_state.musicListFilter) {
+      MusicListFilter.all => _musicNotes.toList(),
+      MusicListFilter.unlistened =>
+        _musicNotes.where((note) => !note.isListenedBy(_state.me.id)).toList(),
+      MusicListFilter.listened =>
+        _musicNotes.where((note) => note.isListenedBy(_state.me.id)).toList(),
+      MusicListFilter.mine =>
+        _musicNotes
+            .where((note) => note.createdByProfileId == _state.me.id)
+            .toList(),
+      MusicListFilter.partner =>
+        _musicNotes
+            .where((note) => note.createdByProfileId == _state.partner.id)
+            .toList(),
+    };
+    if (_state.musicListFilter == MusicListFilter.all) {
+      notes.sort((a, b) {
+        final aListened = a.isListenedBy(_state.me.id);
+        final bListened = b.isListenedBy(_state.me.id);
+        if (aListened != bListened) {
+          return aListened ? 1 : -1;
+        }
+        return _musicNotes.indexOf(a).compareTo(_musicNotes.indexOf(b));
+      });
+    }
+    return List<MusicNote>.unmodifiable(notes);
+  }
+
+  int get unlistenedMusicNoteCount =>
+      _musicNotes.where((note) => !note.isListenedBy(_state.me.id)).length;
+
+  int get listenedMusicNoteCount =>
+      _musicNotes.where((note) => note.isListenedBy(_state.me.id)).length;
+
+  int get mutualListenedMusicNoteCount =>
+      _musicNotes.where((note) => note.listenedByProfileIds.length >= 2).length;
+
   List<ScheduleEntry> get scheduleEntries =>
       List<ScheduleEntry>.unmodifiable(_scheduleEntries);
 
@@ -3045,8 +3111,66 @@ class AlagagiController extends ChangeNotifier {
   List<StockStory> get stockStories =>
       List<StockStory>.unmodifiable(_stockStories);
 
+  List<StockStory> get visibleStockStories {
+    final stories = switch (_state.stockStoryListFilter) {
+      StockStoryListFilter.all => _stockStories,
+      StockStoryListFilter.mine =>
+        _stockStories
+            .where((story) => story.createdByProfileId == _state.me.id)
+            .toList(),
+      StockStoryListFilter.partner =>
+        _stockStories
+            .where((story) => story.createdByProfileId == _state.partner.id)
+            .toList(),
+      StockStoryListFilter.needsReply =>
+        _stockStories
+            .where(
+              (story) =>
+                  story.createdByProfileId == _state.partner.id &&
+                  !story.hasReply,
+            )
+            .toList(),
+      StockStoryListFilter.replied =>
+        _stockStories.where((story) => story.hasReply).toList(),
+    };
+    return List<StockStory>.unmodifiable(stories);
+  }
+
   List<StockHolding> get stockHoldings =>
       List<StockHolding>.unmodifiable(_stockHoldings);
+
+  List<StockHolding> get visibleStockHoldings {
+    final holdings = switch (_state.stockHoldingListFilter) {
+      StockHoldingListFilter.all => _stockHoldings,
+      StockHoldingListFilter.mine =>
+        _stockHoldings
+            .where((holding) => holding.createdByProfileId == _state.me.id)
+            .toList(),
+      StockHoldingListFilter.partner =>
+        _stockHoldings
+            .where((holding) => holding.createdByProfileId == _state.partner.id)
+            .toList(),
+      StockHoldingListFilter.needsReply =>
+        _stockHoldings
+            .where(
+              (holding) =>
+                  holding.createdByProfileId == _state.partner.id &&
+                  !holding.hasReply,
+            )
+            .toList(),
+      StockHoldingListFilter.shared =>
+        _stockHoldings
+            .where((holding) => stockHoldingSharedByBoth(holding.name))
+            .toList(),
+      StockHoldingListFilter.holding =>
+        _stockHoldings.where((holding) => holding.status == '보유 중').toList(),
+      StockHoldingListFilter.considering =>
+        _stockHoldings.where((holding) => holding.status == '정리 고민 중').toList(),
+      StockHoldingListFilter.closed =>
+        _stockHoldings.where((holding) => holding.status == '최근 정리함').toList(),
+    };
+    return List<StockHolding>.unmodifiable(holdings);
+  }
 
   bool stockHoldingSharedByBoth(String name) {
     final normalizedName = name.trim().toLowerCase();
@@ -4252,6 +4376,14 @@ class AlagagiController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setMusicListFilter(MusicListFilter filter) {
+    if (_state.musicListFilter == filter) {
+      return;
+    }
+    _state = _state.copyWith(musicListFilter: filter);
+    notifyListeners();
+  }
+
   void setMusicDraftMood(String mood) {
     if (!musicMoodOptions.contains(mood)) {
       return;
@@ -4981,11 +5113,29 @@ class AlagagiController extends ChangeNotifier {
   void setStockStoryTab(StockStoryTab tab) {
     _state = _state.copyWith(
       stockStoryTab: tab,
+      stockStoryListFilter: StockStoryListFilter.all,
+      stockHoldingListFilter: StockHoldingListFilter.all,
       clearStockStoryDraftError: true,
       clearStockHoldingDraftError: true,
       clearStockStoryReplyError: true,
       clearStockHoldingReplyError: true,
     );
+    notifyListeners();
+  }
+
+  void setStockStoryListFilter(StockStoryListFilter filter) {
+    if (_state.stockStoryListFilter == filter) {
+      return;
+    }
+    _state = _state.copyWith(stockStoryListFilter: filter);
+    notifyListeners();
+  }
+
+  void setStockHoldingListFilter(StockHoldingListFilter filter) {
+    if (_state.stockHoldingListFilter == filter) {
+      return;
+    }
+    _state = _state.copyWith(stockHoldingListFilter: filter);
     notifyListeners();
   }
 

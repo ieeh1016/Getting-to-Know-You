@@ -27,6 +27,7 @@ Key musicEditButtonKey(String noteId) => Key('music-edit-button-$noteId');
 Key musicLinkButtonKey(String noteId) => Key('music-link-button-$noteId');
 Key musicListenedButtonKey(String noteId) =>
     Key('music-listened-button-$noteId');
+Key musicListFilterButtonKey(String filter) => Key('music-list-filter-$filter');
 const meetingCalendarKey = Key('meeting-calendar');
 const meetingSharedMemoFieldKey = Key('meeting-shared-memo-field');
 const meetingSubmitButtonKey = Key('meeting-submit-button');
@@ -124,6 +125,8 @@ Key stockStoryReplySubmitButtonKey(String storyId) =>
     Key('stock-story-reply-submit-$storyId');
 Key stockStoryReplyToneKey(String storyId, String tone) =>
     Key('stock-story-reply-tone-$storyId-$tone');
+Key stockStoryListFilterButtonKey(String filter) =>
+    Key('stock-story-list-filter-$filter');
 Key stockHoldingCardKey(String holdingId) =>
     Key('stock-holding-card-$holdingId');
 Key stockHoldingStatusKey(String status) => Key('stock-holding-status-$status');
@@ -132,6 +135,8 @@ Key stockHoldingReplyFieldKey(String holdingId) =>
     Key('stock-holding-reply-field-$holdingId');
 Key stockHoldingReplySubmitButtonKey(String holdingId) =>
     Key('stock-holding-reply-submit-$holdingId');
+Key stockHoldingListFilterButtonKey(String filter) =>
+    Key('stock-holding-list-filter-$filter');
 
 double _placeBoardMapHeight(BuildContext context) {
   final viewportHeight = MediaQuery.sizeOf(context).height;
@@ -11072,7 +11077,8 @@ class _StockStoriesPane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stories = controller.stockStories;
+    final stories = controller.visibleStockStories;
+    final totalCount = controller.stockStories.length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -11087,15 +11093,103 @@ class _StockStoriesPane extends StatelessWidget {
               _StockStoryAddButton(controller: controller),
           ],
         ),
+        if (totalCount > 0) ...[
+          const SizedBox(height: 12),
+          _StockStorySummaryCard(controller: controller),
+          const SizedBox(height: 10),
+          _StockStoryFilterBar(controller: controller),
+        ],
         const SizedBox(height: 12),
-        if (stories.isEmpty)
+        if (totalCount == 0)
           const _EmptyStateCard(text: '관심 가는 종목을 하나만 가볍게 남겨볼까요?')
+        else if (stories.isEmpty)
+          const _EmptyStateCard(text: '이 조건에 맞는 이야기는 아직 없어요.')
         else
           for (final story in stories) ...[
             _StockStoryCard(controller: controller, story: story),
             const SizedBox(height: 12),
           ],
       ],
+    );
+  }
+}
+
+class _StockStorySummaryCard extends StatelessWidget {
+  const _StockStorySummaryCard({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final stories = controller.stockStories;
+    final replyNeededCount = stories
+        .where(
+          (story) =>
+              story.createdByProfileId == controller.state.partner.id &&
+              !story.hasReply,
+        )
+        .length;
+    final repliedCount = stories.where((story) => story.hasReply).length;
+    return _PaperCard(
+      radius: 18,
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          Expanded(
+            child: _QuietMetric(label: '전체 이야기', value: '${stories.length}'),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _QuietMetric(
+              label: '답장 필요',
+              value: '$replyNeededCount',
+              muted: replyNeededCount == 0,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _QuietMetric(
+              label: '답장 있음',
+              value: '$repliedCount',
+              muted: repliedCount == 0,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StockStoryFilterBar extends StatelessWidget {
+  const _StockStoryFilterBar({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = controller.state.stockStoryListFilter;
+    final filters = [
+      (StockStoryListFilter.all, '전체'),
+      (StockStoryListFilter.mine, '내가 남김'),
+      (StockStoryListFilter.partner, '상대가 남김'),
+      (StockStoryListFilter.needsReply, '답장 필요'),
+      (StockStoryListFilter.replied, '답장 있음'),
+    ];
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final filter in filters) ...[
+            _FilterPill(
+              key: stockStoryListFilterButtonKey(filter.$1.name),
+              label: filter.$2,
+              selected: selected == filter.$1,
+              onTap: () => controller.setStockStoryListFilter(filter.$1),
+            ),
+            if (filter != filters.last) const SizedBox(width: 7),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -11218,7 +11312,7 @@ class _StockStoryDraftCard extends StatelessWidget {
           const SizedBox(height: 10),
           _StockStoryTextField(
             fieldKey: stockStoryReasonFieldKey,
-            label: 'WHY',
+            label: '관심 이유',
             hint: '왜 같이 보고 싶은지',
             initialValue: controller.state.stockStoryDraftReason,
             maxLength: 120,
@@ -11686,25 +11780,21 @@ class _StockHoldingsPane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final holdings = controller.stockHoldings;
-    final mineCount = holdings
+    final holdings = controller.visibleStockHoldings;
+    final allHoldings = controller.stockHoldings;
+    final mineCount = allHoldings
         .where(
           (holding) => holding.createdByProfileId == controller.state.me.id,
         )
         .length;
-    final partnerCount = holdings.length - mineCount;
+    final partnerCount = allHoldings.length - mineCount;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _StockHoldingSummaryCard(
-          mineCount: mineCount,
-          partnerCount: partnerCount,
-        ),
         if (controller.state.stockHoldingDraftVisible) ...[
-          const SizedBox(height: 16),
           _StockHoldingDraftCard(controller: controller),
+          const SizedBox(height: 18),
         ],
-        const SizedBox(height: 18),
         Row(
           children: [
             const Expanded(child: _SectionLabel('공유한 보유 종목')),
@@ -11713,8 +11803,20 @@ class _StockHoldingsPane extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        if (holdings.isEmpty)
+        _StockHoldingSummaryCard(
+          controller: controller,
+          mineCount: mineCount,
+          partnerCount: partnerCount,
+        ),
+        if (allHoldings.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          _StockHoldingFilterBar(controller: controller),
+        ],
+        const SizedBox(height: 12),
+        if (allHoldings.isEmpty)
           const _EmptyStateCard(text: '들고 있는 종목을 부담 없이 하나만 공유해볼까요?')
+        else if (holdings.isEmpty)
+          const _EmptyStateCard(text: '이 조건에 맞는 보유 종목은 아직 없어요.')
         else
           for (final holding in holdings) ...[
             _StockHoldingCard(controller: controller, holding: holding),
@@ -11727,30 +11829,81 @@ class _StockHoldingsPane extends StatelessWidget {
 
 class _StockHoldingSummaryCard extends StatelessWidget {
   const _StockHoldingSummaryCard({
+    required this.controller,
     required this.mineCount,
     required this.partnerCount,
   });
 
+  final AlagagiController controller;
   final int mineCount;
   final int partnerCount;
 
   @override
   Widget build(BuildContext context) {
+    final replyNeededCount = controller.stockHoldings
+        .where(
+          (holding) =>
+              holding.createdByProfileId == controller.state.partner.id &&
+              !holding.hasReply,
+        )
+        .length;
     return _PaperCard(
-      radius: 20,
-      padding: const EdgeInsets.all(15),
+      radius: 18,
+      padding: const EdgeInsets.all(14),
       child: Row(
         children: [
           Expanded(
-            child: _StockStoryMiniBox(label: '내가 공유한 종목', body: '$mineCount개'),
+            child: _QuietMetric(label: '내 종목', value: '$mineCount'),
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: _StockStoryMiniBox(
-              label: '상대가 공유한 종목',
-              body: '$partnerCount개',
+            child: _QuietMetric(label: '상대 종목', value: '$partnerCount'),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _QuietMetric(
+              label: '답장 필요',
+              value: '$replyNeededCount',
+              muted: replyNeededCount == 0,
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StockHoldingFilterBar extends StatelessWidget {
+  const _StockHoldingFilterBar({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = controller.state.stockHoldingListFilter;
+    final filters = [
+      (StockHoldingListFilter.all, '전체'),
+      (StockHoldingListFilter.mine, '내 종목'),
+      (StockHoldingListFilter.partner, '상대 종목'),
+      (StockHoldingListFilter.needsReply, '답장 필요'),
+      (StockHoldingListFilter.shared, '함께 보유'),
+      (StockHoldingListFilter.holding, '보유 중'),
+      (StockHoldingListFilter.considering, '정리 고민'),
+      (StockHoldingListFilter.closed, '최근 정리'),
+    ];
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final filter in filters) ...[
+            _FilterPill(
+              key: stockHoldingListFilterButtonKey(filter.$1.name),
+              label: filter.$2,
+              selected: selected == filter.$1,
+              onTap: () => controller.setStockHoldingListFilter(filter.$1),
+            ),
+            if (filter != filters.last) const SizedBox(width: 7),
+          ],
         ],
       ),
     );
@@ -12225,7 +12378,8 @@ class MusicScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final notes = controller.musicNotes;
+    final notes = controller.visibleMusicNotes;
+    final totalCount = controller.musicNotes.length;
     return _ScreenScroll(
       bottomNavigation: _BottomNav(controller: controller),
       children: [
@@ -12254,9 +12408,17 @@ class MusicScreen extends StatelessWidget {
               _MusicAddInlineButton(controller: controller),
           ],
         ),
+        if (totalCount > 0) ...[
+          const SizedBox(height: 12),
+          _MusicLibrarySummaryCard(controller: controller),
+          const SizedBox(height: 10),
+          _MusicFilterBar(controller: controller),
+        ],
         const SizedBox(height: 12),
-        if (notes.isEmpty)
+        if (totalCount == 0)
           const _EmptyStateCard(text: '요즘 듣는 노래를 한 곡만 가볍게 남겨볼까요?')
+        else if (notes.isEmpty)
+          const _EmptyStateCard(text: '이 조건에 맞는 곡은 아직 없어요.')
         else
           for (final note in notes) ...[
             _MusicNoteCard(
@@ -12267,6 +12429,119 @@ class MusicScreen extends StatelessWidget {
             const SizedBox(height: 12),
           ],
       ],
+    );
+  }
+}
+
+class _MusicLibrarySummaryCard extends StatelessWidget {
+  const _MusicLibrarySummaryCard({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final totalCount = controller.musicNotes.length;
+    final unlistenedCount = controller.unlistenedMusicNoteCount;
+    final mutualCount = controller.mutualListenedMusicNoteCount;
+    return _PaperCard(
+      radius: 18,
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          Expanded(
+            child: _QuietMetric(
+              label: '아직 들을 곡',
+              value: '$unlistenedCount',
+              muted: unlistenedCount == 0,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _QuietMetric(label: '전체 노트', value: '$totalCount'),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _QuietMetric(
+              label: '둘 다 들음',
+              value: '$mutualCount',
+              muted: mutualCount == 0,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MusicFilterBar extends StatelessWidget {
+  const _MusicFilterBar({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = controller.state.musicListFilter;
+    final filters = [
+      (MusicListFilter.all, '전체'),
+      (MusicListFilter.unlistened, '아직'),
+      (MusicListFilter.listened, '들었어요'),
+      (MusicListFilter.mine, '내가 남김'),
+      (MusicListFilter.partner, '상대가 남김'),
+    ];
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final filter in filters) ...[
+            _FilterPill(
+              key: musicListFilterButtonKey(filter.$1.name),
+              label: filter.$2,
+              selected: selected == filter.$1,
+              onTap: () => controller.setMusicListFilter(filter.$1),
+            ),
+            if (filter != filters.last) const SizedBox(width: 7),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _QuietMetric extends StatelessWidget {
+  const _QuietMetric({
+    required this.label,
+    required this.value,
+    this.muted = false,
+  });
+
+  final String label;
+  final String value;
+  final bool muted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: muted ? const Color(0xFFF8F8F4) : const Color(0xFFF1F4EC),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: sans(size: 10.5, color: AlagagiColors.muted)),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: serif(
+              context,
+              size: 19,
+              weight: FontWeight.w800,
+              color: muted ? AlagagiColors.muted : AlagagiColors.sageDeep,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -12406,7 +12681,7 @@ class _MusicDraftCard extends StatelessWidget {
           const SizedBox(height: 16),
           _MusicTextField(
             fieldKey: musicTitleFieldKey,
-            label: 'SONG',
+            label: '곡 제목',
             hint: '예: 밤 산책',
             initialValue: controller.state.musicDraftTitle,
             maxLength: 60,
@@ -12415,7 +12690,7 @@ class _MusicDraftCard extends StatelessWidget {
           const SizedBox(height: 10),
           _MusicTextField(
             fieldKey: musicArtistFieldKey,
-            label: 'ARTIST',
+            label: '아티스트',
             hint: '아티스트 이름',
             initialValue: controller.state.musicDraftArtist,
             maxLength: 60,
@@ -12424,7 +12699,7 @@ class _MusicDraftCard extends StatelessWidget {
           const SizedBox(height: 10),
           _MusicTextField(
             fieldKey: musicLinkFieldKey,
-            label: 'LINK',
+            label: '링크',
             hint: 'https://...',
             initialValue: controller.state.musicDraftLink,
             maxLength: 180,
@@ -12433,7 +12708,7 @@ class _MusicDraftCard extends StatelessWidget {
           const SizedBox(height: 10),
           _MusicTextField(
             fieldKey: musicNoteFieldKey,
-            label: 'SHORT NOTE',
+            label: '짧은 메모',
             hint: '왜 건네고 싶은 곡인지 한 줄로',
             initialValue: controller.state.musicDraftNote,
             maxLength: 80,

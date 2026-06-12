@@ -165,6 +165,7 @@
 - 음악 listen-state 저장은 `listenedByProfileIds`만 갱신하고 `updatedAt` 기반 새 음악 노트 판정을 흔들지 않는다.
 - 음악 노트 카드는 긴 제목/아티스트/메모를 preview로 유지하고 tap 시 전체 곡 정보와 메모를 bottom sheet에서 보여준다.
 - 음악 노트 카드의 `링크 열기` action은 bare domain을 `https://`로 보정해 즉시 외부 링크로 열고, 카드의 전체보기 tap 동작과 충돌하지 않는다.
+- 음악 노트가 늘어나도 `아직`, `들었어요`, `내가 남김`, `상대가 남김` 필터로 목록을 좁힐 수 있고, 기본 목록은 내가 아직 듣지 않은 곡을 먼저 보여준다.
 - 홈은 `주식 이야기` 추가 후에도 별도 feature card를 늘리지 않고, 상단 메뉴 sheet에서 `궁금함 한 장`, `주식 이야기`, `처음 안내`로 진입한다.
 - `주식 이야기`는 별도 bottom navigation tab을 추가하지 않고 menu sheet에서 dedicated screen으로 이동한다.
 - 주식 이야기 draft 입력은 local state only이며 submit 시 `spaces/{spaceId}/stockStories/{storyId}` 1 document 이하로 저장한다.
@@ -172,6 +173,7 @@
 - `주식 이야기` 화면은 `이야기`와 `보유` 탭을 제공하며, `보유` 탭에서 내가 가진 종목을 공유할 수 있다.
 - 보유 주식 draft 입력은 local state only이며 submit 시 `spaces/{spaceId}/stockHoldings/{holdingId}` 1 document 이하로 저장한다.
 - 상대가 공유한 보유 종목에는 답장 action이 보이고, 같은 종목을 둘 다 공유하면 `함께 보유 중` badge가 보인다.
+- 주식 이야기/보유 목록이 늘어나도 작성자, 답장 필요, 답장 있음, 함께 보유, 보유 상태 필터로 빠르게 좁힐 수 있다.
 - 주식 이야기 화면은 매수/매도, 수익률 랭킹, 실시간 시세, 가격 알림 UI를 제공하지 않는다.
 
 ## Manual Checks

@@ -548,6 +548,8 @@ This batch follows `docs/design/music_tab_navigation_concept.html` and `docs/des
   - Submit CTA label is `노래 남기기`.
   - Saved notes show who left the song and the short note.
   - Saved notes show a compact emoji listen-state action: `👀 아직`, `🎧 들었어요`, or `🎧 둘 다 들음`.
+  - When notes grow, the screen shows a small library summary for unlistened, total, and mutually listened songs.
+  - Music filters include `전체`, `아직`, `들었어요`, `내가 남김`, and `상대가 남김`; the default `전체` view keeps songs I have not listened to near the top.
   - A saved note with an http/https link exposes a distinct `링크 열기` action that opens the link immediately without opening the full-detail sheet.
   - Link actions normalize bare domains to `https://...`; unsupported schemes stay stored as text but are not opened from the card action.
   - A user can edit only music notes they created.
@@ -588,6 +590,7 @@ This batch follows `docs/design/stock_talk_entry_options.html` and `docs/design/
   - Empty state says that one stock can be left lightly for a shared conversation.
   - Add form includes stock name, interest reason, expectation point, risk point, and one question.
   - Saved stories show who left the story, expectation/risk preview, and reply state.
+  - When stories grow, the list exposes a compact summary and filters for `전체`, `내가 남김`, `상대가 남김`, `답장 필요`, and `답장 있음`.
   - A user can reply only to a partner-created story that does not already have their reply.
   - Reply uses one of `같이 볼래요`, `더 찾아볼게요`, `조심해요` plus a short note.
   - Tapping a saved story opens a readable detail sheet with the full reason, expectation, risk, question, and reply if present.
@@ -599,6 +602,7 @@ This batch follows `docs/design/stock_talk_entry_options.html` and `docs/design/
   - Draft input is local state only; Firestore writes happen only on explicit holding submit or explicit reply submit.
 - Stock holding UX:
   - `보유` tab shows a soft summary that separates `내가 공유한 종목`, `상대가 공유한 종목`, and holdings shared by both people through a `함께 보유 중` badge.
+  - When shared holdings grow, filters include `전체`, `내 종목`, `상대 종목`, `답장 필요`, `함께 보유`, and status filters for `보유 중`, `정리 고민`, `최근 정리`.
   - Add form includes stock name, status, weight label, holding reason, watch point, concern, and one question for the partner.
   - A user can reply only to a partner-created holding that does not already have their reply.
   - Reply uses one of `같이 볼래요`, `더 찾아볼게요`, `조심해요` plus a short note.
