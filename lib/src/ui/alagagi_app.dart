@@ -8596,7 +8596,7 @@ class _MeetingCalendar extends StatelessWidget {
             spacing: 10,
             runSpacing: 8,
             children: const [
-              _LegendDot(color: AlagagiColors.ink, label: '만나는 날'),
+              _LegendDot(color: Color(0xFFE1C77A), label: '만나는 날'),
               _LegendDot(color: AlagagiColors.sageDeep, label: '서로 가능'),
               _LegendDot(color: AlagagiColors.sage, label: '내 입력'),
               _LegendDot(color: Color(0xFFC8AD6D), label: '내 상세 일정'),
@@ -8709,47 +8709,57 @@ class _MeetingDateCell extends StatelessWidget {
                   ),
                 ),
               ),
-              Positioned(
-                bottom: 4,
-                left: 4,
-                right: 4,
-                child: meetingDay
-                    ? Container(
-                        key: meetingDayIndicatorKey(dateKey),
-                        height: 14,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(999),
+              if (meetingDay)
+                Positioned(
+                  top: 5,
+                  right: 5,
+                  child: Semantics(
+                    label: '만나는 날',
+                    child: Container(
+                      key: meetingDayIndicatorKey(dateKey),
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE1C77A),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.82),
+                          width: 1.1,
                         ),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            '👫',
-                            semanticsLabel: '만나는 날',
-                            maxLines: 1,
-                            style: sans(size: 10.5, height: 1),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x33000000),
+                            blurRadius: 4,
+                            offset: Offset(0, 1),
                           ),
-                        ),
-                      )
-                    : FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            for (
-                              var index = 0;
-                              index < indicators.length;
-                              index++
-                            ) ...[
-                              if (index > 0) const SizedBox(width: 3),
-                              indicators[index],
-                            ],
-                          ],
-                        ),
+                        ],
                       ),
-              ),
+                    ),
+                  ),
+                ),
+              if (!meetingDay)
+                Positioned(
+                  bottom: 4,
+                  left: 4,
+                  right: 4,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        for (
+                          var index = 0;
+                          index < indicators.length;
+                          index++
+                        ) ...[
+                          if (index > 0) const SizedBox(width: 3),
+                          indicators[index],
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
