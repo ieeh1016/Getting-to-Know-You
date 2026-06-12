@@ -8725,13 +8725,10 @@ class _MeetingDateCell extends StatelessWidget {
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
                           child: Text(
-                            '만나는 날',
+                            '👫',
+                            semanticsLabel: '만나는 날',
                             maxLines: 1,
-                            style: sans(
-                              size: 8.2,
-                              weight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
+                            style: sans(size: 10.5, height: 1),
                           ),
                         ),
                       )
