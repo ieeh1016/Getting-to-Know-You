@@ -53,6 +53,9 @@ void main() {
     expect(find.byKey(homeMenuSheetKey), findsOneWidget);
     expect(find.byKey(homeMenuCuriosityButtonKey), findsOneWidget);
     expect(find.byKey(homeMenuStockStoryButtonKey), findsOneWidget);
+    expect(find.byKey(homeMenuBalanceButtonKey), findsOneWidget);
+    expect(find.byKey(homeMenuProfileCardButtonKey), findsOneWidget);
+    expect(find.byKey(homeMenuWishlistButtonKey), findsOneWidget);
 
     await tester.tap(find.byKey(homeMenuCuriosityButtonKey));
     await tester.pumpAndSettle();
@@ -135,6 +138,9 @@ void main() {
     expect(find.byKey(homeMenuSheetKey), findsOneWidget);
     expect(find.text('궁금함 한 장'), findsOneWidget);
     expect(find.text('주식 이야기'), findsOneWidget);
+    expect(find.byKey(homeMenuBalanceButtonKey), findsOneWidget);
+    expect(find.byKey(homeMenuProfileCardButtonKey), findsOneWidget);
+    expect(find.byKey(homeMenuWishlistButtonKey), findsOneWidget);
 
     await tester.tap(find.byKey(homeMenuStockStoryButtonKey));
     await tester.pumpAndSettle();
@@ -148,6 +154,33 @@ void main() {
     expect(find.text('약속'), findsOneWidget);
     expect(find.text('장소'), findsOneWidget);
     expect(find.text('마이'), findsOneWidget);
+  });
+
+  testWidgets('home menu works as a feature launcher', (tester) async {
+    await tester.pumpWidget(const AlagagiApp());
+    await enterSpace(tester);
+
+    await tester.tap(find.byKey(homeMenuButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(homeMenuBalanceButtonKey));
+    await tester.pumpAndSettle();
+    expect(find.byKey(balanceDeckKey), findsOneWidget);
+
+    await tester.tap(find.byKey(subScreenBackButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(homeMenuButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(homeMenuProfileCardButtonKey));
+    await tester.pumpAndSettle();
+    expect(find.text('소개 카드'), findsOneWidget);
+
+    await tester.tap(find.byKey(subScreenBackButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(homeMenuButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(homeMenuWishlistButtonKey));
+    await tester.pumpAndSettle();
+    expect(find.byKey(wishlistBoardKey), findsOneWidget);
   });
 
   testWidgets('stock story screen adds a quiet stock story', (tester) async {
@@ -1684,7 +1717,9 @@ void main() {
     await tester.pumpWidget(const AlagagiApp());
     await enterSpace(tester);
 
-    await tester.tap(find.text('마이'));
+    await tester.tap(find.byKey(homeMenuButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(homeMenuBalanceButtonKey));
     await tester.pumpAndSettle();
 
     final backButton = tester.widget<InkWell>(
@@ -1708,12 +1743,34 @@ void main() {
     expect(backIcon.color, const Color(0xFF656D5E));
 
     final titleStyles = tester
-        .widgetList<Text>(find.text('마이'))
+        .widgetList<Text>(find.text('밸런스 게임'))
         .map((text) => text.style)
         .where((style) => style?.fontSize == 18);
     expect(titleStyles, isNotEmpty);
     expect(titleStyles.first!.fontWeight, FontWeight.w700);
     expect(titleStyles.first!.fontFamily, 'Nanum Myeongjo');
+  });
+
+  testWidgets('bottom tab root screens do not show a back action', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const AlagagiApp());
+    await enterSpace(tester);
+
+    await tester.tap(find.text('약속'));
+    await tester.pumpAndSettle();
+    expect(find.text('만날 수 있는 날'), findsOneWidget);
+    expect(find.byKey(subScreenBackButtonKey), findsNothing);
+
+    await tester.tap(find.text('장소'));
+    await tester.pumpAndSettle();
+    expect(find.text('가보고 싶은 곳'), findsOneWidget);
+    expect(find.byKey(subScreenBackButtonKey), findsNothing);
+
+    await tester.tap(find.text('마이'));
+    await tester.pumpAndSettle();
+    expect(find.text('마이'), findsWidgets);
+    expect(find.byKey(subScreenBackButtonKey), findsNothing);
   });
 
   testWidgets('bottom navigation exposes questions music and my tabs', (
@@ -1754,14 +1811,39 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(meetingCalendarKey), findsOneWidget);
-    await tester.ensureVisible(find.byKey(meetingTimeBlockStartFieldKey));
-    await tester.enterText(find.byKey(meetingTimeBlockStartFieldKey), '14:00');
-    await tester.enterText(find.byKey(meetingTimeBlockEndFieldKey), '16:30');
-    await tester.enterText(find.byKey(meetingTimeBlockTitleFieldKey), '병원 예약');
+    await tester.ensureVisible(
+      find.byKey(meetingTimeBlockPresetButtonKey('evening')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(meetingTimeBlockPresetButtonKey('evening')));
+    await tester.pumpAndSettle();
+
+    final startEditable = tester.widget<EditableText>(
+      find.descendant(
+        of: find.byKey(meetingTimeBlockStartFieldKey),
+        matching: find.byType(EditableText),
+      ),
+    );
+    final endEditable = tester.widget<EditableText>(
+      find.descendant(
+        of: find.byKey(meetingTimeBlockEndFieldKey),
+        matching: find.byType(EditableText),
+      ),
+    );
+    final titleEditable = tester.widget<EditableText>(
+      find.descendant(
+        of: find.byKey(meetingTimeBlockTitleFieldKey),
+        matching: find.byType(EditableText),
+      ),
+    );
+    expect(startEditable.controller.text, '19:00');
+    expect(endEditable.controller.text, '21:00');
+    expect(titleEditable.controller.text, '저녁 약속');
+
     await tester.ensureVisible(find.byKey(meetingTimeBlockAddButtonKey));
     await tester.tap(find.byKey(meetingTimeBlockAddButtonKey));
     await tester.pumpAndSettle();
-    expect(find.text('14:00-16:30 · 병원 예약'), findsOneWidget);
+    expect(find.text('19:00-21:00 · 저녁 약속'), findsOneWidget);
 
     await tester.enterText(
       find.byKey(meetingSharedMemoFieldKey),
@@ -1774,7 +1856,7 @@ void main() {
     expect(controller.mySelectedScheduleEntry?.sharedMemo, '19:30 이후면 편해요.');
     expect(
       controller.mySelectedScheduleEntry?.timeBlocks.single.title,
-      '병원 예약',
+      '저녁 약속',
     );
     expect(find.text('일정을 저장했어요.'), findsOneWidget);
   });

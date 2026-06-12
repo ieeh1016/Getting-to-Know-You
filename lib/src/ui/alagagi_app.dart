@@ -36,6 +36,8 @@ const meetingTimeBlockStartFieldKey = Key('meeting-time-block-start-field');
 const meetingTimeBlockEndFieldKey = Key('meeting-time-block-end-field');
 const meetingTimeBlockTitleFieldKey = Key('meeting-time-block-title-field');
 const meetingTimeBlockAddButtonKey = Key('meeting-time-block-add-button');
+Key meetingTimeBlockPresetButtonKey(String presetId) =>
+    Key('meeting-time-block-preset-$presetId');
 Key meetingDateButtonKey(String dateKey) => Key('meeting-date-$dateKey');
 Key meetingMutualIndicatorKey(String dateKey) =>
     Key('meeting-mutual-indicator-$dateKey');
@@ -79,6 +81,9 @@ const homeMenuButtonKey = Key('home-menu-button');
 const homeMenuSheetKey = Key('home-menu-sheet');
 const homeMenuCuriosityButtonKey = Key('home-menu-curiosity-button');
 const homeMenuStockStoryButtonKey = Key('home-menu-stock-story-button');
+const homeMenuBalanceButtonKey = Key('home-menu-balance-button');
+const homeMenuProfileCardButtonKey = Key('home-menu-profile-card-button');
+const homeMenuWishlistButtonKey = Key('home-menu-wishlist-button');
 const homeMenuGuideButtonKey = Key('home-menu-guide-button');
 const homeCuriosityEntryKey = Key('home-curiosity-entry');
 const homeCuriositySheetKey = Key('home-curiosity-sheet');
@@ -1665,12 +1670,12 @@ void _showHomeMenuSheet(BuildContext context, AlagagiController controller) {
               ),
               const SizedBox(height: 17),
               Text(
-                '조금씩 메뉴',
+                '기능 모아보기',
                 style: serif(context, size: 21, weight: FontWeight.w800),
               ),
               const SizedBox(height: 6),
               Text(
-                '오늘 질문을 방해하지 않는 선에서, 가끔 꺼내볼 기능만 모아뒀어요.',
+                '오늘 질문을 방해하지 않는 선에서, 가끔 꺼내볼 기능을 한곳에 모았어요.',
                 style: sans(
                   size: 12.3,
                   color: AlagagiColors.muted,
@@ -1699,6 +1704,40 @@ void _showHomeMenuSheet(BuildContext context, AlagagiController controller) {
                 onTap: () {
                   Navigator.of(sheetContext).pop();
                   controller.goTo(AlagagiRoute.stockStory);
+                },
+              ),
+              const SizedBox(height: 8),
+              _HomeMenuRow(
+                rowKey: homeMenuBalanceButtonKey,
+                icon: Icons.swap_horiz_rounded,
+                title: '밸런스 게임',
+                subtitle: '글 쓰기 어려운 날엔 둘 중 하나만 고르기',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  controller.goTo(AlagagiRoute.balance);
+                },
+              ),
+              const SizedBox(height: 8),
+              _HomeMenuRow(
+                rowKey: homeMenuProfileCardButtonKey,
+                icon: Icons.badge_outlined,
+                title: '소개 카드',
+                subtitle: '취향과 대화 방식을 편한 만큼 채우기',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  controller.setProfileCardTab(ProfileCardTab.me);
+                  controller.goTo(AlagagiRoute.profileCard);
+                },
+              ),
+              const SizedBox(height: 8),
+              _HomeMenuRow(
+                rowKey: homeMenuWishlistButtonKey,
+                icon: Icons.bookmark_add_outlined,
+                title: '언젠가, 같이',
+                subtitle: '같이 해보고 싶은 일을 조용히 담기',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  controller.goTo(AlagagiRoute.wishlist);
                 },
               ),
               const SizedBox(height: 8),
@@ -4165,21 +4204,21 @@ void _showFirstVisitGuideBook(BuildContext context) {
                           icon: Icons.badge_outlined,
                           title: '소개 카드',
                           body: '취향과 대화 방식을 편한 질문부터 채워요.',
-                          where: '마이',
+                          where: '메뉴',
                         ),
                         SizedBox(height: 8),
                         _GuideBookFeatureRow(
                           icon: Icons.bookmark_add_outlined,
                           title: '언젠가, 같이',
                           body: '같이 해보고 싶은 일을 조용히 담아둬요.',
-                          where: '홈',
+                          where: '메뉴',
                         ),
                         SizedBox(height: 8),
                         _GuideBookFeatureRow(
                           icon: Icons.tune_rounded,
                           title: '밸런스 게임',
                           body: '글을 쓰기 어려운 날에는 둘 중 하나만 골라요.',
-                          where: '홈',
+                          where: '메뉴',
                         ),
                       ],
                     ),
@@ -8338,11 +8377,7 @@ class MeetingScreen extends StatelessWidget {
     return _ScreenScroll(
       bottomNavigation: _BottomNav(controller: controller),
       children: [
-        _TopBar(
-          title: '만날 수 있는 날',
-          trailing: '',
-          onBack: () => controller.goTo(AlagagiRoute.home),
-        ),
+        _TopBar(title: '만날 수 있는 날', trailing: ''),
         const SizedBox(height: 4),
         Text(
           '각자의 일정 내용은 지키면서 겹치는 여유만 맞춰요',
@@ -8659,6 +8694,53 @@ class _MeetingDateCell extends StatelessWidget {
   }
 }
 
+class _MeetingTimePreset {
+  const _MeetingTimePreset({
+    required this.id,
+    required this.label,
+    required this.start,
+    required this.end,
+    required this.title,
+  });
+
+  final String id;
+  final String label;
+  final String start;
+  final String end;
+  final String title;
+}
+
+const _meetingTimePresets = [
+  _MeetingTimePreset(
+    id: 'morning',
+    label: '오전 일정',
+    start: '10:00',
+    end: '12:00',
+    title: '오전 일정',
+  ),
+  _MeetingTimePreset(
+    id: 'lunch',
+    label: '점심 약속',
+    start: '12:00',
+    end: '13:30',
+    title: '점심 약속',
+  ),
+  _MeetingTimePreset(
+    id: 'afternoon',
+    label: '오후 일정',
+    start: '14:00',
+    end: '17:00',
+    title: '오후 일정',
+  ),
+  _MeetingTimePreset(
+    id: 'evening',
+    label: '저녁 약속',
+    start: '19:00',
+    end: '21:00',
+    title: '저녁 약속',
+  ),
+];
+
 class _MeetingDetailCard extends StatelessWidget {
   const _MeetingDetailCard({super.key, required this.controller});
 
@@ -8757,8 +8839,26 @@ class _MeetingDetailCard extends StatelessWidget {
           Text('상대에게 보이는 일정', style: sans(size: 11.5, weight: FontWeight.w800)),
           const SizedBox(height: 4),
           Text(
-            '몇 시부터 몇 시까지 어떤 일정인지, 보여도 괜찮은 것만 남겨요.',
+            '24시간 표기로 적거나, 자주 쓰는 시간대를 먼저 골라요.',
             style: sans(size: 11.2, color: AlagagiColors.muted),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final preset in _meetingTimePresets)
+                _FilterPill(
+                  key: meetingTimeBlockPresetButtonKey(preset.id),
+                  label: preset.label,
+                  selected: false,
+                  onTap: () => controller.updateMeetingTimeBlockDraft(
+                    start: preset.start,
+                    end: preset.end,
+                    title: preset.title,
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 10),
           Row(
@@ -8770,7 +8870,7 @@ class _MeetingDetailCard extends StatelessWidget {
                   hint: '14:00',
                   initialValue: controller.state.meetingBlockStartDraft,
                   maxLength: 5,
-                  helperText: '',
+                  helperText: '예: 09:30',
                   minLines: 1,
                   maxLines: 1,
                   keyboardType: TextInputType.datetime,
@@ -8786,7 +8886,7 @@ class _MeetingDetailCard extends StatelessWidget {
                   hint: '16:00',
                   initialValue: controller.state.meetingBlockEndDraft,
                   maxLength: 5,
-                  helperText: '',
+                  helperText: '예: 18:00',
                   minLines: 1,
                   maxLines: 1,
                   keyboardType: TextInputType.datetime,
@@ -9134,7 +9234,7 @@ class _MeetingCandidateCard extends StatelessWidget {
   }
 }
 
-class _MeetingTextField extends StatelessWidget {
+class _MeetingTextField extends StatefulWidget {
   const _MeetingTextField({
     required this.fieldKey,
     required this.label,
@@ -9160,6 +9260,37 @@ class _MeetingTextField extends StatelessWidget {
   final TextInputType? keyboardType;
 
   @override
+  State<_MeetingTextField> createState() => _MeetingTextFieldState();
+}
+
+class _MeetingTextFieldState extends State<_MeetingTextField> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void didUpdateWidget(covariant _MeetingTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialValue != widget.initialValue &&
+        _controller.text != widget.initialValue) {
+      _controller.text = widget.initialValue;
+      _controller.selection = TextSelection.collapsed(
+        offset: widget.initialValue.length,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -9169,17 +9300,17 @@ class _MeetingTextField extends StatelessWidget {
       ),
       padding: const EdgeInsets.fromLTRB(14, 7, 14, 7),
       child: TextFormField(
-        key: fieldKey,
-        initialValue: initialValue,
-        maxLength: maxLength,
-        minLines: minLines,
-        maxLines: maxLines,
-        keyboardType: keyboardType,
-        onChanged: onChanged,
+        key: widget.fieldKey,
+        controller: _controller,
+        maxLength: widget.maxLength,
+        minLines: widget.minLines,
+        maxLines: widget.maxLines,
+        keyboardType: widget.keyboardType,
+        onChanged: widget.onChanged,
         decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          helperText: helperText.isEmpty ? null : helperText,
+          labelText: widget.label,
+          hintText: widget.hint,
+          helperText: widget.helperText.isEmpty ? null : widget.helperText,
           counterText: '',
           isDense: true,
           border: InputBorder.none,
@@ -9216,11 +9347,7 @@ class _PlaceBoardScreenState extends State<PlaceBoardScreen> {
     return _ScreenScroll(
       bottomNavigation: _BottomNav(controller: controller),
       children: [
-        _TopBar(
-          title: '가보고 싶은 곳',
-          trailing: '',
-          onBack: () => controller.goTo(AlagagiRoute.home),
-        ),
+        _TopBar(title: '가보고 싶은 곳', trailing: ''),
         const SizedBox(height: 4),
         Row(
           children: [
@@ -13110,11 +13237,7 @@ class MyScreen extends StatelessWidget {
     return _ScreenScroll(
       bottomNavigation: _BottomNav(controller: controller),
       children: [
-        _TopBar(
-          title: '마이',
-          trailing: '',
-          onBack: () => controller.goTo(AlagagiRoute.home),
-        ),
+        _TopBar(title: '마이', trailing: ''),
         const SizedBox(height: 18),
         Column(
           key: myDashboardKey,
@@ -14074,15 +14197,11 @@ class _NavItem extends StatelessWidget {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({
-    required this.title,
-    required this.trailing,
-    required this.onBack,
-  });
+  const _TopBar({required this.title, required this.trailing, this.onBack});
 
   final String title;
   final String trailing;
-  final VoidCallback onBack;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -14093,7 +14212,9 @@ class _TopBar extends StatelessWidget {
           width: 56,
           child: Align(
             alignment: Alignment.centerLeft,
-            child: _BackButton(onTap: onBack),
+            child: onBack == null
+                ? const SizedBox.shrink()
+                : _BackButton(onTap: onBack!),
           ),
         ),
         Expanded(

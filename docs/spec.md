@@ -223,6 +223,7 @@ If the app grows, bottom navigation may become:
 
 - 홈 header는 단순 텍스트 제목 대신 작은 새싹 표식, `조금씩` 한글 워드마크, `천천히 알아가는 기록` 보조 문구로 앱 브랜드를 보여준다.
 - 홈의 핵심 시선은 `Today's Question` 카드에 남겨두고, 추가 기능은 질문 카드 아래의 작은 `궁금함` 상태 카드로만 진입시킨다.
+- 홈 header menu는 `기능 모아보기` 역할을 하며 `궁금함 한 장`, `주식 이야기`, `밸런스 게임`, `소개 카드`, `언젠가, 같이`, `처음 안내`로 바로 이동할 수 있다.
 - `궁금함` 상태 카드는 받은 질문, 보낸 질문, 답장 완료 상태를 낮은 압력의 문구로 요약한다.
 - `궁금함` 상태 카드를 누르면 bottom sheet가 열리고, 받은 질문 답장 입력, 내가 보낸 질문 상태, 새 질문 작성 흐름을 보여준다.
 - 질문 작성과 답장 저장은 사용자가 명시적으로 `질문 보내기` 또는 `답장 저장하기`를 눌렀을 때만 `spaces/{spaceId}/curiosityCards/{cardId}`에 기록한다.
@@ -246,6 +247,7 @@ If the app grows, bottom navigation may become:
 - schedule entry는 `dateKey`, `profileId`, `availability`, `timeSlots`, `timeBlocks`, `sharedMemo`, `updatedAt`을 공유 공간에 저장한다.
 - `timeSlots`는 `오전/오후/저녁` 빠른 가능 시간이며, `timeBlocks`는 `startMinute`, `endMinute`, `title`을 가진 상세 공유 일정이다.
 - 사용자는 한 날짜에 여러 상세 일정을 추가할 수 있으며 `14:00-16:30 병원 예약`처럼 몇 시부터 몇 시까지 무슨 일정인지 상대에게 공유할 수 있다.
+- 상세 일정 입력은 `오전 일정`, `점심 약속`, `오후 일정`, `저녁 약속` 같은 빠른 입력 preset을 제공하고, 사용자는 채워진 시간을 직접 수정할 수 있다.
 - 상대에게 보여도 되는 조율 내용은 `상대에게 남길 한마디`인 `sharedMemo`와 `timeBlocks`에 따로 남긴다.
 - 둘 다 `available`이고 겹치는 `timeSlots`가 있으면 meeting candidate로 강조한다.
 - `maybe`가 포함된 날은 확정 후보가 아니라 조율 필요 상태로 둔다.
@@ -519,7 +521,8 @@ This batch focuses only on the HOME today's question card. It follows the `docs/
 ### MVP v0.12 Sub Screen Header Polish
 
 - Selected design: `docs/design/topbar_header_redesign.html` 대안 B `Soft Paper Header`.
-- 마이/답변/밸런스/소개 카드/위시 등 sub screen header의 back action은 텍스트 화살표가 아니라 line icon 기반 버튼으로 렌더링한다.
+- 답변/밸런스/소개 카드/위시/주식 이야기 등 sub screen header의 back action은 텍스트 화살표가 아니라 line icon 기반 버튼으로 렌더링한다.
+- 하단 탭 루트 화면인 `홈`, `질문`, `음악`, `약속`, `장소`, `마이`는 같은 navigation level이므로 header back action을 노출하지 않는다.
 - Back button은 38x38px circular paper button, subtle border, 낮은 shadow로 렌더링해 기존보다 덜 무겁게 보인다.
 - Back icon은 chevron line icon을 사용하고, 아이콘 크기와 색은 버튼보다 강하게 튀지 않는다.
 - Sub screen title은 작은 letter-spaced label이 아니라 18px serif / 700 heading으로 렌더링한다.
