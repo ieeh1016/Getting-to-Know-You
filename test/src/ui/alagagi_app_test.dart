@@ -1953,6 +1953,71 @@ void main() {
     );
   });
 
+  testWidgets('meeting candidate saves free-form meeting day details', (
+    tester,
+  ) async {
+    const dateKey = '2026-06-11';
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          scheduleEntries: [
+            ScheduleEntry(
+              dateKey: dateKey,
+              profileId: 'youngwooUid',
+              availability: MeetingAvailability.available,
+              timeSlots: {MeetingTimeSlot.evening},
+            ),
+            ScheduleEntry(
+              dateKey: dateKey,
+              profileId: 'minyoungUid',
+              availability: MeetingAvailability.available,
+              timeSlots: {MeetingTimeSlot.evening},
+            ),
+          ],
+        ),
+      ),
+    );
+    controller
+      ..goTo(AlagagiRoute.meetings)
+      ..selectMeetingDate(dateKey);
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(meetingDayTimeFieldKey));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(meetingDayTimeFieldKey), '저녁 7시쯤');
+    await tester.ensureVisible(find.byKey(meetingDayNoteFieldKey));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(meetingDayNoteFieldKey), '장소는 성수 쪽');
+    await tester.ensureVisible(find.byKey(meetingDaySaveButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(meetingDaySaveButtonKey));
+    await tester.pumpAndSettle();
+
+    final entry = controller.scheduleEntryFor(controller.state.me.id, dateKey);
+    expect(entry, isNotNull);
+    expect(entry!.isMeetingDay, isTrue);
+    expect(entry.meetingTimeLabel, '저녁 7시쯤');
+    expect(entry.meetingNote, '장소는 성수 쪽');
+    expect(find.byKey(meetingDayIndicatorKey(dateKey)), findsOneWidget);
+    expect(find.text('만나는 날로 저장했어요.'), findsOneWidget);
+  });
+
   testWidgets('meeting save failure shows retry action', (tester) async {
     final repository = _FailingSaveRepository()..failScheduleSaves = true;
     final controller = AlagagiController.forSession(

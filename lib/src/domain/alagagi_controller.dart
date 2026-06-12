@@ -844,6 +844,9 @@ class ScheduleEntry {
     required this.timeSlots,
     this.timeBlocks = const [],
     this.sharedMemo = '',
+    this.isMeetingDay = false,
+    this.meetingTimeLabel = '',
+    this.meetingNote = '',
     this.updatedAt,
   });
 
@@ -853,6 +856,9 @@ class ScheduleEntry {
   final Set<MeetingTimeSlot> timeSlots;
   final List<ScheduleTimeBlock> timeBlocks;
   final String sharedMemo;
+  final bool isMeetingDay;
+  final String meetingTimeLabel;
+  final String meetingNote;
   final DateTime? updatedAt;
 
   String get id => '${dateKey}_$profileId';
@@ -865,6 +871,9 @@ class ScheduleEntry {
     Set<MeetingTimeSlot>? timeSlots,
     List<ScheduleTimeBlock>? timeBlocks,
     String? sharedMemo,
+    bool? isMeetingDay,
+    String? meetingTimeLabel,
+    String? meetingNote,
     DateTime? updatedAt,
   }) {
     return ScheduleEntry(
@@ -874,6 +883,9 @@ class ScheduleEntry {
       timeSlots: timeSlots ?? this.timeSlots,
       timeBlocks: timeBlocks ?? this.timeBlocks,
       sharedMemo: sharedMemo ?? this.sharedMemo,
+      isMeetingDay: isMeetingDay ?? this.isMeetingDay,
+      meetingTimeLabel: meetingTimeLabel ?? this.meetingTimeLabel,
+      meetingNote: meetingNote ?? this.meetingNote,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -1250,6 +1262,9 @@ class AlagagiState {
     this.meetingBlockEndDraft = '',
     this.meetingBlockTitleDraft = '',
     this.meetingDraftSharedMemo = '',
+    this.meetingDraftIsMeetingDay = false,
+    this.meetingDraftMeetingTimeLabel = '',
+    this.meetingDraftMeetingNote = '',
     this.meetingDraftError,
     this.meetingSaveStatus = SaveStatus.idle,
     this.meetingSaveFeedback,
@@ -1350,6 +1365,9 @@ class AlagagiState {
   final String meetingBlockEndDraft;
   final String meetingBlockTitleDraft;
   final String meetingDraftSharedMemo;
+  final bool meetingDraftIsMeetingDay;
+  final String meetingDraftMeetingTimeLabel;
+  final String meetingDraftMeetingNote;
   final String? meetingDraftError;
   final SaveStatus meetingSaveStatus;
   final String? meetingSaveFeedback;
@@ -1451,6 +1469,9 @@ class AlagagiState {
     String? meetingBlockEndDraft,
     String? meetingBlockTitleDraft,
     String? meetingDraftSharedMemo,
+    bool? meetingDraftIsMeetingDay,
+    String? meetingDraftMeetingTimeLabel,
+    String? meetingDraftMeetingNote,
     String? meetingDraftError,
     bool clearMeetingDraftError = false,
     SaveStatus? meetingSaveStatus,
@@ -1587,6 +1608,12 @@ class AlagagiState {
           meetingBlockTitleDraft ?? this.meetingBlockTitleDraft,
       meetingDraftSharedMemo:
           meetingDraftSharedMemo ?? this.meetingDraftSharedMemo,
+      meetingDraftIsMeetingDay:
+          meetingDraftIsMeetingDay ?? this.meetingDraftIsMeetingDay,
+      meetingDraftMeetingTimeLabel:
+          meetingDraftMeetingTimeLabel ?? this.meetingDraftMeetingTimeLabel,
+      meetingDraftMeetingNote:
+          meetingDraftMeetingNote ?? this.meetingDraftMeetingNote,
       meetingDraftError: clearMeetingDraftError
           ? null
           : meetingDraftError ?? this.meetingDraftError,
@@ -1839,6 +1866,7 @@ class AlagagiController extends ChangeNotifier {
   Answer? _lastFailedAnswer;
   AnswerComment? _lastFailedAnswerComment;
   ScheduleEntry? _lastFailedScheduleEntry;
+  String _lastFailedScheduleEntrySuccessFeedback = '일정을 저장했어요.';
   SharedPlace? _lastFailedSharedPlace;
   CuriosityCard? _lastFailedCuriosityCard;
 
@@ -2033,6 +2061,9 @@ class AlagagiController extends ChangeNotifier {
             timeSlots: entry.timeSlots,
             timeBlocks: entry.timeBlocks,
             sharedMemo: entry.sharedMemo,
+            isMeetingDay: entry.isMeetingDay,
+            meetingTimeLabel: entry.meetingTimeLabel,
+            meetingNote: entry.meetingNote,
             updatedAt: entry.updatedAt,
           );
         }),
@@ -2472,14 +2503,17 @@ class AlagagiController extends ChangeNotifier {
     );
   }
 
-  void _persistScheduleEntry(ScheduleEntry entry) {
+  void _persistScheduleEntry(
+    ScheduleEntry entry, {
+    String successFeedback = '일정을 저장했어요.',
+  }) {
     final repository = _repository;
     final spaceId = _spaceId;
     if (repository == null || spaceId == null) {
       _lastFailedScheduleEntry = null;
       _state = _state.copyWith(
         meetingSaveStatus: SaveStatus.saved,
-        meetingSaveFeedback: '일정을 저장했어요.',
+        meetingSaveFeedback: successFeedback,
         meetingSaveTargetId: entry.id,
         clearMeetingDraftError: true,
       );
@@ -2493,7 +2527,7 @@ class AlagagiController extends ChangeNotifier {
             _lastFailedScheduleEntry = null;
             _state = _state.copyWith(
               meetingSaveStatus: SaveStatus.saved,
-              meetingSaveFeedback: '일정을 저장했어요.',
+              meetingSaveFeedback: successFeedback,
               meetingSaveTargetId: entry.id,
               clearMeetingDraftError: true,
             );
@@ -2501,6 +2535,7 @@ class AlagagiController extends ChangeNotifier {
           })
           .catchError((Object _) {
             _lastFailedScheduleEntry = entry;
+            _lastFailedScheduleEntrySuccessFeedback = successFeedback;
             _state = _state.copyWith(
               meetingDraftError: '일정을 저장하지 못했어요. 다시 시도해 주세요.',
               meetingSaveStatus: SaveStatus.failed,
@@ -3070,6 +3105,43 @@ class AlagagiController extends ChangeNotifier {
 
   ScheduleEntry? get partnerSelectedScheduleEntry =>
       scheduleEntryFor(_state.partner.id, selectedMeetingDateKey);
+
+  List<String> get meetingDayDateKeys {
+    final keys =
+        _scheduleEntries
+            .where((entry) => entry.isMeetingDay)
+            .map((entry) => entry.dateKey)
+            .toSet()
+            .toList()
+          ..sort();
+    return List<String>.unmodifiable(keys);
+  }
+
+  ScheduleEntry? get nextMeetingDayEntry {
+    final keys = meetingDayDateKeys;
+    if (keys.isEmpty) {
+      return null;
+    }
+    final today = _todayDateKey();
+    final upcomingKey = keys.firstWhere(
+      (key) => key.compareTo(today) >= 0,
+      orElse: () => keys.last,
+    );
+    return meetingDayEntryFor(upcomingKey);
+  }
+
+  ScheduleEntry? meetingDayEntryFor(String dateKey) {
+    final entries = _scheduleEntries
+        .where((entry) => entry.dateKey == dateKey && entry.isMeetingDay)
+        .toList();
+    if (entries.isEmpty) {
+      return null;
+    }
+    return entries.firstWhere(
+      (entry) => entry.profileId == _state.me.id,
+      orElse: () => entries.first,
+    );
+  }
 
   List<MeetingCandidate> get meetingCandidates {
     final keys = _scheduleEntries.map((entry) => entry.dateKey).toSet().toList()
@@ -4519,6 +4591,7 @@ class AlagagiController extends ChangeNotifier {
 
   void selectMeetingDate(String dateKey) {
     final entry = scheduleEntryFor(_state.me.id, dateKey);
+    final meetingDayEntry = meetingDayEntryFor(dateKey);
     _state = _state.copyWith(
       selectedMeetingDateKey: dateKey,
       meetingDraftAvailability:
@@ -4530,6 +4603,12 @@ class AlagagiController extends ChangeNotifier {
       meetingBlockEndDraft: '',
       meetingBlockTitleDraft: '',
       meetingDraftSharedMemo: entry?.sharedMemo ?? '',
+      meetingDraftIsMeetingDay:
+          entry?.isMeetingDay ?? meetingDayEntry?.isMeetingDay ?? false,
+      meetingDraftMeetingTimeLabel:
+          entry?.meetingTimeLabel ?? meetingDayEntry?.meetingTimeLabel ?? '',
+      meetingDraftMeetingNote:
+          entry?.meetingNote ?? meetingDayEntry?.meetingNote ?? '',
       clearMeetingDraftError: true,
       clearMeetingSaveFeedback: true,
       clearMeetingSaveTargetId: true,
@@ -4653,13 +4732,40 @@ class AlagagiController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateMeetingDayDraft({String? timeLabel, String? note}) {
+    _state = _state.copyWith(
+      meetingDraftMeetingTimeLabel: timeLabel,
+      meetingDraftMeetingNote: note,
+      clearMeetingDraftError: true,
+      clearMeetingSaveFeedback: true,
+    );
+    notifyListeners();
+  }
+
+  void submitMeetingDayDraft() {
+    _submitMeetingDraft(
+      markAsMeetingDay: true,
+      successFeedback: '만나는 날로 저장했어요.',
+    );
+  }
+
   void submitMeetingDraft() {
+    _submitMeetingDraft(successFeedback: '일정을 저장했어요.');
+  }
+
+  void _submitMeetingDraft({
+    bool markAsMeetingDay = false,
+    required String successFeedback,
+  }) {
     if (_state.meetingSaveStatus == SaveStatus.saving) {
       return;
     }
     final sharedMemo = _state.meetingDraftSharedMemo.trim();
     final availability = _state.meetingDraftAvailability;
     final timeBlocks = _state.meetingDraftTimeBlocks;
+    final meetingTimeLabel = _state.meetingDraftMeetingTimeLabel.trim();
+    final meetingNote = _state.meetingDraftMeetingNote.trim();
+    final isMeetingDay = markAsMeetingDay || _state.meetingDraftIsMeetingDay;
     final timeSlots = availability == MeetingAvailability.busy
         ? <MeetingTimeSlot>{}
         : _state.meetingDraftTimeSlots;
@@ -4675,6 +4781,16 @@ class AlagagiController extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    if (meetingTimeLabel.length > 40) {
+      _state = _state.copyWith(meetingDraftError: '만나는 시간은 40자 안으로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    if (meetingNote.length > 80) {
+      _state = _state.copyWith(meetingDraftError: '만나는 날 메모는 80자 안으로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
 
     final entry = ScheduleEntry(
       dateKey: selectedMeetingDateKey,
@@ -4683,6 +4799,9 @@ class AlagagiController extends ChangeNotifier {
       timeSlots: Set<MeetingTimeSlot>.unmodifiable(timeSlots),
       sharedMemo: sharedMemo,
       timeBlocks: List<ScheduleTimeBlock>.unmodifiable(timeBlocks),
+      isMeetingDay: isMeetingDay,
+      meetingTimeLabel: isMeetingDay ? meetingTimeLabel : '',
+      meetingNote: isMeetingDay ? meetingNote : '',
       updatedAt: DateTime.now(),
     );
     final index = _scheduleEntries.indexWhere(
@@ -4696,13 +4815,16 @@ class AlagagiController extends ChangeNotifier {
     _sortScheduleEntriesByDate();
     _lastFailedScheduleEntry = null;
     _state = _state.copyWith(
+      meetingDraftIsMeetingDay: isMeetingDay,
+      meetingDraftMeetingTimeLabel: isMeetingDay ? meetingTimeLabel : '',
+      meetingDraftMeetingNote: isMeetingDay ? meetingNote : '',
       meetingSaveStatus: SaveStatus.saving,
       meetingSaveTargetId: entry.id,
       clearMeetingDraftError: true,
       clearMeetingSaveFeedback: true,
     );
     notifyListeners();
-    _persistScheduleEntry(entry);
+    _persistScheduleEntry(entry, successFeedback: successFeedback);
   }
 
   void retryMeetingSave() {
@@ -4726,7 +4848,10 @@ class AlagagiController extends ChangeNotifier {
       clearMeetingSaveFeedback: true,
     );
     notifyListeners();
-    _persistScheduleEntry(entry);
+    _persistScheduleEntry(
+      entry,
+      successFeedback: _lastFailedScheduleEntrySuccessFeedback,
+    );
   }
 
   void startPlaceDraft() {

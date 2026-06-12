@@ -184,6 +184,28 @@ void main() {
       expect(entry.timeBlocks.single.title, '병원 예약');
     });
 
+    test('meeting day draft stores flexible time and note', () {
+      final controller = AlagagiController()..enterSpace('영우');
+
+      controller.selectMeetingDate('2026-06-11');
+      controller.updateMeetingDayDraft(
+        timeLabel: '저녁 7시쯤',
+        note: '장소는 성수 쪽으로 천천히 보기',
+      );
+      controller.submitMeetingDayDraft();
+
+      final entry = controller.scheduleEntryFor(
+        controller.state.me.id,
+        '2026-06-11',
+      );
+
+      expect(entry, isNotNull);
+      expect(entry!.isMeetingDay, isTrue);
+      expect(entry.meetingTimeLabel, '저녁 7시쯤');
+      expect(entry.meetingNote, '장소는 성수 쪽으로 천천히 보기');
+      expect(controller.meetingDayEntryFor('2026-06-11'), entry);
+    });
+
     test('place board saves a place and toggles interest', () {
       final controller = AlagagiController()..enterSpace('영우');
 

@@ -36,9 +36,14 @@ const meetingTimeBlockStartFieldKey = Key('meeting-time-block-start-field');
 const meetingTimeBlockEndFieldKey = Key('meeting-time-block-end-field');
 const meetingTimeBlockTitleFieldKey = Key('meeting-time-block-title-field');
 const meetingTimeBlockAddButtonKey = Key('meeting-time-block-add-button');
+const meetingDayTimeFieldKey = Key('meeting-day-time-field');
+const meetingDayNoteFieldKey = Key('meeting-day-note-field');
+const meetingDaySaveButtonKey = Key('meeting-day-save-button');
 Key meetingTimeBlockPresetButtonKey(String presetId) =>
     Key('meeting-time-block-preset-$presetId');
 Key meetingDateButtonKey(String dateKey) => Key('meeting-date-$dateKey');
+Key meetingDayIndicatorKey(String dateKey) =>
+    Key('meeting-day-indicator-$dateKey');
 Key meetingMutualIndicatorKey(String dateKey) =>
     Key('meeting-mutual-indicator-$dateKey');
 Key meetingMyEntryIndicatorKey(String dateKey) =>
@@ -5509,21 +5514,27 @@ class _ReadOnlyCommentBlock extends StatelessWidget {
 }
 
 class _SmallBadge extends StatelessWidget {
-  const _SmallBadge({required this.label});
+  const _SmallBadge({required this.label, this.dark = false});
 
   final String label;
+  final bool dark;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF0F2EB),
+        color: dark
+            ? Colors.white.withValues(alpha: 0.14)
+            : const Color(0xFFF0F2EB),
         borderRadius: BorderRadius.circular(20),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       child: Text(
         label,
-        style: sans(size: 10.5, color: AlagagiColors.sageDeep),
+        style: sans(
+          size: 10.5,
+          color: dark ? Colors.white : AlagagiColors.sageDeep,
+        ),
       ),
     );
   }
@@ -8374,6 +8385,7 @@ class MeetingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final candidates = controller.meetingCandidates;
+    final meetingDayEntry = controller.nextMeetingDayEntry;
     return _ScreenScroll(
       bottomNavigation: _BottomNav(controller: controller),
       children: [
@@ -8384,7 +8396,10 @@ class MeetingScreen extends StatelessWidget {
           style: sans(size: 12.5, color: AlagagiColors.muted),
         ),
         const SizedBox(height: 16),
-        _MeetingHeroCard(candidateCount: candidates.length),
+        _MeetingHeroCard(
+          candidateCount: candidates.length,
+          meetingDayEntry: meetingDayEntry,
+        ),
         const SizedBox(height: 14),
         _MeetingCalendar(controller: controller),
         const SizedBox(height: 14),
@@ -8408,12 +8423,27 @@ class MeetingScreen extends StatelessWidget {
 }
 
 class _MeetingHeroCard extends StatelessWidget {
-  const _MeetingHeroCard({required this.candidateCount});
+  const _MeetingHeroCard({
+    required this.candidateCount,
+    required this.meetingDayEntry,
+  });
 
   final int candidateCount;
+  final ScheduleEntry? meetingDayEntry;
 
   @override
   Widget build(BuildContext context) {
+    final meetingTimeLabel = meetingDayEntry?.meetingTimeLabel.trim() ?? '';
+    final heroTitle = meetingDayEntry != null
+        ? '${_meetingDateShortLabel(meetingDayEntry!.dateKey)}\n만나는 날이에요'
+        : candidateCount == 0
+        ? '가능한 날을\n하나씩 남겨볼까요?'
+        : '이번 달엔\n$candidateCount일이 서로 괜찮아요';
+    final heroSubtitle = meetingDayEntry != null
+        ? meetingTimeLabel.isEmpty
+              ? '시간은 편할 때 다시 적어도 괜찮아요.'
+              : '$meetingTimeLabel에 만나기로 했어요.'
+        : '상대에게 보여도 괜찮은 일정과 만날 수 있는 여유만 남겨요.';
     return _PaperCard(
       radius: 24,
       padding: const EdgeInsets.all(20),
@@ -8432,9 +8462,7 @@ class _MeetingHeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            candidateCount == 0
-                ? '가능한 날을\n하나씩 남겨볼까요?'
-                : '이번 달엔\n$candidateCount일이 서로 괜찮아요',
+            heroTitle,
             style: serif(
               context,
               size: 22,
@@ -8444,7 +8472,7 @@ class _MeetingHeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 9),
           Text(
-            '상대에게 보여도 괜찮은 일정과 만날 수 있는 여유만 남겨요.',
+            heroSubtitle,
             style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
           ),
         ],
@@ -8545,6 +8573,7 @@ class _MeetingCalendar extends StatelessWidget {
                   myEntry!.timeSlots
                       .intersection(partnerEntry!.timeSlots)
                       .isNotEmpty;
+              final meetingDay = controller.meetingDayEntryFor(dateKey) != null;
               final busy = myEntry?.availability == MeetingAvailability.busy;
               final hasMyEntry = myEntry != null;
               final hasMyDetails = myEntry?.timeBlocks.isNotEmpty ?? false;
@@ -8552,6 +8581,7 @@ class _MeetingCalendar extends StatelessWidget {
                 dateKey: dateKey,
                 day: date.day,
                 selected: selected,
+                meetingDay: meetingDay,
                 mutual: mutual,
                 busy: busy,
                 hasMyEntry: hasMyEntry,
@@ -8566,6 +8596,7 @@ class _MeetingCalendar extends StatelessWidget {
             spacing: 10,
             runSpacing: 8,
             children: const [
+              _LegendDot(color: AlagagiColors.ink, label: '만나는 날'),
               _LegendDot(color: AlagagiColors.sageDeep, label: '서로 가능'),
               _LegendDot(color: AlagagiColors.sage, label: '내 입력'),
               _LegendDot(color: Color(0xFFC8AD6D), label: '내 상세 일정'),
@@ -8583,6 +8614,7 @@ class _MeetingDateCell extends StatelessWidget {
     required this.dateKey,
     required this.day,
     required this.selected,
+    required this.meetingDay,
     required this.mutual,
     required this.busy,
     required this.hasMyEntry,
@@ -8594,6 +8626,7 @@ class _MeetingDateCell extends StatelessWidget {
   final String dateKey;
   final int day;
   final bool selected;
+  final bool meetingDay;
   final bool mutual;
   final bool busy;
   final bool hasMyEntry;
@@ -8603,7 +8636,9 @@ class _MeetingDateCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final background = selected
+    final background = meetingDay
+        ? AlagagiColors.ink
+        : selected
         ? AlagagiColors.ink
         : mutual
         ? const Color(0xFFEEF2E8)
@@ -8612,7 +8647,7 @@ class _MeetingDateCell extends StatelessWidget {
         : hasMyEntry
         ? const Color(0xFFF5F8EF)
         : Colors.white;
-    final foreground = selected
+    final foreground = meetingDay || selected
         ? Colors.white
         : mutual
         ? AlagagiColors.sageDeep
@@ -8621,7 +8656,7 @@ class _MeetingDateCell extends StatelessWidget {
         : hasMyEntry
         ? AlagagiColors.sageDeep
         : const Color(0xFF4D4B45);
-    final borderColor = selected
+    final borderColor = meetingDay || selected
         ? AlagagiColors.ink
         : mutual
         ? const Color(0x668A9A7E)
@@ -8675,16 +8710,48 @@ class _MeetingDateCell extends StatelessWidget {
                 ),
               ),
               Positioned(
-                bottom: 5,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    for (var index = 0; index < indicators.length; index++) ...[
-                      if (index > 0) const SizedBox(width: 3),
-                      indicators[index],
-                    ],
-                  ],
-                ),
+                bottom: 4,
+                left: 4,
+                right: 4,
+                child: meetingDay
+                    ? Container(
+                        key: meetingDayIndicatorKey(dateKey),
+                        height: 14,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            '만나는 날',
+                            maxLines: 1,
+                            style: sans(
+                              size: 8.2,
+                              weight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      )
+                    : FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            for (
+                              var index = 0;
+                              index < indicators.length;
+                              index++
+                            ) ...[
+                              if (index > 0) const SizedBox(width: 3),
+                              indicators[index],
+                            ],
+                          ],
+                        ),
+                      ),
               ),
             ],
           ),
@@ -8750,6 +8817,19 @@ class _MeetingDetailCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final myEntry = controller.mySelectedScheduleEntry;
     final partnerEntry = controller.partnerSelectedScheduleEntry;
+    final meetingDayEntry = controller.meetingDayEntryFor(
+      controller.selectedMeetingDateKey,
+    );
+    final sharedSlots =
+        myEntry?.timeSlots.intersection(
+          partnerEntry?.timeSlots ?? const <MeetingTimeSlot>{},
+        ) ??
+        const <MeetingTimeSlot>{};
+    final mutual =
+        myEntry?.canMeet == true &&
+        partnerEntry?.canMeet == true &&
+        sharedSlots.isNotEmpty;
+    final showMeetingDayPanel = mutual || meetingDayEntry != null;
     return _PaperCard(
       radius: 24,
       padding: const EdgeInsets.all(18),
@@ -8784,6 +8864,14 @@ class _MeetingDetailCard extends StatelessWidget {
             entry: partnerEntry,
             isMe: false,
           ),
+          if (showMeetingDayPanel) ...[
+            const SizedBox(height: 14),
+            _MeetingDayPanel(
+              controller: controller,
+              alreadyMeetingDay: meetingDayEntry != null,
+              sharedSlots: sharedSlots,
+            ),
+          ],
           const SizedBox(height: 16),
           Wrap(
             spacing: 8,
@@ -8972,6 +9060,108 @@ class _MeetingDetailCard extends StatelessWidget {
   }
 }
 
+class _MeetingDayPanel extends StatelessWidget {
+  const _MeetingDayPanel({
+    required this.controller,
+    required this.alreadyMeetingDay,
+    required this.sharedSlots,
+  });
+
+  final AlagagiController controller;
+  final bool alreadyMeetingDay;
+  final Set<MeetingTimeSlot> sharedSlots;
+
+  @override
+  Widget build(BuildContext context) {
+    final slotLabel = sharedSlots.isEmpty
+        ? '겹치는 시간을 확인하고 있어요.'
+        : '${sharedSlots.map(_meetingTimeSlotLabel).join(', ')}에 서로 괜찮아요.';
+    return Container(
+      decoration: BoxDecoration(
+        color: alreadyMeetingDay ? AlagagiColors.ink : const Color(0xFFF3F6EE),
+        border: Border.all(
+          color: alreadyMeetingDay
+              ? AlagagiColors.ink
+              : const Color(0x338A9A7E),
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  alreadyMeetingDay ? '만나는 날' : '둘 다 가능한 날이에요',
+                  style: serif(
+                    context,
+                    size: 18,
+                    weight: FontWeight.w800,
+                    color: alreadyMeetingDay ? Colors.white : AlagagiColors.ink,
+                  ),
+                ),
+              ),
+              _SmallBadge(
+                label: alreadyMeetingDay ? '정해짐' : '후보',
+                dark: alreadyMeetingDay,
+              ),
+            ],
+          ),
+          const SizedBox(height: 7),
+          Text(
+            alreadyMeetingDay
+                ? '시간이나 메모는 정해진 형식 없이 편하게 다시 적어둘 수 있어요.'
+                : '$slotLabel 시간은 편한 말로 바로 적어도 괜찮아요.',
+            style: sans(
+              size: 12,
+              height: 1.55,
+              color: alreadyMeetingDay
+                  ? Colors.white.withValues(alpha: 0.72)
+                  : AlagagiColors.muted,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _MeetingTextField(
+            fieldKey: meetingDayTimeFieldKey,
+            label: '만나는 시간',
+            hint: '예: 19:00-21:00, 저녁 7시쯤',
+            initialValue: controller.state.meetingDraftMeetingTimeLabel,
+            maxLength: 40,
+            helperText: '딱 맞춘 형식이 아니어도 괜찮아요.',
+            minLines: 1,
+            maxLines: 1,
+            onChanged: (value) =>
+                controller.updateMeetingDayDraft(timeLabel: value),
+          ),
+          const SizedBox(height: 9),
+          _MeetingTextField(
+            fieldKey: meetingDayNoteFieldKey,
+            label: '만나는 날 메모',
+            hint: '예: 장소는 성수 쪽으로 천천히 보기',
+            initialValue: controller.state.meetingDraftMeetingNote,
+            maxLength: 80,
+            helperText: '',
+            minLines: 1,
+            maxLines: 2,
+            onChanged: (value) => controller.updateMeetingDayDraft(note: value),
+          ),
+          const SizedBox(height: 11),
+          _PrimaryButton(
+            label: alreadyMeetingDay ? '만나는 날 수정 저장' : '만나는 날로 저장하기',
+            buttonKey: meetingDaySaveButtonKey,
+            onPressed: controller.submitMeetingDayDraft,
+            color: alreadyMeetingDay
+                ? AlagagiColors.sageDeep
+                : AlagagiColors.ink,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MeetingSaveStatus extends StatelessWidget {
   const _MeetingSaveStatus({required this.controller});
 
@@ -9059,6 +9249,8 @@ class _MeetingPersonRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final status = _meetingAvailabilityLabel(entry?.availability);
     final sharedMemo = entry?.sharedMemo.trim() ?? '';
+    final meetingTimeLabel = entry?.meetingTimeLabel.trim() ?? '';
+    final meetingNote = entry?.meetingNote.trim() ?? '';
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFF8F8F4),
@@ -9116,6 +9308,24 @@ class _MeetingPersonRow extends StatelessWidget {
                     style: sans(
                       size: 11,
                       color: const Color(0xFF6B675F),
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+                if (entry?.isMeetingDay == true) ...[
+                  const SizedBox(height: 5),
+                  Text(
+                    [
+                      '만나는 날',
+                      if (meetingTimeLabel.isNotEmpty) meetingTimeLabel,
+                      if (meetingNote.isNotEmpty) meetingNote,
+                    ].join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: sans(
+                      size: 11,
+                      color: AlagagiColors.sageDeep,
+                      weight: FontWeight.w800,
                       height: 1.35,
                     ),
                   ),
@@ -10982,6 +11192,14 @@ String _meetingDateLabel(String dateKey) {
   }
   const weekdays = ['월', '화', '수', '목', '금', '토', '일'];
   return '${date.month}월 ${date.day}일 ${weekdays[date.weekday - 1]}요일';
+}
+
+String _meetingDateShortLabel(String dateKey) {
+  final date = DateTime.tryParse(dateKey);
+  if (date == null) {
+    return dateKey;
+  }
+  return '${date.month}월 ${date.day}일';
 }
 
 String _meetingAvailabilityLabel(MeetingAvailability? availability) {

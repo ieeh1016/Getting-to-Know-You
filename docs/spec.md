@@ -250,6 +250,7 @@ If the app grows, bottom navigation may become:
 - 상세 일정 입력은 `오전 일정`, `점심 약속`, `오후 일정`, `저녁 약속` 같은 빠른 입력 preset을 제공하고, 사용자는 채워진 시간을 직접 수정할 수 있다.
 - 상대에게 보여도 되는 조율 내용은 `상대에게 남길 한마디`인 `sharedMemo`와 `timeBlocks`에 따로 남긴다.
 - 둘 다 `available`이고 겹치는 `timeSlots`가 있으면 meeting candidate로 강조한다.
+- 둘 다 가능한 후보에서는 `만나는 날`로 저장할 수 있고, 만나는 시간은 `19:00-21:00`, `저녁 7시쯤`처럼 자유 문구로 입력한다.
 - `maybe`가 포함된 날은 확정 후보가 아니라 조율 필요 상태로 둔다.
 - 장소 보드는 `장소` 화면에서 제공한다.
 - 장소 보드는 현재 위치 공유 기능이 아니며, 사용자가 저장한 장소만 둘에게 보인다.
@@ -1967,6 +1968,9 @@ Rules:
     }
   ],
   "sharedMemo": "19:30 이후면 괜찮아요.",
+  "isMeetingDay": true,
+  "meetingTimeLabel": "저녁 7시쯤",
+  "meetingNote": "장소는 성수 쪽으로 천천히 보기",
   "updatedAt": "serverTimestamp"
 }
 ```

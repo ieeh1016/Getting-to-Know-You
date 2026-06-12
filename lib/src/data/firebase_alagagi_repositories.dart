@@ -299,6 +299,9 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           'timeSlots': entry.timeSlots.map(_timeSlotToData).toList(),
           'timeBlocks': entry.timeBlocks.map(_timeBlockToData).toList(),
           'sharedMemo': entry.sharedMemo,
+          'isMeetingDay': entry.isMeetingDay,
+          'meetingTimeLabel': entry.meetingTimeLabel,
+          'meetingNote': entry.meetingNote,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
   }
@@ -661,6 +664,9 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         'timeBlocks',
       ).map(_timeBlockFromData).nonNulls.toList(),
       sharedMemo: _readString(data, 'sharedMemo') ?? '',
+      isMeetingDay: _readBool(data, 'isMeetingDay') ?? false,
+      meetingTimeLabel: _readString(data, 'meetingTimeLabel') ?? '',
+      meetingNote: _readString(data, 'meetingNote') ?? '',
       updatedAt: _readDateTime(data, 'updatedAt'),
     );
   }
@@ -974,6 +980,14 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     }
     if (value is String) {
       return int.tryParse(value);
+    }
+    return null;
+  }
+
+  bool? _readBool(Map<String, dynamic> data, String key) {
+    final value = data[key];
+    if (value is bool) {
+      return value;
     }
     return null;
   }

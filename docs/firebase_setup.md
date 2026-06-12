@@ -489,6 +489,9 @@ service cloud.firestore {
           'timeSlots',
           'timeBlocks',
           'sharedMemo',
+          'isMeetingDay',
+          'meetingTimeLabel',
+          'meetingNote',
           'updatedAt'
         ])
         && request.resource.data.dateKey is string
@@ -502,7 +505,12 @@ service cloud.firestore {
         && request.resource.data.timeBlocks is list
         && request.resource.data.timeBlocks.size() <= 6
         && request.resource.data.sharedMemo is string
-        && request.resource.data.sharedMemo.size() <= 120;
+        && request.resource.data.sharedMemo.size() <= 120
+        && request.resource.data.isMeetingDay is bool
+        && request.resource.data.meetingTimeLabel is string
+        && request.resource.data.meetingTimeLabel.size() <= 40
+        && request.resource.data.meetingNote is string
+        && request.resource.data.meetingNote.size() <= 80;
     }
 
     function validSharedPlace(spaceId, placeId) {

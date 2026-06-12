@@ -217,6 +217,7 @@
 - Meeting detailed time block add/remove is local draft state only; the Firestore write happens only when `일정 저장하기` is submitted.
 - Meeting calendar marks a date as `내 입력` after I save availability/time slots even when the partner has not entered anything yet.
 - Meeting calendar keeps `서로 가능`, `내 입력`, and `상대 표시` markers visible together when both people have compatible entries.
+- Meeting candidate detail lets the user save `만나는 날` with a free-form time label such as `저녁 7시쯤`, and the calendar marks that date as `만나는 날`.
 - Kakao place search typing/result selection, map pan/zoom, detail open, category draft changes는 Firestore write를 만들지 않는다.
 - Place save/interest action은 사용자 명시 action에서만 shared place document를 저장한다.
 - Place board는 현재 위치, 이동 경로, raw API payload, 이미지 blob을 저장하지 않는다.
