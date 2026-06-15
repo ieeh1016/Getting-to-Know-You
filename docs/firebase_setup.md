@@ -108,7 +108,7 @@ minyoung@gettoknow.local
 
 Firestore Console에서 배열은 `array` 타입으로 넣는다.
 
-`spaces/main/curiosityCards` 하위 컬렉션은 앱에서 처음 `질문 보내기`를 누를 때 자동으로 만들어진다. `spaces/main/stockStories` 하위 컬렉션도 `주식 이야기`에서 처음 `이야기 남기기`를 누를 때 자동으로 만들어진다. `spaces/main/stockHoldings` 하위 컬렉션은 `보유` 탭에서 처음 `보유 공유하기`를 누를 때 자동으로 만들어진다. Console에서 빈 컬렉션을 미리 만들 필요는 없지만, 아래 Security Rules에는 `curiosityCards`, `stockStories`, `stockHoldings` 규칙이 포함되어 있어야 한다.
+`spaces/main/curiosityCards` 하위 컬렉션은 앱에서 처음 `질문 보내기`를 누를 때 자동으로 만들어진다. `spaces/main/stockStories` 하위 컬렉션도 `주식 이야기`에서 처음 `이야기 남기기`를 누를 때 자동으로 만들어진다. `spaces/main/stockHoldings` 하위 컬렉션은 `보유` 탭에서 처음 `보유 공유하기`를 누를 때 자동으로 만들어진다. `spaces/main/improvementPosts` 하위 컬렉션은 `건의함`에서 처음 `건의 남기기`를 누를 때 자동으로 만들어진다. Console에서 빈 컬렉션을 미리 만들 필요는 없지만, 아래 Security Rules에는 `curiosityCards`, `stockStories`, `stockHoldings`, `improvementPosts` 규칙이 포함되어 있어야 한다.
 
 ## 6. Firestore Security Rules
 
@@ -258,6 +258,48 @@ service cloud.firestore {
             && request.auth.uid in resource.data.listenedByProfileIds
           )
         );
+    }
+
+    function validImprovementPostShape(spaceId, postId) {
+      return request.resource.data.keys().hasOnly([
+          'id',
+          'title',
+          'body',
+          'category',
+          'createdByProfileId',
+          'createdLabel',
+          'updatedAt'
+        ])
+        && request.resource.data.id == postId
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 2
+        && request.resource.data.title.size() <= 50
+        && request.resource.data.body is string
+        && request.resource.data.body.size() >= 4
+        && request.resource.data.body.size() <= 300
+        && request.resource.data.category in ['개선', '추가 요청', '불편함', '아이디어']
+        && request.resource.data.createdByProfileId is string
+        && request.resource.data.createdByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        && request.resource.data.createdLabel is string
+        && request.resource.data.createdLabel.size() <= 16;
+    }
+
+    function validNewImprovementPost(spaceId, postId) {
+      return validImprovementPostShape(spaceId, postId)
+        && request.resource.data.createdByProfileId == request.auth.uid;
+    }
+
+    function validImprovementPostOwnerEdit(spaceId, postId) {
+      return validImprovementPostShape(spaceId, postId)
+        && resource.data.createdByProfileId == request.auth.uid
+        && request.resource.data.createdByProfileId == resource.data.createdByProfileId
+        && request.resource.data.createdLabel == resource.data.createdLabel
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'title',
+          'body',
+          'category',
+          'updatedAt'
+        ]);
     }
 
     function validCuriosityCardShape(spaceId, cardId) {
@@ -723,6 +765,16 @@ service cloud.firestore {
             validSharedPlaceOwnerEdit(spaceId, placeId)
             || validSharedPlaceInterestUpdate(spaceId, placeId)
           );
+        allow delete: if isSpaceMember(spaceId)
+          && resource.data.createdByProfileId == request.auth.uid;
+      }
+
+      match /improvementPosts/{postId} {
+        allow read: if isSpaceMember(spaceId);
+        allow create: if isSpaceMember(spaceId)
+          && validNewImprovementPost(spaceId, postId);
+        allow update: if isSpaceMember(spaceId)
+          && validImprovementPostOwnerEdit(spaceId, postId);
         allow delete: if isSpaceMember(spaceId)
           && resource.data.createdByProfileId == request.auth.uid;
       }

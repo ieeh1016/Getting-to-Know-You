@@ -12,6 +12,7 @@ enum AlagagiRoute {
   meetings,
   places,
   stockStory,
+  improvements,
   balance,
   profileCard,
   wishlist,
@@ -55,6 +56,7 @@ const musicMoodOptions = ['차분한', '산책', '카페', '밤', '가벼운', '
 const stockStoryReplyToneOptions = ['같이 볼래요', '더 찾아볼게요', '조심해요'];
 const stockHoldingStatusOptions = ['보유 중', '정리 고민 중', '최근 정리함'];
 const stockHoldingWeightOptions = ['작게', '보통', '크게'];
+const improvementPostCategoryOptions = ['개선', '추가 요청', '불편함', '아이디어'];
 
 enum QuestionDepth { light, daily, beliefs, inner }
 
@@ -139,6 +141,7 @@ class AlagagiSpaceData {
     this.curiosityCards = const [],
     this.stockStories = const [],
     this.stockHoldings = const [],
+    this.improvementPosts = const [],
     this.dailyProgress,
     this.personalization = const SpacePersonalization(),
   });
@@ -154,6 +157,7 @@ class AlagagiSpaceData {
   final List<CuriosityCard> curiosityCards;
   final List<StockStory> stockStories;
   final List<StockHolding> stockHoldings;
+  final List<ImprovementPost> improvementPosts;
   final DailyQuestionProgress? dailyProgress;
   final SpacePersonalization personalization;
 }
@@ -221,6 +225,10 @@ abstract class AlagagiDataRepository {
   Future<void> saveStockHolding(String spaceId, StockHolding holding);
 
   Future<void> deleteStockHolding(String spaceId, String holdingId);
+
+  Future<void> saveImprovementPost(String spaceId, ImprovementPost post);
+
+  Future<void> deleteImprovementPost(String spaceId, String postId);
 }
 
 class AppProfile {
@@ -1017,6 +1025,43 @@ class CuriosityCard {
   }
 }
 
+class ImprovementPost {
+  const ImprovementPost({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.category,
+    required this.createdByProfileId,
+    required this.createdLabel,
+    this.updatedAt,
+  });
+
+  final String id;
+  final String title;
+  final String body;
+  final String category;
+  final String createdByProfileId;
+  final String createdLabel;
+  final DateTime? updatedAt;
+
+  ImprovementPost copyWith({
+    String? title,
+    String? body,
+    String? category,
+    DateTime? updatedAt,
+  }) {
+    return ImprovementPost(
+      id: id,
+      title: title ?? this.title,
+      body: body ?? this.body,
+      category: category ?? this.category,
+      createdByProfileId: createdByProfileId,
+      createdLabel: createdLabel,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+}
+
 class StockStory {
   const StockStory({
     required this.id,
@@ -1312,6 +1357,15 @@ class AlagagiState {
     this.stockHoldingReplyTonesByHoldingId = const {},
     this.stockHoldingReplyError,
     this.stockHoldingListFilter = StockHoldingListFilter.all,
+    this.improvementDraftVisible = false,
+    this.improvementDraftTitle = '',
+    this.improvementDraftBody = '',
+    this.improvementDraftCategory = '개선',
+    this.improvementDraftError,
+    this.editingImprovementPostId,
+    this.improvementSaveStatus = SaveStatus.idle,
+    this.improvementSaveFeedback,
+    this.improvementSaveTargetId,
     this.curiosityQuestionDraft = '',
     this.curiosityReplyDraftsByCardId = const {},
     this.curiosityError,
@@ -1416,6 +1470,15 @@ class AlagagiState {
   final Map<String, String> stockHoldingReplyTonesByHoldingId;
   final String? stockHoldingReplyError;
   final StockHoldingListFilter stockHoldingListFilter;
+  final bool improvementDraftVisible;
+  final String improvementDraftTitle;
+  final String improvementDraftBody;
+  final String improvementDraftCategory;
+  final String? improvementDraftError;
+  final String? editingImprovementPostId;
+  final SaveStatus improvementSaveStatus;
+  final String? improvementSaveFeedback;
+  final String? improvementSaveTargetId;
   final String curiosityQuestionDraft;
   final Map<String, String> curiosityReplyDraftsByCardId;
   final String? curiosityError;
@@ -1535,6 +1598,19 @@ class AlagagiState {
     String? stockHoldingReplyError,
     bool clearStockHoldingReplyError = false,
     StockHoldingListFilter? stockHoldingListFilter,
+    bool? improvementDraftVisible,
+    String? improvementDraftTitle,
+    String? improvementDraftBody,
+    String? improvementDraftCategory,
+    String? improvementDraftError,
+    bool clearImprovementDraftError = false,
+    String? editingImprovementPostId,
+    bool clearEditingImprovementPostId = false,
+    SaveStatus? improvementSaveStatus,
+    String? improvementSaveFeedback,
+    bool clearImprovementSaveFeedback = false,
+    String? improvementSaveTargetId,
+    bool clearImprovementSaveTargetId = false,
     String? curiosityQuestionDraft,
     Map<String, String>? curiosityReplyDraftsByCardId,
     String? curiosityError,
@@ -1713,6 +1789,27 @@ class AlagagiState {
           : stockHoldingReplyError ?? this.stockHoldingReplyError,
       stockHoldingListFilter:
           stockHoldingListFilter ?? this.stockHoldingListFilter,
+      improvementDraftVisible:
+          improvementDraftVisible ?? this.improvementDraftVisible,
+      improvementDraftTitle:
+          improvementDraftTitle ?? this.improvementDraftTitle,
+      improvementDraftBody: improvementDraftBody ?? this.improvementDraftBody,
+      improvementDraftCategory:
+          improvementDraftCategory ?? this.improvementDraftCategory,
+      improvementDraftError: clearImprovementDraftError
+          ? null
+          : improvementDraftError ?? this.improvementDraftError,
+      editingImprovementPostId: clearEditingImprovementPostId
+          ? null
+          : editingImprovementPostId ?? this.editingImprovementPostId,
+      improvementSaveStatus:
+          improvementSaveStatus ?? this.improvementSaveStatus,
+      improvementSaveFeedback: clearImprovementSaveFeedback
+          ? null
+          : improvementSaveFeedback ?? this.improvementSaveFeedback,
+      improvementSaveTargetId: clearImprovementSaveTargetId
+          ? null
+          : improvementSaveTargetId ?? this.improvementSaveTargetId,
       curiosityQuestionDraft:
           curiosityQuestionDraft ?? this.curiosityQuestionDraft,
       curiosityReplyDraftsByCardId:
@@ -1872,12 +1969,14 @@ class AlagagiController extends ChangeNotifier {
   final List<CuriosityCard> _curiosityCards = [];
   final List<StockStory> _stockStories = [];
   final List<StockHolding> _stockHoldings = [];
+  final List<ImprovementPost> _improvementPosts = [];
   Answer? _lastFailedAnswer;
   AnswerComment? _lastFailedAnswerComment;
   ScheduleEntry? _lastFailedScheduleEntry;
   String _lastFailedScheduleEntrySuccessFeedback = '일정을 저장했어요.';
   SharedPlace? _lastFailedSharedPlace;
   CuriosityCard? _lastFailedCuriosityCard;
+  ImprovementPost? _lastFailedImprovementPost;
 
   AlagagiState get state => _state;
 
@@ -2260,6 +2359,10 @@ class AlagagiController extends ChangeNotifier {
       ..clear()
       ..addAll(data.stockHoldings);
     _sortStockHoldingsByUpdatedAt();
+    _improvementPosts
+      ..clear()
+      ..addAll(data.improvementPosts);
+    _sortImprovementPostsByUpdatedAt();
   }
 
   static DailyQuestionProgress _resolveDailyQuestionProgress(
@@ -2676,6 +2779,98 @@ class AlagagiController extends ChangeNotifier {
               curiositySaveStatus: SaveStatus.failed,
               curiositySaveTargetId: card.id,
               clearCuriositySaveFeedback: true,
+            );
+            notifyListeners();
+          }),
+    );
+  }
+
+  void _persistImprovementPost(
+    ImprovementPost post, {
+    String successFeedback = '건의를 저장했어요.',
+  }) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      _lastFailedImprovementPost = null;
+      _state = _state.copyWith(
+        improvementSaveStatus: SaveStatus.saved,
+        improvementSaveFeedback: successFeedback,
+        improvementSaveTargetId: post.id,
+        clearImprovementDraftError: true,
+      );
+      notifyListeners();
+      return;
+    }
+    unawaited(
+      repository
+          .saveImprovementPost(spaceId, post)
+          .then<void>((_) {
+            _lastFailedImprovementPost = null;
+            _state = _state.copyWith(
+              improvementSaveStatus: SaveStatus.saved,
+              improvementSaveFeedback: successFeedback,
+              improvementSaveTargetId: post.id,
+              clearImprovementDraftError: true,
+            );
+            notifyListeners();
+          })
+          .catchError((Object _) {
+            _lastFailedImprovementPost = post;
+            _state = _state.copyWith(
+              improvementDraftError: '건의를 저장하지 못했어요. 다시 시도해 주세요.',
+              improvementSaveStatus: SaveStatus.failed,
+              improvementSaveTargetId: post.id,
+              clearImprovementSaveFeedback: true,
+            );
+            notifyListeners();
+          }),
+    );
+  }
+
+  void _deletePersistedImprovementPost(
+    ImprovementPost post,
+    int previousIndex,
+  ) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      _state = _state.copyWith(
+        improvementSaveStatus: SaveStatus.saved,
+        improvementSaveFeedback: '건의를 삭제했어요.',
+        improvementSaveTargetId: post.id,
+        clearImprovementDraftError: true,
+      );
+      notifyListeners();
+      return;
+    }
+    unawaited(
+      repository
+          .deleteImprovementPost(spaceId, post.id)
+          .then<void>((_) {
+            _state = _state.copyWith(
+              improvementSaveStatus: SaveStatus.saved,
+              improvementSaveFeedback: '건의를 삭제했어요.',
+              improvementSaveTargetId: post.id,
+              clearImprovementDraftError: true,
+            );
+            notifyListeners();
+          })
+          .catchError((Object _) {
+            final boundedIndex = previousIndex
+                .clamp(0, _improvementPosts.length)
+                .toInt();
+            if (!_improvementPosts.any(
+              (candidate) => candidate.id == post.id,
+            )) {
+              _improvementPosts.insert(boundedIndex, post);
+              _sortImprovementPostsByUpdatedAt();
+            }
+            _state = _state.copyWith(
+              improvementDraftError: '건의를 삭제하지 못했어요. 다시 시도해 주세요.',
+              improvementSaveStatus: SaveStatus.failed,
+              improvementSaveTargetId: post.id,
+              clearImprovementSaveFeedback: true,
             );
             notifyListeners();
           }),
@@ -3200,6 +3395,9 @@ class AlagagiController extends ChangeNotifier {
   List<CuriosityCard> get curiosityCards =>
       List<CuriosityCard>.unmodifiable(_curiosityCards);
 
+  List<ImprovementPost> get improvementPosts =>
+      List<ImprovementPost>.unmodifiable(_improvementPosts);
+
   List<StockStory> get stockStories =>
       List<StockStory>.unmodifiable(_stockStories);
 
@@ -3309,6 +3507,10 @@ class AlagagiController extends ChangeNotifier {
       }
     }
     return null;
+  }
+
+  bool isImprovementSaveTarget(String postId) {
+    return _state.improvementSaveTargetId == postId;
   }
 
   List<ArchiveItem> get archiveItems {
@@ -3513,6 +3715,23 @@ class AlagagiController extends ChangeNotifier {
 
   void _sortCuriosityCardsByUpdatedAt() {
     _curiosityCards.sort((a, b) {
+      final aUpdatedAt = a.updatedAt;
+      final bUpdatedAt = b.updatedAt;
+      if (aUpdatedAt == null && bUpdatedAt == null) {
+        return b.id.compareTo(a.id);
+      }
+      if (aUpdatedAt == null) {
+        return 1;
+      }
+      if (bUpdatedAt == null) {
+        return -1;
+      }
+      return bUpdatedAt.compareTo(aUpdatedAt);
+    });
+  }
+
+  void _sortImprovementPostsByUpdatedAt() {
+    _improvementPosts.sort((a, b) {
       final aUpdatedAt = a.updatedAt;
       final bUpdatedAt = b.updatedAt;
       if (aUpdatedAt == null && bUpdatedAt == null) {
@@ -4229,6 +4448,243 @@ class AlagagiController extends ChangeNotifier {
 
   String curiosityReplyDraftFor(String cardId) {
     return _state.curiosityReplyDraftsByCardId[cardId] ?? '';
+  }
+
+  void startImprovementDraft() {
+    _state = _state.copyWith(
+      route: AlagagiRoute.improvements,
+      improvementDraftVisible: true,
+      improvementDraftTitle: '',
+      improvementDraftBody: '',
+      improvementDraftCategory: improvementPostCategoryOptions.first,
+      clearImprovementDraftError: true,
+      clearEditingImprovementPostId: true,
+      improvementSaveStatus: SaveStatus.idle,
+      clearImprovementSaveFeedback: true,
+      clearImprovementSaveTargetId: true,
+    );
+    notifyListeners();
+  }
+
+  void startImprovementEdit(String postId) {
+    final index = _improvementPosts.indexWhere((post) => post.id == postId);
+    if (index == -1) {
+      _state = _state.copyWith(
+        improvementDraftError: '수정할 건의를 찾지 못했어요.',
+        improvementSaveStatus: SaveStatus.failed,
+        improvementSaveTargetId: postId,
+        clearImprovementSaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    final post = _improvementPosts[index];
+    if (post.createdByProfileId != _state.me.id) {
+      _state = _state.copyWith(
+        improvementDraftError: '내가 남긴 건의만 수정할 수 있어요.',
+        improvementSaveStatus: SaveStatus.failed,
+        improvementSaveTargetId: postId,
+        clearImprovementSaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    _state = _state.copyWith(
+      route: AlagagiRoute.improvements,
+      improvementDraftVisible: true,
+      editingImprovementPostId: post.id,
+      improvementDraftTitle: post.title,
+      improvementDraftBody: post.body,
+      improvementDraftCategory: post.category,
+      improvementSaveStatus: SaveStatus.idle,
+      clearImprovementDraftError: true,
+      clearImprovementSaveFeedback: true,
+      clearImprovementSaveTargetId: true,
+    );
+    notifyListeners();
+  }
+
+  void cancelImprovementDraft() {
+    _state = _state.copyWith(
+      improvementDraftVisible: false,
+      improvementDraftTitle: '',
+      improvementDraftBody: '',
+      improvementDraftCategory: improvementPostCategoryOptions.first,
+      clearImprovementDraftError: true,
+      clearEditingImprovementPostId: true,
+    );
+    notifyListeners();
+  }
+
+  void updateImprovementDraft({String? title, String? body, String? category}) {
+    _state = _state.copyWith(
+      improvementDraftTitle: title,
+      improvementDraftBody: body,
+      improvementDraftCategory: category,
+      improvementSaveStatus: SaveStatus.idle,
+      clearImprovementDraftError: true,
+      clearImprovementSaveFeedback: true,
+      clearImprovementSaveTargetId: true,
+    );
+    notifyListeners();
+  }
+
+  void submitImprovementDraft() {
+    if (_state.improvementSaveStatus == SaveStatus.saving) {
+      return;
+    }
+    final title = _state.improvementDraftTitle.trim();
+    final body = _state.improvementDraftBody.trim();
+    final category = _state.improvementDraftCategory.trim();
+
+    String? error;
+    if (title.length < 2) {
+      error = '제목은 두 글자 이상 남겨주세요.';
+    } else if (title.length > 50) {
+      error = '제목은 50자 안으로 남겨주세요.';
+    } else if (body.length < 4) {
+      error = '내용은 네 글자 이상 남겨주세요.';
+    } else if (body.length > 300) {
+      error = '내용은 300자 안으로 남겨주세요.';
+    } else if (!improvementPostCategoryOptions.contains(category)) {
+      error = '분류를 다시 골라주세요.';
+    }
+    if (error != null) {
+      _state = _state.copyWith(
+        improvementDraftError: error,
+        improvementSaveStatus: SaveStatus.idle,
+        clearImprovementSaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+
+    final editingId = _state.editingImprovementPostId;
+    final editingIndex = editingId == null
+        ? -1
+        : _improvementPosts.indexWhere((post) => post.id == editingId);
+    if (editingId != null) {
+      if (editingIndex == -1) {
+        _state = _state.copyWith(
+          improvementDraftError: '수정할 건의를 찾지 못했어요.',
+          improvementSaveStatus: SaveStatus.failed,
+          improvementSaveTargetId: editingId,
+          clearImprovementSaveFeedback: true,
+        );
+        notifyListeners();
+        return;
+      }
+      if (_improvementPosts[editingIndex].createdByProfileId != _state.me.id) {
+        _state = _state.copyWith(
+          improvementDraftError: '내가 남긴 건의만 수정할 수 있어요.',
+          improvementSaveStatus: SaveStatus.failed,
+          improvementSaveTargetId: editingId,
+          clearImprovementSaveFeedback: true,
+        );
+        notifyListeners();
+        return;
+      }
+    }
+
+    final now = DateTime.now();
+    final ImprovementPost post;
+    final String successFeedback;
+    if (editingIndex == -1) {
+      post = ImprovementPost(
+        id: 'improvement_${_state.me.id}_${now.microsecondsSinceEpoch}',
+        title: title,
+        body: body,
+        category: category,
+        createdByProfileId: _state.me.id,
+        createdLabel: '오늘',
+        updatedAt: now,
+      );
+      _improvementPosts.insert(0, post);
+      successFeedback = '건의를 남겼어요.';
+    } else {
+      post = _improvementPosts[editingIndex].copyWith(
+        title: title,
+        body: body,
+        category: category,
+        updatedAt: now,
+      );
+      _improvementPosts[editingIndex] = post;
+      successFeedback = '건의를 수정했어요.';
+    }
+    _sortImprovementPostsByUpdatedAt();
+    _lastFailedImprovementPost = null;
+    _state = _state.copyWith(
+      improvementDraftVisible: false,
+      improvementDraftTitle: '',
+      improvementDraftBody: '',
+      improvementDraftCategory: improvementPostCategoryOptions.first,
+      improvementSaveStatus: SaveStatus.saving,
+      improvementSaveTargetId: post.id,
+      clearImprovementDraftError: true,
+      clearEditingImprovementPostId: true,
+      clearImprovementSaveFeedback: true,
+    );
+    notifyListeners();
+    _persistImprovementPost(post, successFeedback: successFeedback);
+  }
+
+  void deleteImprovementPost(String postId) {
+    final index = _improvementPosts.indexWhere((post) => post.id == postId);
+    if (index == -1) {
+      _state = _state.copyWith(
+        improvementDraftError: '삭제할 건의를 찾지 못했어요.',
+        improvementSaveStatus: SaveStatus.failed,
+        improvementSaveTargetId: postId,
+        clearImprovementSaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    final post = _improvementPosts[index];
+    if (post.createdByProfileId != _state.me.id) {
+      _state = _state.copyWith(
+        improvementDraftError: '내가 남긴 건의만 삭제할 수 있어요.',
+        improvementSaveStatus: SaveStatus.failed,
+        improvementSaveTargetId: postId,
+        clearImprovementSaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    _improvementPosts.removeAt(index);
+    final wasEditing = _state.editingImprovementPostId == postId;
+    _state = _state.copyWith(
+      improvementDraftVisible: wasEditing
+          ? false
+          : _state.improvementDraftVisible,
+      improvementDraftTitle: wasEditing ? '' : _state.improvementDraftTitle,
+      improvementDraftBody: wasEditing ? '' : _state.improvementDraftBody,
+      improvementDraftCategory: wasEditing
+          ? improvementPostCategoryOptions.first
+          : _state.improvementDraftCategory,
+      improvementSaveStatus: SaveStatus.saving,
+      improvementSaveTargetId: post.id,
+      clearImprovementDraftError: true,
+      clearEditingImprovementPostId: wasEditing,
+      clearImprovementSaveFeedback: true,
+    );
+    notifyListeners();
+    _deletePersistedImprovementPost(post, index);
+  }
+
+  void retryImprovementSave() {
+    final post = _lastFailedImprovementPost;
+    if (post == null || _state.improvementSaveStatus == SaveStatus.saving) {
+      return;
+    }
+    _state = _state.copyWith(
+      improvementSaveStatus: SaveStatus.saving,
+      improvementSaveTargetId: post.id,
+      clearImprovementDraftError: true,
+      clearImprovementSaveFeedback: true,
+    );
+    notifyListeners();
+    _persistImprovementPost(post);
   }
 
   bool isCuriositySaveTarget(String cardId) {

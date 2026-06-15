@@ -223,7 +223,7 @@ If the app grows, bottom navigation may become:
 
 - 홈 header는 단순 텍스트 제목 대신 작은 새싹 표식, `조금씩` 한글 워드마크, `천천히 알아가는 기록` 보조 문구로 앱 브랜드를 보여준다.
 - 홈의 핵심 시선은 `Today's Question` 카드에 남겨두고, 추가 기능은 질문 카드 아래의 작은 `궁금함` 상태 카드로만 진입시킨다.
-- 홈 header menu는 `기능 모아보기` 역할을 하며 `궁금함 한 장`, `주식 이야기`, `밸런스 게임`, `소개 카드`, `언젠가, 같이`, `처음 안내`로 바로 이동할 수 있다.
+- 홈 header menu는 `기능 모아보기` 역할을 하며 `궁금함 한 장`, `주식 이야기`, `건의함`, `밸런스 게임`, `소개 카드`, `언젠가, 같이`, `처음 안내`로 바로 이동할 수 있다.
 - `궁금함` 상태 카드는 받은 질문, 보낸 질문, 답장 완료 상태를 낮은 압력의 문구로 요약한다.
 - `궁금함` 상태 카드를 누르면 bottom sheet가 열리고, 받은 질문 답장 입력, 내가 보낸 질문 상태, 새 질문 작성 흐름을 보여준다.
 - 질문 작성과 답장 저장은 사용자가 명시적으로 `질문 보내기` 또는 `답장 저장하기`를 눌렀을 때만 `spaces/{spaceId}/curiosityCards/{cardId}`에 기록한다.
@@ -581,7 +581,7 @@ This batch follows `docs/design/stock_talk_entry_options.html` and `docs/design/
 - Entry:
   - Home must not add another full-width feature card for this scope.
   - Home header exposes a compact menu button that opens `조금씩 메뉴` as a bottom sheet.
-  - The menu sheet contains `궁금함 한 장`, `주식 이야기`, and `처음 안내`.
+- The menu sheet contains `궁금함 한 장`, `주식 이야기`, `건의함`, and `처음 안내`.
   - `궁금함 한 장` is accessed from this menu instead of a separate home card.
   - `주식 이야기` opens a dedicated screen without adding a new bottom navigation tab.
 - Stock story data:
@@ -621,6 +621,22 @@ This batch follows `docs/design/stock_talk_entry_options.html` and `docs/design/
   - Replying to a holding updates the existing `stockHoldings/{holdingId}` document.
   - Editing or deleting a holding is allowed only for the profile that created that holding.
   - Draft typing, opening the menu, route changes, and reading a story do not create Firestore writes.
+
+### MVP v0.18 건의함
+
+- Entry:
+  - `건의함` opens from the home header menu as a dedicated screen without adding a bottom navigation tab.
+  - The home screen does not add another feature card for this board.
+- UX:
+  - Users can leave a post with category, title, and body.
+  - Categories are `개선`, `추가 요청`, `불편함`, and `아이디어`.
+  - Saved posts show author, category, title, and a body preview.
+  - Tapping a post opens the readable detail sheet.
+  - Only the profile that created a post can edit or delete it.
+- Firestore:
+  - Store posts under `spaces/{spaceId}/improvementPosts/{postId}`.
+  - Draft input is local state only; Firestore writes happen only on explicit submit, edit save, or delete.
+  - Each post stores `id`, `title`, `body`, `category`, `createdByProfileId`, `createdLabel`, and `updatedAt`.
 
 ### MVP v0.14 Quiet Home Progress & Save Stability
 

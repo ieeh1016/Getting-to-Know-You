@@ -1997,6 +1997,97 @@ void main() {
       },
     );
 
+    test('improvement board saves edits and deletes owner posts', () async {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        firebaseSessionWithData(
+          AlagagiSpaceData(
+            improvementPosts: [
+              ImprovementPost(
+                id: 'improvement_mine',
+                title: '장소 화면 개선',
+                body: '지도 위 버튼을 조금 더 정리하면 좋겠어요.',
+                category: '개선',
+                createdByProfileId: 'youngwooUid',
+                createdLabel: '오늘',
+                updatedAt: DateTime.parse('2026-06-10T09:00:00.000Z'),
+              ),
+              ImprovementPost(
+                id: 'improvement_partner',
+                title: '루틴 공유',
+                body: '서로의 반복 일정을 볼 수 있으면 좋겠어요.',
+                category: '추가 요청',
+                createdByProfileId: 'minyoungUid',
+                createdLabel: '오늘',
+                updatedAt: DateTime.parse('2026-06-10T08:00:00.000Z'),
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+      );
+
+      expect(controller.improvementPosts, hasLength(2));
+
+      controller.startImprovementDraft();
+      controller.updateImprovementDraft(
+        title: '음악 정렬',
+        body: '아직 안 들은 노래를 더 쉽게 보고 싶어요.',
+        category: '아이디어',
+      );
+
+      expect(repository.savedImprovementPosts, isEmpty);
+
+      controller.submitImprovementDraft();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(repository.savedImprovementPosts.single.spaceId, 'main');
+      expect(repository.savedImprovementPosts.single.post.title, '음악 정렬');
+      expect(
+        repository.savedImprovementPosts.single.post.createdByProfileId,
+        'youngwooUid',
+      );
+
+      controller.startImprovementEdit('improvement_partner');
+      expect(controller.state.improvementDraftError, contains('내가 남긴'));
+
+      controller.startImprovementEdit('improvement_mine');
+      expect(controller.state.editingImprovementPostId, 'improvement_mine');
+      controller.updateImprovementDraft(
+        title: '장소 화면 더 넓게',
+        body: '지도를 볼 때 카드가 덜 겹치면 좋겠어요.',
+        category: '불편함',
+      );
+      controller.submitImprovementDraft();
+      await Future<void>.delayed(Duration.zero);
+
+      final editedPost = controller.improvementPosts.firstWhere(
+        (post) => post.id == 'improvement_mine',
+      );
+      expect(editedPost.title, '장소 화면 더 넓게');
+      expect(editedPost.category, '불편함');
+      expect(repository.savedImprovementPosts.last.post.id, 'improvement_mine');
+
+      controller.deleteImprovementPost('improvement_partner');
+      expect(controller.state.improvementDraftError, contains('내가 남긴'));
+      expect(repository.deletedImprovementPosts, isEmpty);
+
+      controller.deleteImprovementPost('improvement_mine');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        controller.improvementPosts.any(
+          (post) => post.id == 'improvement_mine',
+        ),
+        isFalse,
+      );
+      expect(repository.deletedImprovementPosts.single.spaceId, 'main');
+      expect(
+        repository.deletedImprovementPosts.single.postId,
+        'improvement_mine',
+      );
+    });
+
     test(
       'home progress summary uses local seen time for new partner music notes',
       () {
@@ -2106,6 +2197,9 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   final List<({String spaceId, StockStory story})> savedStockStories = [];
   final List<({String spaceId, StockHolding holding})> savedStockHoldings = [];
   final List<({String spaceId, String holdingId})> deletedStockHoldings = [];
+  final List<({String spaceId, ImprovementPost post})> savedImprovementPosts =
+      [];
+  final List<({String spaceId, String postId})> deletedImprovementPosts = [];
   final List<({String spaceId, AnswerComment comment})> savedAnswerComments =
       [];
   final List<({String spaceId, CuriosityCard card})> savedCuriosityCards = [];
@@ -2206,6 +2300,16 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   @override
   Future<void> deleteStockHolding(String spaceId, String holdingId) async {
     deletedStockHoldings.add((spaceId: spaceId, holdingId: holdingId));
+  }
+
+  @override
+  Future<void> saveImprovementPost(String spaceId, ImprovementPost post) async {
+    savedImprovementPosts.add((spaceId: spaceId, post: post));
+  }
+
+  @override
+  Future<void> deleteImprovementPost(String spaceId, String postId) async {
+    deletedImprovementPosts.add((spaceId: spaceId, postId: postId));
   }
 
   @override

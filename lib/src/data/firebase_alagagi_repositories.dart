@@ -421,6 +421,34 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         .delete();
   }
 
+  @override
+  Future<void> saveImprovementPost(String spaceId, ImprovementPost post) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('improvementPosts')
+        .doc(post.id)
+        .set({
+          'id': post.id,
+          'title': post.title,
+          'body': post.body,
+          'category': post.category,
+          'createdByProfileId': post.createdByProfileId,
+          'createdLabel': post.createdLabel,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> deleteImprovementPost(String spaceId, String postId) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('improvementPosts')
+        .doc(postId)
+        .delete();
+  }
+
   Future<AlagagiSpaceData> _loadSpaceData({
     required String spaceId,
     required String meId,
@@ -442,6 +470,9 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         .get();
     final stockStoriesSnapshot = await space.collection('stockStories').get();
     final stockHoldingsSnapshot = await space.collection('stockHoldings').get();
+    final improvementPostsSnapshot = await space
+        .collection('improvementPosts')
+        .get();
     final progressSnapshot = await space
         .collection('progress')
         .doc('daily')
@@ -502,6 +533,10 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           .toList(),
       stockHoldings: stockHoldingsSnapshot.docs
           .map((doc) => _stockHoldingFromData(doc.id, doc.data()))
+          .nonNulls
+          .toList(),
+      improvementPosts: improvementPostsSnapshot.docs
+          .map((doc) => _improvementPostFromData(doc.id, doc.data()))
           .nonNulls
           .toList(),
       dailyProgress: _dailyProgressFromData(progressSnapshot.data()),
@@ -803,6 +838,31 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       reply: _readString(data, 'reply'),
       repliedByProfileId: _readString(data, 'repliedByProfileId'),
       repliedLabel: _readString(data, 'repliedLabel'),
+      updatedAt: _readDateTime(data, 'updatedAt'),
+    );
+  }
+
+  ImprovementPost? _improvementPostFromData(
+    String fallbackId,
+    Map<String, dynamic> data,
+  ) {
+    final title = _readString(data, 'title');
+    final body = _readString(data, 'body');
+    final category = _readString(data, 'category');
+    final createdByProfileId = _readString(data, 'createdByProfileId');
+    if (title == null ||
+        body == null ||
+        category == null ||
+        createdByProfileId == null) {
+      return null;
+    }
+    return ImprovementPost(
+      id: _readString(data, 'id') ?? fallbackId,
+      title: title,
+      body: body,
+      category: category,
+      createdByProfileId: createdByProfileId,
+      createdLabel: _readString(data, 'createdLabel') ?? '오늘',
       updatedAt: _readDateTime(data, 'updatedAt'),
     );
   }

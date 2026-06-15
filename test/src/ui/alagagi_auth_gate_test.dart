@@ -428,4 +428,13 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
 
   @override
   Future<void> deleteStockHolding(String spaceId, String holdingId) async {}
+
+  @override
+  Future<void> saveImprovementPost(
+    String spaceId,
+    ImprovementPost post,
+  ) async {}
+
+  @override
+  Future<void> deleteImprovementPost(String spaceId, String postId) async {}
 }

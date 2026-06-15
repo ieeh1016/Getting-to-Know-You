@@ -53,6 +53,7 @@ void main() {
     expect(find.byKey(homeMenuSheetKey), findsOneWidget);
     expect(find.byKey(homeMenuCuriosityButtonKey), findsOneWidget);
     expect(find.byKey(homeMenuStockStoryButtonKey), findsOneWidget);
+    expect(find.byKey(homeMenuImprovementButtonKey), findsOneWidget);
     expect(find.byKey(homeMenuBalanceButtonKey), findsOneWidget);
     expect(find.byKey(homeMenuProfileCardButtonKey), findsOneWidget);
     expect(find.byKey(homeMenuWishlistButtonKey), findsOneWidget);
@@ -138,6 +139,7 @@ void main() {
     expect(find.byKey(homeMenuSheetKey), findsOneWidget);
     expect(find.text('궁금함 한 장'), findsOneWidget);
     expect(find.text('주식 이야기'), findsOneWidget);
+    expect(find.byKey(homeMenuImprovementButtonKey), findsOneWidget);
     expect(find.byKey(homeMenuBalanceButtonKey), findsOneWidget);
     expect(find.byKey(homeMenuProfileCardButtonKey), findsOneWidget);
     expect(find.byKey(homeMenuWishlistButtonKey), findsOneWidget);
@@ -154,6 +156,136 @@ void main() {
     expect(find.text('약속'), findsOneWidget);
     expect(find.text('장소'), findsOneWidget);
     expect(find.text('마이'), findsOneWidget);
+  });
+
+  testWidgets('improvement board opens from menu and saves a post', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const AlagagiApp());
+    await enterSpace(tester);
+
+    await tester.tap(find.byKey(homeMenuButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(homeMenuImprovementButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('건의함'), findsOneWidget);
+    expect(find.byKey(improvementAddButtonKey), findsOneWidget);
+
+    await tester.tap(find.byKey(improvementAddButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(improvementCategoryKey('추가 요청')));
+    await tester.enterText(find.byKey(improvementTitleFieldKey), '루틴 공유');
+    await tester.enterText(
+      find.byKey(improvementBodyFieldKey),
+      '서로의 반복 일정을 함께 볼 수 있으면 좋겠어요.',
+    );
+    await tester.ensureVisible(find.byKey(improvementSubmitButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(improvementSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('루틴 공유'), findsOneWidget);
+    expect(find.textContaining('반복 일정'), findsOneWidget);
+    expect(find.text('추가 요청'), findsWidgets);
+  });
+
+  testWidgets('improvement board owners can edit and delete their posts', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      AlagagiSession(
+        spaceId: 'main',
+        me: const AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: const AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          improvementPosts: [
+            ImprovementPost(
+              id: 'improvement_mine',
+              title: '장소 화면',
+              body: '지도를 볼 때 카드가 조금 덜 겹치면 좋겠어요.',
+              category: '개선',
+              createdByProfileId: 'youngwooUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-10T09:00:00.000Z'),
+            ),
+            ImprovementPost(
+              id: 'improvement_partner',
+              title: '음악 정렬',
+              body: '아직 안 들은 노래를 먼저 보면 좋겠어요.',
+              category: '아이디어',
+              createdByProfileId: 'minyoungUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-10T08:00:00.000Z'),
+            ),
+          ],
+        ),
+      ),
+    )..goTo(AlagagiRoute.improvements);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(improvementEditButtonKey('improvement_mine')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(improvementDeleteButtonKey('improvement_mine')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(improvementEditButtonKey('improvement_partner')),
+      findsNothing,
+    );
+
+    await tester.ensureVisible(
+      find.byKey(improvementEditButtonKey('improvement_mine')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(improvementEditButtonKey('improvement_mine')));
+    await tester.pumpAndSettle();
+    expect(find.text('수정 저장'), findsOneWidget);
+
+    await tester.enterText(find.byKey(improvementTitleFieldKey), '지도 화면');
+    await tester.enterText(
+      find.byKey(improvementBodyFieldKey),
+      '지도 조작 중에는 카드가 덜 가리면 좋겠어요.',
+    );
+    await tester.ensureVisible(find.byKey(improvementSubmitButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(improvementSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('지도 화면'), findsOneWidget);
+    expect(find.textContaining('지도 조작'), findsOneWidget);
+
+    await tester.ensureVisible(
+      find.byKey(improvementDeleteButtonKey('improvement_mine')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(improvementDeleteButtonKey('improvement_mine')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(improvementCardKey('improvement_mine')), findsNothing);
+    expect(
+      find.byKey(improvementCardKey('improvement_partner')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('home menu works as a feature launcher', (tester) async {
@@ -2965,6 +3097,15 @@ class _FailingSaveRepository implements AlagagiDataRepository {
 
   @override
   Future<void> deleteStockHolding(String spaceId, String holdingId) async {}
+
+  @override
+  Future<void> saveImprovementPost(
+    String spaceId,
+    ImprovementPost post,
+  ) async {}
+
+  @override
+  Future<void> deleteImprovementPost(String spaceId, String postId) async {}
 
   @override
   Future<void> saveProfileSlot(
