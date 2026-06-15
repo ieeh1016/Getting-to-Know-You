@@ -9936,6 +9936,7 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
     final visibleBoardPlaces = _showAllBoardPlaces
         ? boardPlaces
         : boardPlaces.take(4).toList();
+    final pairPlanTitle = _meetingPlanPairTitle(controller);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -9946,13 +9947,45 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF5D2),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0x33D9B34F)),
+                    ),
+                    alignment: Alignment.center,
+                    child: const Text('📝', style: TextStyle(fontSize: 18)),
+                  ),
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: Text(
-                      '그날 할 것',
-                      style: serif(context, size: 20, weight: FontWeight.w800),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          pairPlanTitle,
+                          style: serif(
+                            context,
+                            size: 20,
+                            weight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '같이 하고 싶은 것들을 편하게 모아요.',
+                          style: sans(
+                            size: 11.5,
+                            color: AlagagiColors.muted,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   _SmallBadge(label: _meetingDateShortLabel(entry.dateKey)),
                 ],
               ),
@@ -10053,7 +10086,7 @@ class _MeetingPlanTaskList extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                '아래에 하나씩 추가하면 그날 계획이 보기 좋게 정리돼요.',
+                '둘이 같이 하고 싶은 걸 하나씩 적어두면 좋아요.',
                 style: sans(
                   size: 12.2,
                   color: AlagagiColors.muted,
@@ -10190,6 +10223,25 @@ class _MeetingPlanTaskComposer extends StatelessWidget {
       ],
     );
   }
+}
+
+String _meetingPlanPairTitle(AlagagiController controller) {
+  final me = controller.state.me.nickname.trim();
+  final partner = controller.state.partner.nickname.trim();
+  if ({me, partner}.containsAll(const ['영우', '민영'])) {
+    return '영우·민영의 계획';
+  }
+  final names = [
+    if (me.isNotEmpty) me,
+    if (partner.isNotEmpty && partner != me) partner,
+  ];
+  if (names.length >= 2) {
+    return '${names.take(2).join('·')}의 계획';
+  }
+  if (names.length == 1) {
+    return '${names.single}의 계획';
+  }
+  return '우리의 계획';
 }
 
 class _MeetingPlanMorePlacesButton extends StatelessWidget {

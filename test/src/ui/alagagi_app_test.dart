@@ -2545,6 +2545,9 @@ void main() {
 
     expect(find.byKey(meetingPlanScreenKey), findsOneWidget);
     expect(find.byKey(meetingPlanDateButtonKey(dateKey)), findsOneWidget);
+    expect(find.text('영우·민영의 계획'), findsOneWidget);
+    expect(find.text('같이 하고 싶은 것들을 편하게 모아요.'), findsOneWidget);
+    expect(find.text('그날 할 것'), findsNothing);
 
     for (final item in ['전시 보기', '근처 카페', '저녁 먹기']) {
       await tester.ensureVisible(find.byKey(meetingPlanDraftFieldKey));
