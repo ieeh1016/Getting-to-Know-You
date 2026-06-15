@@ -1508,6 +1508,7 @@ class AlagagiState {
     this.meetingDraftMeetingNote = '',
     this.meetingDraftMeetingPlanText = '',
     this.meetingPlanDraftText = '',
+    this.meetingPlanItemDraft = '',
     this.meetingDraftError,
     this.meetingSaveStatus = SaveStatus.idle,
     this.meetingSaveFeedback,
@@ -1624,6 +1625,7 @@ class AlagagiState {
   final String meetingDraftMeetingNote;
   final String meetingDraftMeetingPlanText;
   final String meetingPlanDraftText;
+  final String meetingPlanItemDraft;
   final String? meetingDraftError;
   final SaveStatus meetingSaveStatus;
   final String? meetingSaveFeedback;
@@ -1742,6 +1744,7 @@ class AlagagiState {
     String? meetingDraftMeetingNote,
     String? meetingDraftMeetingPlanText,
     String? meetingPlanDraftText,
+    String? meetingPlanItemDraft,
     String? meetingDraftError,
     bool clearMeetingDraftError = false,
     SaveStatus? meetingSaveStatus,
@@ -1905,6 +1908,7 @@ class AlagagiState {
       meetingDraftMeetingPlanText:
           meetingDraftMeetingPlanText ?? this.meetingDraftMeetingPlanText,
       meetingPlanDraftText: meetingPlanDraftText ?? this.meetingPlanDraftText,
+      meetingPlanItemDraft: meetingPlanItemDraft ?? this.meetingPlanItemDraft,
       meetingDraftError: clearMeetingDraftError
           ? null
           : meetingDraftError ?? this.meetingDraftError,
@@ -3853,6 +3857,9 @@ class AlagagiController extends ChangeNotifier {
     return entry;
   }
 
+  List<String> get meetingPlanDraftItems =>
+      _parseMeetingPlanItems(_state.meetingPlanDraftText);
+
   List<SharedPlace> placesForMeetingPlan(String dateKey) {
     final places = _sharedPlaces
         .where((place) => place.linkedDateKey == dateKey)
@@ -4084,6 +4091,9 @@ class AlagagiController extends ChangeNotifier {
           route == AlagagiRoute.meetingPlans &&
           selectedMeetingPlanDateKey == null,
       meetingPlanDraftText: meetingPlanDraftText,
+      meetingPlanItemDraft: route == AlagagiRoute.meetingPlans
+          ? ''
+          : _state.meetingPlanItemDraft,
       editingAnswer: false,
       clearActiveAnswerQuestion: route != AlagagiRoute.answer,
       clearAnswerError: true,
@@ -5972,6 +5982,7 @@ class AlagagiController extends ChangeNotifier {
       meetingPlanDraftText: _meetingPlanTextFromItems(
         entry?.meetingPlanItems ?? const [],
       ),
+      meetingPlanItemDraft: '',
       clearMeetingDraftError: true,
       clearMeetingSaveFeedback: true,
       clearMeetingSaveTargetId: true,
@@ -5982,6 +5993,57 @@ class AlagagiController extends ChangeNotifier {
   void updateMeetingPlanDraft(String value) {
     _state = _state.copyWith(
       meetingPlanDraftText: value,
+      clearMeetingDraftError: true,
+      clearMeetingSaveFeedback: true,
+    );
+    notifyListeners();
+  }
+
+  void updateMeetingPlanItemDraft(String value) {
+    _state = _state.copyWith(
+      meetingPlanItemDraft: value,
+      clearMeetingDraftError: true,
+      clearMeetingSaveFeedback: true,
+    );
+    notifyListeners();
+  }
+
+  void addMeetingPlanDraftItem() {
+    final item = _state.meetingPlanItemDraft.trim();
+    if (item.isEmpty) {
+      _state = _state.copyWith(meetingDraftError: '추가할 내용을 한 줄로 적어주세요.');
+      notifyListeners();
+      return;
+    }
+    if (item.length > 40) {
+      _state = _state.copyWith(meetingDraftError: '할 일은 한 줄에 40자 안으로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    final items = meetingPlanDraftItems;
+    if (items.length >= 8) {
+      _state = _state.copyWith(meetingDraftError: '만남 계획은 8개까지만 남길 수 있어요.');
+      notifyListeners();
+      return;
+    }
+    final nextItems = [...items, item];
+    _state = _state.copyWith(
+      meetingPlanDraftText: _meetingPlanTextFromItems(nextItems),
+      meetingPlanItemDraft: '',
+      clearMeetingDraftError: true,
+      clearMeetingSaveFeedback: true,
+    );
+    notifyListeners();
+  }
+
+  void removeMeetingPlanDraftItem(int index) {
+    final items = meetingPlanDraftItems;
+    if (index < 0 || index >= items.length) {
+      return;
+    }
+    final nextItems = [...items]..removeAt(index);
+    _state = _state.copyWith(
+      meetingPlanDraftText: _meetingPlanTextFromItems(nextItems),
       clearMeetingDraftError: true,
       clearMeetingSaveFeedback: true,
     );
@@ -6053,6 +6115,7 @@ class AlagagiController extends ChangeNotifier {
     _state = _state.copyWith(
       selectedMeetingPlanDateKey: dateKey,
       meetingPlanDraftText: _meetingPlanTextFromItems(meetingPlanItems),
+      meetingPlanItemDraft: '',
       meetingDraftMeetingPlanText: dateKey == selectedMeetingDateKey
           ? _meetingPlanTextFromItems(meetingPlanItems)
           : _state.meetingDraftMeetingPlanText,

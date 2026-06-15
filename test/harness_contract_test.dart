@@ -34,6 +34,34 @@ void main() {
     }
   });
 
+  test('shared place rules cover repository write metadata and date links', () {
+    final repository = File(
+      'lib/src/data/firebase_alagagi_repositories.dart',
+    ).readAsStringSync();
+    final rules = File('firestore.rules').readAsStringSync();
+
+    expect(
+      RegExp(
+        r"'updatedByProfileId'\s*:\s*place\.updatedByProfileId\s*\?\?\s*place\.createdByProfileId",
+      ).hasMatch(repository),
+      isTrue,
+      reason:
+          'saveSharedPlace writes updatedByProfileId, so sharedPlaces rules '
+          'must allow and validate the field.',
+    );
+    expect(rules, contains("'updatedByProfileId'"));
+    expect(
+      rules,
+      contains('request.resource.data.updatedByProfileId == request.auth.uid'),
+    );
+    expect(rules, contains('request.resource.data.updatedAt == request.time'));
+    expect(rules, contains('function validSharedPlaceMeetingLinkUpdate'));
+    expect(
+      rules,
+      contains('validSharedPlaceMeetingLinkUpdate(spaceId, placeId)'),
+    );
+  });
+
   test('multi-agent harness playbook is linked and role complete', () {
     final agents = File('AGENTS.md').readAsStringSync();
     final playbook = File('docs/agent_harness_playbook.md').readAsStringSync();

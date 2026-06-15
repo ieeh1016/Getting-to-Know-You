@@ -2428,6 +2428,51 @@ void main() {
               createdByProfileId: 'minyoungUid',
               interestedByProfileIds: {'minyoungUid'},
             ),
+            SharedPlace(
+              id: 'place_food',
+              name: '작은 식당',
+              address: '서울 성동구',
+              category: PlaceCategory.food,
+              provider: MapApiProvider.kakao,
+              createdByProfileId: 'youngwooUid',
+              interestedByProfileIds: {'youngwooUid'},
+            ),
+            SharedPlace(
+              id: 'place_walk',
+              name: '산책길',
+              address: '서울 성동구',
+              category: PlaceCategory.walk,
+              provider: MapApiProvider.kakao,
+              createdByProfileId: 'minyoungUid',
+              interestedByProfileIds: {'minyoungUid'},
+            ),
+            SharedPlace(
+              id: 'place_exhibition',
+              name: '작은 전시 공간',
+              address: '서울 성동구',
+              category: PlaceCategory.exhibition,
+              provider: MapApiProvider.kakao,
+              createdByProfileId: 'youngwooUid',
+              interestedByProfileIds: {'youngwooUid'},
+            ),
+            SharedPlace(
+              id: 'place_activity',
+              name: '공방 체험',
+              address: '서울 성동구',
+              category: PlaceCategory.activity,
+              provider: MapApiProvider.kakao,
+              createdByProfileId: 'minyoungUid',
+              interestedByProfileIds: {'minyoungUid'},
+            ),
+            SharedPlace(
+              id: 'place_gallery_5',
+              name: '다섯 번째 장소',
+              address: '서울 성동구',
+              category: PlaceCategory.exhibition,
+              provider: MapApiProvider.kakao,
+              createdByProfileId: 'youngwooUid',
+              interestedByProfileIds: {'youngwooUid'},
+            ),
           ],
         ),
       ),
@@ -2440,10 +2485,15 @@ void main() {
     expect(find.byKey(meetingPlanScreenKey), findsOneWidget);
     expect(find.byKey(meetingPlanDateButtonKey(dateKey)), findsOneWidget);
 
-    await tester.enterText(
-      find.byKey(meetingPlanDraftFieldKey),
-      '전시 보기\n근처 카페\n저녁 먹기',
-    );
+    for (final item in ['전시 보기', '근처 카페', '저녁 먹기']) {
+      await tester.ensureVisible(find.byKey(meetingPlanDraftFieldKey));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(meetingPlanDraftFieldKey), item);
+      await tester.ensureVisible(find.byKey(meetingPlanItemAddButtonKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(meetingPlanItemAddButtonKey));
+      await tester.pumpAndSettle();
+    }
     await tester.ensureVisible(find.byKey(meetingPlanSaveButtonKey));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(meetingPlanSaveButtonKey));
@@ -2454,6 +2504,19 @@ void main() {
     expect(entry!.meetingPlanItems, ['전시 보기', '근처 카페', '저녁 먹기']);
     expect(find.text('만남 계획을 저장했어요.'), findsOneWidget);
 
+    expect(
+      find.byKey(meetingPlanPlaceLinkButtonKey('place_activity')),
+      findsNothing,
+    );
+    await tester.ensureVisible(find.byKey(meetingPlanPlaceMoreButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(meetingPlanPlaceMoreButtonKey));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(meetingPlanPlaceLinkButtonKey('place_activity')),
+      findsOneWidget,
+    );
+
     await tester.ensureVisible(
       find.byKey(meetingPlanPlaceLinkButtonKey('place_cafe')),
     );
@@ -2461,7 +2524,12 @@ void main() {
     await tester.tap(find.byKey(meetingPlanPlaceLinkButtonKey('place_cafe')));
     await tester.pumpAndSettle();
 
-    expect(controller.sharedPlaces.single.linkedDateKey, dateKey);
+    expect(
+      controller.sharedPlaces
+          .firstWhere((place) => place.id == 'place_cafe')
+          .linkedDateKey,
+      dateKey,
+    );
   });
 
   testWidgets('meeting save failure shows retry action', (tester) async {

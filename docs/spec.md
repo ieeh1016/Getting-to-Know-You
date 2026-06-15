@@ -261,7 +261,7 @@ If the app grows, bottom navigation may become:
 - 둘 다 `available`이고 겹치는 `timeSlots`가 있으면 meeting candidate로 강조한다.
 - 둘 다 가능한 후보에서는 `만나는 날`로 저장할 수 있고, 만나는 시간은 `19:00-21:00`, `저녁 7시쯤`처럼 자유 문구로 입력한다.
 - `만나는 날`로 저장된 날짜는 별도 `만남` 탭에만 모아 보여주며, 후보/조율 중인 날짜와 섞지 않는다.
-- `만남` 탭에서는 그날 할 것과 갈 곳을 줄 단위로 정리하는 가벼운 플랜 입력을 제공한다.
+- `만남` 탭에서는 그날 할 것과 갈 곳을 한 줄씩 추가/삭제하는 가벼운 계획 목록을 제공한다.
 - `만남` 탭은 장소 보드에 저장된 장소를 선택한 만나는 날의 후보 장소로 연결하거나 해제할 수 있다.
 - `maybe`가 포함된 날은 확정 후보가 아니라 조율 필요 상태로 둔다.
 - 장소 보드는 `장소` 화면에서 제공한다.
@@ -2031,6 +2031,7 @@ Rules:
   "createdByProfileId": "{uid}",
   "interestedByProfileIds": ["{uid}"],
   "linkedDateKey": "",
+  "updatedByProfileId": "{uid}",
   "updatedAt": "serverTimestamp"
 }
 ```
@@ -2039,10 +2040,11 @@ Rules:
 
 - Places are normalized before storage; provider-specific raw payloads are not stored.
 - Current location, movement path, and route history are not stored.
-- `linkedDateKey` is kept as an empty compatibility field; the current Places UI does not link places to meeting dates.
+- `linkedDateKey` is empty by default and stores a meeting date key when a place is attached to a fixed meeting day.
 - Duplicate Kakao `providerPlaceId` submissions update the existing place instead of creating a second card.
 - Interest is reversible; members can add or remove their own profile id from `interestedByProfileIds`.
 - Creators can edit or delete their own places.
+- Place edits, interest updates, and meeting-day links store the acting member in `updatedByProfileId`.
 - `provider` is always `kakao`.
 
 `spaces/{spaceId}/stockStories/{storyId}`

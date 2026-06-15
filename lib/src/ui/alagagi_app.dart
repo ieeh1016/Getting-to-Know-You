@@ -42,7 +42,9 @@ const meetingDayPlanFieldKey = Key('meeting-day-plan-field');
 const meetingDaySaveButtonKey = Key('meeting-day-save-button');
 const meetingPlanScreenKey = Key('meeting-plan-screen');
 const meetingPlanDraftFieldKey = Key('meeting-plan-draft-field');
+const meetingPlanItemAddButtonKey = Key('meeting-plan-item-add-button');
 const meetingPlanSaveButtonKey = Key('meeting-plan-save-button');
+const meetingPlanPlaceMoreButtonKey = Key('meeting-plan-place-more-button');
 Key meetingTimeBlockPresetButtonKey(String presetId) =>
     Key('meeting-time-block-preset-$presetId');
 Key meetingDateButtonKey(String dateKey) => Key('meeting-date-$dateKey');
@@ -50,6 +52,8 @@ Key meetingPlanDateButtonKey(String dateKey) =>
     Key('meeting-plan-date-$dateKey');
 Key meetingPlanPlaceLinkButtonKey(String placeId) =>
     Key('meeting-plan-place-link-$placeId');
+Key meetingPlanItemRemoveButtonKey(int index) =>
+    Key('meeting-plan-item-remove-$index');
 Key meetingDayIndicatorKey(String dateKey) =>
     Key('meeting-day-indicator-$dateKey');
 Key meetingMutualIndicatorKey(String dateKey) =>
@@ -9901,7 +9905,7 @@ class _MeetingPlanDateCard extends StatelessWidget {
   }
 }
 
-class _MeetingPlanDetailCard extends StatelessWidget {
+class _MeetingPlanDetailCard extends StatefulWidget {
   const _MeetingPlanDetailCard({
     super.key,
     required this.controller,
@@ -9912,12 +9916,26 @@ class _MeetingPlanDetailCard extends StatelessWidget {
   final ScheduleEntry entry;
 
   @override
+  State<_MeetingPlanDetailCard> createState() => _MeetingPlanDetailCardState();
+}
+
+class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
+  bool _showAllBoardPlaces = false;
+
+  @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
+    final entry = widget.entry;
     final linkedPlaces = controller.placesForMeetingPlan(entry.dateKey);
-    final otherPlaces = controller.sharedPlaces
+    final boardPlaces = controller.sharedPlaces
         .where((place) => place.linkedDateKey != entry.dateKey)
-        .take(4)
         .toList();
+    final hiddenBoardPlaceCount = boardPlaces.length > 4
+        ? boardPlaces.length - 4
+        : 0;
+    final visibleBoardPlaces = _showAllBoardPlaces
+        ? boardPlaces
+        : boardPlaces.take(4).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -9938,18 +9956,10 @@ class _MeetingPlanDetailCard extends StatelessWidget {
                   _SmallBadge(label: _meetingDateShortLabel(entry.dateKey)),
                 ],
               ),
-              const SizedBox(height: 10),
-              _MeetingTextField(
-                fieldKey: meetingPlanDraftFieldKey,
-                label: '계획',
-                hint: '예: 전시 보기\n근처 카페\n저녁 먹기',
-                initialValue: controller.state.meetingPlanDraftText,
-                maxLength: 260,
-                helperText: '한 줄에 하나씩 적으면 아래에서 보기 좋게 정리돼요.',
-                minLines: 4,
-                maxLines: 7,
-                onChanged: controller.updateMeetingPlanDraft,
-              ),
+              const SizedBox(height: 12),
+              _MeetingPlanTaskList(controller: controller),
+              const SizedBox(height: 12),
+              _MeetingPlanTaskComposer(controller: controller),
               if (controller.state.meetingDraftError != null &&
                   controller.state.meetingSaveStatus != SaveStatus.failed) ...[
                 const SizedBox(height: 9),
@@ -9990,11 +10000,11 @@ class _MeetingPlanDetailCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
           ],
-        if (otherPlaces.isNotEmpty) ...[
+        if (boardPlaces.isNotEmpty) ...[
           const SizedBox(height: 12),
           const _SectionLabel('장소 보드에서 가져오기'),
           const SizedBox(height: 10),
-          for (final place in otherPlaces) ...[
+          for (final place in visibleBoardPlaces) ...[
             _MeetingPlanPlaceRow(
               controller: controller,
               place: place,
@@ -10003,8 +10013,217 @@ class _MeetingPlanDetailCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
           ],
+          if (boardPlaces.length > 4)
+            _MeetingPlanMorePlacesButton(
+              expanded: _showAllBoardPlaces,
+              hiddenCount: hiddenBoardPlaceCount,
+              onPressed: () {
+                setState(() => _showAllBoardPlaces = !_showAllBoardPlaces);
+              },
+            ),
         ],
       ],
+    );
+  }
+}
+
+class _MeetingPlanTaskList extends StatelessWidget {
+  const _MeetingPlanTaskList({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = controller.meetingPlanDraftItems;
+    if (items.isEmpty) {
+      return Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8F8F4),
+          border: Border.all(color: AlagagiColors.line),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+        child: Row(
+          children: [
+            Icon(
+              Icons.playlist_add_check_rounded,
+              size: 20,
+              color: AlagagiColors.sageDeep,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                '아래에 하나씩 추가하면 그날 계획이 보기 좋게 정리돼요.',
+                style: sans(
+                  size: 12.2,
+                  color: AlagagiColors.muted,
+                  height: 1.45,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return Column(
+      children: [
+        for (var index = 0; index < items.length; index++) ...[
+          _MeetingPlanTaskRow(
+            index: index,
+            label: items[index],
+            onRemove: () => controller.removeMeetingPlanDraftItem(index),
+          ),
+          if (index != items.length - 1) const SizedBox(height: 8),
+        ],
+      ],
+    );
+  }
+}
+
+class _MeetingPlanTaskRow extends StatelessWidget {
+  const _MeetingPlanTaskRow({
+    required this.index,
+    required this.label,
+    required this.onRemove,
+  });
+
+  final int index;
+  final String label;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 10, 6, 10),
+      child: Row(
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: const BoxDecoration(
+              color: Color(0xFFF0F2EB),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              '${index + 1}',
+              style: sans(
+                size: 11,
+                weight: FontWeight.w800,
+                color: AlagagiColors.sageDeep,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: sans(size: 13, weight: FontWeight.w700, height: 1.35),
+            ),
+          ),
+          SizedBox(
+            width: 34,
+            height: 34,
+            child: IconButton(
+              key: meetingPlanItemRemoveButtonKey(index),
+              onPressed: onRemove,
+              icon: const Icon(Icons.close_rounded, size: 17),
+              color: AlagagiColors.muted,
+              tooltip: '삭제',
+              padding: EdgeInsets.zero,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MeetingPlanTaskComposer extends StatelessWidget {
+  const _MeetingPlanTaskComposer({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: _MeetingTextField(
+            fieldKey: meetingPlanDraftFieldKey,
+            label: '추가할 계획',
+            hint: '예: 전시 보기',
+            initialValue: controller.state.meetingPlanItemDraft,
+            maxLength: 40,
+            helperText: '',
+            minLines: 1,
+            maxLines: 1,
+            onChanged: controller.updateMeetingPlanItemDraft,
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          height: 56,
+          child: OutlinedButton.icon(
+            key: meetingPlanItemAddButtonKey,
+            onPressed: controller.addMeetingPlanDraftItem,
+            icon: const Icon(Icons.add_rounded, size: 17),
+            label: const Text('추가'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AlagagiColors.sageDeep,
+              side: const BorderSide(color: Color(0x338A9A7E)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              textStyle: sans(size: 12.5, weight: FontWeight.w800),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MeetingPlanMorePlacesButton extends StatelessWidget {
+  const _MeetingPlanMorePlacesButton({
+    required this.expanded,
+    required this.hiddenCount,
+    required this.onPressed,
+  });
+
+  final bool expanded;
+  final int hiddenCount;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 40,
+      child: OutlinedButton.icon(
+        key: meetingPlanPlaceMoreButtonKey,
+        onPressed: onPressed,
+        icon: Icon(
+          expanded ? Icons.keyboard_arrow_up_rounded : Icons.more_horiz_rounded,
+          size: 18,
+        ),
+        label: Text(expanded ? '접기' : '$hiddenCount곳 더 보기'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AlagagiColors.sageDeep,
+          side: const BorderSide(color: Color(0x338A9A7E)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+          textStyle: sans(size: 12.5, weight: FontWeight.w800),
+        ),
+      ),
     );
   }
 }

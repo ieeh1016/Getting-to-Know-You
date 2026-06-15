@@ -214,7 +214,15 @@ void main() {
       controller.updateMeetingDayDraft(timeLabel: '저녁 7시쯤');
       controller.submitMeetingDayDraft();
       controller.goTo(AlagagiRoute.meetingPlans);
-      controller.updateMeetingPlanDraft('전시 보기\n근처 카페\n저녁 먹기');
+      controller.updateMeetingPlanItemDraft('전시 보기');
+      controller.addMeetingPlanDraftItem();
+      controller.updateMeetingPlanItemDraft('삭제할 임시 계획');
+      controller.addMeetingPlanDraftItem();
+      controller.removeMeetingPlanDraftItem(1);
+      controller.updateMeetingPlanItemDraft('근처 카페');
+      controller.addMeetingPlanDraftItem();
+      controller.updateMeetingPlanItemDraft('저녁 먹기');
+      controller.addMeetingPlanDraftItem();
       controller.submitMeetingPlanDraft();
 
       final entry = controller.scheduleEntryFor(
