@@ -38,6 +38,7 @@ void main() {
     expect(find.byKey(homeQuestionAnswerButtonKey), findsOneWidget);
     expect(find.byKey(homeMenuButtonKey), findsOneWidget);
     expect(find.byKey(homeCuriosityEntryKey), findsNothing);
+    expect(find.text('닮은 취향 키워드'), findsNothing);
     expect(find.textContaining('궁금함 한 장'), findsNothing);
     expect(find.text('지금의 마음을 한 줄로...'), findsNothing);
     expect(find.text('9:41'), findsNothing);

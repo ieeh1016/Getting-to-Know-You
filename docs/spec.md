@@ -961,7 +961,6 @@ Required UI:
 - Insight cards:
   - 함께 답한 질문 수
   - 주고받은 질문 count
-  - 닮은 취향 키워드
 - Quiet progress summary:
   - 오늘 질문 상태
   - 둘 다 답한 질문 상태

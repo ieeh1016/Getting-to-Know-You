@@ -4727,43 +4727,6 @@ class _InsightGrid extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 14),
-        _PaperCard(
-          radius: 18,
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '닮은 취향 키워드',
-                style: sans(
-                  size: 11,
-                  color: AlagagiColors.muted,
-                  letterSpacing: 1,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 6,
-                runSpacing: 8,
-                children: insight.matchedKeywords.isEmpty
-                    ? [
-                        Text(
-                          '기록은 답이 쌓이면 자연스럽게 만들어져요.',
-                          style: sans(
-                            size: 12.5,
-                            color: AlagagiColors.muted,
-                            height: 1.5,
-                          ),
-                        ),
-                      ]
-                    : insight.matchedKeywords.take(4).map((keyword) {
-                        return _KeywordChip(label: keyword);
-                      }).toList(),
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }
