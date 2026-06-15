@@ -1,12 +1,12 @@
 # 알아가기 SDD
 
-> Current source of truth: [spec.md](spec.md)
+> Current source of truth: [spec.md](spec.md) and the feature specs under [spec/](spec/).
 
-이 문서는 초기 MVP 기록을 보존한다. 현재 개발 방향은 `index.html` 디자인 시안 기반의 `알아가기` 제품이며, 상세 요구사항과 화면별 인수 기준은 [spec.md](spec.md)를 따른다.
+이 문서는 초기 MVP 기록을 보존한다. 현재 개발 방향은 `index.html` 디자인 시안 기반의 `알아가기` 제품이며, 상세 요구사항과 화면별 인수 기준은 [spec.md](spec.md)와 기능별 spec을 따른다.
 
 ## Current SDD Operating Rules
 
-- 모든 기능 변경은 [spec.md](spec.md)를 먼저 수정한다.
+- 모든 기능 변경은 [spec.md](spec.md) 또는 관련 기능별 spec을 먼저 수정한다.
 - spec 변경 후 [test_plan.md](test_plan.md)에 실패해야 하는 테스트를 추가한다.
 - 테스트가 실패하는 것을 확인한 뒤 production code를 수정한다.
 - Firestore-backed 기능은 Spark/free-plan budget을 먼저 확인한다.

@@ -1,6 +1,6 @@
 # Test Plan
 
-> Current source of truth: [spec.md](spec.md). All new behavior must be added to the spec first, then covered by failing tests before production code changes.
+> Current source of truth: [spec.md](spec.md) and the relevant feature spec under [spec/](spec/). All new behavior must be added to the spec first, then covered by failing tests before production code changes.
 
 ## Unit Tests
 

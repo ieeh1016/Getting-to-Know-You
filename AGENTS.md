@@ -1,11 +1,11 @@
 # AI Agent Working Contract
 
-This repository is built with an SDD + TDD workflow. Treat `docs/spec.md` as the product source of truth and keep every behavior change traceable from spec to tests to implementation.
+This repository is built with an SDD + TDD workflow. Treat `docs/spec.md` and the relevant files under `docs/spec/` as the product source of truth, and keep every behavior change traceable from spec to tests to implementation.
 
 ## Required Order
 
-1. Read the relevant section of `docs/spec.md`.
-2. Update `docs/spec.md` before changing production behavior.
+1. Read `docs/spec.md` and the relevant feature spec under `docs/spec/`.
+2. Update the top-level spec index or feature spec before changing production behavior.
 3. Update `docs/test_plan.md` and add or adjust domain/widget tests for the new behavior.
 4. Prefer observing the new or changed test fail before production edits when practical.
 5. Implement the smallest production change that satisfies the spec and tests.
@@ -58,7 +58,7 @@ The local one-command gate is:
 - Never commit Firebase service account files, passwords, API secrets, or local password helper scripts.
 - Firestore writes happen only on explicit user actions.
 - Draft typing, scrolling, route changes, tab changes, calendar navigation, and music seen state must not create Firestore writes.
-- Keep new Firebase-backed features inside the Spark/free-plan assumptions documented in `docs/spec.md`.
+- Keep new Firebase-backed features inside the Spark/free-plan assumptions documented in `docs/spec/firestore.md`.
 
 ## Git Hygiene
 

@@ -8,13 +8,14 @@ does not include AI agents.
 
 Every multi-agent task still follows the repository contract:
 
-1. `docs/spec.md`
+1. `docs/spec.md` and the relevant `docs/spec/*.md` feature spec
 2. `docs/test_plan.md` and tests
 3. Production implementation
 4. Verification and handoff
 
-`docs/spec.md` wins over `docs/test_plan.md`, tests, code, and chat history
-when those sources disagree.
+`docs/spec.md` and feature specs under `docs/spec/` win over
+`docs/test_plan.md`, tests, code, and chat history when those sources disagree.
+The archived `docs/spec/legacy_full_spec.md` is migration context only.
 
 ## Agent Roles
 
@@ -22,13 +23,13 @@ when those sources disagree.
 
 - Owns task scope, sequencing, file ownership, and final handoff.
 - Decides which work stays local and which work can run in parallel.
-- Resolves conflicts against `docs/spec.md`.
+- Resolves conflicts against `docs/spec.md` and the relevant feature spec.
 - Must check `git status --short` before and after changes.
 
 ### Spec Agent
 
 - Updates product behavior, acceptance criteria, copy/tone, out-of-scope notes,
-  and Firebase budget assumptions in `docs/spec.md`.
+  and Firebase budget assumptions in the relevant spec file.
 - Must not change production code.
 - Hands off the exact spec sections changed.
 
@@ -109,4 +110,3 @@ Final handoff should include:
   another adding tests.
 - Keep the Orchestrator on the critical path for integration, final review, and
   commit scope.
-

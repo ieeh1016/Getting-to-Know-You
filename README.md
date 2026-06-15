@@ -4,7 +4,7 @@
 
 ## 개발 방식
 
-- Product Spec: [docs/spec.md](docs/spec.md)에 화면 흐름과 인수 기준을 고정합니다.
+- Product Spec: [docs/spec.md](docs/spec.md)를 진입점으로 두고, 기능별 상세 요구사항은 [docs/spec/](docs/spec/)에서 관리합니다.
 - SDD: [docs/sdd.md](docs/sdd.md)는 기존 MVP 기록이며, 새 개발은 Product Spec을 기준으로 진행합니다.
 - TDD: 새 행동은 domain/widget test로 먼저 표현하고 구현합니다.
 - AI Harness: [AGENTS.md](AGENTS.md)에 AI/maintainer 작업 순서와 guardrail을 고정합니다.
