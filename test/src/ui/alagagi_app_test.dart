@@ -2382,6 +2382,67 @@ void main() {
     expect(find.text('만나는 날로 저장했어요.'), findsOneWidget);
   });
 
+  testWidgets(
+    'meeting calendar fixed day stays visually distinct from selection',
+    (tester) async {
+      const meetingDateKey = '2026-06-11';
+      const selectedDateKey = '2026-06-12';
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            scheduleEntries: [
+              ScheduleEntry(
+                dateKey: meetingDateKey,
+                profileId: 'youngwooUid',
+                availability: MeetingAvailability.available,
+                timeSlots: {MeetingTimeSlot.evening},
+                isMeetingDay: true,
+              ),
+            ],
+          ),
+        ),
+      );
+      controller
+        ..goTo(AlagagiRoute.meetings)
+        ..selectMeetingDate(selectedDateKey);
+
+      await tester.pumpWidget(
+        MaterialApp(home: AlagagiRoot(controller: controller)),
+      );
+      await tester.pumpAndSettle();
+
+      final fixedDayDecoration = _meetingDateCellDecoration(
+        tester,
+        meetingDateKey,
+      );
+      final selectedDayDecoration = _meetingDateCellDecoration(
+        tester,
+        selectedDateKey,
+      );
+
+      expect(fixedDayDecoration.color, const Color(0xFFFFF5D2));
+      expect(fixedDayDecoration.color, isNot(AlagagiColors.ink));
+      expect(selectedDayDecoration.color, AlagagiColors.ink);
+      expect(
+        find.byKey(meetingDayIndicatorKey(meetingDateKey)),
+        findsOneWidget,
+      );
+    },
+  );
+
   testWidgets('meeting plan tab saves plan items for a fixed meeting day', (
     tester,
   ) async {
@@ -3301,6 +3362,18 @@ void main() {
       expect(repository.savedAnswerComments.single.comment.body, '이 답 좋다.');
     },
   );
+}
+
+BoxDecoration _meetingDateCellDecoration(WidgetTester tester, String dateKey) {
+  final container = tester.widget<Container>(
+    find
+        .descendant(
+          of: find.byKey(meetingDateButtonKey(dateKey)),
+          matching: find.byType(Container),
+        )
+        .first,
+  );
+  return container.decoration! as BoxDecoration;
 }
 
 class _FailingSaveRepository implements AlagagiDataRepository {

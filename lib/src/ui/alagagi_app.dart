@@ -10547,10 +10547,13 @@ class _MeetingDateCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final background = meetingDay
+    const meetingDayFill = Color(0xFFFFF5D2);
+    const meetingDayBorder = Color(0xFFD9B34F);
+    const meetingDayForeground = Color(0xFF6F5518);
+    final background = selected
         ? AlagagiColors.ink
-        : selected
-        ? AlagagiColors.ink
+        : meetingDay
+        ? meetingDayFill
         : mutual
         ? const Color(0xFFEEF2E8)
         : busy || hasMyDetails
@@ -10558,8 +10561,10 @@ class _MeetingDateCell extends StatelessWidget {
         : hasMyEntry
         ? const Color(0xFFF5F8EF)
         : Colors.white;
-    final foreground = meetingDay || selected
+    final foreground = selected
         ? Colors.white
+        : meetingDay
+        ? meetingDayForeground
         : mutual
         ? AlagagiColors.sageDeep
         : busy || hasMyDetails
@@ -10567,8 +10572,10 @@ class _MeetingDateCell extends StatelessWidget {
         : hasMyEntry
         ? AlagagiColors.sageDeep
         : const Color(0xFF4D4B45);
-    final borderColor = meetingDay || selected
+    final borderColor = selected
         ? AlagagiColors.ink
+        : meetingDay
+        ? meetingDayBorder
         : mutual
         ? const Color(0x668A9A7E)
         : hasMyEntry
@@ -10622,28 +10629,29 @@ class _MeetingDateCell extends StatelessWidget {
               ),
               if (meetingDay)
                 Positioned(
-                  top: 5,
-                  right: 5,
+                  bottom: 5,
+                  left: 0,
+                  right: 0,
                   child: Semantics(
                     label: '만나는 날',
-                    child: Container(
-                      key: meetingDayIndicatorKey(dateKey),
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE1C77A),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.82),
-                          width: 1.1,
+                    child: Center(
+                      child: Container(
+                        key: meetingDayIndicatorKey(dateKey),
+                        width: 18,
+                        height: 3.5,
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? const Color(0xFFE1C77A)
+                              : const Color(0xFFD9B34F),
+                          borderRadius: BorderRadius.circular(999),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x22000000),
+                              blurRadius: 3,
+                              offset: Offset(0, 1),
+                            ),
+                          ],
                         ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x33000000),
-                            blurRadius: 4,
-                            offset: Offset(0, 1),
-                          ),
-                        ],
                       ),
                     ),
                   ),
