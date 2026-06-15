@@ -5,6 +5,7 @@
 *.swp
 .DS_Store
 change-passwords.js
+firebase-service-account*.json
 .atom/
 .build/
 .buildlog/

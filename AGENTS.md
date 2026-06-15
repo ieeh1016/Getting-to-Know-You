@@ -13,11 +13,28 @@ This repository is built with an SDD + TDD workflow. Treat `docs/spec.md` as the
 
 For purely mechanical, documentation-only, or emergency fixes, explain why a production behavior test is not needed.
 
+## Multi-Agent Work
+
+When multiple AI agents collaborate on this repository, use
+`docs/agent_harness_playbook.md` as the operating guide. The app runtime does
+not include AI agents; this playbook is only for development and verification
+work.
+
+- Keep one orchestrator responsible for scope, file ownership, final review,
+  and handoff.
+- Do not assign the same writable file to multiple active implementation
+  agents.
+- Use parallel agents primarily for independent reviews such as spec, tests,
+  UI QA, Firebase rules/budget, and verification.
+- Final handoff should include changed files, verification results, Firebase
+  impact, UI QA notes, and known risks.
+
 ## Verification
 
 Use the focused command first while developing, then run the full gate before handoff:
 
 ```sh
+./scripts/check_firestore_rules_sync.sh
 dart analyze
 flutter test
 flutter build web
@@ -49,4 +66,3 @@ The local one-command gate is:
 - Keep commits focused and name the user-facing behavior or harness change.
 - Do not include ignored local helper files such as `change-passwords.js`.
 - Before commit, check `git status --short` and staged diff scope.
-

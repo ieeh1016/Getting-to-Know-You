@@ -4,6 +4,9 @@
 
 ## Unit Tests
 
+- `firestore.rules` 기준 파일과 `docs/firebase_setup.md`의 Firestore Rules 코드블록이 항상 일치한다.
+- Firestore repository에서 사용하는 collection 이름은 `firestore.rules`의 match path로 커버된다.
+- `AGENTS.md`는 `docs/agent_harness_playbook.md`를 연결하고, playbook은 Orchestrator/Spec/Test/Implementation/UI QA/Firebase Rules/Verification 역할을 정의한다.
 - `AlagagiAuthRepository`가 짧은 로그인 아이디를 Firebase 이메일로 변환한다.
 - fake auth repository가 로그인 성공/실패/로그아웃 상태를 스트림으로 노출한다.
 - Firestore-style user data에서 `AlagagiSession`을 구성한다.
@@ -186,8 +189,12 @@
 
 - AI Harness:
   - 새 작업자는 `AGENTS.md`만 읽어도 spec -> test_plan/tests -> implementation -> verification 순서를 알 수 있다.
+  - 멀티 에이전트 작업은 `docs/agent_harness_playbook.md`의 역할/소유권/handoff 규칙을 따른다.
+  - `firestore.rules`는 Firestore Security Rules의 기준 파일이며 Firebase setup 문서와 동기화되어 있다.
   - `scripts/verify.sh`는 dependency install, Dart analysis, Flutter tests, web build를 한 번에 실행한다.
-  - CI는 GitHub Pages build 전에 `dart analyze`와 `flutter test`를 모두 실행한다.
+  - CI는 PR에서 non-deploy 검증을 실행하고, main push에서 Firestore Rules와 GitHub Pages deploy를 실행한다.
+  - CI는 GitHub Pages build 전에 rules sync check, `dart analyze`, `flutter test`를 모두 실행한다.
+  - `firebase.json`은 기준 `firestore.rules` 파일을 가리키고, workflow는 `FIREBASE_SERVICE_ACCOUNT`를 사용해 `firebase deploy --only firestore:rules`를 실행한다.
   - PR checklist는 spec/test/Firebase budget/UX tone/verification 항목을 노출한다.
 - 모바일 폭 390px 기준에서 텍스트가 잘리지 않는다.
 - 웹에서 스크롤, 탭, 상태 표시가 자연스럽다.

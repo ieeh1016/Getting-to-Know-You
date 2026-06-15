@@ -17,8 +17,12 @@ Required harness files:
 - `AGENTS.md`: root-level working contract for AI agents and future maintainers.
 - `docs/spec.md`: product source of truth and acceptance criteria.
 - `docs/test_plan.md`: test intent that mirrors new spec behavior before implementation.
+- `docs/agent_harness_playbook.md`: development-only multi-agent operating guide.
+- `firestore.rules`: canonical Firestore Security Rules source.
+- `firebase.json`: Firebase CLI mapping that deploys the canonical `firestore.rules` file.
+- `scripts/check_firestore_rules_sync.sh`: local/CI check that keeps `firestore.rules` and the Firebase setup guide aligned.
 - `scripts/verify.sh`: local one-command verification for dependency install, analysis, tests, and web build.
-- `.github/workflows/deploy.yml`: CI gate that runs analysis, tests, and release web build before GitHub Pages deploy.
+- `.github/workflows/deploy.yml`: CI gate that runs analysis, tests, release web build, Firestore Rules deploy, and GitHub Pages deploy.
 - `.github/pull_request_template.md`: review checklist that keeps SDD/TDD, Firebase budget, UX tone, and verification visible.
 
 AI change workflow:
@@ -29,12 +33,17 @@ AI change workflow:
 4. Implement the smallest production change that satisfies the spec and tests.
 5. Run `dart analyze` and `flutter test`; run `flutter build web` when deployment or visible web UI is affected.
 6. Keep Firebase secrets, password helper scripts, generated builds, and local-only data out of Git.
+7. When multiple AI agents are used, keep one orchestrator, assign disjoint write scopes, and follow `docs/agent_harness_playbook.md`.
 
 Acceptance Criteria:
 
 - A new AI agent can open the repository and understand the required development order without reading prior chat history.
 - CI fails when Dart analysis or tests fail.
 - Local verification is available through a single script.
+- Pull requests run the non-deploy verification gate before merge.
+- Firestore rules have a canonical repository file and docs sync check.
+- Main-branch deployments publish Firestore rules from `firestore.rules` when `FIREBASE_SERVICE_ACCOUNT` is configured.
+- Multi-agent development is documented as a development harness, not an app runtime feature.
 - PRs expose whether spec, test plan, tests, Firebase budget, and user-facing tone were considered.
 
 ## 1. Product Summary
