@@ -195,6 +195,7 @@
   - CI는 PR에서 non-deploy 검증을 실행하고, main push에서 Firestore Rules와 GitHub Pages deploy를 실행한다.
   - CI는 GitHub Pages build 전에 rules sync check, `dart analyze`, `flutter test`를 모두 실행한다.
   - `firebase.json`은 기준 `firestore.rules` 파일을 가리키고, workflow는 `FIREBASE_SERVICE_ACCOUNT`를 사용해 `firebase deploy --only firestore:rules`를 실행한다.
+  - `FIREBASE_SERVICE_ACCOUNT`용 service account는 `roles/firebaserules.admin`과 `roles/serviceusage.serviceUsageViewer`를 함께 가진다.
   - PR checklist는 spec/test/Firebase budget/UX tone/verification 항목을 노출한다.
 - 모바일 폭 390px 기준에서 텍스트가 잘리지 않는다.
 - 웹에서 스크롤, 탭, 상태 표시가 자연스럽다.
@@ -228,6 +229,7 @@
 - Meeting calendar marks a date as `내 입력` after I save availability/time slots even when the partner has not entered anything yet.
 - Meeting calendar keeps `서로 가능`, `내 입력`, and `상대 표시` markers visible together when both people have compatible entries.
 - Meeting candidate detail lets the user save `만나는 날` with a free-form time label such as `저녁 7시쯤`, and the calendar marks that date as `만나는 날`.
+- Meeting plan tab shows only fixed meeting days, lets the user save a short line-separated plan for the selected day, and can link a saved place to that day.
 - Kakao place search typing/result selection, map pan/zoom, detail open, category draft changes는 Firestore write를 만들지 않는다.
 - Place save/interest action은 사용자 명시 action에서만 shared place document를 저장한다.
 - Place board는 현재 위치, 이동 경로, raw API payload, 이미지 blob을 저장하지 않는다.

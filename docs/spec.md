@@ -253,13 +253,16 @@ If the app grows, bottom navigation may become:
 - 서로 가능한 날짜도 `내 입력`과 `상대 표시`를 함께 유지해 양쪽 입력 여부가 사라지지 않게 한다.
 - 날짜 선택, 월간 캘린더 계산, 화면 전환은 local UI state이며 Firestore write를 만들지 않는다.
 - 사용자가 `일정 저장하기`를 누를 때만 schedule entry를 저장한다.
-- schedule entry는 `dateKey`, `profileId`, `availability`, `timeSlots`, `timeBlocks`, `sharedMemo`, `updatedAt`을 공유 공간에 저장한다.
+- schedule entry는 `dateKey`, `profileId`, `availability`, `timeSlots`, `timeBlocks`, `sharedMemo`, `isMeetingDay`, `meetingTimeLabel`, `meetingNote`, `meetingPlanItems`, `updatedAt`을 공유 공간에 저장한다.
 - `timeSlots`는 `오전/오후/저녁` 빠른 가능 시간이며, `timeBlocks`는 `startMinute`, `endMinute`, `title`을 가진 상세 공유 일정이다.
 - 사용자는 한 날짜에 여러 상세 일정을 추가할 수 있으며 `14:00-16:30 병원 예약`처럼 몇 시부터 몇 시까지 무슨 일정인지 상대에게 공유할 수 있다.
 - 상세 일정 입력은 `오전 일정`, `점심 약속`, `오후 일정`, `저녁 약속` 같은 빠른 입력 preset을 제공하고, 사용자는 채워진 시간을 직접 수정할 수 있다.
 - 상대에게 보여도 되는 조율 내용은 `상대에게 남길 한마디`인 `sharedMemo`와 `timeBlocks`에 따로 남긴다.
 - 둘 다 `available`이고 겹치는 `timeSlots`가 있으면 meeting candidate로 강조한다.
 - 둘 다 가능한 후보에서는 `만나는 날`로 저장할 수 있고, 만나는 시간은 `19:00-21:00`, `저녁 7시쯤`처럼 자유 문구로 입력한다.
+- `만나는 날`로 저장된 날짜는 별도 `만남` 탭에만 모아 보여주며, 후보/조율 중인 날짜와 섞지 않는다.
+- `만남` 탭에서는 그날 할 것과 갈 곳을 줄 단위로 정리하는 가벼운 플랜 입력을 제공한다.
+- `만남` 탭은 장소 보드에 저장된 장소를 선택한 만나는 날의 후보 장소로 연결하거나 해제할 수 있다.
 - `maybe`가 포함된 날은 확정 후보가 아니라 조율 필요 상태로 둔다.
 - 장소 보드는 `장소` 화면에서 제공한다.
 - 장소 보드는 현재 위치 공유 기능이 아니며, 사용자가 저장한 장소만 둘에게 보인다.
@@ -1998,6 +2001,7 @@ Rules:
   "isMeetingDay": true,
   "meetingTimeLabel": "저녁 7시쯤",
   "meetingNote": "장소는 성수 쪽으로 천천히 보기",
+  "meetingPlanItems": ["전시 보기", "근처 카페", "저녁 먹기"],
   "updatedAt": "serverTimestamp"
 }
 ```
@@ -2008,6 +2012,8 @@ Rules:
 - Private memo documents are read only for the signed-in user.
 - Keystrokes, date selection, and calendar rendering do not write documents.
 - `일정 저장하기` writes the shared entry and the private memo document together.
+- `만나는 날`로 저장된 entry can include up to 8 lightweight plan items for what to do or where to go that day.
+- Meeting plan items are written only when the user taps the `만남` tab save action or updates a meeting-day entry that already had saved plan items.
 
 `spaces/{spaceId}/sharedPlaces/{placeId}`
 

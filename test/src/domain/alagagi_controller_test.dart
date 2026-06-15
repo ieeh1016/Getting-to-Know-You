@@ -203,7 +203,30 @@ void main() {
       expect(entry!.isMeetingDay, isTrue);
       expect(entry.meetingTimeLabel, '저녁 7시쯤');
       expect(entry.meetingNote, '장소는 성수 쪽으로 천천히 보기');
+      expect(entry.meetingPlanItems, isEmpty);
       expect(controller.meetingDayEntryFor('2026-06-11'), entry);
+    });
+
+    test('meeting plan draft stores line-separated things to do', () {
+      final controller = AlagagiController()..enterSpace('영우');
+
+      controller.selectMeetingDate('2026-06-11');
+      controller.updateMeetingDayDraft(timeLabel: '저녁 7시쯤');
+      controller.submitMeetingDayDraft();
+      controller.goTo(AlagagiRoute.meetingPlans);
+      controller.updateMeetingPlanDraft('전시 보기\n근처 카페\n저녁 먹기');
+      controller.submitMeetingPlanDraft();
+
+      final entry = controller.scheduleEntryFor(
+        controller.state.me.id,
+        '2026-06-11',
+      );
+
+      expect(controller.state.route, AlagagiRoute.meetingPlans);
+      expect(controller.selectedMeetingPlanDateKey, '2026-06-11');
+      expect(entry, isNotNull);
+      expect(entry!.meetingPlanItems, ['전시 보기', '근처 카페', '저녁 먹기']);
+      expect(controller.state.meetingSaveFeedback, '만남 계획을 저장했어요.');
     });
 
     test('place board saves a place and toggles interest', () {

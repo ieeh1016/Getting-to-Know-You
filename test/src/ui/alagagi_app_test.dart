@@ -2377,8 +2377,91 @@ void main() {
     expect(entry!.isMeetingDay, isTrue);
     expect(entry.meetingTimeLabel, '저녁 7시쯤');
     expect(entry.meetingNote, '장소는 성수 쪽');
+    expect(entry.meetingPlanItems, isEmpty);
     expect(find.byKey(meetingDayIndicatorKey(dateKey)), findsOneWidget);
     expect(find.text('만나는 날로 저장했어요.'), findsOneWidget);
+  });
+
+  testWidgets('meeting plan tab saves plan items for a fixed meeting day', (
+    tester,
+  ) async {
+    const dateKey = '2026-06-11';
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          scheduleEntries: [
+            ScheduleEntry(
+              dateKey: dateKey,
+              profileId: 'youngwooUid',
+              availability: MeetingAvailability.available,
+              timeSlots: {MeetingTimeSlot.evening},
+              isMeetingDay: true,
+              meetingTimeLabel: '저녁 7시쯤',
+            ),
+            ScheduleEntry(
+              dateKey: dateKey,
+              profileId: 'minyoungUid',
+              availability: MeetingAvailability.available,
+              timeSlots: {MeetingTimeSlot.evening},
+            ),
+          ],
+          sharedPlaces: [
+            SharedPlace(
+              id: 'place_cafe',
+              name: '조용한 카페',
+              address: '서울 성동구',
+              category: PlaceCategory.cafe,
+              provider: MapApiProvider.kakao,
+              createdByProfileId: 'minyoungUid',
+              interestedByProfileIds: {'minyoungUid'},
+            ),
+          ],
+        ),
+      ),
+    )..goTo(AlagagiRoute.meetingPlans);
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(meetingPlanScreenKey), findsOneWidget);
+    expect(find.byKey(meetingPlanDateButtonKey(dateKey)), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(meetingPlanDraftFieldKey),
+      '전시 보기\n근처 카페\n저녁 먹기',
+    );
+    await tester.ensureVisible(find.byKey(meetingPlanSaveButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(meetingPlanSaveButtonKey));
+    await tester.pumpAndSettle();
+
+    final entry = controller.scheduleEntryFor(controller.state.me.id, dateKey);
+    expect(entry, isNotNull);
+    expect(entry!.meetingPlanItems, ['전시 보기', '근처 카페', '저녁 먹기']);
+    expect(find.text('만남 계획을 저장했어요.'), findsOneWidget);
+
+    await tester.ensureVisible(
+      find.byKey(meetingPlanPlaceLinkButtonKey('place_cafe')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(meetingPlanPlaceLinkButtonKey('place_cafe')));
+    await tester.pumpAndSettle();
+
+    expect(controller.sharedPlaces.single.linkedDateKey, dateKey);
   });
 
   testWidgets('meeting save failure shows retry action', (tester) async {

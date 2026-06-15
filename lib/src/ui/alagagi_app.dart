@@ -38,10 +38,18 @@ const meetingTimeBlockTitleFieldKey = Key('meeting-time-block-title-field');
 const meetingTimeBlockAddButtonKey = Key('meeting-time-block-add-button');
 const meetingDayTimeFieldKey = Key('meeting-day-time-field');
 const meetingDayNoteFieldKey = Key('meeting-day-note-field');
+const meetingDayPlanFieldKey = Key('meeting-day-plan-field');
 const meetingDaySaveButtonKey = Key('meeting-day-save-button');
+const meetingPlanScreenKey = Key('meeting-plan-screen');
+const meetingPlanDraftFieldKey = Key('meeting-plan-draft-field');
+const meetingPlanSaveButtonKey = Key('meeting-plan-save-button');
 Key meetingTimeBlockPresetButtonKey(String presetId) =>
     Key('meeting-time-block-preset-$presetId');
 Key meetingDateButtonKey(String dateKey) => Key('meeting-date-$dateKey');
+Key meetingPlanDateButtonKey(String dateKey) =>
+    Key('meeting-plan-date-$dateKey');
+Key meetingPlanPlaceLinkButtonKey(String placeId) =>
+    Key('meeting-plan-place-link-$placeId');
 Key meetingDayIndicatorKey(String dateKey) =>
     Key('meeting-day-indicator-$dateKey');
 Key meetingMutualIndicatorKey(String dateKey) =>
@@ -401,6 +409,7 @@ class _AlagagiRootState extends State<AlagagiRoot> {
         onOpenExternalLink: widget.onOpenExternalLink ?? openExternalLink,
       ),
       AlagagiRoute.meetings => MeetingScreen(controller: _controller),
+      AlagagiRoute.meetingPlans => MeetingPlanScreen(controller: _controller),
       AlagagiRoute.places => PlaceBoardScreen(
         controller: _controller,
         onOpenExternalLink: widget.onOpenExternalLink ?? openExternalLink,
@@ -9624,6 +9633,482 @@ class MeetingScreen extends StatelessWidget {
   }
 }
 
+class MeetingPlanScreen extends StatelessWidget {
+  const MeetingPlanScreen({super.key, required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = controller.meetingDayEntries;
+    final selectedEntry = controller.selectedMeetingPlanEntry;
+    return _ScreenScroll(
+      bottomNavigation: _BottomNav(controller: controller),
+      children: [
+        _TopBar(title: '만남', trailing: ''),
+        const SizedBox(height: 4),
+        Text(
+          '정해진 날만 모아서 뭐하고 어디 갈지 정리해요',
+          style: sans(size: 12.5, color: AlagagiColors.muted),
+        ),
+        const SizedBox(height: 16),
+        if (entries.isEmpty)
+          _MeetingPlanEmptyState(controller: controller)
+        else ...[
+          _MeetingPlanHeroCard(entry: selectedEntry ?? entries.first),
+          const SizedBox(height: 14),
+          _MeetingPlanDateStrip(controller: controller, entries: entries),
+          const SizedBox(height: 14),
+          if (selectedEntry != null)
+            _MeetingPlanDetailCard(
+              key: ValueKey('meeting-plan-detail-${selectedEntry.dateKey}'),
+              controller: controller,
+              entry: selectedEntry,
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+class _MeetingPlanEmptyState extends StatelessWidget {
+  const _MeetingPlanEmptyState({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return _PaperCard(
+      key: meetingPlanScreenKey,
+      radius: 24,
+      padding: const EdgeInsets.all(20),
+      dashed: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Icon(
+            Icons.favorite_border_rounded,
+            size: 28,
+            color: AlagagiColors.sageDeep,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '아직 정해진 만나는 날이 없어요',
+            textAlign: TextAlign.center,
+            style: serif(context, size: 20, weight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '약속 탭에서 서로 가능한 날짜를 만나는 날로 정하면 여기에 계획 공간이 열려요.',
+            textAlign: TextAlign.center,
+            style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.55),
+          ),
+          const SizedBox(height: 16),
+          _PrimaryButton(
+            label: '약속에서 날짜 정하기',
+            onPressed: () => controller.goTo(AlagagiRoute.meetings),
+            color: AlagagiColors.sageDeep,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MeetingPlanHeroCard extends StatelessWidget {
+  const _MeetingPlanHeroCard({required this.entry});
+
+  final ScheduleEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final timeLabel = entry.meetingTimeLabel.trim();
+    final note = entry.meetingNote.trim();
+    final planCount = entry.meetingPlanItems.length;
+    return _PaperCard(
+      key: meetingPlanScreenKey,
+      radius: 24,
+      padding: const EdgeInsets.all(20),
+      highlightedBorder: const Color(0x22E1C77A),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AlagagiColors.ink,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.favorite_rounded,
+                  color: Color(0xFFE1C77A),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _meetingDateLabel(entry.dateKey),
+                      style: serif(context, size: 20, weight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      timeLabel.isEmpty ? '시간은 편하게 다시 정해도 괜찮아요.' : timeLabel,
+                      style: sans(size: 12, color: AlagagiColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (note.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Text(
+              note,
+              style: sans(
+                size: 12.5,
+                height: 1.5,
+                color: const Color(0xFF5F5D57),
+              ),
+            ),
+          ],
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _SmallBadge(
+                label: planCount == 0 ? '계획 비어 있음' : '계획 $planCount개',
+              ),
+              const _SmallBadge(label: '확정 날짜'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MeetingPlanDateStrip extends StatelessWidget {
+  const _MeetingPlanDateStrip({
+    required this.controller,
+    required this.entries,
+  });
+
+  final AlagagiController controller;
+  final List<ScheduleEntry> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 82,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: entries.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 10),
+        itemBuilder: (context, index) {
+          final entry = entries[index];
+          final selected =
+              entry.dateKey == controller.selectedMeetingPlanDateKey;
+          return _MeetingPlanDateCard(
+            entry: entry,
+            selected: selected,
+            onTap: () => controller.selectMeetingPlanDate(entry.dateKey),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _MeetingPlanDateCard extends StatelessWidget {
+  const _MeetingPlanDateCard({
+    required this.entry,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final ScheduleEntry entry;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final date = DateTime.tryParse(entry.dateKey);
+    final day = date?.day.toString() ?? entry.dateKey;
+    final month = date == null ? '' : '${date.month}월';
+    return SizedBox(
+      width: 78,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: meetingPlanDateButtonKey(entry.dateKey),
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Container(
+            decoration: BoxDecoration(
+              color: selected ? AlagagiColors.ink : AlagagiColors.paper,
+              border: Border.all(
+                color: selected ? AlagagiColors.ink : AlagagiColors.line,
+              ),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  month,
+                  style: sans(
+                    size: 10.5,
+                    color: selected ? Colors.white70 : AlagagiColors.muted,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  day,
+                  style: sans(
+                    size: 21,
+                    weight: FontWeight.w800,
+                    color: selected ? Colors.white : AlagagiColors.ink,
+                  ),
+                ),
+                Text(
+                  entry.meetingPlanItems.isEmpty
+                      ? '비어 있음'
+                      : '${entry.meetingPlanItems.length}개',
+                  style: sans(
+                    size: 10.5,
+                    color: selected
+                        ? const Color(0xFFE1C77A)
+                        : AlagagiColors.sageDeep,
+                    weight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MeetingPlanDetailCard extends StatelessWidget {
+  const _MeetingPlanDetailCard({
+    super.key,
+    required this.controller,
+    required this.entry,
+  });
+
+  final AlagagiController controller;
+  final ScheduleEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final linkedPlaces = controller.placesForMeetingPlan(entry.dateKey);
+    final otherPlaces = controller.sharedPlaces
+        .where((place) => place.linkedDateKey != entry.dateKey)
+        .take(4)
+        .toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _PaperCard(
+          radius: 24,
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '그날 할 것',
+                      style: serif(context, size: 20, weight: FontWeight.w800),
+                    ),
+                  ),
+                  _SmallBadge(label: _meetingDateShortLabel(entry.dateKey)),
+                ],
+              ),
+              const SizedBox(height: 10),
+              _MeetingTextField(
+                fieldKey: meetingPlanDraftFieldKey,
+                label: '계획',
+                hint: '예: 전시 보기\n근처 카페\n저녁 먹기',
+                initialValue: controller.state.meetingPlanDraftText,
+                maxLength: 260,
+                helperText: '한 줄에 하나씩 적으면 아래에서 보기 좋게 정리돼요.',
+                minLines: 4,
+                maxLines: 7,
+                onChanged: controller.updateMeetingPlanDraft,
+              ),
+              if (controller.state.meetingDraftError != null &&
+                  controller.state.meetingSaveStatus != SaveStatus.failed) ...[
+                const SizedBox(height: 9),
+                Text(
+                  controller.state.meetingDraftError!,
+                  style: sans(size: 12, color: AlagagiColors.sageDeep),
+                ),
+              ],
+              const SizedBox(height: 12),
+              _PrimaryButton(
+                label: '만남 계획 저장',
+                buttonKey: meetingPlanSaveButtonKey,
+                onPressed: controller.submitMeetingPlanDraft,
+                color: AlagagiColors.ink,
+              ),
+              _MeetingSaveStatus(controller: controller),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        Row(
+          children: [
+            const Expanded(child: _SectionLabel('이 날 장소 후보')),
+            _SmallBadge(label: '${linkedPlaces.length}곳'),
+          ],
+        ),
+        _PlaceSaveStatus(controller: controller),
+        const SizedBox(height: 10),
+        if (linkedPlaces.isEmpty)
+          const _EmptyStateCard(text: '장소 탭에서 저장한 곳을 이 날 후보로 붙여볼 수 있어요.')
+        else
+          for (final place in linkedPlaces) ...[
+            _MeetingPlanPlaceRow(
+              controller: controller,
+              place: place,
+              selectedDateKey: entry.dateKey,
+              linked: true,
+            ),
+            const SizedBox(height: 10),
+          ],
+        if (otherPlaces.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          const _SectionLabel('장소 보드에서 가져오기'),
+          const SizedBox(height: 10),
+          for (final place in otherPlaces) ...[
+            _MeetingPlanPlaceRow(
+              controller: controller,
+              place: place,
+              selectedDateKey: entry.dateKey,
+              linked: false,
+            ),
+            const SizedBox(height: 10),
+          ],
+        ],
+      ],
+    );
+  }
+}
+
+class _MeetingPlanPlaceRow extends StatelessWidget {
+  const _MeetingPlanPlaceRow({
+    required this.controller,
+    required this.place,
+    required this.selectedDateKey,
+    required this.linked,
+  });
+
+  final AlagagiController controller;
+  final SharedPlace place;
+  final String selectedDateKey;
+  final bool linked;
+
+  @override
+  Widget build(BuildContext context) {
+    final busy =
+        controller.state.placeSaveStatus == SaveStatus.saving &&
+        controller.isPlaceSaveTarget(place.id);
+    return _PaperCard(
+      radius: 18,
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: linked ? const Color(0xFFF4EEDC) : const Color(0xFFF0F2EB),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              _placeCategoryIcon(place.category),
+              size: 21,
+              color: linked ? const Color(0xFF8A6F2D) : AlagagiColors.sageDeep,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  place.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: sans(size: 13.5, weight: FontWeight.w800),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  [
+                    _placeCategoryLabel(place.category),
+                    if (place.isMutual) '서로 관심',
+                    if (place.address.isNotEmpty) place.address,
+                  ].join(' · '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: sans(size: 11.2, color: AlagagiColors.muted),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          SizedBox(
+            height: 32,
+            child: OutlinedButton(
+              key: meetingPlanPlaceLinkButtonKey(place.id),
+              onPressed: busy
+                  ? null
+                  : () {
+                      if (controller.selectedMeetingPlanDateKey !=
+                          selectedDateKey) {
+                        controller.selectMeetingPlanDate(selectedDateKey);
+                      }
+                      controller.linkPlaceToSelectedMeetingPlan(place.id);
+                    },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: linked
+                    ? const Color(0xFF8A6F2D)
+                    : AlagagiColors.sageDeep,
+                disabledForegroundColor: AlagagiColors.muted,
+                side: BorderSide(
+                  color: linked
+                      ? const Color(0x33C8AD6D)
+                      : const Color(0x338A9A7E),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                textStyle: sans(size: 11.5, weight: FontWeight.w800),
+              ),
+              child: Text(linked ? '빼기' : '담기'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MeetingHeroCard extends StatelessWidget {
   const _MeetingHeroCard({
     required this.candidateCount,
@@ -9642,9 +10127,14 @@ class _MeetingHeroCard extends StatelessWidget {
         ? '가능한 날을\n하나씩 남겨볼까요?'
         : '이번 달엔\n$candidateCount일이 서로 괜찮아요';
     final heroSubtitle = meetingDayEntry != null
-        ? meetingTimeLabel.isEmpty
-              ? '시간은 편할 때 다시 적어도 괜찮아요.'
-              : '$meetingTimeLabel에 만나기로 했어요.'
+        ? [
+            if (meetingTimeLabel.isEmpty)
+              '시간은 편할 때 다시 적어도 괜찮아요.'
+            else
+              '$meetingTimeLabel에 만나기로 했어요.',
+            if (meetingDayEntry!.meetingPlanItems.isNotEmpty)
+              '만남 탭에 그날 계획이 정리돼 있어요.',
+          ].join(' ')
         : '상대에게 보여도 괜찮은 일정과 만날 수 있는 여유만 남겨요.';
     return _PaperCard(
       radius: 24,
@@ -16027,7 +16517,7 @@ class _BottomNav extends StatelessWidget {
         color: AlagagiColors.paper.withValues(alpha: 0.94),
         border: const Border(top: BorderSide(color: AlagagiColors.line)),
       ),
-      padding: const EdgeInsets.fromLTRB(18, 10, 18, 12),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
       child: Row(
         children: [
           Expanded(
@@ -16072,6 +16562,19 @@ class _BottomNav extends StatelessWidget {
                   ) >
                   0,
               onTap: () => controller.goTo(AlagagiRoute.meetings),
+            ),
+          ),
+          Expanded(
+            child: _NavItem(
+              icon: Icons.favorite_border_rounded,
+              label: '만남',
+              selected: controller.state.route == AlagagiRoute.meetingPlans,
+              showBadge:
+                  controller.unreadCountForFeature(
+                    UnreadActivityFeature.meetings,
+                  ) >
+                  0,
+              onTap: () => controller.goTo(AlagagiRoute.meetingPlans),
             ),
           ),
           Expanded(

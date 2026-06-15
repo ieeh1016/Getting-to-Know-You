@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>조금씩 · 확정 만남 탭 제안</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --outer:#e8e8e0;
+    --bg:#f4f3ef;
+    --paper:#fcfcfa;
+    --ink:#2f2f2b;
+    --text:#494640;
+    --muted:#8d887e;
+    --line:#e5e1d8;
+    --soft:#f8f8f4;
+    --sage:#8a9a7e;
+    --sage-deep:#637458;
+    --sage-soft:#edf3e8;
+    --gold:#c5ab67;
+    --gold-soft:#f7efdb;
+    --clay:#b18472;
+    --clay-soft:#f6ebe6;
+    --blue:#7e95a5;
+    --blue-soft:#e7eef1;
+    --lav:#9d90b1;
+    --lav-soft:#f0edf5;
+    --shadow:0 28px 70px rgba(60,58,50,.16);
+  }
+  body{
+    min-height:100vh;
+    background:linear-gradient(180deg,rgba(255,255,255,.24),rgba(255,255,255,0) 360px),var(--outer);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;
+    padding:38px 18px 62px;
+  }
+  h1,h2,h3,h4{font-family:Georgia,"Times New Roman","Nanum Myeongjo",serif;font-weight:700;letter-spacing:0}
+  button,input,textarea{font:inherit}
+  button{border:0;background:none}
+  .wrap{max-width:1240px;margin:0 auto}
+  .page-title{
+    max-width:880px;
+    margin:0 auto 30px;
+    text-align:center;
+  }
+  .eyebrow{
+    display:block;
+    margin-bottom:8px;
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:2.2px;
+  }
+  .page-title h1{font-size:32px;line-height:1.34}
+  .page-title p{
+    margin-top:12px;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.75;
+  }
+  .principles{
+    max-width:1060px;
+    margin:0 auto 34px;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+  }
+  .principle{
+    border:1px solid rgba(229,225,216,.95);
+    border-radius:20px;
+    background:rgba(252,252,250,.8);
+    padding:18px 19px;
+    box-shadow:0 14px 32px rgba(62,60,52,.045);
+  }
+  .principle strong{
+    display:inline-flex;
+    min-height:24px;
+    align-items:center;
+    padding:0 10px;
+    border-radius:999px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:800;
+    letter-spacing:1.2px;
+  }
+  .principle h2{margin-top:10px;font-size:19px;line-height:1.38}
+  .principle p{margin-top:8px;color:var(--muted);font-size:12.7px;line-height:1.72}
+  .section-head{
+    max-width:1120px;
+    margin:34px auto 18px;
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:22px;
+  }
+  .section-head h2{font-size:25px;line-height:1.35}
+  .section-head p{max-width:600px;color:var(--muted);font-size:13px;line-height:1.72}
+  .stage{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(276px,1fr));
+    gap:22px;
+    align-items:start;
+  }
+  .caption{margin:0 2px 12px}
+  .tag{
+    display:inline-flex;
+    min-height:23px;
+    align-items:center;
+    padding:0 9px;
+    border-radius:999px;
+    border:1px solid rgba(99,116,88,.22);
+    background:rgba(252,252,250,.88);
+    color:var(--sage-deep);
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:1.4px;
+  }
+  .caption h3{margin-top:8px;font-size:18.5px;line-height:1.35}
+  .caption p{margin-top:5px;color:var(--muted);font-size:12.2px;line-height:1.64}
+  .phone{
+    width:100%;
+    max-width:344px;
+    min-height:742px;
+    margin:0 auto;
+    position:relative;
+    overflow:hidden;
+    border:8px solid #fff;
+    border-radius:38px;
+    background:var(--bg);
+    box-shadow:var(--shadow);
+  }
+  .screen{padding:24px 22px 96px}
+  .topbar{min-height:42px;display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+  .circle{
+    width:38px;height:38px;border:1px solid var(--line);border-radius:50%;
+    background:rgba(252,252,250,.88);display:grid;place-items:center;color:var(--sage-deep);
+  }
+  svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.9;fill:none}
+  .title{font-family:Georgia,"Times New Roman","Nanum Myeongjo",serif;font-size:20px;font-weight:700}
+  .hero{
+    border:1px solid var(--line);
+    border-radius:24px;
+    background:linear-gradient(145deg,#fcfcfa,#f2f5ee);
+    padding:17px 18px;
+    margin-bottom:13px;
+  }
+  .hero.dark{background:var(--ink);border-color:var(--ink);color:#fff}
+  .hero small{display:block;color:var(--sage-deep);font-size:10px;font-weight:800;letter-spacing:1.8px}
+  .hero.dark small{color:rgba(255,255,255,.62)}
+  .hero h4{margin-top:8px;font-size:22px;line-height:1.35}
+  .hero p{margin-top:7px;color:var(--muted);font-size:12px;line-height:1.6}
+  .hero.dark p{color:rgba(255,255,255,.7)}
+  .summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:13px}
+  .stat{
+    min-height:66px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:rgba(252,252,250,.9);
+    padding:10px;
+  }
+  .stat strong{display:block;font-size:18px;line-height:1.1}
+  .stat span{display:block;margin-top:6px;color:var(--muted);font-size:10.5px;line-height:1.3}
+  .card{
+    border:1px solid var(--line);
+    border-radius:22px;
+    background:rgba(252,252,250,.92);
+    padding:16px;
+    margin-bottom:12px;
+  }
+  .card.soft{background:var(--soft)}
+  .card.dark{background:var(--ink);border-color:var(--ink);color:#fff}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .card h4{font-size:19px;line-height:1.35}
+  .pill{
+    display:inline-flex;align-items:center;justify-content:center;min-height:25px;
+    padding:0 9px;border-radius:999px;background:var(--sage-soft);
+    color:var(--sage-deep);font-size:10.5px;font-weight:800;white-space:nowrap;
+  }
+  .pill.gold{background:var(--gold-soft);color:#927638}
+  .pill.blue{background:var(--blue-soft);color:#607987}
+  .pill.dark{background:rgba(255,255,255,.14);color:rgba(255,255,255,.84)}
+  .meeting-card{
+    border:1px solid var(--line);
+    border-radius:20px;
+    background:rgba(252,252,250,.94);
+    padding:15px;
+    margin-bottom:11px;
+  }
+  .date-box{display:flex;gap:12px;align-items:center}
+  .date-mark{
+    width:48px;height:54px;border-radius:17px;background:var(--gold-soft);
+    color:#927638;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:0 0 auto;
+  }
+  .date-mark strong{font-size:19px;line-height:1}
+  .date-mark span{margin-top:4px;font-size:10px;font-weight:800}
+  .meeting-card h5{font-family:Georgia,"Times New Roman","Nanum Myeongjo",serif;font-size:17px;line-height:1.35}
+  .meeting-card p{margin-top:5px;color:var(--muted);font-size:11.5px;line-height:1.55}
+  .progress{
+    margin-top:12px;
+    display:flex;
+    gap:5px;
+  }
+  .step{
+    height:6px;flex:1;border-radius:999px;background:#e7e2d6;
+  }
+  .step.on{background:var(--sage)}
+  .tab-row{
+    display:flex;
+    gap:7px;
+    overflow:hidden;
+    margin:9px 0 13px;
+  }
+  .tab-chip{
+    min-height:31px;
+    padding:0 11px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:#fff;
+    color:var(--muted);
+    font-size:11px;
+    font-weight:800;
+    white-space:nowrap;
+  }
+  .tab-chip.active{background:var(--ink);border-color:var(--ink);color:#fff}
+  .plan-list{display:flex;flex-direction:column;gap:8px}
+  .plan-item{
+    display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);
+    border-radius:16px;background:rgba(255,255,255,.78);padding:10px 11px;
+  }
+  .plan-icon{
+    width:27px;height:27px;border-radius:50%;display:grid;place-items:center;
+    background:var(--gold-soft);color:#927638;flex:0 0 auto;
+  }
+  .plan-icon.sage{background:var(--sage-soft);color:var(--sage-deep)}
+  .plan-icon.blue{background:var(--blue-soft);color:#607987}
+  .plan-icon.lav{background:var(--lav-soft);color:var(--lav)}
+  .plan-icon svg{width:14px;height:14px}
+  .plan-item strong{display:block;color:var(--text);font-size:12.4px}
+  .plan-item span{display:block;margin-top:3px;color:var(--muted);font-size:10.8px;line-height:1.45}
+  .field{
+    margin-top:10px;border:1px solid var(--line);border-radius:15px;background:#fff;padding:11px 12px;
+  }
+  .field label{display:block;color:var(--text);font-size:12px;font-weight:800;margin-bottom:7px}
+  .field .value{color:var(--muted);font-size:12px;line-height:1.55}
+  .course-line{
+    position:relative;
+    margin-top:13px;
+    padding-left:18px;
+  }
+  .course-line:before{
+    content:"";
+    position:absolute;
+    left:6px;top:7px;bottom:7px;
+    width:2px;border-radius:999px;background:#ddd6c8;
+  }
+  .course-stop{
+    position:relative;
+    margin-bottom:11px;
+    border:1px solid var(--line);
+    border-radius:16px;
+    background:#fff;
+    padding:11px 12px;
+  }
+  .course-stop:before{
+    content:"";
+    position:absolute;
+    left:-17px;top:17px;width:10px;height:10px;border-radius:50%;
+    background:var(--sage);border:2px solid var(--bg);
+  }
+  .course-stop strong{display:block;font-size:12.5px;color:var(--text)}
+  .course-stop span{display:block;margin-top:4px;color:var(--muted);font-size:10.8px;line-height:1.45}
+  .candidate-place{
+    display:flex;gap:10px;padding:11px 0;border-top:1px solid var(--line);
+  }
+  .candidate-place:first-of-type{border-top:0}
+  .thumb{
+    width:40px;height:40px;border-radius:14px;display:grid;place-items:center;
+    background:var(--blue-soft);color:#607987;flex:0 0 auto;
+  }
+  .candidate-place strong{display:block;font-size:12.5px;color:var(--text)}
+  .candidate-place span{display:block;margin-top:3px;color:var(--muted);font-size:10.8px;line-height:1.42}
+  .vote{
+    margin-top:8px;
+    display:flex;
+    gap:6px;
+  }
+  .vote button{
+    min-height:30px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--muted);
+    padding:0 10px;
+    font-size:11px;
+    font-weight:800;
+  }
+  .vote button.on{background:var(--sage-soft);color:var(--sage-deep);border-color:rgba(99,116,88,.24)}
+  .primary{
+    width:100%;min-height:42px;margin-top:11px;border-radius:15px;background:var(--ink);
+    color:#fff;font-size:13px;font-weight:800;
+  }
+  .secondary{
+    min-height:34px;border:1px solid var(--line);border-radius:14px;background:#fff;
+    color:var(--text);padding:0 12px;font-size:11.5px;font-weight:800;
+  }
+  .empty{
+    min-height:230px;
+    border:1px dashed #d9d4c8;
+    border-radius:22px;
+    background:rgba(252,252,250,.75);
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    padding:20px;
+  }
+  .empty .circle{margin-bottom:12px;background:var(--gold-soft);color:#927638}
+  .empty h4{font-size:19px;line-height:1.35}
+  .empty p{margin-top:8px;color:var(--muted);font-size:12px;line-height:1.65}
+  .bottom-nav{
+    position:absolute;left:0;right:0;bottom:0;height:82px;border-top:1px solid rgba(229,225,216,.88);
+    background:rgba(252,252,250,.93);backdrop-filter:blur(12px);
+    display:grid;grid-template-columns:repeat(7,1fr);padding:10px 10px 8px;
+  }
+  .nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font-size:9.2px}
+  .nav-item.active{color:var(--ink);font-weight:800}
+  .nav-item svg{width:17px;height:17px}
+  .notes{
+    max-width:1080px;
+    margin:32px auto 0;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+  }
+  .note{border:1px solid var(--line);border-radius:20px;background:rgba(252,252,250,.8);padding:17px 18px}
+  .note h3{font-size:17px;line-height:1.35}
+  .note p{margin-top:8px;color:var(--muted);font-size:12.5px;line-height:1.7}
+  @media(max-width:1180px){
+    .stage{grid-template-columns:repeat(2,minmax(300px,1fr))}
+    .principles,.notes{grid-template-columns:1fr}
+  }
+  @media(max-width:700px){
+    body{padding:24px 14px 44px}
+    .page-title h1{font-size:26px}
+    .section-head{display:block}
+    .section-head p{margin-top:8px}
+    .stage{grid-template-columns:1fr}
+    .phone{max-width:390px}
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="page-title">
+    <span class="eyebrow">FIXED MEETING TAB PROPOSAL</span>
+    <h1>`약속`과 분리된 새 탭,<br>확정된 만나는 날만 모아 계획하기</h1>
+    <p>
+      `약속`은 날짜를 조율하는 곳으로 남기고, 새 `만남` 탭은 이미 정해진 날짜만 보여줍니다.
+      여기서 그날 뭐 할지, 어디 갈지, 어떤 순서로 움직일지를 차분하게 정합니다.
+    </p>
+  </header>
+
+  <section class="principles">
+    <article class="principle">
+      <strong>ROLE SPLIT</strong>
+      <h2>약속은 조율, 만남은 실행</h2>
+      <p>캘린더에서 날짜를 정하고 나면, 그 이후의 결정은 새 탭으로 넘어갑니다. 한 화면에 너무 많은 책임을 주지 않습니다.</p>
+    </article>
+    <article class="principle">
+      <strong>ONLY FIXED DAYS</strong>
+      <h2>확정된 날짜만 노출</h2>
+      <p>후보 날짜, 조율 중인 날짜는 보이지 않습니다. 들어오자마자 “우리가 실제로 만나는 날”만 확인합니다.</p>
+    </article>
+    <article class="principle">
+      <strong>SOFT PLANNING</strong>
+      <h2>딱딱한 일정표 대신 가벼운 코스</h2>
+      <p>완료 체크리스트보다 `할 것`, `갈 곳`, `먹을 것` 후보를 정리하고 둘이 마음을 표시하는 정도로 둡니다.</p>
+    </article>
+  </section>
+
+  <section class="section-head">
+    <div>
+      <span class="eyebrow">SCREEN FLOW</span>
+      <h2>새 `만남` 탭의 4개 주요 화면</h2>
+    </div>
+    <p>
+      하단 탭은 `홈 / 질문 / 음악 / 약속 / 만남 / 장소 / 마이`가 됩니다.
+      탭이 많아지는 대신 `약속`과 `만남`의 역할을 명확히 나눠 화면을 덜 복잡하게 만듭니다.
+    </p>
+  </section>
+
+  <section class="stage">
+    <article>
+      <div class="caption">
+        <span class="tag">01 · 만남 탭 홈</span>
+        <h3>정해진 날만 카드로 보기</h3>
+        <p>확정된 날짜가 없으면 빈 상태, 있으면 가장 가까운 만나는 날을 맨 위에 보여줍니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <div class="circle"><svg viewBox="0 0 24 24"><path d="M12 3c-1 4-4 6-8 7 1 7 6 10 8 10s7-3 8-10c-4-1-7-3-8-7z"/></svg></div>
+            <div class="title">만남</div>
+            <div class="circle"><svg viewBox="0 0 24 24"><path d="M5 12h14M5 6h14M5 18h14"/></svg></div>
+          </div>
+          <section class="hero dark">
+            <small>NEXT MEETING</small>
+            <h4>6월 11일<br>저녁 7시쯤</h4>
+            <p>그날 할 것 2개와 장소 후보 3곳이 정리돼 있어요.</p>
+          </section>
+          <div class="summary-row">
+            <div class="stat"><strong>2</strong><span>할 것</span></div>
+            <div class="stat"><strong>3</strong><span>장소 후보</span></div>
+            <div class="stat"><strong>1</strong><span>정한 코스</span></div>
+          </div>
+          <section class="meeting-card">
+            <div class="date-box">
+              <div class="date-mark"><strong>11</strong><span>목</span></div>
+              <div>
+                <h5>성수에서 천천히 보기</h5>
+                <p>저녁 7시쯤 · 장소는 성수 쪽으로</p>
+              </div>
+            </div>
+            <div class="progress"><i class="step on"></i><i class="step on"></i><i class="step"></i></div>
+            <button class="primary">이 만남 정리하기</button>
+          </section>
+          <section class="meeting-card">
+            <div class="date-box">
+              <div class="date-mark" style="background:var(--sage-soft);color:var(--sage-deep)"><strong>19</strong><span>금</span></div>
+              <div>
+                <h5>가볍게 밥 먹는 날</h5>
+                <p>시간은 아직 편하게 조율 중</p>
+              </div>
+            </div>
+          </section>
+        </div>
+        <nav class="bottom-nav">
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9H3z"/></svg><span>홈</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M5 5h14v14H5z"/></svg><span>질문</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M9 18V5l10-2v13"/></svg><span>음악</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M7 3v4M17 3v4M4 8h16v12H4z"/></svg><span>약속</span></div>
+          <div class="nav-item active"><svg viewBox="0 0 24 24"><path d="M12 3c-1 4-4 6-8 7 1 7 6 10 8 10s7-3 8-10c-4-1-7-3-8-7z"/></svg><span>만남</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M12 21s7-5 7-11a7 7 0 10-14 0c0 6 7 11 7 11z"/></svg><span>장소</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c1-4 4-6 8-6s7 2 8 6"/></svg><span>마이</span></div>
+        </nav>
+      </div>
+    </article>
+
+    <article>
+      <div class="caption">
+        <span class="tag">02 · 만남 상세</span>
+        <h3>뭐 할지와 어디 갈지 한 화면</h3>
+        <p>탭 안에서 `할 것`, `장소 후보`, `코스`를 전환하며 정합니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <div class="circle"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+            <div class="title">6월 11일</div>
+            <div class="circle"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></div>
+          </div>
+          <section class="card dark">
+            <div class="row">
+              <h4>성수에서 천천히 보기</h4>
+              <span class="pill dark">저녁 7시쯤</span>
+            </div>
+            <p style="margin-top:8px;color:rgba(255,255,255,.7);font-size:12px;line-height:1.58">장소는 성수 쪽으로 천천히 보기</p>
+          </section>
+          <div class="tab-row">
+            <button class="tab-chip active">전체</button>
+            <button class="tab-chip">할 것</button>
+            <button class="tab-chip">장소</button>
+            <button class="tab-chip">코스</button>
+          </div>
+          <section class="card">
+            <div class="row">
+              <h4>하고 싶은 것</h4>
+              <span class="pill">2개</span>
+            </div>
+            <div class="plan-list" style="margin-top:12px">
+              <div class="plan-item">
+                <div class="plan-icon"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
+                <div><strong>작은 전시 보기</strong><span>둘 다 관심 있어요</span></div>
+              </div>
+              <div class="plan-item">
+                <div class="plan-icon sage"><svg viewBox="0 0 24 24"><path d="M4 17c4-1 6-3 8-8 2 5 4 7 8 8"/></svg></div>
+                <div><strong>근처 조금 걷기</strong><span>날씨 좋으면만</span></div>
+              </div>
+            </div>
+            <div class="field"><label>한 줄 추가</label><div class="value">예: 사진 찍기, 책방 들르기</div></div>
+          </section>
+          <section class="card">
+            <div class="row">
+              <h4>장소 후보</h4>
+              <button class="secondary">장소에서 가져오기</button>
+            </div>
+            <div class="candidate-place">
+              <div class="thumb"><svg viewBox="0 0 24 24"><path d="M12 21s7-5 7-11a7 7 0 10-14 0c0 6 7 11 7 11z"/></svg></div>
+              <div><strong>어니언 성수</strong><span>카페 · 둘 다 관심</span></div>
+            </div>
+          </section>
+        </div>
+        <nav class="bottom-nav">
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9H3z"/></svg><span>홈</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M5 5h14v14H5z"/></svg><span>질문</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M9 18V5l10-2v13"/></svg><span>음악</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M7 3v4M17 3v4M4 8h16v12H4z"/></svg><span>약속</span></div>
+          <div class="nav-item active"><svg viewBox="0 0 24 24"><path d="M12 3c-1 4-4 6-8 7 1 7 6 10 8 10s7-3 8-10c-4-1-7-3-8-7z"/></svg><span>만남</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M12 21s7-5 7-11a7 7 0 10-14 0c0 6 7 11 7 11z"/></svg><span>장소</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c1-4 4-6 8-6s7 2 8 6"/></svg><span>마이</span></div>
+        </nav>
+      </div>
+    </article>
+
+    <article>
+      <div class="caption">
+        <span class="tag">03 · 장소 결정</span>
+        <h3>저장한 장소를 후보로 가져오기</h3>
+        <p>`장소` 탭은 장소 보드로 유지하고, `만남` 탭에서 해당 날짜의 후보로 담습니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <div class="circle"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+            <div class="title">장소 후보</div>
+            <div class="circle"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></div>
+          </div>
+          <section class="hero">
+            <small>PLACE CANDIDATES</small>
+            <h4>어디서 놀지<br>같이 골라요</h4>
+            <p>지도에서 새로 찾거나, 장소 보드에 담아둔 곳을 가져옵니다.</p>
+          </section>
+          <section class="card">
+            <div class="candidate-place">
+              <div class="thumb"><svg viewBox="0 0 24 24"><path d="M12 21s7-5 7-11a7 7 0 10-14 0c0 6 7 11 7 11z"/></svg></div>
+              <div>
+                <strong>어니언 성수</strong>
+                <span>서울 성동구 · 카페</span>
+                <div class="vote"><button class="on">나도 좋아요</button><button>코스에 넣기</button></div>
+              </div>
+            </div>
+            <div class="candidate-place">
+              <div class="thumb" style="background:var(--lav-soft);color:var(--lav)"><svg viewBox="0 0 24 24"><path d="M4 19h16M6 19V5h12v14M9 9h6M9 13h6"/></svg></div>
+              <div>
+                <strong>작은 전시 공간</strong>
+                <span>전시 · 민영 저장</span>
+                <div class="vote"><button>관심</button><button class="on">코스 후보</button></div>
+              </div>
+            </div>
+            <div class="candidate-place">
+              <div class="thumb" style="background:var(--clay-soft);color:var(--clay)"><svg viewBox="0 0 24 24"><path d="M4 8h16M6 8v10h12V8M8 8V6a4 4 0 018 0v2"/></svg></div>
+              <div>
+                <strong>성수 저녁집</strong>
+                <span>식사 · 영우 저장</span>
+                <div class="vote"><button>관심</button><button>코스에 넣기</button></div>
+              </div>
+            </div>
+            <button class="primary">지도에서 장소 더 찾기</button>
+          </section>
+        </div>
+        <nav class="bottom-nav">
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9H3z"/></svg><span>홈</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M5 5h14v14H5z"/></svg><span>질문</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M9 18V5l10-2v13"/></svg><span>음악</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M7 3v4M17 3v4M4 8h16v12H4z"/></svg><span>약속</span></div>
+          <div class="nav-item active"><svg viewBox="0 0 24 24"><path d="M12 3c-1 4-4 6-8 7 1 7 6 10 8 10s7-3 8-10c-4-1-7-3-8-7z"/></svg><span>만남</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M12 21s7-5 7-11a7 7 0 10-14 0c0 6 7 11 7 11z"/></svg><span>장소</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c1-4 4-6 8-6s7 2 8 6"/></svg><span>마이</span></div>
+        </nav>
+      </div>
+    </article>
+
+    <article>
+      <div class="caption">
+        <span class="tag">04 · 그날 코스</span>
+        <h3>결정된 내용을 한 줄 흐름으로 보기</h3>
+        <p>최종 목적은 체크리스트가 아니라, 만나기 전에 보기 쉬운 작은 코스 카드입니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <div class="circle"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+            <div class="title">그날 코스</div>
+            <div class="circle"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></div>
+          </div>
+          <section class="card dark">
+            <div class="row">
+              <h4>6월 11일 목요일</h4>
+              <span class="pill dark">준비됨</span>
+            </div>
+            <p style="margin-top:8px;color:rgba(255,255,255,.7);font-size:12px;line-height:1.58">저녁 7시쯤 · 성수에서 천천히</p>
+          </section>
+          <section class="card">
+            <div class="row">
+              <h4>우리 코스</h4>
+              <button class="secondary">수정</button>
+            </div>
+            <div class="course-line">
+              <div class="course-stop">
+                <strong>작은 전시 공간</strong>
+                <span>먼저 가볍게 둘러보기</span>
+              </div>
+              <div class="course-stop">
+                <strong>어니언 성수</strong>
+                <span>근처에서 커피 마시기</span>
+              </div>
+              <div class="course-stop">
+                <strong>성수 저녁집</strong>
+                <span>배고프면 바로 이동</span>
+              </div>
+            </div>
+          </section>
+          <section class="card soft">
+            <div class="row">
+              <h4>아직 정하지 않은 것</h4>
+              <span class="pill">1개</span>
+            </div>
+            <div class="plan-item" style="margin-top:11px">
+              <div class="plan-icon lav"><svg viewBox="0 0 24 24"><path d="M12 20h9M12 4h9M4 9h16M4 15h16"/></svg></div>
+              <div><strong>비 오면 대안</strong><span>실내 장소 하나 더 담아두기</span></div>
+            </div>
+          </section>
+        </div>
+        <nav class="bottom-nav">
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9H3z"/></svg><span>홈</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M5 5h14v14H5z"/></svg><span>질문</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M9 18V5l10-2v13"/></svg><span>음악</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M7 3v4M17 3v4M4 8h16v12H4z"/></svg><span>약속</span></div>
+          <div class="nav-item active"><svg viewBox="0 0 24 24"><path d="M12 3c-1 4-4 6-8 7 1 7 6 10 8 10s7-3 8-10c-4-1-7-3-8-7z"/></svg><span>만남</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M12 21s7-5 7-11a7 7 0 10-14 0c0 6 7 11 7 11z"/></svg><span>장소</span></div>
+          <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c1-4 4-6 8-6s7 2 8 6"/></svg><span>마이</span></div>
+        </nav>
+      </div>
+    </article>
+  </section>
+
+  <section class="section-head">
+    <div>
+      <span class="eyebrow">EMPTY STATE</span>
+      <h2>확정된 날이 없을 때</h2>
+    </div>
+    <p>
+      `만남` 탭은 후보를 만들지 않습니다. 확정된 날이 없으면 약속 탭으로 부드럽게 보내는 빈 상태만 보여줍니다.
+    </p>
+  </section>
+
+  <section class="notes">
+    <article class="note">
+      <h3>데이터 구조</h3>
+      <p>
+        `ScheduleEntry.isMeetingDay == true`인 날짜만 `만남` 탭에 노출합니다.
+        플랜은 1차로 `meetingPlans` 또는 `meetingPlanItems`에 저장하고, 장소는 `placeId` 참조를 선택적으로 둡니다.
+      </p>
+    </article>
+    <article class="note">
+      <h3>탭 수 문제</h3>
+      <p>
+        하단 탭이 7개가 되므로 글자 크기와 간격을 더 조밀하게 잡아야 합니다.
+        부담이 크면 `장소`를 `만남` 안으로 일부 흡수하는 2차 안도 가능합니다.
+      </p>
+    </article>
+    <article class="note">
+      <h3>추천 구현 순서</h3>
+      <p>
+        먼저 `만남` 탭 목록과 상세를 만들고, 그다음 장소 후보 가져오기를 붙입니다.
+        지도 검색 자체는 기존 `장소` 기능을 재사용합니다.
+      </p>
+    </article>
+  </section>
+</main>
+</body>
+</html>

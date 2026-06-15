@@ -55,12 +55,15 @@ void main() {
             as Map<String, dynamic>;
     final firestoreConfig = firebaseConfig['firestore'] as Map<String, dynamic>;
     final workflow = File('.github/workflows/deploy.yml').readAsStringSync();
+    final firebaseSetup = File('docs/firebase_setup.md').readAsStringSync();
 
     expect(firestoreConfig['rules'], 'firestore.rules');
     expect(workflow, contains('firebase deploy --only firestore:rules'));
     expect(workflow, contains('FIREBASE_SERVICE_ACCOUNT'));
     expect(workflow, contains('GOOGLE_APPLICATION_CREDENTIALS'));
     expect(workflow, contains("if: github.event_name != 'pull_request'"));
+    expect(firebaseSetup, contains('roles/firebaserules.admin'));
+    expect(firebaseSetup, contains('roles/serviceusage.serviceUsageViewer'));
   });
 }
 

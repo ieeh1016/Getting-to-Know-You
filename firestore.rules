@@ -438,6 +438,7 @@ service cloud.firestore {
           'isMeetingDay',
           'meetingTimeLabel',
           'meetingNote',
+          'meetingPlanItems',
           'updatedAt'
         ])
         && request.resource.data.dateKey is string
@@ -456,7 +457,10 @@ service cloud.firestore {
         && request.resource.data.meetingTimeLabel is string
         && request.resource.data.meetingTimeLabel.size() <= 40
         && request.resource.data.meetingNote is string
-        && request.resource.data.meetingNote.size() <= 80;
+        && request.resource.data.meetingNote.size() <= 80
+        && (!request.resource.data.keys().hasAny(['meetingPlanItems'])
+          || (request.resource.data.meetingPlanItems is list
+            && request.resource.data.meetingPlanItems.size() <= 8));
     }
 
     function validSharedPlace(spaceId, placeId) {

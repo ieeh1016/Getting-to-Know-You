@@ -10,6 +10,7 @@ enum AlagagiRoute {
   records,
   music,
   meetings,
+  meetingPlans,
   places,
   stockStory,
   improvements,
@@ -923,6 +924,7 @@ class ScheduleEntry {
     this.isMeetingDay = false,
     this.meetingTimeLabel = '',
     this.meetingNote = '',
+    this.meetingPlanItems = const [],
     this.updatedAt,
   });
 
@@ -935,6 +937,7 @@ class ScheduleEntry {
   final bool isMeetingDay;
   final String meetingTimeLabel;
   final String meetingNote;
+  final List<String> meetingPlanItems;
   final DateTime? updatedAt;
 
   String get id => '${dateKey}_$profileId';
@@ -950,6 +953,7 @@ class ScheduleEntry {
     bool? isMeetingDay,
     String? meetingTimeLabel,
     String? meetingNote,
+    List<String>? meetingPlanItems,
     DateTime? updatedAt,
   }) {
     return ScheduleEntry(
@@ -962,6 +966,7 @@ class ScheduleEntry {
       isMeetingDay: isMeetingDay ?? this.isMeetingDay,
       meetingTimeLabel: meetingTimeLabel ?? this.meetingTimeLabel,
       meetingNote: meetingNote ?? this.meetingNote,
+      meetingPlanItems: meetingPlanItems ?? this.meetingPlanItems,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -1490,6 +1495,7 @@ class AlagagiState {
     this.musicListFilter = MusicListFilter.all,
     this.editingMusicNoteId,
     this.selectedMeetingDateKey,
+    this.selectedMeetingPlanDateKey,
     this.meetingDraftAvailability = MeetingAvailability.available,
     this.meetingDraftTimeSlots = const {MeetingTimeSlot.evening},
     this.meetingDraftTimeBlocks = const [],
@@ -1500,6 +1506,8 @@ class AlagagiState {
     this.meetingDraftIsMeetingDay = false,
     this.meetingDraftMeetingTimeLabel = '',
     this.meetingDraftMeetingNote = '',
+    this.meetingDraftMeetingPlanText = '',
+    this.meetingPlanDraftText = '',
     this.meetingDraftError,
     this.meetingSaveStatus = SaveStatus.idle,
     this.meetingSaveFeedback,
@@ -1603,6 +1611,7 @@ class AlagagiState {
   final MusicListFilter musicListFilter;
   final String? editingMusicNoteId;
   final String? selectedMeetingDateKey;
+  final String? selectedMeetingPlanDateKey;
   final MeetingAvailability meetingDraftAvailability;
   final Set<MeetingTimeSlot> meetingDraftTimeSlots;
   final List<ScheduleTimeBlock> meetingDraftTimeBlocks;
@@ -1613,6 +1622,8 @@ class AlagagiState {
   final bool meetingDraftIsMeetingDay;
   final String meetingDraftMeetingTimeLabel;
   final String meetingDraftMeetingNote;
+  final String meetingDraftMeetingPlanText;
+  final String meetingPlanDraftText;
   final String? meetingDraftError;
   final SaveStatus meetingSaveStatus;
   final String? meetingSaveFeedback;
@@ -1717,6 +1728,8 @@ class AlagagiState {
     String? editingMusicNoteId,
     bool clearEditingMusicNoteId = false,
     String? selectedMeetingDateKey,
+    String? selectedMeetingPlanDateKey,
+    bool clearSelectedMeetingPlanDateKey = false,
     MeetingAvailability? meetingDraftAvailability,
     Set<MeetingTimeSlot>? meetingDraftTimeSlots,
     List<ScheduleTimeBlock>? meetingDraftTimeBlocks,
@@ -1727,6 +1740,8 @@ class AlagagiState {
     bool? meetingDraftIsMeetingDay,
     String? meetingDraftMeetingTimeLabel,
     String? meetingDraftMeetingNote,
+    String? meetingDraftMeetingPlanText,
+    String? meetingPlanDraftText,
     String? meetingDraftError,
     bool clearMeetingDraftError = false,
     SaveStatus? meetingSaveStatus,
@@ -1865,6 +1880,9 @@ class AlagagiState {
           : editingMusicNoteId ?? this.editingMusicNoteId,
       selectedMeetingDateKey:
           selectedMeetingDateKey ?? this.selectedMeetingDateKey,
+      selectedMeetingPlanDateKey: clearSelectedMeetingPlanDateKey
+          ? null
+          : selectedMeetingPlanDateKey ?? this.selectedMeetingPlanDateKey,
       meetingDraftAvailability:
           meetingDraftAvailability ?? this.meetingDraftAvailability,
       meetingDraftTimeSlots:
@@ -1884,6 +1902,9 @@ class AlagagiState {
           meetingDraftMeetingTimeLabel ?? this.meetingDraftMeetingTimeLabel,
       meetingDraftMeetingNote:
           meetingDraftMeetingNote ?? this.meetingDraftMeetingNote,
+      meetingDraftMeetingPlanText:
+          meetingDraftMeetingPlanText ?? this.meetingDraftMeetingPlanText,
+      meetingPlanDraftText: meetingPlanDraftText ?? this.meetingPlanDraftText,
       meetingDraftError: clearMeetingDraftError
           ? null
           : meetingDraftError ?? this.meetingDraftError,
@@ -2820,6 +2841,22 @@ class AlagagiController extends ChangeNotifier {
 
   static bool _isSameMonth(DateTime first, DateTime second) {
     return first.year == second.year && first.month == second.month;
+  }
+
+  static List<String> _parseMeetingPlanItems(String value) {
+    final items = value
+        .split(RegExp(r'[\n,]'))
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
+    return List<String>.unmodifiable(items);
+  }
+
+  static String _meetingPlanTextFromItems(List<String> items) {
+    return items
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .join('\n');
   }
 
   List<ProfileCardData> _emptyProfileCardsForSession() {
@@ -3763,17 +3800,31 @@ class AlagagiController extends ChangeNotifier {
     return List<String>.unmodifiable(keys);
   }
 
+  List<ScheduleEntry> get meetingDayEntries {
+    final entries = meetingDayDateKeys
+        .map(meetingDayEntryFor)
+        .nonNulls
+        .toList();
+    final today = _todayDateKey();
+    entries.sort((a, b) {
+      final aUpcoming = a.dateKey.compareTo(today) >= 0;
+      final bUpcoming = b.dateKey.compareTo(today) >= 0;
+      if (aUpcoming != bUpcoming) {
+        return aUpcoming ? -1 : 1;
+      }
+      return aUpcoming
+          ? a.dateKey.compareTo(b.dateKey)
+          : b.dateKey.compareTo(a.dateKey);
+    });
+    return List<ScheduleEntry>.unmodifiable(entries);
+  }
+
   ScheduleEntry? get nextMeetingDayEntry {
-    final keys = meetingDayDateKeys;
-    if (keys.isEmpty) {
+    final entries = meetingDayEntries;
+    if (entries.isEmpty) {
       return null;
     }
-    final today = _todayDateKey();
-    final upcomingKey = keys.firstWhere(
-      (key) => key.compareTo(today) >= 0,
-      orElse: () => keys.last,
-    );
-    return meetingDayEntryFor(upcomingKey);
+    return entries.first;
   }
 
   ScheduleEntry? meetingDayEntryFor(String dateKey) {
@@ -3787,6 +3838,32 @@ class AlagagiController extends ChangeNotifier {
       (entry) => entry.profileId == _state.me.id,
       orElse: () => entries.first,
     );
+  }
+
+  String get selectedMeetingPlanDateKey =>
+      _state.selectedMeetingPlanDateKey ??
+      nextMeetingDayEntry?.dateKey ??
+      selectedMeetingDateKey;
+
+  ScheduleEntry? get selectedMeetingPlanEntry {
+    final entry = meetingDayEntryFor(selectedMeetingPlanDateKey);
+    if (entry == null) {
+      return nextMeetingDayEntry;
+    }
+    return entry;
+  }
+
+  List<SharedPlace> placesForMeetingPlan(String dateKey) {
+    final places = _sharedPlaces
+        .where((place) => place.linkedDateKey == dateKey)
+        .toList();
+    places.sort((a, b) {
+      if (a.isMutual != b.isMutual) {
+        return a.isMutual ? -1 : 1;
+      }
+      return a.name.compareTo(b.name);
+    });
+    return List<SharedPlace>.unmodifiable(places);
   }
 
   List<MeetingCandidate> get meetingCandidates {
@@ -3991,8 +4068,22 @@ class AlagagiController extends ChangeNotifier {
     if (feature != null) {
       _markFeatureSeen(feature);
     }
+    String? selectedMeetingPlanDateKey;
+    String? meetingPlanDraftText;
+    if (route == AlagagiRoute.meetingPlans) {
+      final entry = selectedMeetingPlanEntry ?? nextMeetingDayEntry;
+      selectedMeetingPlanDateKey = entry?.dateKey;
+      meetingPlanDraftText = _meetingPlanTextFromItems(
+        entry?.meetingPlanItems ?? const [],
+      );
+    }
     _state = _state.copyWith(
       route: route,
+      selectedMeetingPlanDateKey: selectedMeetingPlanDateKey,
+      clearSelectedMeetingPlanDateKey:
+          route == AlagagiRoute.meetingPlans &&
+          selectedMeetingPlanDateKey == null,
+      meetingPlanDraftText: meetingPlanDraftText,
       editingAnswer: false,
       clearActiveAnswerQuestion: route != AlagagiRoute.answer,
       clearAnswerError: true,
@@ -4134,6 +4225,7 @@ class AlagagiController extends ChangeNotifier {
       AlagagiRoute.profileCard => UnreadActivityFeature.profileCard,
       AlagagiRoute.wishlist => UnreadActivityFeature.wishlist,
       AlagagiRoute.meetings => UnreadActivityFeature.meetings,
+      AlagagiRoute.meetingPlans => UnreadActivityFeature.meetings,
       AlagagiRoute.places => UnreadActivityFeature.places,
       AlagagiRoute.stockStory => UnreadActivityFeature.stocks,
       AlagagiRoute.music => UnreadActivityFeature.music,
@@ -5730,6 +5822,11 @@ class AlagagiController extends ChangeNotifier {
           entry?.meetingTimeLabel ?? meetingDayEntry?.meetingTimeLabel ?? '',
       meetingDraftMeetingNote:
           entry?.meetingNote ?? meetingDayEntry?.meetingNote ?? '',
+      meetingDraftMeetingPlanText: _meetingPlanTextFromItems(
+        entry?.meetingPlanItems ??
+            meetingDayEntry?.meetingPlanItems ??
+            const [],
+      ),
       clearMeetingDraftError: true,
       clearMeetingSaveFeedback: true,
       clearMeetingSaveTargetId: true,
@@ -5853,14 +5950,119 @@ class AlagagiController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateMeetingDayDraft({String? timeLabel, String? note}) {
+  void updateMeetingDayDraft({
+    String? timeLabel,
+    String? note,
+    String? planText,
+  }) {
     _state = _state.copyWith(
       meetingDraftMeetingTimeLabel: timeLabel,
       meetingDraftMeetingNote: note,
+      meetingDraftMeetingPlanText: planText,
       clearMeetingDraftError: true,
       clearMeetingSaveFeedback: true,
     );
     notifyListeners();
+  }
+
+  void selectMeetingPlanDate(String dateKey) {
+    final entry = meetingDayEntryFor(dateKey);
+    _state = _state.copyWith(
+      selectedMeetingPlanDateKey: dateKey,
+      meetingPlanDraftText: _meetingPlanTextFromItems(
+        entry?.meetingPlanItems ?? const [],
+      ),
+      clearMeetingDraftError: true,
+      clearMeetingSaveFeedback: true,
+      clearMeetingSaveTargetId: true,
+    );
+    notifyListeners();
+  }
+
+  void updateMeetingPlanDraft(String value) {
+    _state = _state.copyWith(
+      meetingPlanDraftText: value,
+      clearMeetingDraftError: true,
+      clearMeetingSaveFeedback: true,
+    );
+    notifyListeners();
+  }
+
+  void submitMeetingPlanDraft() {
+    if (_state.meetingSaveStatus == SaveStatus.saving) {
+      return;
+    }
+    final dateKey = selectedMeetingPlanDateKey;
+    final meetingDayEntry = meetingDayEntryFor(dateKey);
+    if (meetingDayEntry == null) {
+      _state = _state.copyWith(meetingDraftError: '먼저 약속에서 만나는 날을 정해주세요.');
+      notifyListeners();
+      return;
+    }
+    final meetingPlanItems = _parseMeetingPlanItems(
+      _state.meetingPlanDraftText,
+    );
+    if (meetingPlanItems.any((item) => item.length > 40)) {
+      _state = _state.copyWith(meetingDraftError: '할 일은 한 줄에 40자 안으로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    if (meetingPlanItems.length > 8) {
+      _state = _state.copyWith(meetingDraftError: '만남 계획은 8개까지만 남길 수 있어요.');
+      notifyListeners();
+      return;
+    }
+
+    final myEntry = scheduleEntryFor(_state.me.id, dateKey);
+    final fallbackSlots = meetingDayEntry.timeSlots.isEmpty
+        ? const {MeetingTimeSlot.evening}
+        : meetingDayEntry.timeSlots;
+    final entry = ScheduleEntry(
+      dateKey: dateKey,
+      profileId: _state.me.id,
+      availability: myEntry?.availability ?? meetingDayEntry.availability,
+      timeSlots: Set<MeetingTimeSlot>.unmodifiable(
+        myEntry?.timeSlots.isNotEmpty == true
+            ? myEntry!.timeSlots
+            : fallbackSlots,
+      ),
+      timeBlocks: List<ScheduleTimeBlock>.unmodifiable(
+        myEntry?.timeBlocks ?? const [],
+      ),
+      sharedMemo: myEntry?.sharedMemo ?? '',
+      isMeetingDay: true,
+      meetingTimeLabel: (myEntry?.meetingTimeLabel.trim().isNotEmpty ?? false)
+          ? myEntry!.meetingTimeLabel
+          : meetingDayEntry.meetingTimeLabel,
+      meetingNote: (myEntry?.meetingNote.trim().isNotEmpty ?? false)
+          ? myEntry!.meetingNote
+          : meetingDayEntry.meetingNote,
+      meetingPlanItems: List<String>.unmodifiable(meetingPlanItems),
+      updatedAt: DateTime.now(),
+    );
+    final index = _scheduleEntries.indexWhere(
+      (candidate) => candidate.id == entry.id,
+    );
+    if (index == -1) {
+      _scheduleEntries.add(entry);
+    } else {
+      _scheduleEntries[index] = entry;
+    }
+    _sortScheduleEntriesByDate();
+    _lastFailedScheduleEntry = null;
+    _state = _state.copyWith(
+      selectedMeetingPlanDateKey: dateKey,
+      meetingPlanDraftText: _meetingPlanTextFromItems(meetingPlanItems),
+      meetingDraftMeetingPlanText: dateKey == selectedMeetingDateKey
+          ? _meetingPlanTextFromItems(meetingPlanItems)
+          : _state.meetingDraftMeetingPlanText,
+      meetingSaveStatus: SaveStatus.saving,
+      meetingSaveTargetId: entry.id,
+      clearMeetingDraftError: true,
+      clearMeetingSaveFeedback: true,
+    );
+    notifyListeners();
+    _persistScheduleEntry(entry, successFeedback: '만남 계획을 저장했어요.');
   }
 
   void submitMeetingDayDraft() {
@@ -5886,6 +6088,9 @@ class AlagagiController extends ChangeNotifier {
     final timeBlocks = _state.meetingDraftTimeBlocks;
     final meetingTimeLabel = _state.meetingDraftMeetingTimeLabel.trim();
     final meetingNote = _state.meetingDraftMeetingNote.trim();
+    final meetingPlanItems = _parseMeetingPlanItems(
+      _state.meetingDraftMeetingPlanText,
+    );
     final isMeetingDay = markAsMeetingDay || _state.meetingDraftIsMeetingDay;
     final timeSlots = availability == MeetingAvailability.busy
         ? <MeetingTimeSlot>{}
@@ -5912,6 +6117,16 @@ class AlagagiController extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    if (meetingPlanItems.any((item) => item.length > 40)) {
+      _state = _state.copyWith(meetingDraftError: '할 일은 한 줄에 40자 안으로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    if (meetingPlanItems.length > 8) {
+      _state = _state.copyWith(meetingDraftError: '만남 계획은 8개까지만 남길 수 있어요.');
+      notifyListeners();
+      return;
+    }
 
     final entry = ScheduleEntry(
       dateKey: selectedMeetingDateKey,
@@ -5923,6 +6138,9 @@ class AlagagiController extends ChangeNotifier {
       isMeetingDay: isMeetingDay,
       meetingTimeLabel: isMeetingDay ? meetingTimeLabel : '',
       meetingNote: isMeetingDay ? meetingNote : '',
+      meetingPlanItems: isMeetingDay
+          ? List<String>.unmodifiable(meetingPlanItems)
+          : const [],
       updatedAt: DateTime.now(),
     );
     final index = _scheduleEntries.indexWhere(
@@ -5939,6 +6157,9 @@ class AlagagiController extends ChangeNotifier {
       meetingDraftIsMeetingDay: isMeetingDay,
       meetingDraftMeetingTimeLabel: isMeetingDay ? meetingTimeLabel : '',
       meetingDraftMeetingNote: isMeetingDay ? meetingNote : '',
+      meetingDraftMeetingPlanText: isMeetingDay
+          ? _meetingPlanTextFromItems(meetingPlanItems)
+          : '',
       meetingSaveStatus: SaveStatus.saving,
       meetingSaveTargetId: entry.id,
       clearMeetingDraftError: true,
@@ -6279,6 +6500,14 @@ class AlagagiController extends ChangeNotifier {
   }
 
   void linkPlaceToSelectedMeeting(String placeId) {
+    _linkPlaceToMeetingDate(placeId, selectedMeetingDateKey);
+  }
+
+  void linkPlaceToSelectedMeetingPlan(String placeId) {
+    _linkPlaceToMeetingDate(placeId, selectedMeetingPlanDateKey);
+  }
+
+  void _linkPlaceToMeetingDate(String placeId, String dateKey) {
     if (_state.placeSaveStatus == SaveStatus.saving) {
       return;
     }
@@ -6287,10 +6516,9 @@ class AlagagiController extends ChangeNotifier {
       return;
     }
     final place = _sharedPlaces[index];
-    final selectedDateKey = selectedMeetingDateKey;
-    final alreadyLinkedToSelectedDate = place.linkedDateKey == selectedDateKey;
+    final alreadyLinkedToSelectedDate = place.linkedDateKey == dateKey;
     final updatedPlace = place.copyWith(
-      linkedDateKey: alreadyLinkedToSelectedDate ? null : selectedDateKey,
+      linkedDateKey: alreadyLinkedToSelectedDate ? null : dateKey,
       clearLinkedDateKey: alreadyLinkedToSelectedDate,
       interestedByProfileIds: alreadyLinkedToSelectedDate
           ? place.interestedByProfileIds

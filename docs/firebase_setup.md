@@ -558,6 +558,7 @@ service cloud.firestore {
           'isMeetingDay',
           'meetingTimeLabel',
           'meetingNote',
+          'meetingPlanItems',
           'updatedAt'
         ])
         && request.resource.data.dateKey is string
@@ -576,7 +577,10 @@ service cloud.firestore {
         && request.resource.data.meetingTimeLabel is string
         && request.resource.data.meetingTimeLabel.size() <= 40
         && request.resource.data.meetingNote is string
-        && request.resource.data.meetingNote.size() <= 80;
+        && request.resource.data.meetingNote.size() <= 80
+        && (!request.resource.data.keys().hasAny(['meetingPlanItems'])
+          || (request.resource.data.meetingPlanItems is list
+            && request.resource.data.meetingPlanItems.size() <= 8));
     }
 
     function validSharedPlace(spaceId, placeId) {
@@ -875,8 +879,22 @@ FIREBASE_SERVICE_ACCOUNT
 
 `FIREBASE_SERVICE_ACCOUNT`는 GitHub Actions가 Firestore Security Rules를 배포할 때만 사용한다.
 Google Cloud Console에서 배포용 service account를 만들고, 프로젝트에
-`Firebase Rules Admin`(`roles/firebaserules.admin`) 권한을 준 뒤 JSON key 전체를
-GitHub Secret 값으로 저장한다. Service account key 파일은 저장소에 커밋하지 않는다.
+아래 권한을 모두 준 뒤 JSON key 전체를 GitHub Secret 값으로 저장한다.
+
+- `Firebase Rules Admin`(`roles/firebaserules.admin`): Firestore Security Rules ruleset/release를 배포한다.
+- `Service Usage Viewer`(`roles/serviceusage.serviceUsageViewer`): Firebase CLI가 `firestore.googleapis.com` 활성화 상태를 조회한다.
+
+권한은 `IAM 및 관리자` -> `IAM` 화면에서 프로젝트 principal로 부여한다.
+`서비스 계정` 상세 화면의 `권한` 탭은 "누가 이 서비스 계정을 사용할 수 있는가"에
+가까워서, 거기에만 역할을 추가하면 GitHub Actions 배포 권한으로 동작하지 않을 수 있다.
+GitHub Secret에 저장한 JSON의 `client_email` 값과 IAM 화면의 principal 이메일이
+같은지 확인한다.
+
+`firebaserules.googleapis.com/v1/projects/...:test`에서 403이 나면
+`roles/firebaserules.admin`이 정확한 프로젝트의 정확한 service account principal에
+붙어 있는지 다시 확인한다. 역할을 추가한 직후에는 IAM 전파에 몇 분 걸릴 수 있다.
+
+Service account key 파일은 저장소에 커밋하지 않는다.
 
 Secrets를 추가한 뒤 `main` 브랜치에 push하면 GitHub Actions가 Flutter Web을 다시
 빌드하고, `firebase.json`이 가리키는 `firestore.rules`를 `firebase deploy --only

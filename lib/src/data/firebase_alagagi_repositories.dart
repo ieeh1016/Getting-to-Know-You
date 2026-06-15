@@ -326,6 +326,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           'isMeetingDay': entry.isMeetingDay,
           'meetingTimeLabel': entry.meetingTimeLabel,
           'meetingNote': entry.meetingNote,
+          'meetingPlanItems': entry.meetingPlanItems,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
   }
@@ -758,6 +759,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       isMeetingDay: _readBool(data, 'isMeetingDay') ?? false,
       meetingTimeLabel: _readString(data, 'meetingTimeLabel') ?? '',
       meetingNote: _readString(data, 'meetingNote') ?? '',
+      meetingPlanItems: _readStringList(data, 'meetingPlanItems'),
       updatedAt: _readDateTime(data, 'updatedAt'),
     );
   }
