@@ -6998,6 +6998,10 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
     final selectedSlot = isMine && _editingSlotId != null
         ? _slotById(card.slots, _editingSlotId!)
         : null;
+    final filteredSlots = _filteredSlots(card.slots);
+    final filledSlots = _filledSlots(filteredSlots);
+    final pendingSlots = _pendingSlots(filteredSlots);
+    final recommendedSlot = _recommendedSlot(card);
     return _ScreenScroll(
       bottomNavigation: _BottomNav(controller: controller),
       children: [
@@ -7006,12 +7010,7 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
           trailing: '',
           onBack: () => controller.goTo(AlagagiRoute.home),
         ),
-        const SizedBox(height: 8),
-        Text(
-          '편한 만큼 채워두는 내 소개 카드',
-          style: sans(size: 12.5, color: AlagagiColors.muted),
-        ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
@@ -7040,8 +7039,8 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
         ),
         const SizedBox(height: 16),
         _ProfileSummaryCard(card: card),
-        const SizedBox(height: 16),
         if (isMine) ...[
+          const SizedBox(height: 14),
           _ProfileCustomCardEntry(
             customCount: card.customCount,
             onTap: () {
@@ -7061,12 +7060,6 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
             selectedCategory: _selectedCategory,
             onSelected: _selectCategory,
           ),
-          const SizedBox(height: 14),
-          _ProfileRecommendCard(
-            slot: _recommendedSlot(card),
-            onUse: _startEditing,
-            onSkip: _skipSlot,
-          ),
           if (selectedSlot != null) ...[
             const SizedBox(height: 14),
             _ProfileEditorPanel(
@@ -7079,20 +7072,49 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
           ],
           const SizedBox(height: 18),
           _ProfileSectionHeader(
-            title: _selectedCategory == '전체' ? '카드팩' : '$_selectedCategory 카드',
-            meta:
-                '${_filteredSlots(card.slots).where((slot) => slot.value == null && !slot.skipped).length}개 남음 · ${_filteredSlots(card.slots).where((slot) => slot.skipped).length}개 넘김',
+            title: _selectedCategory == '전체'
+                ? '작성한 카드'
+                : '$_selectedCategory에 남긴 카드',
+            meta: filledSlots.isEmpty ? '아직 비어 있어요' : '최근 카드 먼저',
           ),
           const SizedBox(height: 10),
-          _ProfileSlotGrid(
-            slots: _filteredSlots(card.slots),
+          _ProfileSlotList(
+            slots: filledSlots,
             editingSlotId: _editingSlotId,
+            emptyText: _selectedCategory == '전체'
+                ? '아직 작성한 카드가 없어요. 편한 질문 하나부터 남겨봐요.'
+                : '이 분류에는 아직 작성한 카드가 없어요.',
             onEdit: _startEditing,
             onSkip: _skipSlot,
             onHide: _hideSlot,
             onRestore: _restoreSlot,
             onDelete: _deleteSlot,
           ),
+          const SizedBox(height: 18),
+          _ProfileSectionHeader(
+            title: '편한 질문',
+            meta: pendingSlots.isEmpty
+                ? '모두 정리됨'
+                : '${pendingSlots.length}개 남음',
+          ),
+          const SizedBox(height: 10),
+          _ProfileRecommendCard(
+            slot: recommendedSlot,
+            onUse: _startEditing,
+            onSkip: _skipSlot,
+          ),
+          if (pendingSlots.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            _ProfileSlotGrid(
+              slots: pendingSlots,
+              editingSlotId: _editingSlotId,
+              onEdit: _startEditing,
+              onSkip: _skipSlot,
+              onHide: _hideSlot,
+              onRestore: _restoreSlot,
+              onDelete: _deleteSlot,
+            ),
+          ],
           if (_hiddenSlots(card.slots).isNotEmpty) ...[
             const SizedBox(height: 16),
             _ProfileHiddenSlotsPanel(
@@ -7101,14 +7123,22 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
             ),
           ],
         ] else ...[
+          const SizedBox(height: 14),
           _ProfileCategoryChips(
             selectedCategory: _selectedCategory,
             onSelected: _selectCategory,
           ),
           const SizedBox(height: 14),
-          const _ProfileQuietMatchStrip(),
-          const SizedBox(height: 14),
-          _ProfilePartnerReadList(slots: _filteredSlots(card.slots)),
+          _ProfileSectionHeader(
+            title: _selectedCategory == '전체'
+                ? '모든 답변'
+                : '$_selectedCategory 답변',
+            meta: filteredSlots.where((slot) => slot.value != null).isEmpty
+                ? '아직 없음'
+                : '${filteredSlots.where((slot) => slot.value != null).length}개',
+          ),
+          const SizedBox(height: 10),
+          _ProfilePartnerReadList(slots: filteredSlots),
         ],
       ],
     );
@@ -7122,6 +7152,26 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
     return visibleSlots
         .where((slot) => slot.category == _selectedCategory)
         .toList();
+  }
+
+  List<ProfileSlot> _filledSlots(List<ProfileSlot> slots) {
+    final filled = slots.where((slot) => slot.value != null).toList();
+    filled.sort((a, b) {
+      if (a.custom != b.custom) {
+        return a.custom ? -1 : 1;
+      }
+      final aUpdatedAt = a.updatedAt;
+      final bUpdatedAt = b.updatedAt;
+      if (aUpdatedAt != null && bUpdatedAt != null) {
+        return bUpdatedAt.compareTo(aUpdatedAt);
+      }
+      return 0;
+    });
+    return filled;
+  }
+
+  List<ProfileSlot> _pendingSlots(List<ProfileSlot> slots) {
+    return slots.where((slot) => slot.value == null).toList();
   }
 
   List<ProfileSlot> _hiddenSlots(List<ProfileSlot> slots) {
@@ -7157,6 +7207,51 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
   }
 }
 
+class _ProfileSlotList extends StatelessWidget {
+  const _ProfileSlotList({
+    required this.slots,
+    required this.editingSlotId,
+    required this.emptyText,
+    required this.onEdit,
+    required this.onSkip,
+    required this.onHide,
+    required this.onRestore,
+    required this.onDelete,
+  });
+
+  final List<ProfileSlot> slots;
+  final String? editingSlotId;
+  final String emptyText;
+  final ValueChanged<ProfileSlot> onEdit;
+  final ValueChanged<ProfileSlot> onSkip;
+  final ValueChanged<ProfileSlot> onHide;
+  final ValueChanged<ProfileSlot> onRestore;
+  final ValueChanged<ProfileSlot> onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    if (slots.isEmpty) {
+      return _InlineEmptyState(text: emptyText);
+    }
+    return Column(
+      children: [
+        for (final slot in slots) ...[
+          _ProfileSlotCard(
+            slot: slot,
+            selected: editingSlotId == slot.id,
+            onEdit: () => onEdit(slot),
+            onSkip: () => onSkip(slot),
+            onHide: () => onHide(slot),
+            onRestore: () => onRestore(slot),
+            onDelete: () => onDelete(slot),
+          ),
+          if (slot != slots.last) const SizedBox(height: 10),
+        ],
+      ],
+    );
+  }
+}
+
 class _ProfileSummaryCard extends StatelessWidget {
   const _ProfileSummaryCard({required this.card});
 
@@ -7164,28 +7259,39 @@ class _ProfileSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMine = card.profile.isMe;
     final progress = card.totalCount == 0
         ? 0.0
         : card.filledCount / card.totalCount;
-    final hiddenMeta = card.hiddenCount > 0 ? ' · ${card.hiddenCount}개 숨김' : '';
+    final customFilledCount = card.slots
+        .where((slot) => !slot.hidden && slot.custom && slot.value != null)
+        .length;
+    final title = isMine ? '내 소개 서랍' : '${card.profile.nickname}님이 남긴 소개';
+    final subtitle = isMine ? '편한 만큼 남기고, 애매한 질문은 숨겨두기' : '채워진 답만 보여요';
+    final dark = !isMine;
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AlagagiColors.paper, Color(0xFFF3F5EE)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        color: dark ? const Color(0xFF2F2F2B) : null,
+        gradient: dark
+            ? null
+            : const LinearGradient(
+                colors: [AlagagiColors.paper, Color(0xFFF3F5EE)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+        border: Border.all(
+          color: dark ? const Color(0x332F2F2B) : AlagagiColors.line,
         ),
-        border: Border.all(color: AlagagiColors.line),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x08000000),
-            blurRadius: 28,
-            offset: Offset(0, 14),
+            color: dark ? const Color(0x2A2F2F2B) : const Color(0x08000000),
+            blurRadius: dark ? 34 : 28,
+            offset: const Offset(0, 14),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(19),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -7195,10 +7301,10 @@ class _ProfileSummaryCard extends StatelessWidget {
                 width: 54,
                 height: 54,
                 decoration: BoxDecoration(
-                  color: card.profile.isMe
+                  color: isMine
                       ? AlagagiColors.softSage
-                      : const Color(0xFFE7DDF0),
-                  borderRadius: BorderRadius.circular(18),
+                      : const Color(0xFFF0EDF4),
+                  borderRadius: BorderRadius.circular(19),
                 ),
                 alignment: Alignment.center,
                 child: Text(
@@ -7212,36 +7318,46 @@ class _ProfileSummaryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${card.profile.nickname} 카드',
-                      style: serif(context, size: 20, weight: FontWeight.w800),
+                      title,
+                      style: serif(
+                        context,
+                        size: 21,
+                        weight: FontWeight.w800,
+                        color: dark ? Colors.white : AlagagiColors.ink,
+                      ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 4),
                     Text(
-                      card.profile.isMe
-                          ? '${card.openCount}개 남음 · ${card.skippedCount}개 넘김$hiddenMeta'
-                          : '채워진 답만 보여요',
-                      style: sans(size: 12, color: AlagagiColors.muted),
+                      subtitle,
+                      style: sans(
+                        size: 12.2,
+                        color: dark
+                            ? const Color(0xFFD5D3CB)
+                            : AlagagiColors.muted,
+                        height: 1.45,
+                      ),
                     ),
                   ],
                 ),
               ),
-              Container(
-                height: 31,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2F2F2B),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  '${card.filledCount} / ${card.totalCount}',
-                  style: sans(
-                    size: 11,
-                    color: Colors.white,
-                    weight: FontWeight.w700,
+              if (isMine)
+                Container(
+                  height: 31,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2F2F2B),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    '${card.filledCount} / ${card.totalCount}',
+                    style: sans(
+                      size: 11,
+                      color: Colors.white,
+                      weight: FontWeight.w700,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -7249,19 +7365,129 @@ class _ProfileSummaryCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
             child: LinearProgressIndicator(
               value: progress,
-              minHeight: 7,
-              backgroundColor: const Color(0xFFE6E9DF),
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                AlagagiColors.lavender,
+              minHeight: 8,
+              backgroundColor: dark
+                  ? const Color(0x24FFFFFF)
+                  : const Color(0xFFE6E9DF),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                dark ? const Color(0xFFF4ECD9) : AlagagiColors.lavender,
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 13),
+          Row(
+            children: [
+              Expanded(
+                child: _ProfileSummaryStatCell(
+                  value: '${card.filledCount}',
+                  label: isMine ? '작성함' : '답변',
+                  dark: dark,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _ProfileSummaryStatCell(
+                  value: '$customFilledCount',
+                  label: '직접 카드',
+                  dark: dark,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _ProfileSummaryStatCell(
+                  value: isMine ? '${card.hiddenCount}' : '${card.totalCount}',
+                  label: isMine ? '숨김' : '전체 카드',
+                  dark: dark,
+                ),
+              ),
+            ],
+          ),
+          if (!isMine) ...[
+            const SizedBox(height: 15),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0x1AFFFFFF),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.mark_chat_read_outlined,
+                    size: 18,
+                    color: Color(0xFFF4ECD9),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      customFilledCount > 0
+                          ? '직접 만든 카드도 함께 올라와 있어요'
+                          : '상대가 채운 카드만 조용히 보여줘요',
+                      style: sans(
+                        size: 11.5,
+                        color: const Color(0xFFD5D3CB),
+                        height: 1.45,
+                        weight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileSummaryStatCell extends StatelessWidget {
+  const _ProfileSummaryStatCell({
+    required this.value,
+    required this.label,
+    required this.dark,
+  });
+
+  final String value;
+  final String label;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 54),
+      decoration: BoxDecoration(
+        color: dark
+            ? const Color(0x14FFFFFF)
+            : Colors.white.withValues(alpha: 0.5),
+        border: Border.all(
+          color: dark ? const Color(0x16FFFFFF) : AlagagiColors.line,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
           Text(
-            card.profile.isMe
-                ? '다 채우지 않아도 괜찮아요. 애매한 질문은 넘기고, 별로인 질문은 숨겨도 됩니다.'
-                : '아직 비어 있는 칸은 따로 재촉하지 않습니다. 올라온 답만 천천히 읽어요.',
-            style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
+            value,
+            style: sans(
+              size: 17,
+              weight: FontWeight.w800,
+              color: dark ? Colors.white : AlagagiColors.ink,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: sans(
+              size: 10.8,
+              weight: FontWeight.w700,
+              color: dark ? const Color(0xFFCFCBC1) : AlagagiColors.muted,
+            ),
           ),
         ],
       ),
@@ -7286,25 +7512,31 @@ class _ProfileCustomCardEntry extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFFAFAF5),
-          border: Border.all(color: AlagagiColors.line),
+          color: const Color(0xFF2F2F2B),
           borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x242F2F2B),
+              blurRadius: 28,
+              offset: Offset(0, 16),
+            ),
+          ],
         ),
-        padding: const EdgeInsets.all(15),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
         child: Row(
           children: [
             Container(
-              width: 38,
-              height: 38,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
-                color: AlagagiColors.softSage,
-                borderRadius: BorderRadius.circular(14),
+                color: const Color(0x1FFFFFFF),
+                borderRadius: BorderRadius.circular(999),
               ),
               alignment: Alignment.center,
               child: const Icon(
                 Icons.add_rounded,
-                size: 22,
-                color: AlagagiColors.sageDeep,
+                size: 21,
+                color: Colors.white,
               ),
             ),
             const SizedBox(width: 12),
@@ -7313,17 +7545,17 @@ class _ProfileCustomCardEntry extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '내 카드 추가',
+                    '내 질문으로 카드 추가',
                     style: sans(
                       size: 13.5,
-                      color: const Color(0xFF45443F),
+                      color: Colors.white,
                       weight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '직접 만든 질문과 답변을 상대 카드에도 공유해요',
-                    style: sans(size: 12, color: AlagagiColors.muted),
+                    '기본 질문이 애매하면 직접 만들어 남겨요',
+                    style: sans(size: 11.5, color: const Color(0xFFD9D7CF)),
                   ),
                 ],
               ),
@@ -7333,8 +7565,8 @@ class _ProfileCustomCardEntry extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: customCount > 0
-                    ? const Color(0xFFF0EDF4)
-                    : const Color(0xFFF8F8F4),
+                    ? const Color(0xFFF4ECD9)
+                    : const Color(0x1FFFFFFF),
                 borderRadius: BorderRadius.circular(999),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -7343,8 +7575,8 @@ class _ProfileCustomCardEntry extends StatelessWidget {
                 style: sans(
                   size: 11.5,
                   color: customCount > 0
-                      ? const Color(0xFF7D688F)
-                      : AlagagiColors.muted,
+                      ? const Color(0xFF8B6E31)
+                      : const Color(0xFFD9D7CF),
                   weight: FontWeight.w700,
                 ),
               ),
@@ -7393,14 +7625,47 @@ class _ProfileCustomCardPanelState extends State<_ProfileCustomCardPanel> {
     }
   }
 
+  OutlineInputBorder _inputBorder(Color color) {
+    return OutlineInputBorder(
+      borderRadius: BorderRadius.circular(17),
+      borderSide: BorderSide(color: color),
+    );
+  }
+
+  Widget _fieldLabel(String label, String trailing) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: sans(
+            size: 11.5,
+            color: AlagagiColors.muted,
+            weight: FontWeight.w800,
+          ),
+        ),
+        Text(
+          trailing,
+          style: sans(
+            size: 11.5,
+            color: AlagagiColors.muted,
+            weight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final titleLength = _titleController.text.characters.length;
+    final bodyLength = _bodyController.text.characters.length;
     return Container(
       key: profileCustomCardPanelKey,
       decoration: BoxDecoration(
         color: AlagagiColors.paper,
         border: Border.all(color: AlagagiColors.line),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(26),
         boxShadow: const [
           BoxShadow(
             color: Color(0x08000000),
@@ -7409,130 +7674,189 @@ class _ProfileCustomCardPanelState extends State<_ProfileCustomCardPanel> {
           ),
         ],
       ),
-      padding: const EdgeInsets.all(18),
+      clipBehavior: Clip.antiAlias,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '직접 소개 카드 만들기',
-                  style: serif(context, size: 18, weight: FontWeight.w800),
-                ),
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AlagagiColors.paper, Color(0xFFEEF2E8)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              IconButton(
-                key: profileCustomCancelButtonKey,
-                tooltip: '닫기',
-                onPressed: widget.onCancel,
-                icon: const Icon(Icons.close_rounded),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '정해진 질문이 애매할 때, 내가 더 편한 질문으로 소개를 남길 수 있어요.',
-            style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.55),
-          ),
-          const SizedBox(height: 14),
-          TextField(
-            key: profileCustomTitleFieldKey,
-            controller: _titleController,
-            maxLength: 32,
-            onChanged: (_) => setState(() => _error = null),
-            decoration: InputDecoration(
-              counterText: '',
-              hintText: '예: 요즘 내가 자주 하는 생각',
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: AlagagiColors.line),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: AlagagiColors.line),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: AlagagiColors.sageDeep),
-              ),
+              border: Border(bottom: BorderSide(color: AlagagiColors.line)),
             ),
-            style: sans(size: 13.5),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            key: profileCustomBodyFieldKey,
-            controller: _bodyController,
-            maxLength: 120,
-            minLines: 4,
-            maxLines: 6,
-            onChanged: (_) => setState(() => _error = null),
-            decoration: InputDecoration(
-              counterText: '',
-              hintText: '내가 공유하고 싶은 답변을 편하게 적어주세요',
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: AlagagiColors.line),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: AlagagiColors.line),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: AlagagiColors.sageDeep),
-              ),
-            ),
-            style: sans(size: 13.5, height: 1.65),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final category in categories)
-                _ProfileCustomCategoryChip(
-                  category: category,
-                  selected: _selectedCategory == category,
-                  onTap: () => setState(() {
-                    _selectedCategory = category;
-                    _error = null;
-                  }),
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'CARD STUDIO',
+                  style: sans(
+                    size: 10.5,
+                    color: AlagagiColors.sageDeep,
+                    weight: FontWeight.w800,
+                    letterSpacing: 1.8,
+                  ),
                 ),
-            ],
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: 10),
-            Text(
-              _error!,
-              style: sans(
-                size: 12,
-                color: const Color(0xFFB3605C),
-                weight: FontWeight.w700,
-              ),
-            ),
-          ],
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton.icon(
-              key: profileCustomSubmitButtonKey,
-              onPressed: _submit,
-              icon: const Icon(Icons.check_rounded, size: 18),
-              label: const Text('카드 추가'),
-              style: ElevatedButton.styleFrom(
-                elevation: 0,
-                backgroundColor: AlagagiColors.sageDeep,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                const SizedBox(height: 8),
+                Text(
+                  '내가 편한 질문으로\n소개를 남겨요',
+                  style: serif(
+                    context,
+                    size: 21,
+                    weight: FontWeight.w800,
+                    height: 1.34,
+                  ),
                 ),
-                textStyle: sans(size: 13.5, weight: FontWeight.w700),
-              ),
+                const SizedBox(height: 7),
+                Text(
+                  '답변이 저장된 뒤에만 상대 카드에 보여요. 작성 중인 내용은 공유되지 않아요.',
+                  style: sans(
+                    size: 12.5,
+                    color: AlagagiColors.muted,
+                    height: 1.58,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 15, 16, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _fieldLabel('카드 제목', '$titleLength / 32'),
+                const SizedBox(height: 7),
+                TextField(
+                  key: profileCustomTitleFieldKey,
+                  controller: _titleController,
+                  maxLength: 32,
+                  onChanged: (_) => setState(() => _error = null),
+                  decoration: InputDecoration(
+                    counterText: '',
+                    hintText: '예: 요즘 내가 자주 하는 생각',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: _inputBorder(AlagagiColors.line),
+                    enabledBorder: _inputBorder(AlagagiColors.line),
+                    focusedBorder: _inputBorder(AlagagiColors.sageDeep),
+                  ),
+                  style: sans(size: 13.5),
+                ),
+                const SizedBox(height: 12),
+                _fieldLabel('답변', '$bodyLength / 120'),
+                const SizedBox(height: 7),
+                TextField(
+                  key: profileCustomBodyFieldKey,
+                  controller: _bodyController,
+                  maxLength: 120,
+                  minLines: 4,
+                  maxLines: 6,
+                  onChanged: (_) => setState(() => _error = null),
+                  decoration: InputDecoration(
+                    counterText: '',
+                    hintText: '내가 공유하고 싶은 답변을 편하게 적어주세요',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: _inputBorder(AlagagiColors.line),
+                    enabledBorder: _inputBorder(AlagagiColors.line),
+                    focusedBorder: _inputBorder(AlagagiColors.sageDeep),
+                  ),
+                  style: sans(size: 13.5, height: 1.65),
+                ),
+                const SizedBox(height: 12),
+                _fieldLabel('분류', '상대 카드에서도 표시'),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final category in categories)
+                      _ProfileCustomCategoryChip(
+                        category: category,
+                        selected: _selectedCategory == category,
+                        onTap: () => setState(() {
+                          _selectedCategory = category;
+                          _error = null;
+                        }),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF6F2E7),
+                    borderRadius: BorderRadius.circular(17),
+                  ),
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    '저장하면 상대의 카드 화면에 새 카드로 올라가고, 새로 도착한 것에도 표시됩니다.',
+                    style: sans(
+                      size: 11.8,
+                      color: const Color(0xFF816A39),
+                      height: 1.52,
+                      weight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    _error!,
+                    style: sans(
+                      size: 12,
+                      color: const Color(0xFFB3605C),
+                      weight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 88,
+                  height: 48,
+                  child: OutlinedButton(
+                    key: profileCustomCancelButtonKey,
+                    onPressed: widget.onCancel,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AlagagiColors.muted,
+                      side: const BorderSide(color: AlagagiColors.line),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      textStyle: sans(size: 13, weight: FontWeight.w800),
+                    ),
+                    child: const Text('취소'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: ElevatedButton(
+                      key: profileCustomSubmitButtonKey,
+                      onPressed: _submit,
+                      style: ElevatedButton.styleFrom(
+                        elevation: 0,
+                        backgroundColor: AlagagiColors.sageDeep,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        textStyle: sans(size: 13, weight: FontWeight.w900),
+                      ),
+                      child: const Text('카드 저장'),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -7591,7 +7915,7 @@ class _ProfileCategoryChips extends StatelessWidget {
   final String selectedCategory;
   final ValueChanged<String> onSelected;
 
-  static const categories = ['전체', '취향', '하루', '대화', '함께', '직접'];
+  static const categories = ['전체', '직접', '취향', '하루', '대화', '함께'];
 
   @override
   Widget build(BuildContext context) {
@@ -8179,6 +8503,29 @@ class _ProfileSlotCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final filled = slot.value != null;
     final skipped = slot.skipped && !filled;
+    final accent = filled && slot.custom;
+    final mutedBody = !filled;
+    final badgeLabel = slot.custom
+        ? '직접 카드'
+        : filled
+        ? '기본 카드'
+        : skipped
+        ? '넘겨둠'
+        : '비어 있음';
+    final badgeBackground = slot.custom
+        ? const Color(0xFFF0EDF4)
+        : filled
+        ? const Color(0xFFF8F8F4)
+        : skipped
+        ? const Color(0xFFECEAE2)
+        : const Color(0xFFF4ECD9);
+    final badgeColor = slot.custom
+        ? const Color(0xFF7D688F)
+        : skipped
+        ? const Color(0xFF8A8175)
+        : filled
+        ? AlagagiColors.muted
+        : const Color(0xFF8B6E31);
     void openFull() => _showReadableDetailSheet(
       context,
       label: '소개 카드',
@@ -8189,16 +8536,28 @@ class _ProfileSlotCard extends StatelessWidget {
     );
     return InkWell(
       key: profileSlotCardKey(slot.id),
-      borderRadius: BorderRadius.circular(20),
-      onTap: skipped ? onRestore : onEdit,
+      borderRadius: BorderRadius.circular(21),
+      onTap: filled
+          ? openFull
+          : skipped
+          ? onRestore
+          : onEdit,
       child: Container(
-        constraints: const BoxConstraints(minHeight: 134),
+        constraints: BoxConstraints(minHeight: filled ? 0 : 126),
         decoration: BoxDecoration(
-          color: skipped ? const Color(0xFFF8F8F4) : AlagagiColors.paper,
+          color: accent
+              ? const Color(0xFFFBFDF8)
+              : skipped
+              ? const Color(0xFFF8F8F4)
+              : AlagagiColors.paper,
           border: Border.all(
-            color: selected ? AlagagiColors.sageDeep : AlagagiColors.line,
+            color: selected
+                ? AlagagiColors.sageDeep
+                : accent
+                ? const Color(0x3D6F7F63)
+                : AlagagiColors.line,
           ),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(21),
           boxShadow: const [
             BoxShadow(
               color: Color(0x06000000),
@@ -8212,41 +8571,46 @@ class _ProfileSlotCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _ProfileSlotIcon(slotId: slot.id),
-                const Spacer(),
-                if (filled)
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 5),
+                    child: Text(
+                      slot.custom ? '직접 만든 카드' : slot.category,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: sans(
+                        size: 11.5,
+                        color: AlagagiColors.muted,
+                        weight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+                if (filled) ...[
                   _OpenReadableIconButton(
                     key: profileSlotReadButtonKey(slot.id),
                     onPressed: openFull,
                   ),
-                if (filled) const SizedBox(width: 2),
+                  const SizedBox(width: 2),
+                ],
                 Container(
-                  height: 22,
+                  height: 24,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: filled
-                        ? const Color(0xFFF0EDF4)
-                        : skipped
-                        ? const Color(0xFFECEAE2)
-                        : const Color(0xFFF8F8F4),
+                    color: badgeBackground,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Text(
-                    filled
-                        ? '작성됨'
-                        : skipped
-                        ? '넘겨둠'
-                        : '비어 있음',
+                    badgeLabel,
                     style: sans(
                       size: 10.5,
-                      color: filled
-                          ? const Color(0xFF7D688F)
-                          : skipped
-                          ? const Color(0xFF8A8175)
-                          : AlagagiColors.muted,
-                      weight: FontWeight.w700,
+                      color: badgeColor,
+                      weight: FontWeight.w800,
                     ),
                   ),
                 ),
@@ -8256,33 +8620,34 @@ class _ProfileSlotCard extends StatelessWidget {
             Text(
               slot.label,
               style: sans(
-                size: 12.5,
+                size: filled ? 14 : 13,
                 color: const Color(0xFF45443F),
-                weight: FontWeight.w700,
-                height: 1.4,
+                weight: FontWeight.w800,
+                height: 1.42,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 7),
             Text(
               filled
                   ? slot.value!
                   : skipped
                   ? '지금은 넘겨둔 질문이에요'
-                  : '아직 비어 있어요',
-              maxLines: 3,
+                  : slot.inputHint,
+              maxLines: filled ? 4 : 3,
               overflow: TextOverflow.ellipsis,
               style:
                   sans(
-                    size: 12,
-                    color: filled
-                        ? const Color(0xFF45443F)
-                        : AlagagiColors.muted,
-                    height: 1.55,
+                    size: filled ? 12.7 : 11.8,
+                    color: mutedBody
+                        ? AlagagiColors.muted
+                        : const Color(0xFF45443F),
+                    height: filled ? 1.62 : 1.48,
+                    weight: filled ? FontWeight.w500 : null,
                   ).copyWith(
-                    fontStyle: filled ? FontStyle.normal : FontStyle.italic,
+                    fontStyle: mutedBody ? FontStyle.italic : FontStyle.normal,
                   ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 4,
@@ -8325,40 +8690,6 @@ class _ProfileSlotCard extends StatelessWidget {
   }
 }
 
-class _ProfileQuietMatchStrip extends StatelessWidget {
-  const _ProfileQuietMatchStrip();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF2F2F2B),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      padding: const EdgeInsets.all(15),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'QUIET MATCH',
-            style: sans(
-              size: 10.5,
-              color: const Color(0xFFC9C9C2),
-              weight: FontWeight.w700,
-              letterSpacing: 2,
-            ),
-          ),
-          const SizedBox(height: 7),
-          Text(
-            '비슷한 답은 참고 정도로만 보여줘요. 빈 칸은 따로 재촉하지 않습니다.',
-            style: sans(size: 13, color: const Color(0xFFF2F1EB), height: 1.6),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _ProfilePartnerReadList extends StatelessWidget {
   const _ProfilePartnerReadList({required this.slots});
 
@@ -8366,14 +8697,25 @@ class _ProfilePartnerReadList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final filledSlots = slots.where((slot) => slot.value != null).toList();
+    final filledSlots = slots.where((slot) => slot.value != null).toList()
+      ..sort((a, b) {
+        if (a.custom != b.custom) {
+          return a.custom ? -1 : 1;
+        }
+        final aUpdatedAt = a.updatedAt;
+        final bUpdatedAt = b.updatedAt;
+        if (aUpdatedAt != null && bUpdatedAt != null) {
+          return bUpdatedAt.compareTo(aUpdatedAt);
+        }
+        return 0;
+      });
     if (filledSlots.isEmpty) {
       return const _InlineEmptyState(text: '아직 채워진 카드가 없어요. 천천히 기다려도 괜찮아요.');
     }
     return Column(
       children: [
         for (final slot in filledSlots) ...[
-          _ProfileReadCard(slot: slot),
+          _ProfileReadCard(slot: slot, featured: slot.custom),
           const SizedBox(height: 10),
         ],
       ],
@@ -8382,9 +8724,10 @@ class _ProfilePartnerReadList extends StatelessWidget {
 }
 
 class _ProfileReadCard extends StatelessWidget {
-  const _ProfileReadCard({required this.slot});
+  const _ProfileReadCard({required this.slot, required this.featured});
 
   final ProfileSlot slot;
+  final bool featured;
 
   @override
   Widget build(BuildContext context) {
@@ -8400,11 +8743,20 @@ class _ProfileReadCard extends StatelessWidget {
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: AlagagiColors.paper,
-          border: Border.all(color: AlagagiColors.line),
-          borderRadius: BorderRadius.circular(20),
+          color: featured ? const Color(0xFFFDFBFE) : AlagagiColors.paper,
+          border: Border.all(
+            color: featured ? const Color(0x3DB9A8C9) : AlagagiColors.line,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x06000000),
+              blurRadius: 20,
+              offset: Offset(0, 10),
+            ),
+          ],
         ),
-        padding: const EdgeInsets.all(15),
+        padding: const EdgeInsets.all(17),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -8415,20 +8767,45 @@ class _ProfileReadCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     slot.label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: sans(
-                      size: 12.5,
-                      color: AlagagiColors.muted,
-                      weight: FontWeight.w700,
+                      size: 13.5,
+                      color: const Color(0xFF45443F),
+                      weight: FontWeight.w800,
+                      height: 1.3,
                     ),
                   ),
                 ),
+                Container(
+                  height: 24,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: featured
+                        ? const Color(0xFFF0EDF4)
+                        : const Color(0xFFF8F8F4),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    featured ? '직접 카드' : slot.category,
+                    style: sans(
+                      size: 10.5,
+                      color: featured
+                          ? const Color(0xFF7D688F)
+                          : AlagagiColors.muted,
+                      weight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 2),
                 _OpenReadableIconButton(
                   key: profileSlotReadButtonKey(slot.id),
                   onPressed: openFull,
                 ),
               ],
             ),
-            const SizedBox(height: 9),
+            const SizedBox(height: 12),
             Text(
               slot.value!,
               maxLines: 4,
