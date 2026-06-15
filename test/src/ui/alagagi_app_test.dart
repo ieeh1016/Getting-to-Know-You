@@ -2079,6 +2079,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('조용한 바다가 끌려요'), findsWidgets);
+    expect(find.text('결과 보기'), findsOneWidget);
+    expect(find.text('다른 취향이 이야기로 남았어요'), findsNothing);
+
+    await tester.ensureVisible(find.byKey(balanceResultToggleButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(balanceResultToggleButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('다른 취향이 이야기로 남았어요'), findsOneWidget);
 
     final afterSelection = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, '다음 취향'),

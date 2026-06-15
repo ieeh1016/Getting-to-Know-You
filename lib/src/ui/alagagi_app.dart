@@ -19,6 +19,7 @@ const wishlistBoardKey = Key('wishlist-board');
 const balanceDeckKey = Key('balance-deck');
 const balanceReasonFieldKey = Key('balance-reason-field');
 const balanceReasonSaveButtonKey = Key('balance-reason-save-button');
+const balanceResultToggleButtonKey = Key('balance-result-toggle-button');
 Key balanceRecordFilterButtonKey(String filter) =>
     Key('balance-record-filter-$filter');
 const musicTitleFieldKey = Key('music-title-field');
@@ -6374,6 +6375,7 @@ class BalanceScreen extends StatefulWidget {
 
 class _BalanceScreenState extends State<BalanceScreen> {
   _BalanceRecordFilter _filter = _BalanceRecordFilter.all;
+  String? _visibleResultQuestionId;
 
   @override
   Widget build(BuildContext context) {
@@ -6405,7 +6407,10 @@ class _BalanceScreenState extends State<BalanceScreen> {
           partnerChoice: partnerChoice,
           activeIndex: controller.state.activeBalanceIndex,
           count: controller.balanceQuestions.length,
-          onSelect: controller.selectBalanceOption,
+          onSelect: (optionId) {
+            controller.selectBalanceOption(optionId);
+            setState(() => _visibleResultQuestionId = null);
+          },
         ),
         if (selected != null) ...[
           const SizedBox(height: 14),
@@ -6415,18 +6420,38 @@ class _BalanceScreenState extends State<BalanceScreen> {
             initialReason: controller.activeBalanceReason ?? '',
             onSave: controller.saveBalanceReason,
           ),
+          const SizedBox(height: 14),
+          _BalanceRevealCard(
+            question: question,
+            selected: selected,
+            partnerChoice: partnerChoice,
+            partnerName: controller.state.partner.nickname,
+            resultVisible: _visibleResultQuestionId == question.id,
+            onToggleResult: partnerChoice == null
+                ? null
+                : () {
+                    setState(() {
+                      _visibleResultQuestionId =
+                          _visibleResultQuestionId == question.id
+                          ? null
+                          : question.id;
+                    });
+                  },
+          ),
         ],
-        const SizedBox(height: 14),
-        _BalanceResultCard(
-          question: question,
-          selected: selected,
-          partnerChoice: selected == null ? null : partnerChoice,
-          myName: controller.state.me.nickname,
-          partnerName: controller.state.partner.nickname,
-          onOpenMeetings: () => controller.goTo(AlagagiRoute.meetingPlans),
-          onOpenPlaces: () => controller.goTo(AlagagiRoute.places),
-          onOpenMusic: () => controller.goTo(AlagagiRoute.music),
-        ),
+        if (selected != null && _visibleResultQuestionId == question.id) ...[
+          const SizedBox(height: 14),
+          _BalanceResultCard(
+            question: question,
+            selected: selected,
+            partnerChoice: partnerChoice,
+            myName: controller.state.me.nickname,
+            partnerName: controller.state.partner.nickname,
+            onOpenMeetings: () => controller.goTo(AlagagiRoute.meetingPlans),
+            onOpenPlaces: () => controller.goTo(AlagagiRoute.places),
+            onOpenMusic: () => controller.goTo(AlagagiRoute.music),
+          ),
+        ],
         const SizedBox(height: 18),
         _BalanceRecordSection(
           controller: controller,
@@ -6976,6 +7001,115 @@ class _BalanceReasonFieldState extends State<_BalanceReasonField> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _BalanceRevealCard extends StatelessWidget {
+  const _BalanceRevealCard({
+    required this.question,
+    required this.selected,
+    required this.partnerChoice,
+    required this.partnerName,
+    required this.resultVisible,
+    required this.onToggleResult,
+  });
+
+  final BalanceQuestion question;
+  final String selected;
+  final String? partnerChoice;
+  final String partnerName;
+  final bool resultVisible;
+  final VoidCallback? onToggleResult;
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedLabel = _balanceOptionLabel(question, selected);
+    final hasPartnerChoice = partnerChoice != null;
+    return Container(
+      decoration: BoxDecoration(
+        color: AlagagiColors.paper,
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: hasPartnerChoice
+                      ? AlagagiColors.softSage
+                      : const Color(0xFFF8F8F4),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  hasPartnerChoice
+                      ? Icons.lock_open_rounded
+                      : Icons.hourglass_empty_rounded,
+                  size: 18,
+                  color: AlagagiColors.sageDeep,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '내 선택이 저장됐어요',
+                      style: serif(context, size: 16, weight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '$selectedLabel 쪽으로 남겨둘게요.',
+                      style: sans(
+                        size: 12,
+                        color: AlagagiColors.muted,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            hasPartnerChoice
+                ? '$partnerName님도 이미 골랐어요. 준비되면 결과를 열어볼 수 있어요.'
+                : '$partnerName님 선택이 생기면 결과가 열려요. 지금은 내 취향만 조용히 저장해둘게요.',
+            style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
+          ),
+          if (hasPartnerChoice) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 42,
+              child: OutlinedButton(
+                key: balanceResultToggleButtonKey,
+                onPressed: onToggleResult,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AlagagiColors.sageDeep,
+                  side: const BorderSide(color: Color(0x338A9A7E)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                ),
+                child: Text(
+                  resultVisible ? '결과 접기' : '결과 보기',
+                  style: sans(size: 13, weight: FontWeight.w800),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

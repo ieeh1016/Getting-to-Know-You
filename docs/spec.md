@@ -1194,7 +1194,6 @@ Required UI:
 - Header: `취향 매치`
 - Progress: `{current} / {total}`
 - Hero copy:
-  - `짧게 고르고, 나중에 이야기로 이어져요`
   - `둘 중 하나만 골라도 취향 기록이 쌓여요.`
 - Deck card:
   - `QUESTION {current}`
@@ -1204,10 +1203,13 @@ Required UI:
 - VS marker
 - Selected state for me
 - Partner choice indicator only after my selection exists
-- Result panel:
+- Reveal panel:
+  - My choice saved confirmation
+  - Waiting copy when partner has not selected yet
+  - Explicit `결과 보기` action when both selections exist
+- Result panel after reveal:
   - Same choice: quiet shared preference hint
   - Different choice: conversation hint, not a mismatch score
-  - Waiting: partner answer waiting copy
 - Progress dots
 - Next question button
 - Final completion button
@@ -1230,7 +1232,8 @@ Acceptance Criteria:
 
 - 선택 전에는 두 선택지가 동일한 가중치로 보인다.
 - 하나를 선택하면 선택 상태가 표시된다.
-- 상대 선택은 내 선택이 생긴 뒤에만 결과 문장 안에서 표시된다.
+- 상대 선택은 내 선택이 생기고 사용자가 `결과 보기`를 누른 뒤에만 결과 문장 안에서 표시된다.
+- 선택 직후에는 내 선택 저장 상태와 이유 입력만 먼저 보여주고, 결과는 자동으로 펼치지 않는다.
 - 결과 문장은 `궁합`, `%`, `점수`, `완벽` 같은 과한 호환성 표현을 사용하지 않는다.
 - 같은 선택은 가벼운 취향 힌트로, 다른 선택은 대화거리로 설명한다.
 - 밸런스 선택 저장은 기존처럼 해당 question/user selection document 1개 write 이하로 유지한다.
