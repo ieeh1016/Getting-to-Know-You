@@ -2081,10 +2081,37 @@ void main() {
     expect(find.text('조용한 바다가 끌려요'), findsWidgets);
     expect(find.text('결과 열어보기'), findsWidgets);
     expect(find.text('다른 취향이 이야기로 남았어요'), findsNothing);
-    expect(find.text('내 취향 노트'), findsOneWidget);
-    expect(find.text('결과함'), findsOneWidget);
+    expect(find.byKey(balanceTabButtonKey('results')), findsOneWidget);
+    expect(find.byKey(balanceTabButtonKey('notes')), findsOneWidget);
+    expect(find.text('내 취향 노트'), findsNothing);
+    expect(find.text('선택 이유 한 줄'), findsOneWidget);
+    expect(find.text('결과 잠금'), findsNothing);
+
+    await tester.ensureVisible(find.byKey(balanceTabButtonKey('results')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(balanceTabButtonKey('results')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('결과함'), findsWidgets);
+    expect(find.text('결과 잠금'), findsOneWidget);
+    expect(find.text('선택 이유 한 줄'), findsNothing);
+    expect(find.text('내 취향 노트'), findsNothing);
     expect(find.text('다름'), findsNothing);
     expect(find.text('상대'), findsNothing);
+
+    await tester.ensureVisible(find.byKey(balanceTabButtonKey('notes')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(balanceTabButtonKey('notes')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('내 취향 노트'), findsOneWidget);
+    expect(find.textContaining('결과함에서만 공개'), findsWidgets);
+    expect(find.text('결과 잠금'), findsNothing);
+
+    await tester.ensureVisible(find.byKey(balanceTabButtonKey('choose')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(balanceTabButtonKey('choose')));
+    await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.byKey(balanceResultToggleButtonKey));
     await tester.pumpAndSettle();

@@ -24,6 +24,7 @@ const balanceReasonSaveButtonKey = Key('balance-reason-save-button');
 const balanceResultToggleButtonKey = Key('balance-result-toggle-button');
 Key balanceRecordFilterButtonKey(String filter) =>
     Key('balance-record-filter-$filter');
+Key balanceTabButtonKey(String tab) => Key('balance-tab-$tab');
 const musicTitleFieldKey = Key('music-title-field');
 const musicArtistFieldKey = Key('music-artist-field');
 const musicLinkFieldKey = Key('music-link-field');
@@ -6366,6 +6367,8 @@ class _Timeline extends StatelessWidget {
 
 enum _BalanceRecordFilter { all, withReason, noReason }
 
+enum _BalanceTab { choose, results, notes }
+
 class BalanceScreen extends StatefulWidget {
   const BalanceScreen({super.key, required this.controller});
 
@@ -6376,6 +6379,7 @@ class BalanceScreen extends StatefulWidget {
 }
 
 class _BalanceScreenState extends State<BalanceScreen> {
+  _BalanceTab _activeTab = _BalanceTab.choose;
   _BalanceRecordFilter _filter = _BalanceRecordFilter.all;
   String? _visibleResultQuestionId;
 
@@ -6402,96 +6406,110 @@ class _BalanceScreenState extends State<BalanceScreen> {
           revealedCount: controller.balanceRevealedCount,
           totalCount: controller.balanceQuestions.length,
         ),
-        const SizedBox(height: 16),
-        _BalanceDeckCard(
-          question: question,
-          selected: selected,
-          activeIndex: controller.state.activeBalanceIndex,
-          count: controller.balanceQuestions.length,
-          onSelect: (optionId) {
-            if (selected == optionId) {
-              return;
-            }
-            controller.selectBalanceOption(optionId);
-            setState(() => _visibleResultQuestionId = null);
+        const SizedBox(height: 12),
+        _BalanceTabBar(
+          activeTab: _activeTab,
+          resultCount: controller.balanceRevealedCount,
+          noteCount: controller.balanceCompletedCount,
+          onChanged: (tab) {
+            setState(() {
+              _activeTab = tab;
+              _visibleResultQuestionId = null;
+            });
           },
         ),
-        if (selected != null) ...[
-          const SizedBox(height: 14),
-          _BalanceReasonCard(
+        const SizedBox(height: 16),
+        if (_activeTab == _BalanceTab.choose) ...[
+          _BalanceDeckCard(
             question: question,
             selected: selected,
-            initialReason: controller.activeBalanceReason ?? '',
-            onSave: controller.saveBalanceReason,
+            activeIndex: controller.state.activeBalanceIndex,
+            count: controller.balanceQuestions.length,
+            onSelect: (optionId) {
+              if (selected == optionId) {
+                return;
+              }
+              controller.selectBalanceOption(optionId);
+              setState(() => _visibleResultQuestionId = null);
+            },
           ),
-          const SizedBox(height: 14),
-          _BalanceRevealCard(
-            question: question,
-            selected: selected,
-            partnerChoice: partnerChoice,
-            partnerName: controller.state.partner.nickname,
-            resultVisible: _visibleResultQuestionId == question.id,
-            resultRevealed: controller.isBalanceResultRevealedFor(question),
-            onToggleResult: partnerChoice == null
-                ? null
-                : () {
-                    if (!controller.isBalanceResultRevealedFor(question)) {
-                      controller.revealBalanceResult(question);
-                    }
-                    setState(() {
-                      _visibleResultQuestionId =
-                          _visibleResultQuestionId == question.id
-                          ? null
-                          : question.id;
-                    });
-                  },
+          if (selected != null) ...[
+            const SizedBox(height: 14),
+            _BalanceReasonCard(
+              question: question,
+              selected: selected,
+              initialReason: controller.activeBalanceReason ?? '',
+              onSave: controller.saveBalanceReason,
+            ),
+            const SizedBox(height: 14),
+            _BalanceRevealCard(
+              question: question,
+              selected: selected,
+              partnerChoice: partnerChoice,
+              partnerName: controller.state.partner.nickname,
+              resultVisible: _visibleResultQuestionId == question.id,
+              resultRevealed: controller.isBalanceResultRevealedFor(question),
+              onToggleResult: partnerChoice == null
+                  ? null
+                  : () {
+                      if (!controller.isBalanceResultRevealedFor(question)) {
+                        controller.revealBalanceResult(question);
+                      }
+                      setState(() {
+                        _visibleResultQuestionId =
+                            _visibleResultQuestionId == question.id
+                            ? null
+                            : question.id;
+                      });
+                    },
+            ),
+          ],
+          if (selected != null && _visibleResultQuestionId == question.id) ...[
+            const SizedBox(height: 14),
+            _BalanceResultCard(
+              question: question,
+              selected: selected,
+              partnerChoice: partnerChoice,
+              myName: controller.state.me.nickname,
+              partnerName: controller.state.partner.nickname,
+              onOpenMeetings: () => controller.goTo(AlagagiRoute.meetingPlans),
+              onOpenPlaces: () => controller.goTo(AlagagiRoute.places),
+              onOpenMusic: () => controller.goTo(AlagagiRoute.music),
+            ),
+          ],
+          const SizedBox(height: 18),
+          _ProgressDots(
+            activeIndex: controller.state.activeBalanceIndex,
+            count: controller.balanceQuestions.length,
           ),
-        ],
-        if (selected != null && _visibleResultQuestionId == question.id) ...[
-          const SizedBox(height: 14),
-          _BalanceResultCard(
-            question: question,
-            selected: selected,
-            partnerChoice: partnerChoice,
-            myName: controller.state.me.nickname,
-            partnerName: controller.state.partner.nickname,
+          const SizedBox(height: 16),
+          _PrimaryButton(
+            label: selected == null
+                ? '먼저 하나를 골라주세요'
+                : controller.isLastBalanceQuestion
+                ? '완료'
+                : '다음 취향',
+            onPressed: selected == null ? null : controller.nextBalanceQuestion,
+            color: selected == null
+                ? const Color(0xFFC7C3BA)
+                : AlagagiColors.sageDeep,
+          ),
+        ] else if (_activeTab == _BalanceTab.results) ...[
+          _BalanceResultBoxSection(
+            controller: controller,
+            expandedResultQuestionId: _visibleResultQuestionId,
+            onRevealResult: controller.revealBalanceResult,
             onOpenMeetings: () => controller.goTo(AlagagiRoute.meetingPlans),
             onOpenPlaces: () => controller.goTo(AlagagiRoute.places),
             onOpenMusic: () => controller.goTo(AlagagiRoute.music),
           ),
+        ] else ...[
+          _BalanceRecordSection(
+            controller: controller,
+            filter: _filter,
+            onFilterChanged: (filter) => setState(() => _filter = filter),
+          ),
         ],
-        const SizedBox(height: 18),
-        _BalanceResultBoxSection(
-          controller: controller,
-          expandedResultQuestionId: _visibleResultQuestionId,
-          onRevealResult: controller.revealBalanceResult,
-          onOpenMeetings: () => controller.goTo(AlagagiRoute.meetingPlans),
-          onOpenPlaces: () => controller.goTo(AlagagiRoute.places),
-          onOpenMusic: () => controller.goTo(AlagagiRoute.music),
-        ),
-        const SizedBox(height: 18),
-        _BalanceRecordSection(
-          controller: controller,
-          filter: _filter,
-          onFilterChanged: (filter) => setState(() => _filter = filter),
-        ),
-        const SizedBox(height: 18),
-        _ProgressDots(
-          activeIndex: controller.state.activeBalanceIndex,
-          count: controller.balanceQuestions.length,
-        ),
-        const SizedBox(height: 16),
-        _PrimaryButton(
-          label: selected == null
-              ? '먼저 하나를 골라주세요'
-              : controller.isLastBalanceQuestion
-              ? '완료'
-              : '다음 취향',
-          onPressed: selected == null ? null : controller.nextBalanceQuestion,
-          color: selected == null
-              ? const Color(0xFFC7C3BA)
-              : AlagagiColors.sageDeep,
-        ),
       ],
     );
   }
@@ -6613,6 +6631,118 @@ class _BalanceMiniPill extends StatelessWidget {
       ),
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Text(label, style: sans(size: 11, color: const Color(0xFFEFEFE8))),
+    );
+  }
+}
+
+class _BalanceTabBar extends StatelessWidget {
+  const _BalanceTabBar({
+    required this.activeTab,
+    required this.resultCount,
+    required this.noteCount,
+    required this.onChanged,
+  });
+
+  final _BalanceTab activeTab;
+  final int resultCount;
+  final int noteCount;
+  final ValueChanged<_BalanceTab> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AlagagiColors.paper,
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      padding: const EdgeInsets.all(5),
+      child: Row(
+        children: _BalanceTab.values.map((tab) {
+          final selected = tab == activeTab;
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: _BalanceTabButton(
+                tab: tab,
+                selected: selected,
+                count: switch (tab) {
+                  _BalanceTab.choose => null,
+                  _BalanceTab.results => resultCount,
+                  _BalanceTab.notes => noteCount,
+                },
+                onTap: () => onChanged(tab),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _BalanceTabButton extends StatelessWidget {
+  const _BalanceTabButton({
+    required this.tab,
+    required this.selected,
+    required this.count,
+    required this.onTap,
+  });
+
+  final _BalanceTab tab;
+  final bool selected;
+  final int? count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? Colors.white : AlagagiColors.muted;
+    final label = _balanceTabLabel(tab);
+    final count = this.count;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: balanceTabButtonKey(tab.name),
+        borderRadius: BorderRadius.circular(14),
+        onTap: selected ? null : onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          height: 42,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? const Color(0xFF2F2F2B) : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(_balanceTabIcon(tab), size: 15, color: color),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: sans(size: 12, color: color, weight: FontWeight.w800),
+                ),
+              ),
+              if (count != null) ...[
+                const SizedBox(width: 4),
+                Text(
+                  '$count',
+                  style: sans(
+                    size: 10.5,
+                    color: color.withValues(alpha: .82),
+                    weight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -7982,6 +8112,22 @@ String _balanceOptionLabel(BalanceQuestion question, String? optionId) {
     return question.right.label;
   }
   return '아직 선택 전';
+}
+
+String _balanceTabLabel(_BalanceTab tab) {
+  return switch (tab) {
+    _BalanceTab.choose => '오늘',
+    _BalanceTab.results => '결과함',
+    _BalanceTab.notes => '내 노트',
+  };
+}
+
+IconData _balanceTabIcon(_BalanceTab tab) {
+  return switch (tab) {
+    _BalanceTab.choose => Icons.style_outlined,
+    _BalanceTab.results => Icons.lock_open_outlined,
+    _BalanceTab.notes => Icons.sticky_note_2_outlined,
+  };
 }
 
 String _filterLabel(_BalanceRecordFilter filter) {
