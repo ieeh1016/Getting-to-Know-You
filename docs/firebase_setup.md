@@ -746,6 +746,10 @@ service cloud.firestore {
               request.resource.data.reason is string
               && request.resource.data.reason.size() <= 80
             )
+          )
+          && (
+            request.resource.data.resultRevealedAt == null
+            || request.resource.data.resultRevealedAt is timestamp
           );
         allow delete: if false;
       }

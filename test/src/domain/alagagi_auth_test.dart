@@ -1013,6 +1013,75 @@ void main() {
       );
     });
 
+    test('selecting the same balance option keeps the existing selection', () {
+      final repository = RecordingAlagagiRepository();
+      final session = firebaseSessionWithData(
+        const AlagagiSpaceData(
+          balanceSelections: [
+            BalanceSelection(
+              questionId: 'b001',
+              profileId: 'youngwooUid',
+              optionId: 'sea',
+            ),
+          ],
+        ),
+      );
+      final controller = AlagagiController.forSession(
+        session,
+        repository: repository,
+      );
+
+      expect(controller.activeBalanceSelection, 'sea');
+
+      controller.selectBalanceOption('sea');
+
+      expect(controller.activeBalanceSelection, 'sea');
+      expect(repository.savedBalanceSelections, isEmpty);
+    });
+
+    test('revealing a balance result is saved separately from selection', () {
+      final repository = RecordingAlagagiRepository();
+      final session = firebaseSessionWithData(
+        const AlagagiSpaceData(
+          balanceSelections: [
+            BalanceSelection(
+              questionId: 'b001',
+              profileId: 'youngwooUid',
+              optionId: 'sea',
+            ),
+            BalanceSelection(
+              questionId: 'b001',
+              profileId: 'minyoungUid',
+              optionId: 'forest',
+            ),
+          ],
+        ),
+      );
+      final controller = AlagagiController.forSession(
+        session,
+        repository: repository,
+      );
+      final question = controller.activeBalanceQuestion;
+
+      expect(controller.isBalanceResultReadyFor(question), isTrue);
+      expect(controller.isBalanceResultRevealedFor(question), isFalse);
+
+      controller.revealBalanceResult(question);
+
+      expect(controller.isBalanceResultRevealedFor(question), isTrue);
+      expect(controller.balanceRevealedCount, 1);
+      expect(repository.savedBalanceSelections, hasLength(1));
+      expect(
+        repository.savedBalanceSelections.single.selection.resultRevealedAt,
+        isNotNull,
+      );
+
+      repository.savedBalanceSelections.clear();
+      controller.revealBalanceResult(question);
+
+      expect(repository.savedBalanceSelections, isEmpty);
+    });
+
     test('wish draft creates and saves my wish', () {
       final repository = RecordingAlagagiRepository();
       final controller = AlagagiController.forSession(

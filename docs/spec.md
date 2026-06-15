@@ -1920,6 +1920,8 @@ Rules:
   "questionId": "b001",
   "profileId": "{uid}",
   "optionId": "sea",
+  "reason": "조용한 곳이 더 끌려요.",
+  "resultRevealedAt": "timestamp | optional",
   "updatedAt": "serverTimestamp"
 }
 ```

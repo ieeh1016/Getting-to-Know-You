@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>조금씩 · 취향 매치 결과 공개 흐름 재설계</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --outer:#e8e7e0;
+    --bg:#f5f4ef;
+    --paper:#fcfcfa;
+    --ink:#2f2f2b;
+    --text:#4e4b45;
+    --muted:#8d887e;
+    --line:#e5e1d8;
+    --soft:#f8f8f4;
+    --sage:#8a9a7e;
+    --sage-deep:#637458;
+    --sage-soft:#edf3e8;
+    --gold:#c7ab63;
+    --gold-soft:#f8efd9;
+    --clay:#b18472;
+    --clay-soft:#f7ebe6;
+    --blue:#7894a4;
+    --blue-soft:#e7eef2;
+    --shadow:0 26px 70px rgba(60,58,50,.15);
+  }
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(circle at top left,rgba(255,255,255,.5),rgba(255,255,255,0) 360px),
+      linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,0) 420px),
+      var(--outer);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;
+    padding:38px 18px 68px;
+  }
+  h1,h2,h3,h4{font-family:Georgia,"Times New Roman","Nanum Myeongjo",serif;font-weight:700;letter-spacing:0}
+  button,input{font:inherit}
+  button{border:0;background:none}
+  .wrap{max-width:1240px;margin:0 auto}
+  .page-title{max-width:860px;margin:0 auto 30px;text-align:center}
+  .eyebrow{
+    display:block;
+    margin-bottom:8px;
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:2.4px;
+  }
+  .page-title h1{font-size:33px;line-height:1.34}
+  .page-title p{
+    margin:12px auto 0;
+    max-width:760px;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.75;
+  }
+  .principles{
+    max-width:1080px;
+    margin:0 auto 34px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+  }
+  .principle{
+    min-height:168px;
+    border:1px solid rgba(229,225,216,.95);
+    border-radius:22px;
+    background:rgba(252,252,250,.82);
+    padding:18px;
+    box-shadow:0 14px 32px rgba(62,60,52,.045);
+  }
+  .principle strong{
+    display:inline-flex;
+    min-height:24px;
+    align-items:center;
+    padding:0 9px;
+    border-radius:999px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:800;
+    letter-spacing:1.3px;
+  }
+  .principle h2{margin-top:10px;font-size:18px;line-height:1.38}
+  .principle p{margin-top:8px;color:var(--muted);font-size:12.6px;line-height:1.72}
+  .section-head{
+    max-width:1120px;
+    margin:34px auto 18px;
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:22px;
+  }
+  .section-head h2{font-size:25px;line-height:1.35}
+  .section-head p{max-width:610px;color:var(--muted);font-size:13px;line-height:1.72}
+  .stage{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(276px,1fr));
+    gap:22px;
+    align-items:start;
+  }
+  .caption{margin:0 2px 12px}
+  .tag{
+    display:inline-flex;
+    min-height:23px;
+    align-items:center;
+    padding:0 9px;
+    border-radius:999px;
+    border:1px solid rgba(99,116,88,.22);
+    background:rgba(252,252,250,.88);
+    color:var(--sage-deep);
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:1.4px;
+  }
+  .caption h3{margin-top:9px;font-size:18px;line-height:1.34}
+  .caption p{margin-top:7px;color:var(--muted);font-size:12.5px;line-height:1.66}
+  .phone{
+    width:100%;
+    max-width:322px;
+    min-height:642px;
+    margin:0 auto;
+    border:9px solid #fdfdfb;
+    border-radius:38px;
+    background:var(--bg);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+    position:relative;
+  }
+  .screen{
+    min-height:624px;
+    padding:22px 18px 92px;
+    position:relative;
+  }
+  .topbar{
+    height:38px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .back,.icon-btn{
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    background:var(--paper);
+    border:1px solid var(--line);
+    display:grid;
+    place-items:center;
+    color:var(--sage-deep);
+    font-size:16px;
+    font-weight:800;
+  }
+  .title{flex:1;text-align:center;font-family:Georgia,"Times New Roman","Nanum Myeongjo",serif;font-size:17px;font-weight:700}
+  .hero{
+    margin-top:16px;
+    border-radius:24px;
+    background:#30302c;
+    color:#fff;
+    padding:19px;
+  }
+  .hero small,.mini-label{
+    display:block;
+    color:#c9c9c2;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:2px;
+  }
+  .hero h3{margin-top:8px;font-size:21px;line-height:1.42}
+  .hero p{margin-top:8px;color:#ecebe5;font-size:12.5px;line-height:1.65}
+  .progress{
+    margin-top:14px;
+    height:7px;
+    border-radius:999px;
+    background:rgba(255,255,255,.18);
+    overflow:hidden;
+  }
+  .progress span{display:block;width:38%;height:100%;border-radius:999px;background:var(--gold)}
+  .card{
+    margin-top:14px;
+    border:1px solid var(--line);
+    border-radius:22px;
+    background:var(--paper);
+    padding:16px;
+  }
+  .question{text-align:center}
+  .question small{
+    display:inline-flex;
+    min-height:25px;
+    align-items:center;
+    padding:0 10px;
+    border-radius:999px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:800;
+  }
+  .question h4{margin-top:12px;font-size:20px;line-height:1.42}
+  .question p{margin-top:7px;color:var(--muted);font-size:12px;line-height:1.5}
+  .choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;position:relative}
+  .choice-grid:after{
+    content:"VS";
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:36px;
+    height:36px;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    background:#30302c;
+    color:#fff;
+    display:grid;
+    place-items:center;
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:12px;
+    font-weight:800;
+  }
+  .choice{
+    min-height:176px;
+    border:1px solid var(--line);
+    border-radius:21px;
+    background:var(--soft);
+    padding:14px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+  }
+  .choice.selected{
+    background:var(--sage-soft);
+    border-color:var(--sage-deep);
+    box-shadow:inset 0 0 0 1px rgba(99,116,88,.2);
+  }
+  .choice-icon{
+    width:34px;
+    height:34px;
+    border-radius:12px;
+    display:grid;
+    place-items:center;
+    background:#fff;
+    color:var(--sage-deep);
+    font-size:18px;
+  }
+  .choice h5{font-family:Georgia,"Times New Roman","Nanum Myeongjo",serif;font-size:17px;line-height:1.34}
+  .choice span{font-size:11px;color:var(--muted);line-height:1.45}
+  .status-card{
+    border-radius:21px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    padding:15px;
+  }
+  .status-row{display:flex;gap:11px;align-items:flex-start}
+  .status-icon{
+    width:34px;
+    height:34px;
+    border-radius:12px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    display:grid;
+    place-items:center;
+    font-size:17px;
+  }
+  .status-row h4{font-size:16px;line-height:1.35}
+  .status-row p{margin-top:4px;color:var(--muted);font-size:12px;line-height:1.55}
+  .input{
+    margin-top:12px;
+    min-height:44px;
+    border:1px solid var(--line);
+    border-radius:16px;
+    background:var(--soft);
+    padding:12px 13px;
+    color:#aaa69a;
+    font-size:12px;
+  }
+  .primary,.secondary,.ghost{
+    min-height:42px;
+    border-radius:15px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    padding:0 13px;
+    font-size:12.5px;
+    font-weight:800;
+  }
+  .primary{background:var(--sage-deep);color:#fff}
+  .secondary{border:1px solid rgba(99,116,88,.3);color:var(--sage-deep);background:var(--paper)}
+  .ghost{background:var(--soft);color:var(--muted);border:1px solid var(--line)}
+  .action-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+  .solo-action{margin-top:12px}
+  .tabs{
+    margin-top:14px;
+    display:flex;
+    gap:7px;
+    overflow:hidden;
+  }
+  .tab{
+    min-height:31px;
+    padding:0 11px;
+    border-radius:999px;
+    background:var(--paper);
+    border:1px solid var(--line);
+    color:var(--muted);
+    display:flex;
+    align-items:center;
+    font-size:11px;
+    font-weight:800;
+    white-space:nowrap;
+  }
+  .tab.active{background:#30302c;color:#fff;border-color:#30302c}
+  .note-list{display:grid;gap:9px;margin-top:12px}
+  .note-card{
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:var(--paper);
+    padding:13px;
+  }
+  .note-card h4{font-size:15px;line-height:1.35}
+  .note-card p{margin-top:6px;color:var(--muted);font-size:11.5px;line-height:1.55}
+  .note-meta{
+    margin-top:9px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .pill{
+    min-height:24px;
+    border-radius:999px;
+    background:var(--soft);
+    border:1px solid var(--line);
+    padding:0 8px;
+    display:flex;
+    align-items:center;
+    color:var(--muted);
+    font-size:10.5px;
+    font-weight:800;
+  }
+  .pill.sage{background:var(--sage-soft);border-color:rgba(99,116,88,.14);color:var(--sage-deep)}
+  .pill.gold{background:var(--gold-soft);border-color:rgba(199,171,99,.2);color:#8c7333}
+  .locked{
+    border:1px dashed rgba(99,116,88,.35);
+    background:linear-gradient(180deg,#fff,#f8f8f4);
+  }
+  .locked h4{display:flex;align-items:center;gap:7px}
+  .result-card{
+    border-radius:22px;
+    background:#30302c;
+    color:#fff;
+    padding:17px;
+  }
+  .result-card h3{margin-top:7px;font-size:19px;line-height:1.38}
+  .result-card p{margin-top:8px;color:#eeede7;font-size:12.5px;line-height:1.65}
+  .compare{
+    margin-top:13px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .compare-box{
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:16px;
+    background:rgba(255,255,255,.08);
+    padding:11px;
+  }
+  .compare-box small{display:block;color:#c9c9c2;font-size:10px}
+  .compare-box strong{display:block;margin-top:5px;color:#fff;font-size:12.5px;line-height:1.35}
+  .bottom-nav{
+    position:absolute;
+    left:18px;
+    right:18px;
+    bottom:18px;
+    height:58px;
+    border:1px solid var(--line);
+    border-radius:21px;
+    background:rgba(252,252,250,.94);
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    box-shadow:0 16px 38px rgba(63,60,52,.1);
+  }
+  .nav-item{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    color:var(--muted);
+    font-size:10px;
+    font-weight:800;
+  }
+  .nav-item b{font-size:15px;color:inherit}
+  .nav-item.active{color:var(--sage-deep)}
+  .proposal{
+    max-width:1120px;
+    margin:30px auto 0;
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:16px;
+  }
+  .proposal-card{
+    border:1px solid var(--line);
+    border-radius:22px;
+    background:rgba(252,252,250,.82);
+    padding:20px;
+  }
+  .proposal-card h3{font-size:20px;line-height:1.35}
+  .proposal-card p{margin-top:8px;color:var(--muted);font-size:13px;line-height:1.7}
+  .proposal-card ul,.proposal-card ol{margin-top:12px;padding-left:18px;color:var(--text);font-size:13px;line-height:1.75}
+  .flow{
+    margin-top:14px;
+    display:grid;
+    gap:8px;
+  }
+  .flow-step{
+    border:1px solid var(--line);
+    background:var(--paper);
+    border-radius:16px;
+    padding:12px;
+    display:grid;
+    grid-template-columns:42px 1fr;
+    gap:10px;
+    align-items:start;
+  }
+  .flow-step b{
+    width:34px;
+    height:34px;
+    border-radius:12px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    display:grid;
+    place-items:center;
+    font-size:12px;
+  }
+  .flow-step strong{display:block;font-size:13px}
+  .flow-step span{display:block;margin-top:3px;color:var(--muted);font-size:12px;line-height:1.55}
+  table{width:100%;margin-top:12px;border-collapse:collapse;font-size:12px;line-height:1.55}
+  th,td{border:1px solid var(--line);padding:10px;text-align:left;vertical-align:top;background:var(--paper)}
+  th{width:34%;color:var(--sage-deep);background:var(--sage-soft)}
+  .warning{
+    max-width:1120px;
+    margin:22px auto 0;
+    border:1px solid rgba(177,132,114,.22);
+    background:var(--clay-soft);
+    border-radius:22px;
+    padding:18px 20px;
+  }
+  .warning h3{font-size:18px}
+  .warning p{margin-top:7px;color:#7d6258;font-size:13px;line-height:1.72}
+  @media(max-width:1180px){
+    .stage{grid-template-columns:repeat(2,minmax(276px,1fr))}
+    .principles{grid-template-columns:repeat(2,1fr)}
+  }
+  @media(max-width:720px){
+    body{padding:26px 14px 44px}
+    .page-title h1{font-size:27px}
+    .principles,.stage,.proposal{grid-template-columns:1fr}
+    .section-head{display:block}
+    .section-head p{margin-top:8px}
+    .phone{max-width:336px}
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="page-title">
+    <span class="eyebrow">TASTE MATCH · RESULT PRIVACY</span>
+    <h1>취향 매치는<br>고르는 화면과 결과 화면을 분리해야 해요</h1>
+    <p>
+      선택 직후 결과 카드만 숨겨도, 아래 기록에서 같음/다름이나 상대 선택이 보이면 이미 결과를 본 것과 같습니다.
+      그래서 이번 개편은 “메인 화면은 고르는 곳”, “내 취향 노트는 내 기록만”, “결과함은 내가 열어본 결과만”으로 정보 경계를 다시 나눕니다.
+    </p>
+  </header>
+
+  <section class="principles" aria-label="설계 원칙">
+    <article class="principle">
+      <strong>RULE 01</strong>
+      <h2>선택 화면에는 결과성 정보를 두지 않기</h2>
+      <p>선택 직후에는 내 선택 저장 상태와 이유 입력만 보여줍니다. 상대 선택 여부, 같음/다름, 비교 문장은 노출하지 않습니다.</p>
+    </article>
+    <article class="principle">
+      <strong>RULE 02</strong>
+      <h2>기록은 “내 취향 노트”로 재정의</h2>
+      <p>기록 화면은 내가 고른 선택과 내가 쓴 이유를 다시 보는 곳입니다. 결과 기록과 섞지 않습니다.</p>
+    </article>
+    <article class="principle">
+      <strong>RULE 03</strong>
+      <h2>결과는 명시적으로 열어야 공개</h2>
+      <p>상대 선택이 있어도 결과는 자동 공개하지 않습니다. 사용자가 `결과 보기`를 눌렀을 때만 비교 정보를 보여줍니다.</p>
+    </article>
+    <article class="principle">
+      <strong>RULE 04</strong>
+      <h2>결과함은 잠금 상태를 먼저 보여주기</h2>
+      <p>아직 안 본 결과는 잠금 카드로 보여줍니다. 열어본 결과만 같음/다름과 연결 액션을 표시합니다.</p>
+    </article>
+  </section>
+
+  <section class="section-head">
+    <div>
+      <span class="eyebrow">SCREEN PROPOSAL</span>
+      <h2>화면 흐름 제안</h2>
+    </div>
+    <p>
+      기존 한 화면 안에 있던 선택, 기록, 결과를 네 개 상태로 분리합니다.
+      사용자가 심리적으로 “내가 고른다”와 “서로 비교한다”를 다른 행동으로 느끼게 하는 것이 핵심입니다.
+    </p>
+  </section>
+
+  <section class="stage" aria-label="취향 매치 결과 분리 화면 목업">
+    <article>
+      <div class="caption">
+        <span class="tag">01 · CHOOSE</span>
+        <h3>오늘의 선택</h3>
+        <p>여기서는 오직 선택과 내 이유만 다룹니다. 결과/상대 정보는 없습니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <button class="back">‹</button>
+            <div class="title">취향 매치</div>
+            <button class="icon-btn">⋯</button>
+          </div>
+
+          <section class="hero">
+            <small>TODAY TASTE</small>
+            <h3>둘 중 하나만 골라도<br>취향 기록이 쌓여요</h3>
+            <p>오늘은 비교보다 선택에 집중해요. 결과는 내가 열고 싶을 때 따로 볼 수 있어요.</p>
+            <div class="progress"><span></span></div>
+          </section>
+
+          <section class="card question">
+            <small>취향 카드 3</small>
+            <h4>쉬는 날엔?</h4>
+            <p>지금 더 끌리는 쪽을 골라주세요.</p>
+            <div class="choice-grid">
+              <button class="choice selected">
+                <div class="choice-icon">⌂</div>
+                <h5>집에서 충전</h5>
+                <span>내 선택</span>
+              </button>
+              <button class="choice">
+                <div class="choice-icon">↟</div>
+                <h5>밖에서 산책</h5>
+                <span>끌리는 쪽 고르기</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="status-card" style="margin-top:14px">
+            <div class="status-row">
+              <div class="status-icon">✓</div>
+              <div>
+                <h4>내 선택이 저장됐어요</h4>
+                <p>집에서 충전 쪽으로 내 취향 노트에 남겨둘게요.</p>
+              </div>
+            </div>
+            <div class="input">예: 요즘은 조용히 쉬는 날이 좋아요</div>
+            <div class="solo-action">
+              <button class="primary" style="width:100%">이유 저장</button>
+            </div>
+          </section>
+
+          <button class="primary" style="width:100%;margin-top:14px">다음 취향</button>
+
+          <nav class="bottom-nav">
+            <div class="nav-item"><b>⌂</b>홈</div>
+            <div class="nav-item active"><b>◇</b>취향</div>
+            <div class="nav-item"><b>▤</b>노트</div>
+            <div class="nav-item"><b>☰</b>결과함</div>
+          </nav>
+        </div>
+      </div>
+    </article>
+
+    <article>
+      <div class="caption">
+        <span class="tag">02 · MY NOTE</span>
+        <h3>내 취향 노트</h3>
+        <p>기록은 결과가 아니라 내 선택의 아카이브입니다. 상대 선택과 같음/다름은 표시하지 않습니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <button class="back">‹</button>
+            <div class="title">내 취향 노트</div>
+            <button class="icon-btn">＋</button>
+          </div>
+
+          <section class="hero">
+            <small>MY TASTE LOG</small>
+            <h3>내가 고른 취향만<br>조용히 모아둬요</h3>
+            <p>상대 결과와 섞지 않아서, 아직 열지 않은 결과가 미리 보이지 않아요.</p>
+          </section>
+
+          <div class="tabs">
+            <button class="tab active">전체</button>
+            <button class="tab">이유 있음</button>
+            <button class="tab">장소</button>
+            <button class="tab">만남</button>
+          </div>
+
+          <div class="note-list">
+            <article class="note-card">
+              <h4>쉬는 날엔?</h4>
+              <p>내 선택 · 집에서 충전</p>
+              <p>요즘은 조용히 쉬는 날이 좋아요.</p>
+              <div class="note-meta">
+                <span class="pill sage">내 기록</span>
+                <span class="pill">결과 정보 숨김</span>
+              </div>
+            </article>
+
+            <article class="note-card">
+              <h4>카페를 고른다면?</h4>
+              <p>내 선택 · 조용한 분위기</p>
+              <p>대화가 잘 들리는 곳이 편해요.</p>
+              <div class="note-meta">
+                <span class="pill sage">내 기록</span>
+                <span class="pill">결과 정보 숨김</span>
+              </div>
+            </article>
+
+            <article class="note-card locked">
+              <h4>결과는 결과함에서만 봐요</h4>
+              <p>내 취향 노트에서는 상대 선택과 같음/다름을 보여주지 않습니다.</p>
+            </article>
+          </div>
+
+          <nav class="bottom-nav">
+            <div class="nav-item"><b>⌂</b>홈</div>
+            <div class="nav-item"><b>◇</b>취향</div>
+            <div class="nav-item active"><b>▤</b>노트</div>
+            <div class="nav-item"><b>☰</b>결과함</div>
+          </nav>
+        </div>
+      </div>
+    </article>
+
+    <article>
+      <div class="caption">
+        <span class="tag">03 · RESULT BOX</span>
+        <h3>결과함</h3>
+        <p>결과함에서도 안 본 결과는 잠금 상태입니다. 목록 자체가 결과를 스포일러하지 않습니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <button class="back">‹</button>
+            <div class="title">결과함</div>
+            <button class="icon-btn">?</button>
+          </div>
+
+          <section class="hero">
+            <small>RESULT BOX</small>
+            <h3>서로의 결과는<br>열어본 것만 보여요</h3>
+            <p>아직 열지 않은 결과는 상태만 알려주고, 비교 내용은 숨깁니다.</p>
+          </section>
+
+          <div class="tabs">
+            <button class="tab active">열 수 있음</button>
+            <button class="tab">열어본 결과</button>
+            <button class="tab">기다림</button>
+          </div>
+
+          <div class="note-list">
+            <article class="note-card locked">
+              <h4>쉬는 날엔?</h4>
+              <p>내 선택과 상대 선택이 모두 준비됐어요. 결과는 아직 열지 않았습니다.</p>
+              <div class="note-meta">
+                <span class="pill gold">결과 잠금</span>
+                <span class="pill">스포일러 없음</span>
+              </div>
+              <div class="solo-action">
+                <button class="primary" style="width:100%">결과 열어보기</button>
+              </div>
+            </article>
+
+            <article class="note-card">
+              <h4>영화를 본다면?</h4>
+              <p>아직 민영님 선택을 기다리는 중이에요.</p>
+              <div class="note-meta">
+                <span class="pill">기다림</span>
+              </div>
+            </article>
+
+            <article class="note-card">
+              <h4>카페를 고른다면?</h4>
+              <p>이미 열어본 결과가 있어요.</p>
+              <div class="note-meta">
+                <span class="pill sage">결과 확인됨</span>
+                <span class="pill">다시 보기 가능</span>
+              </div>
+            </article>
+          </div>
+
+          <nav class="bottom-nav">
+            <div class="nav-item"><b>⌂</b>홈</div>
+            <div class="nav-item"><b>◇</b>취향</div>
+            <div class="nav-item"><b>▤</b>노트</div>
+            <div class="nav-item active"><b>☰</b>결과함</div>
+          </nav>
+        </div>
+      </div>
+    </article>
+
+    <article>
+      <div class="caption">
+        <span class="tag">04 · REVEALED</span>
+        <h3>결과 공개 후</h3>
+        <p>사용자가 명시적으로 연 결과만 비교 카드와 연결 액션을 보여줍니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <button class="back">‹</button>
+            <div class="title">결과 보기</div>
+            <button class="icon-btn">↗</button>
+          </div>
+
+          <section class="result-card" style="margin-top:16px">
+            <small class="mini-label">RESULT OPENED</small>
+            <h3>서로 다른 취향이<br>이야기거리로 남았어요</h3>
+            <p>영우님은 집에서 충전, 민영님은 밖에서 산책 쪽이에요. 다르다는 사실보다, 서로 어떤 하루를 좋아하는지 알게 된 게 핵심이에요.</p>
+            <div class="compare">
+              <div class="compare-box">
+                <small>영우 선택</small>
+                <strong>집에서 충전</strong>
+              </div>
+              <div class="compare-box">
+                <small>민영 선택</small>
+                <strong>밖에서 산책</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="status-row">
+              <div class="status-icon">↳</div>
+              <div>
+                <h4>이 결과로 이어갈 수 있어요</h4>
+                <p>다음 만남이나 장소 선택에 쓸 수 있는 액션만 가볍게 제공합니다.</p>
+              </div>
+            </div>
+            <div class="action-row">
+              <button class="secondary">만남 계획</button>
+              <button class="secondary">장소 보기</button>
+            </div>
+            <div class="solo-action">
+              <button class="ghost" style="width:100%">내 취향 노트로 돌아가기</button>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="status-row">
+              <div class="status-icon">✓</div>
+              <div>
+                <h4>결과함에 저장됨</h4>
+                <p>한 번 열어본 결과는 이후 결과함의 `열어본 결과`에서 다시 볼 수 있습니다.</p>
+              </div>
+            </div>
+          </section>
+
+          <nav class="bottom-nav">
+            <div class="nav-item"><b>⌂</b>홈</div>
+            <div class="nav-item"><b>◇</b>취향</div>
+            <div class="nav-item"><b>▤</b>노트</div>
+            <div class="nav-item active"><b>☰</b>결과함</div>
+          </nav>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="section-head">
+    <div>
+      <span class="eyebrow">DEVELOPMENT BRIEF</span>
+      <h2>개발 기안</h2>
+    </div>
+    <p>
+      핵심은 화면 UI보다 데이터 공개 상태입니다. 선택 데이터와 결과 공개 상태를 분리해서,
+      사용자가 결과를 열기 전까지 어떤 화면에서도 상대 선택/같음/다름이 새지 않게 만듭니다.
+    </p>
+  </section>
+
+  <section class="proposal" aria-label="개발 기안 상세">
+    <article class="proposal-card">
+      <h3>정보 구조</h3>
+      <p>기존 `취향 기록`은 결과가 섞이기 쉬우므로 이름과 역할을 분리합니다.</p>
+      <div class="flow">
+        <div class="flow-step">
+          <b>1</b>
+          <div><strong>취향 매치</strong><span>오늘의 카드 선택, 내 선택 저장, 이유 입력만 담당합니다.</span></div>
+        </div>
+        <div class="flow-step">
+          <b>2</b>
+          <div><strong>내 취향 노트</strong><span>내 선택과 내 이유만 다시 보여줍니다. 상대 선택과 결과 상태는 숨깁니다.</span></div>
+        </div>
+        <div class="flow-step">
+          <b>3</b>
+          <div><strong>결과함</strong><span>열 수 있음/기다림/열어본 결과를 분리합니다. 열기 전 카드는 스포일러 없이 잠금 상태입니다.</span></div>
+        </div>
+        <div class="flow-step">
+          <b>4</b>
+          <div><strong>결과 상세</strong><span>사용자가 명시적으로 연 결과만 같음/다름, 상대 선택, 연결 액션을 보여줍니다.</span></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="proposal-card">
+      <h3>추천 데이터 모델</h3>
+      <p>결과 공개는 개인별 행동이므로 각 사용자의 선택 문서에 공개 여부를 저장하는 방식이 가장 단순합니다.</p>
+      <table>
+        <tr>
+          <th>balanceSelections</th>
+          <td>
+            기존 필드 `questionId`, `profileId`, `optionId`, `reason` 유지.
+            여기에 `resultRevealedAt` optional timestamp를 추가합니다.
+          </td>
+        </tr>
+        <tr>
+          <th>공개 가능 조건</th>
+          <td>
+            내 선택과 상대 선택이 모두 존재할 때만 `결과 열어보기` 버튼을 활성화합니다.
+            단, 버튼 전에는 상대 optionId를 UI에 렌더링하지 않습니다.
+          </td>
+        </tr>
+        <tr>
+          <th>공개 완료 조건</th>
+          <td>
+            내 selection 문서의 `resultRevealedAt != null`일 때만 결과함의 `열어본 결과`에 비교 내용을 표시합니다.
+          </td>
+        </tr>
+        <tr>
+          <th>Rules 영향</th>
+          <td>
+            `balanceSelections`에 `resultRevealedAt` optional timestamp/null 허용을 추가하면 됩니다.
+            본인 `profileId == request.auth.uid` 조건은 그대로 유지합니다.
+          </td>
+        </tr>
+      </table>
+    </article>
+
+    <article class="proposal-card">
+      <h3>구현 단계</h3>
+      <ol>
+        <li>현재 `BalanceRecordSection`을 메인 화면에서 제거하거나 `내 취향 노트` 컴포넌트로 이름/역할을 변경합니다.</li>
+        <li>`내 취향 노트`에서는 `controller.balanceSelectionFor(question)`과 `balanceReasonFor(question)`만 표시합니다.</li>
+        <li>`partnerBalanceSelectionFor(question)`은 `결과 보기` 또는 `resultRevealedAt` 조건을 만족할 때만 UI에 전달합니다.</li>
+        <li>`결과함` 섹션을 추가해 `열 수 있음`, `기다림`, `열어본 결과` 필터를 제공합니다.</li>
+        <li>`결과 열어보기`를 누르면 `resultRevealedAt`을 저장하고 결과 상세를 표시합니다.</li>
+      </ol>
+    </article>
+
+    <article class="proposal-card">
+      <h3>검증 기준</h3>
+      <ul>
+        <li>선택 직후 화면 어디에도 상대 선택, 같음/다름, 결과 문장이 보이지 않는다.</li>
+        <li>내 취향 노트에는 내 선택과 내 이유만 보인다.</li>
+        <li>결과함의 잠금 카드는 결과가 준비됐다는 사실만 보여주고 비교 내용을 숨긴다.</li>
+        <li>`결과 열어보기`를 누른 뒤에만 상대 선택과 비교 문장이 보인다.</li>
+        <li>한 번 열어본 결과는 새로고침 후에도 `열어본 결과`로 유지된다.</li>
+        <li>Firebase mode에서 실제 상대 선택이 없으면 결과 열기 버튼이 비활성 또는 미노출된다.</li>
+      </ul>
+    </article>
+  </section>
+
+  <section class="warning">
+    <h3>중요한 UX 판단</h3>
+    <p>
+      결과 공개를 너무 숨기면 기능의 재미가 약해질 수 있습니다. 그래서 “결과가 준비됐어요”는 알려주되,
+      “무슨 결과인지”는 숨기는 방식이 가장 균형이 좋습니다. 사용자는 호기심을 느끼고, 동시에 원치 않는 순간에 결과를 강제로 보지 않습니다.
+    </p>
+  </section>
+</main>
+</body>
+</html>

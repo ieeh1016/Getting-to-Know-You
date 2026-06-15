@@ -2075,12 +2075,16 @@ void main() {
     await tester.ensureVisible(find.byKey(balanceReasonFieldKey));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(balanceReasonFieldKey), '조용한 바다가 끌려요');
-    await tester.tap(find.byKey(balanceReasonSaveButtonKey));
+    await tester.pump(const Duration(milliseconds: 700));
     await tester.pumpAndSettle();
 
     expect(find.text('조용한 바다가 끌려요'), findsWidgets);
-    expect(find.text('결과 보기'), findsOneWidget);
+    expect(find.text('결과 열어보기'), findsWidgets);
     expect(find.text('다른 취향이 이야기로 남았어요'), findsNothing);
+    expect(find.text('내 취향 노트'), findsOneWidget);
+    expect(find.text('결과함'), findsOneWidget);
+    expect(find.text('다름'), findsNothing);
+    expect(find.text('상대'), findsNothing);
 
     await tester.ensureVisible(find.byKey(balanceResultToggleButtonKey));
     await tester.pumpAndSettle();
@@ -2088,6 +2092,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('다른 취향이 이야기로 남았어요'), findsOneWidget);
+    expect(find.text('결과 접기'), findsOneWidget);
 
     final afterSelection = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, '다음 취향'),

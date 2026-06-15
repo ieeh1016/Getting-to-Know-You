@@ -195,18 +195,23 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     String spaceId,
     BalanceSelection selection,
   ) {
+    final data = <String, Object?>{
+      'questionId': selection.questionId,
+      'profileId': selection.profileId,
+      'optionId': selection.optionId,
+      'reason': selection.reason,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+    final resultRevealedAt = selection.resultRevealedAt;
+    if (resultRevealedAt != null) {
+      data['resultRevealedAt'] = Timestamp.fromDate(resultRevealedAt);
+    }
     return _firestore
         .collection('spaces')
         .doc(spaceId)
         .collection('balanceSelections')
         .doc('${selection.questionId}_${selection.profileId}')
-        .set({
-          'questionId': selection.questionId,
-          'profileId': selection.profileId,
-          'optionId': selection.optionId,
-          'reason': selection.reason,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        .set(data, SetOptions(merge: true));
   }
 
   @override
@@ -649,6 +654,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       profileId: profileId,
       optionId: optionId,
       reason: _readString(data, 'reason'),
+      resultRevealedAt: _readDateTime(data, 'resultRevealedAt'),
     );
   }
 

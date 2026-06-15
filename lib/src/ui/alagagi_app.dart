@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../data/external_link_opener.dart';
@@ -6362,7 +6364,7 @@ class _Timeline extends StatelessWidget {
   }
 }
 
-enum _BalanceRecordFilter { all, same, different, waiting }
+enum _BalanceRecordFilter { all, withReason, noReason }
 
 class BalanceScreen extends StatefulWidget {
   const BalanceScreen({super.key, required this.controller});
@@ -6397,17 +6399,19 @@ class _BalanceScreenState extends State<BalanceScreen> {
         const SizedBox(height: 16),
         _BalanceTodayCard(
           completedCount: controller.balanceCompletedCount,
-          resolvedCount: controller.balanceResolvedCount,
+          revealedCount: controller.balanceRevealedCount,
           totalCount: controller.balanceQuestions.length,
         ),
         const SizedBox(height: 16),
         _BalanceDeckCard(
           question: question,
           selected: selected,
-          partnerChoice: partnerChoice,
           activeIndex: controller.state.activeBalanceIndex,
           count: controller.balanceQuestions.length,
           onSelect: (optionId) {
+            if (selected == optionId) {
+              return;
+            }
             controller.selectBalanceOption(optionId);
             setState(() => _visibleResultQuestionId = null);
           },
@@ -6427,9 +6431,13 @@ class _BalanceScreenState extends State<BalanceScreen> {
             partnerChoice: partnerChoice,
             partnerName: controller.state.partner.nickname,
             resultVisible: _visibleResultQuestionId == question.id,
+            resultRevealed: controller.isBalanceResultRevealedFor(question),
             onToggleResult: partnerChoice == null
                 ? null
                 : () {
+                    if (!controller.isBalanceResultRevealedFor(question)) {
+                      controller.revealBalanceResult(question);
+                    }
                     setState(() {
                       _visibleResultQuestionId =
                           _visibleResultQuestionId == question.id
@@ -6452,6 +6460,15 @@ class _BalanceScreenState extends State<BalanceScreen> {
             onOpenMusic: () => controller.goTo(AlagagiRoute.music),
           ),
         ],
+        const SizedBox(height: 18),
+        _BalanceResultBoxSection(
+          controller: controller,
+          expandedResultQuestionId: _visibleResultQuestionId,
+          onRevealResult: controller.revealBalanceResult,
+          onOpenMeetings: () => controller.goTo(AlagagiRoute.meetingPlans),
+          onOpenPlaces: () => controller.goTo(AlagagiRoute.places),
+          onOpenMusic: () => controller.goTo(AlagagiRoute.music),
+        ),
         const SizedBox(height: 18),
         _BalanceRecordSection(
           controller: controller,
@@ -6483,12 +6500,12 @@ class _BalanceScreenState extends State<BalanceScreen> {
 class _BalanceTodayCard extends StatelessWidget {
   const _BalanceTodayCard({
     required this.completedCount,
-    required this.resolvedCount,
+    required this.revealedCount,
     required this.totalCount,
   });
 
   final int completedCount;
-  final int resolvedCount;
+  final int revealedCount;
   final int totalCount;
 
   @override
@@ -6547,7 +6564,7 @@ class _BalanceTodayCard extends StatelessWidget {
           ),
           const SizedBox(height: 9),
           Text(
-            '같은 선택은 만남의 힌트로, 다른 선택은 이야기거리로 남깁니다.',
+            '결과는 내가 열어보기 전까지 조용히 잠겨 있어요.',
             style: sans(
               size: 12.5,
               color: const Color(0xFFE3E2DC),
@@ -6570,7 +6587,7 @@ class _BalanceTodayCard extends StatelessWidget {
             runSpacing: 8,
             children: [
               _BalanceMiniPill(label: '내가 고른 카드 $completedCount개'),
-              _BalanceMiniPill(label: '결과 열린 카드 $resolvedCount개'),
+              _BalanceMiniPill(label: '열어본 결과 $revealedCount개'),
             ],
           ),
         ],
@@ -6604,7 +6621,6 @@ class _BalanceDeckCard extends StatelessWidget {
   const _BalanceDeckCard({
     required this.question,
     required this.selected,
-    required this.partnerChoice,
     required this.activeIndex,
     required this.count,
     required this.onSelect,
@@ -6612,7 +6628,6 @@ class _BalanceDeckCard extends StatelessWidget {
 
   final BalanceQuestion question;
   final String? selected;
-  final String? partnerChoice;
   final int activeIndex;
   final int count;
   final ValueChanged<String> onSelect;
@@ -6697,9 +6712,6 @@ class _BalanceDeckCard extends StatelessWidget {
                       child: _BalanceDeckOption(
                         option: question.left,
                         selectedByMe: selected == question.left.id,
-                        selectedByPartner:
-                            selected != null &&
-                            partnerChoice == question.left.id,
                         onTap: () => onSelect(question.left.id),
                       ),
                     ),
@@ -6708,9 +6720,6 @@ class _BalanceDeckCard extends StatelessWidget {
                       child: _BalanceDeckOption(
                         option: question.right,
                         selectedByMe: selected == question.right.id,
-                        selectedByPartner:
-                            selected != null &&
-                            partnerChoice == question.right.id,
                         onTap: () => onSelect(question.right.id),
                       ),
                     ),
@@ -6747,13 +6756,11 @@ class _BalanceDeckOption extends StatelessWidget {
   const _BalanceDeckOption({
     required this.option,
     required this.selectedByMe,
-    required this.selectedByPartner,
     required this.onTap,
   });
 
   final BalanceOption option;
   final bool selectedByMe;
-  final bool selectedByPartner;
   final VoidCallback onTap;
 
   @override
@@ -6787,25 +6794,6 @@ class _BalanceDeckOption extends StatelessWidget {
                     optionId: option.id,
                     selected: selectedByMe,
                   ),
-                  const Spacer(),
-                  if (selectedByPartner)
-                    Container(
-                      height: 25,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(
-                        '상대',
-                        style: sans(
-                          size: 10.5,
-                          color: AlagagiColors.sageDeep,
-                          weight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
                 ],
               ),
               Column(
@@ -6918,11 +6906,15 @@ class _BalanceReasonField extends StatefulWidget {
 
 class _BalanceReasonFieldState extends State<_BalanceReasonField> {
   late final TextEditingController _controller;
+  Timer? _saveDebounce;
+  late String _lastSavedValue;
+  bool _hasPendingSave = false;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialValue);
+    _lastSavedValue = widget.initialValue.trim();
   }
 
   @override
@@ -6930,21 +6922,63 @@ class _BalanceReasonFieldState extends State<_BalanceReasonField> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialValue != widget.initialValue &&
         _controller.text != widget.initialValue) {
+      _saveDebounce?.cancel();
       _controller.text = widget.initialValue;
       _controller.selection = TextSelection.collapsed(
         offset: widget.initialValue.length,
       );
+      _lastSavedValue = widget.initialValue.trim();
+      _hasPendingSave = false;
     }
   }
 
   @override
   void dispose() {
+    _saveDebounce?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
+  void _scheduleSave(String value) {
+    _saveDebounce?.cancel();
+    if (value.trim() == _lastSavedValue) {
+      if (_hasPendingSave) {
+        setState(() => _hasPendingSave = false);
+      }
+      return;
+    }
+    if (!_hasPendingSave) {
+      setState(() => _hasPendingSave = true);
+    }
+    _saveDebounce = Timer(const Duration(milliseconds: 650), _flushSave);
+  }
+
+  void _flushSave() {
+    final value = _controller.text;
+    final trimmed = value.trim();
+    if (trimmed == _lastSavedValue) {
+      if (mounted) {
+        setState(() => _hasPendingSave = false);
+      }
+      return;
+    }
+    widget.onSave(value);
+    if (mounted) {
+      setState(() {
+        _lastSavedValue = trimmed;
+        _hasPendingSave = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final hasSavedReason = _lastSavedValue.isNotEmpty;
+    final statusText = _hasPendingSave
+        ? '잠시 후 자동 저장돼요'
+        : hasSavedReason
+        ? '이유가 자동 저장됐어요'
+        : '이유 없이 선택만 저장해도 괜찮아요';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -6955,7 +6989,11 @@ class _BalanceReasonFieldState extends State<_BalanceReasonField> {
           maxLines: 2,
           maxLength: 80,
           textInputAction: TextInputAction.done,
-          onSubmitted: widget.onSave,
+          onChanged: _scheduleSave,
+          onSubmitted: (_) {
+            _saveDebounce?.cancel();
+            _flushSave();
+          },
           decoration: InputDecoration(
             counterText: '',
             hintText: '예: 요즘 조용한 곳이 더 끌려요',
@@ -6982,23 +7020,29 @@ class _BalanceReasonFieldState extends State<_BalanceReasonField> {
           style: sans(size: 13, color: const Color(0xFF3A3934), height: 1.45),
         ),
         const SizedBox(height: 10),
-        SizedBox(
-          height: 42,
-          child: FilledButton(
-            key: balanceReasonSaveButtonKey,
-            onPressed: () => widget.onSave(_controller.text),
-            style: FilledButton.styleFrom(
-              backgroundColor: AlagagiColors.sageDeep,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
+        Row(
+          children: [
+            Icon(
+              _hasPendingSave
+                  ? Icons.more_horiz_rounded
+                  : Icons.check_circle_outline_rounded,
+              size: 16,
+              color: _hasPendingSave
+                  ? AlagagiColors.muted
+                  : AlagagiColors.sageDeep,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                statusText,
+                style: sans(
+                  size: 11.5,
+                  color: AlagagiColors.muted,
+                  height: 1.45,
+                ),
               ),
             ),
-            child: Text(
-              '이유 저장',
-              style: sans(size: 13, weight: FontWeight.w800),
-            ),
-          ),
+          ],
         ),
       ],
     );
@@ -7012,6 +7056,7 @@ class _BalanceRevealCard extends StatelessWidget {
     required this.partnerChoice,
     required this.partnerName,
     required this.resultVisible,
+    required this.resultRevealed,
     required this.onToggleResult,
   });
 
@@ -7020,6 +7065,7 @@ class _BalanceRevealCard extends StatelessWidget {
   final String? partnerChoice;
   final String partnerName;
   final bool resultVisible;
+  final bool resultRevealed;
   final VoidCallback? onToggleResult;
 
   @override
@@ -7082,7 +7128,9 @@ class _BalanceRevealCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             hasPartnerChoice
-                ? '$partnerName님도 이미 골랐어요. 준비되면 결과를 열어볼 수 있어요.'
+                ? resultRevealed
+                      ? '이미 열어본 결과예요. 원할 때 다시 펼쳐볼 수 있어요.'
+                      : '서로의 선택이 준비됐어요. 결과는 버튼을 눌렀을 때만 열립니다.'
                 : '$partnerName님 선택이 생기면 결과가 열려요. 지금은 내 취향만 조용히 저장해둘게요.',
             style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
           ),
@@ -7102,7 +7150,11 @@ class _BalanceRevealCard extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  resultVisible ? '결과 접기' : '결과 보기',
+                  resultVisible
+                      ? '결과 접기'
+                      : resultRevealed
+                      ? '결과 다시 보기'
+                      : '결과 열어보기',
                   style: sans(size: 13, weight: FontWeight.w800),
                 ),
               ),
@@ -7342,6 +7394,339 @@ class _BalanceRouteChip extends StatelessWidget {
   }
 }
 
+class _BalanceResultBoxSection extends StatelessWidget {
+  const _BalanceResultBoxSection({
+    required this.controller,
+    required this.expandedResultQuestionId,
+    required this.onRevealResult,
+    required this.onOpenMeetings,
+    required this.onOpenPlaces,
+    required this.onOpenMusic,
+  });
+
+  final AlagagiController controller;
+  final String? expandedResultQuestionId;
+  final ValueChanged<BalanceQuestion> onRevealResult;
+  final VoidCallback onOpenMeetings;
+  final VoidCallback onOpenPlaces;
+  final VoidCallback onOpenMusic;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = controller.balanceQuestions.where((question) {
+      return controller.balanceSelectionFor(question) != null;
+    }).toList();
+    final revealableCount = items.where((question) {
+      return controller.isBalanceResultReadyFor(question) &&
+          !controller.isBalanceResultRevealedFor(question);
+    }).length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                '결과함',
+                style: serif(context, size: 17, weight: FontWeight.w800),
+              ),
+            ),
+            Text(
+              revealableCount == 0 ? '잠긴 결과 없음' : '열 수 있음 $revealableCount개',
+              style: sans(size: 11.5, color: AlagagiColors.muted),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '서로의 선택은 내가 직접 열어본 카드에서만 보여요.',
+          style: sans(size: 12, color: AlagagiColors.muted, height: 1.5),
+        ),
+        const SizedBox(height: 10),
+        if (items.isEmpty)
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AlagagiColors.paper,
+              border: Border.all(color: AlagagiColors.line),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            padding: const EdgeInsets.all(15),
+            child: Text(
+              '아직 결과함에 들어간 카드가 없어요. 오늘의 취향을 하나 고르면 결과 상태를 여기서 볼 수 있습니다.',
+              style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
+            ),
+          )
+        else
+          Column(
+            children: items.map((question) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _BalanceResultBoxTile(
+                  question: question,
+                  selected: controller.balanceSelectionFor(question)!,
+                  partnerChoice: controller.partnerBalanceSelectionFor(
+                    question,
+                  ),
+                  revealed: controller.isBalanceResultRevealedFor(question),
+                  suppressInlineResult: expandedResultQuestionId == question.id,
+                  myName: controller.state.me.nickname,
+                  partnerName: controller.state.partner.nickname,
+                  onReveal: () => onRevealResult(question),
+                  onOpenMeetings: onOpenMeetings,
+                  onOpenPlaces: onOpenPlaces,
+                  onOpenMusic: onOpenMusic,
+                ),
+              );
+            }).toList(),
+          ),
+      ],
+    );
+  }
+}
+
+class _BalanceResultBoxTile extends StatelessWidget {
+  const _BalanceResultBoxTile({
+    required this.question,
+    required this.selected,
+    required this.partnerChoice,
+    required this.revealed,
+    required this.suppressInlineResult,
+    required this.myName,
+    required this.partnerName,
+    required this.onReveal,
+    required this.onOpenMeetings,
+    required this.onOpenPlaces,
+    required this.onOpenMusic,
+  });
+
+  final BalanceQuestion question;
+  final String selected;
+  final String? partnerChoice;
+  final bool revealed;
+  final bool suppressInlineResult;
+  final String myName;
+  final String partnerName;
+  final VoidCallback onReveal;
+  final VoidCallback onOpenMeetings;
+  final VoidCallback onOpenPlaces;
+  final VoidCallback onOpenMusic;
+
+  @override
+  Widget build(BuildContext context) {
+    final ready = partnerChoice != null;
+    final statusLabel = !ready
+        ? '기다림'
+        : revealed
+        ? '열어본 결과'
+        : '결과 잠금';
+    final statusColor = revealed
+        ? const Color(0xFF2F2F2B)
+        : ready
+        ? const Color(0xFFF8EFD9)
+        : const Color(0xFFF8F8F4);
+    final statusTextColor = revealed
+        ? Colors.white
+        : ready
+        ? const Color(0xFF8C7333)
+        : AlagagiColors.muted;
+    final copy = !ready
+        ? '$partnerName님 선택을 기다리는 중이에요. 내 선택은 조용히 저장돼 있어요.'
+        : revealed
+        ? '이미 열어본 결과예요. 비교 내용과 다음 액션을 다시 볼 수 있어요.'
+        : '서로의 선택이 준비됐어요. 결과를 열기 전까지 비교 내용은 숨겨둘게요.';
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AlagagiColors.paper,
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  question.prompt,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: sans(
+                    size: 13,
+                    color: const Color(0xFF45443F),
+                    weight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Container(
+                height: 24,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 9),
+                child: Text(
+                  statusLabel,
+                  style: sans(
+                    size: 10.5,
+                    color: statusTextColor,
+                    weight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 7),
+          Text(
+            copy,
+            style: sans(size: 11.8, color: AlagagiColors.muted, height: 1.55),
+          ),
+          if (!revealed) ...[
+            const SizedBox(height: 9),
+            _BalanceRecordValue(
+              label: '내 선택',
+              value: _balanceOptionLabel(question, selected),
+            ),
+          ],
+          if (ready && !revealed) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              height: 40,
+              child: OutlinedButton(
+                onPressed: onReveal,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AlagagiColors.sageDeep,
+                  side: const BorderSide(color: Color(0x338A9A7E)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                ),
+                child: Text(
+                  '결과 열어보기',
+                  style: sans(size: 12.5, weight: FontWeight.w800),
+                ),
+              ),
+            ),
+          ],
+          if (revealed && partnerChoice != null && !suppressInlineResult) ...[
+            const SizedBox(height: 11),
+            _BalanceInlineResultSummary(
+              question: question,
+              selected: selected,
+              partnerChoice: partnerChoice!,
+              myName: myName,
+              partnerName: partnerName,
+              onOpenMeetings: onOpenMeetings,
+              onOpenPlaces: onOpenPlaces,
+              onOpenMusic: onOpenMusic,
+            ),
+          ] else if (revealed && suppressInlineResult) ...[
+            const SizedBox(height: 9),
+            _BalanceRecordValue(label: '상세', value: '위에 열려 있어요'),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _BalanceInlineResultSummary extends StatelessWidget {
+  const _BalanceInlineResultSummary({
+    required this.question,
+    required this.selected,
+    required this.partnerChoice,
+    required this.myName,
+    required this.partnerName,
+    required this.onOpenMeetings,
+    required this.onOpenPlaces,
+    required this.onOpenMusic,
+  });
+
+  final BalanceQuestion question;
+  final String selected;
+  final String partnerChoice;
+  final String myName;
+  final String partnerName;
+  final VoidCallback onOpenMeetings;
+  final VoidCallback onOpenPlaces;
+  final VoidCallback onOpenMusic;
+
+  @override
+  Widget build(BuildContext context) {
+    final sameChoice = selected == partnerChoice;
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF2F2F2B),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.all(13),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            sameChoice ? '같은 취향이 열렸어요' : '다른 취향이 이야기로 남았어요',
+            style: serif(
+              context,
+              size: 15,
+              weight: FontWeight.w800,
+              color: Colors.white,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 9),
+          Row(
+            children: [
+              Expanded(
+                child: _BalanceResultChoice(
+                  label: '$myName 선택',
+                  value: _balanceOptionLabel(question, selected),
+                  highlighted: true,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _BalanceResultChoice(
+                  label: '$partnerName 선택',
+                  value: _balanceOptionLabel(question, partnerChoice),
+                  highlighted: sameChoice,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _BalanceRouteChip(
+                icon: Icons.event_note_outlined,
+                label: '만남 계획',
+                onTap: onOpenMeetings,
+              ),
+              _BalanceRouteChip(
+                icon: Icons.place_outlined,
+                label: '장소 보기',
+                onTap: onOpenPlaces,
+              ),
+              _BalanceRouteChip(
+                icon: Icons.music_note_outlined,
+                label: '음악 노트',
+                onTap: onOpenMusic,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _BalanceRecordSection extends StatelessWidget {
   const _BalanceRecordSection({
     required this.controller,
@@ -7357,17 +7742,16 @@ class _BalanceRecordSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final records = controller.balanceQuestions.where((question) {
       final selected = controller.balanceSelectionFor(question);
-      final partnerChoice = controller.partnerBalanceSelectionFor(question);
       if (selected == null) {
         return false;
       }
+      final hasReason = (controller.balanceReasonFor(question) ?? '')
+          .trim()
+          .isNotEmpty;
       return switch (filter) {
         _BalanceRecordFilter.all => true,
-        _BalanceRecordFilter.same =>
-          partnerChoice != null && selected == partnerChoice,
-        _BalanceRecordFilter.different =>
-          partnerChoice != null && selected != partnerChoice,
-        _BalanceRecordFilter.waiting => partnerChoice == null,
+        _BalanceRecordFilter.withReason => hasReason,
+        _BalanceRecordFilter.noReason => !hasReason,
       };
     }).toList();
 
@@ -7378,7 +7762,7 @@ class _BalanceRecordSection extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                '취향 기록',
+                '내 취향 노트',
                 style: serif(context, size: 17, weight: FontWeight.w800),
               ),
             ),
@@ -7428,11 +7812,7 @@ class _BalanceRecordSection extends StatelessWidget {
                 child: _BalanceRecordTile(
                   question: question,
                   selected: controller.balanceSelectionFor(question)!,
-                  partnerChoice: controller.partnerBalanceSelectionFor(
-                    question,
-                  ),
                   reason: controller.balanceReasonFor(question),
-                  partnerName: controller.state.partner.nickname,
                 ),
               );
             }).toList(),
@@ -7490,27 +7870,17 @@ class _BalanceRecordTile extends StatelessWidget {
   const _BalanceRecordTile({
     required this.question,
     required this.selected,
-    required this.partnerChoice,
     required this.reason,
-    required this.partnerName,
   });
 
   final BalanceQuestion question;
   final String selected;
-  final String? partnerChoice;
   final String? reason;
-  final String partnerName;
 
   @override
   Widget build(BuildContext context) {
-    final partnerChoice = this.partnerChoice;
-    final sameChoice = partnerChoice != null && selected == partnerChoice;
-    final stateLabel = partnerChoice == null
-        ? '대기'
-        : sameChoice
-        ? '같음'
-        : '다름';
-    final reason = this.reason;
+    final reason = this.reason?.trim();
+    final hasReason = reason != null && reason.isNotEmpty;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -7540,17 +7910,15 @@ class _BalanceRecordTile extends StatelessWidget {
                 height: 24,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: sameChoice
-                      ? const Color(0xFF2F2F2B)
-                      : const Color(0xFFF8F8F4),
+                  color: const Color(0xFFF8F8F4),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 9),
                 child: Text(
-                  stateLabel,
+                  hasReason ? '메모 있음' : '선택만 저장',
                   style: sans(
                     size: 10.5,
-                    color: sameChoice ? Colors.white : AlagagiColors.muted,
+                    color: AlagagiColors.muted,
                     weight: FontWeight.w800,
                   ),
                 ),
@@ -7563,24 +7931,17 @@ class _BalanceRecordTile extends StatelessWidget {
             runSpacing: 7,
             children: [
               _BalanceRecordValue(
-                label: '나',
+                label: '내 선택',
                 value: _balanceOptionLabel(question, selected),
               ),
-              _BalanceRecordValue(
-                label: partnerName,
-                value: partnerChoice == null
-                    ? '기다리는 중'
-                    : _balanceOptionLabel(question, partnerChoice),
-              ),
+              const _BalanceRecordValue(label: '결과', value: '결과함에서만 공개'),
             ],
           ),
-          if (reason != null && reason.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              reason,
-              style: sans(size: 11.5, color: AlagagiColors.muted, height: 1.5),
-            ),
-          ],
+          const SizedBox(height: 8),
+          Text(
+            hasReason ? reason : '아직 이유를 남기지 않았어요.',
+            style: sans(size: 11.5, color: AlagagiColors.muted, height: 1.5),
+          ),
         ],
       ),
     );
@@ -7626,18 +7987,16 @@ String _balanceOptionLabel(BalanceQuestion question, String? optionId) {
 String _filterLabel(_BalanceRecordFilter filter) {
   return switch (filter) {
     _BalanceRecordFilter.all => '전체',
-    _BalanceRecordFilter.same => '같은 선택',
-    _BalanceRecordFilter.different => '다른 선택',
-    _BalanceRecordFilter.waiting => '기다림',
+    _BalanceRecordFilter.withReason => '이유 있음',
+    _BalanceRecordFilter.noReason => '메모 없음',
   };
 }
 
 String _emptyRecordCopy(_BalanceRecordFilter filter) {
   return switch (filter) {
     _BalanceRecordFilter.all => '아직 남긴 취향이 없어요. 오늘의 카드를 하나 골라보면 기록이 시작됩니다.',
-    _BalanceRecordFilter.same => '아직 같은 선택으로 열린 기록은 없어요.',
-    _BalanceRecordFilter.different => '아직 다른 선택으로 남은 기록은 없어요.',
-    _BalanceRecordFilter.waiting => '상대 선택을 기다리는 카드가 없어요.',
+    _BalanceRecordFilter.withReason => '아직 이유를 남긴 취향이 없어요. 짧게 한 줄만 적어도 충분합니다.',
+    _BalanceRecordFilter.noReason => '메모 없이 저장된 취향이 없어요.',
   };
 }
 

@@ -180,12 +180,14 @@ class BalanceSelection {
     required this.profileId,
     required this.optionId,
     this.reason,
+    this.resultRevealedAt,
   });
 
   final String questionId;
   final String profileId;
   final String optionId;
   final String? reason;
+  final DateTime? resultRevealedAt;
 }
 
 class ProfileSlotValue {
@@ -2178,6 +2180,7 @@ class AlagagiController extends ChangeNotifier {
   final Map<String, String> _partnerBalanceSelections = {};
   final Map<String, String> _balanceReasons = {};
   final Map<String, String> _partnerBalanceReasons = {};
+  final Map<String, DateTime> _balanceResultRevealedAt = {};
   final List<ProfileCardData> _profileCards = [];
   final List<WishItem> _wishes = [];
   final List<MusicNote> _musicNotes = [];
@@ -2714,12 +2717,17 @@ class AlagagiController extends ChangeNotifier {
     _partnerBalanceSelections.clear();
     _balanceReasons.clear();
     _partnerBalanceReasons.clear();
+    _balanceResultRevealedAt.clear();
     for (final selection in data.balanceSelections) {
       if (selection.profileId == _state.me.id) {
         _balanceSelections[selection.questionId] = selection.optionId;
         final reason = selection.reason;
         if (reason != null && reason.isNotEmpty) {
           _balanceReasons[selection.questionId] = reason;
+        }
+        final resultRevealedAt = selection.resultRevealedAt;
+        if (resultRevealedAt != null) {
+          _balanceResultRevealedAt[selection.questionId] = resultRevealedAt;
         }
       } else if (selection.profileId == _state.partner.id) {
         _partnerBalanceSelections[selection.questionId] = selection.optionId;
@@ -3732,6 +3740,20 @@ class AlagagiController extends ChangeNotifier {
     return _partnerBalanceReasons[question.id];
   }
 
+  DateTime? balanceResultRevealedAtFor(BalanceQuestion question) {
+    return _balanceResultRevealedAt[question.id];
+  }
+
+  bool isBalanceResultReadyFor(BalanceQuestion question) {
+    return _balanceSelections.containsKey(question.id) &&
+        partnerBalanceSelectionFor(question) != null;
+  }
+
+  bool isBalanceResultRevealedFor(BalanceQuestion question) {
+    return isBalanceResultReadyFor(question) &&
+        _balanceResultRevealedAt.containsKey(question.id);
+  }
+
   int get balanceCompletedCount {
     return balanceQuestions
         .where((question) => _balanceSelections.containsKey(question.id))
@@ -3743,6 +3765,10 @@ class AlagagiController extends ChangeNotifier {
       return _balanceSelections.containsKey(question.id) &&
           partnerBalanceSelectionFor(question) != null;
     }).length;
+  }
+
+  int get balanceRevealedCount {
+    return balanceQuestions.where(isBalanceResultRevealedFor).length;
   }
 
   ProfileSlot? get todayFillableProfileSlot {
@@ -4931,11 +4957,15 @@ class AlagagiController extends ChangeNotifier {
     if (question.left.id != optionId && question.right.id != optionId) {
       throw ArgumentError.value(optionId, 'optionId');
     }
+    if (_balanceSelections[question.id] == optionId) {
+      return;
+    }
     final selection = BalanceSelection(
       questionId: question.id,
       profileId: _state.me.id,
       optionId: optionId,
       reason: _balanceReasons[question.id],
+      resultRevealedAt: _balanceResultRevealedAt[question.id],
     );
     _balanceSelections[question.id] = optionId;
     _persistBalanceSelection(selection);
@@ -4963,6 +4993,30 @@ class AlagagiController extends ChangeNotifier {
         profileId: _state.me.id,
         optionId: optionId,
         reason: reason.isEmpty ? null : reason,
+        resultRevealedAt: _balanceResultRevealedAt[question.id],
+      ),
+    );
+    notifyListeners();
+  }
+
+  void revealBalanceResult(BalanceQuestion question) {
+    final optionId = _balanceSelections[question.id];
+    if (optionId == null || partnerBalanceSelectionFor(question) == null) {
+      return;
+    }
+    final resultRevealedAt = _balanceResultRevealedAt[question.id];
+    if (resultRevealedAt != null) {
+      return;
+    }
+    final revealedAt = DateTime.now();
+    _balanceResultRevealedAt[question.id] = revealedAt;
+    _persistBalanceSelection(
+      BalanceSelection(
+        questionId: question.id,
+        profileId: _state.me.id,
+        optionId: optionId,
+        reason: _balanceReasons[question.id],
+        resultRevealedAt: revealedAt,
       ),
     );
     notifyListeners();
