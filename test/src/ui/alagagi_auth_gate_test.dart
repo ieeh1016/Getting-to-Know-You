@@ -384,6 +384,13 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   ) async {}
 
   @override
+  Future<void> deleteProfileSlot(
+    String spaceId,
+    String profileId,
+    String slotId,
+  ) async {}
+
+  @override
   Future<void> saveWish(String spaceId, WishItem wish) async {
     savedWishes.add(wish);
   }

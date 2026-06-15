@@ -10,12 +10,37 @@ MusicNoteSeenStore createMusicNoteSeenStore() {
 
 class BrowserMusicNoteSeenStore implements MusicNoteSeenStore {
   @override
-  DateTime? readLastSeenMusicNoteAt(String spaceId, String profileId) {
-    final raw = html.window.localStorage[_key(spaceId, profileId)];
+  DateTime? readLastSeenAt(
+    String spaceId,
+    String profileId,
+    UnreadActivityFeature feature,
+  ) {
+    final raw =
+        html.window.localStorage[_key(spaceId, profileId, feature)] ??
+        (feature == UnreadActivityFeature.music
+            ? html.window.localStorage[_legacyMusicKey(spaceId, profileId)]
+            : null);
     if (raw == null || raw.trim().isEmpty) {
       return null;
     }
     return DateTime.tryParse(raw);
+  }
+
+  @override
+  void writeLastSeenAt(
+    String spaceId,
+    String profileId,
+    UnreadActivityFeature feature,
+    DateTime timestamp,
+  ) {
+    html.window.localStorage[_key(spaceId, profileId, feature)] = timestamp
+        .toUtc()
+        .toIso8601String();
+  }
+
+  @override
+  DateTime? readLastSeenMusicNoteAt(String spaceId, String profileId) {
+    return readLastSeenAt(spaceId, profileId, UnreadActivityFeature.music);
   }
 
   @override
@@ -24,12 +49,14 @@ class BrowserMusicNoteSeenStore implements MusicNoteSeenStore {
     String profileId,
     DateTime timestamp,
   ) {
-    html.window.localStorage[_key(spaceId, profileId)] = timestamp
-        .toUtc()
-        .toIso8601String();
+    writeLastSeenAt(spaceId, profileId, UnreadActivityFeature.music, timestamp);
   }
 
-  String _key(String spaceId, String profileId) {
+  String _key(String spaceId, String profileId, UnreadActivityFeature feature) {
+    return 'alagagi:lastSeen:${feature.storageKey}:$spaceId:$profileId';
+  }
+
+  String _legacyMusicKey(String spaceId, String profileId) {
     return 'alagagi:lastSeenMusicNoteAt:$spaceId:$profileId';
   }
 }

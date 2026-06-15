@@ -19,6 +19,17 @@ enum AlagagiRoute {
   my,
 }
 
+enum UnreadActivityFeature {
+  profileCard,
+  wishlist,
+  meetings,
+  places,
+  curiosity,
+  stocks,
+  music,
+  improvements,
+}
+
 enum ArchiveFilter { all, bothAnswered, similar }
 
 enum ProfileCardTab { partner, me }
@@ -204,6 +215,12 @@ abstract class AlagagiDataRepository {
     String spaceId,
     String profileId,
     ProfileSlot slot,
+  );
+
+  Future<void> deleteProfileSlot(
+    String spaceId,
+    String profileId,
+    String slotId,
   );
 
   Future<void> saveWish(String spaceId, WishItem wish);
@@ -505,6 +522,11 @@ class ProfileSlot {
     this.value,
     this.locked = false,
     this.unlockHint,
+    this.skipped = false,
+    this.hidden = false,
+    this.custom = false,
+    this.updatedAt,
+    this.updatedByProfileId,
   });
 
   final String id;
@@ -515,23 +537,41 @@ class ProfileSlot {
   final String? value;
   final bool locked;
   final String? unlockHint;
+  final bool skipped;
+  final bool hidden;
+  final bool custom;
+  final DateTime? updatedAt;
+  final String? updatedByProfileId;
 
   ProfileSlot copyWith({
+    String? label,
+    String? icon,
     String? value,
+    bool clearValue = false,
     bool? locked,
     String? unlockHint,
     String? category,
     String? inputHint,
+    bool? skipped,
+    bool? hidden,
+    bool? custom,
+    DateTime? updatedAt,
+    String? updatedByProfileId,
   }) {
     return ProfileSlot(
       id: id,
-      label: label,
-      icon: icon,
+      label: label ?? this.label,
+      icon: icon ?? this.icon,
       category: category ?? this.category,
       inputHint: inputHint ?? this.inputHint,
-      value: value ?? this.value,
+      value: clearValue ? null : value ?? this.value,
       locked: locked ?? this.locked,
       unlockHint: unlockHint ?? this.unlockHint,
+      skipped: skipped ?? this.skipped,
+      hidden: hidden ?? this.hidden,
+      custom: custom ?? this.custom,
+      updatedAt: updatedAt ?? this.updatedAt,
+      updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
     );
   }
 }
@@ -547,9 +587,25 @@ class ProfileCardData {
   final String subtitle;
   final List<ProfileSlot> slots;
 
-  int get filledCount => slots.where((slot) => slot.value != null).length;
+  List<ProfileSlot> get visibleSlots =>
+      slots.where((slot) => !slot.hidden).toList();
 
-  int get totalCount => slots.length;
+  int get filledCount =>
+      slots.where((slot) => !slot.hidden && slot.value != null).length;
+
+  int get skippedCount =>
+      slots.where((slot) => !slot.hidden && slot.skipped).length;
+
+  int get hiddenCount => slots.where((slot) => slot.hidden).length;
+
+  int get customCount =>
+      slots.where((slot) => !slot.hidden && slot.custom).length;
+
+  int get openCount => slots
+      .where((slot) => slot.value == null && !slot.skipped && !slot.hidden)
+      .length;
+
+  int get totalCount => slots.where((slot) => !slot.hidden).length;
 
   ProfileCardData copyWith({List<ProfileSlot>? slots, AppProfile? profile}) {
     return ProfileCardData(
@@ -740,6 +796,8 @@ class WishItem {
     required this.likedByProfileIds,
     this.createdByProfileId = 'me',
     this.done = false,
+    this.updatedAt,
+    this.updatedByProfileId,
   });
 
   final String id;
@@ -749,13 +807,19 @@ class WishItem {
   final String createdByProfileId;
   final Set<String> likedByProfileIds;
   final bool done;
+  final DateTime? updatedAt;
+  final String? updatedByProfileId;
 
   bool get isMutual => likedByProfileIds.length >= 2;
+
+  String get lastChangedByProfileId => updatedByProfileId ?? createdByProfileId;
 
   WishItem copyWith({
     String? createdByProfileId,
     Set<String>? likedByProfileIds,
     bool? done,
+    DateTime? updatedAt,
+    String? updatedByProfileId,
   }) {
     return WishItem(
       id: id,
@@ -765,6 +829,8 @@ class WishItem {
       createdByProfileId: createdByProfileId ?? this.createdByProfileId,
       likedByProfileIds: likedByProfileIds ?? this.likedByProfileIds,
       done: done ?? this.done,
+      updatedAt: updatedAt ?? this.updatedAt,
+      updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
     );
   }
 }
@@ -930,6 +996,7 @@ class SharedPlace {
     this.note = '',
     this.linkedDateKey,
     this.updatedAt,
+    this.updatedByProfileId,
   });
 
   final String id;
@@ -945,8 +1012,11 @@ class SharedPlace {
   final Set<String> interestedByProfileIds;
   final String? linkedDateKey;
   final DateTime? updatedAt;
+  final String? updatedByProfileId;
 
   bool get isMutual => interestedByProfileIds.length >= 2;
+
+  String get lastChangedByProfileId => updatedByProfileId ?? createdByProfileId;
 
   SharedPlace copyWith({
     String? name,
@@ -961,6 +1031,7 @@ class SharedPlace {
     String? linkedDateKey,
     bool clearLinkedDateKey = false,
     DateTime? updatedAt,
+    String? updatedByProfileId,
   }) {
     return SharedPlace(
       id: id,
@@ -979,6 +1050,7 @@ class SharedPlace {
           ? null
           : linkedDateKey ?? this.linkedDateKey,
       updatedAt: updatedAt ?? this.updatedAt,
+      updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
     );
   }
 }
@@ -993,6 +1065,7 @@ class CuriosityCard {
     this.reply,
     this.repliedLabel,
     this.updatedAt,
+    this.updatedByProfileId,
   });
 
   final String id;
@@ -1003,14 +1076,19 @@ class CuriosityCard {
   final String? reply;
   final String? repliedLabel;
   final DateTime? updatedAt;
+  final String? updatedByProfileId;
 
   bool get hasReply => reply != null && reply!.trim().isNotEmpty;
+
+  String get lastChangedByProfileId =>
+      updatedByProfileId ?? (hasReply ? toProfileId : fromProfileId);
 
   CuriosityCard copyWith({
     String? question,
     String? reply,
     String? repliedLabel,
     DateTime? updatedAt,
+    String? updatedByProfileId,
   }) {
     return CuriosityCard(
       id: id,
@@ -1021,6 +1099,7 @@ class CuriosityCard {
       reply: reply ?? this.reply,
       repliedLabel: repliedLabel ?? this.repliedLabel,
       updatedAt: updatedAt ?? this.updatedAt,
+      updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
     );
   }
 }
@@ -1077,6 +1156,7 @@ class StockStory {
     this.repliedByProfileId,
     this.repliedLabel,
     this.updatedAt,
+    this.updatedByProfileId,
   });
 
   final String id;
@@ -1092,8 +1172,12 @@ class StockStory {
   final String? repliedByProfileId;
   final String? repliedLabel;
   final DateTime? updatedAt;
+  final String? updatedByProfileId;
 
   bool get hasReply => reply != null && reply!.trim().isNotEmpty;
+
+  String get lastChangedByProfileId =>
+      updatedByProfileId ?? repliedByProfileId ?? createdByProfileId;
 
   StockStory copyWith({
     String? name,
@@ -1106,6 +1190,7 @@ class StockStory {
     String? repliedByProfileId,
     String? repliedLabel,
     DateTime? updatedAt,
+    String? updatedByProfileId,
   }) {
     return StockStory(
       id: id,
@@ -1121,6 +1206,7 @@ class StockStory {
       repliedByProfileId: repliedByProfileId ?? this.repliedByProfileId,
       repliedLabel: repliedLabel ?? this.repliedLabel,
       updatedAt: updatedAt ?? this.updatedAt,
+      updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
     );
   }
 }
@@ -1142,6 +1228,7 @@ class StockHolding {
     this.repliedByProfileId,
     this.repliedLabel,
     this.updatedAt,
+    this.updatedByProfileId,
   });
 
   final String id;
@@ -1159,8 +1246,12 @@ class StockHolding {
   final String? repliedByProfileId;
   final String? repliedLabel;
   final DateTime? updatedAt;
+  final String? updatedByProfileId;
 
   bool get hasReply => reply != null && reply!.trim().isNotEmpty;
+
+  String get lastChangedByProfileId =>
+      updatedByProfileId ?? repliedByProfileId ?? createdByProfileId;
 
   StockHolding copyWith({
     String? name,
@@ -1175,6 +1266,7 @@ class StockHolding {
     String? repliedByProfileId,
     String? repliedLabel,
     DateTime? updatedAt,
+    String? updatedByProfileId,
   }) {
     return StockHolding(
       id: id,
@@ -1192,6 +1284,7 @@ class StockHolding {
       repliedByProfileId: repliedByProfileId ?? this.repliedByProfileId,
       repliedLabel: repliedLabel ?? this.repliedLabel,
       updatedAt: updatedAt ?? this.updatedAt,
+      updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
     );
   }
 }
@@ -1224,7 +1317,79 @@ class HomeProgressSummaryAction {
   final AlagagiRoute route;
 }
 
+class UnreadActivity {
+  const UnreadActivity({
+    required this.id,
+    required this.feature,
+    required this.title,
+    required this.description,
+    required this.updatedAt,
+    required this.route,
+  });
+
+  final String id;
+  final UnreadActivityFeature feature;
+  final String title;
+  final String description;
+  final DateTime updatedAt;
+  final AlagagiRoute route;
+}
+
+extension UnreadActivityFeatureMeta on UnreadActivityFeature {
+  String get storageKey {
+    return switch (this) {
+      UnreadActivityFeature.profileCard => 'profileCard',
+      UnreadActivityFeature.wishlist => 'wishlist',
+      UnreadActivityFeature.meetings => 'meetings',
+      UnreadActivityFeature.places => 'places',
+      UnreadActivityFeature.curiosity => 'curiosity',
+      UnreadActivityFeature.stocks => 'stocks',
+      UnreadActivityFeature.music => 'music',
+      UnreadActivityFeature.improvements => 'improvements',
+    };
+  }
+
+  String get label {
+    return switch (this) {
+      UnreadActivityFeature.profileCard => '소개 카드',
+      UnreadActivityFeature.wishlist => '언젠가, 같이',
+      UnreadActivityFeature.meetings => '약속',
+      UnreadActivityFeature.places => '장소',
+      UnreadActivityFeature.curiosity => '궁금함',
+      UnreadActivityFeature.stocks => '주식 이야기',
+      UnreadActivityFeature.music => '음악 노트',
+      UnreadActivityFeature.improvements => '건의함',
+    };
+  }
+
+  AlagagiRoute get route {
+    return switch (this) {
+      UnreadActivityFeature.profileCard => AlagagiRoute.profileCard,
+      UnreadActivityFeature.wishlist => AlagagiRoute.wishlist,
+      UnreadActivityFeature.meetings => AlagagiRoute.meetings,
+      UnreadActivityFeature.places => AlagagiRoute.places,
+      UnreadActivityFeature.curiosity => AlagagiRoute.home,
+      UnreadActivityFeature.stocks => AlagagiRoute.stockStory,
+      UnreadActivityFeature.music => AlagagiRoute.music,
+      UnreadActivityFeature.improvements => AlagagiRoute.improvements,
+    };
+  }
+}
+
 abstract class MusicNoteSeenStore {
+  DateTime? readLastSeenAt(
+    String spaceId,
+    String profileId,
+    UnreadActivityFeature feature,
+  );
+
+  void writeLastSeenAt(
+    String spaceId,
+    String profileId,
+    UnreadActivityFeature feature,
+    DateTime timestamp,
+  );
+
   DateTime? readLastSeenMusicNoteAt(String spaceId, String profileId);
 
   void writeLastSeenMusicNoteAt(
@@ -1238,8 +1403,27 @@ class MemoryMusicNoteSeenStore implements MusicNoteSeenStore {
   final Map<String, DateTime> _values = {};
 
   @override
+  DateTime? readLastSeenAt(
+    String spaceId,
+    String profileId,
+    UnreadActivityFeature feature,
+  ) {
+    return _values[_key(spaceId, profileId, feature)];
+  }
+
+  @override
+  void writeLastSeenAt(
+    String spaceId,
+    String profileId,
+    UnreadActivityFeature feature,
+    DateTime timestamp,
+  ) {
+    _values[_key(spaceId, profileId, feature)] = timestamp;
+  }
+
+  @override
   DateTime? readLastSeenMusicNoteAt(String spaceId, String profileId) {
-    return _values[_key(spaceId, profileId)];
+    return readLastSeenAt(spaceId, profileId, UnreadActivityFeature.music);
   }
 
   @override
@@ -1248,11 +1432,15 @@ class MemoryMusicNoteSeenStore implements MusicNoteSeenStore {
     String profileId,
     DateTime timestamp,
   ) {
-    _values[_key(spaceId, profileId)] = timestamp;
+    writeLastSeenAt(spaceId, profileId, UnreadActivityFeature.music, timestamp);
   }
 
-  static String _key(String spaceId, String profileId) {
-    return 'alagagi:lastSeenMusicNoteAt:$spaceId:$profileId';
+  static String _key(
+    String spaceId,
+    String profileId,
+    UnreadActivityFeature feature,
+  ) {
+    return 'alagagi:lastSeen:${feature.storageKey}:$spaceId:$profileId';
   }
 }
 
@@ -2047,7 +2235,7 @@ class AlagagiController extends ChangeNotifier {
           : HomeProgressSummaryTone.ready,
     );
 
-    final hasNewMusic = hasNewPartnerMusicNotes;
+    final hasNewMusic = unreadCountForFeature(UnreadActivityFeature.music) > 0;
     final musicItem = HomeProgressSummaryItem(
       id: 'music',
       label: '음악 노트',
@@ -2083,24 +2271,216 @@ class AlagagiController extends ChangeNotifier {
   }
 
   bool get hasNewPartnerMusicNotes {
+    return unreadCountForFeature(UnreadActivityFeature.music) > 0;
+  }
+
+  List<UnreadActivity> get unreadActivities {
+    final activities = <UnreadActivity>[];
+    final partnerName = _state.partner.nickname;
+    final partnerCard = _profileCards.cast<ProfileCardData?>().firstWhere(
+      (card) => card?.profile.id == _state.partner.id,
+      orElse: () => null,
+    );
+    for (final slot in partnerCard?.slots ?? const <ProfileSlot>[]) {
+      if (slot.hidden || slot.value == null || slot.value!.trim().isEmpty) {
+        continue;
+      }
+      _addUnreadActivity(
+        activities,
+        feature: UnreadActivityFeature.profileCard,
+        id: 'profile-${slot.id}',
+        title: '소개 카드에 새 답이 있어요',
+        description: '$partnerName님이 "${slot.label}"에 답했어요.',
+        updatedAt: slot.updatedAt,
+        actorProfileId: slot.updatedByProfileId ?? _state.partner.id,
+      );
+    }
+    for (final wish in _wishes) {
+      final isPartnerWish = wish.createdByProfileId == _state.partner.id;
+      final partnerLikedMine =
+          wish.createdByProfileId == _state.me.id &&
+          wish.likedByProfileIds.contains(_state.partner.id);
+      if (!isPartnerWish && !partnerLikedMine) {
+        continue;
+      }
+      final description = partnerLikedMine
+          ? '"${wish.title}"에 $partnerName님도 관심을 표시했어요.'
+          : wish.isMutual
+          ? '"${wish.title}"가 같이 하고 싶은 일로 열렸어요.'
+          : '$partnerName님이 "${wish.title}"를 담았어요.';
+      _addUnreadActivity(
+        activities,
+        feature: UnreadActivityFeature.wishlist,
+        id: 'wish-${wish.id}',
+        title: '언젠가 같이 할 일이 생겼어요',
+        description: description,
+        updatedAt: wish.updatedAt,
+        actorProfileId: wish.lastChangedByProfileId,
+      );
+    }
+    for (final entry in _scheduleEntries) {
+      _addUnreadActivity(
+        activities,
+        feature: UnreadActivityFeature.meetings,
+        id: 'meeting-${entry.id}',
+        title: '약속 일정이 업데이트됐어요',
+        description:
+            '$partnerName님이 ${_compactDateLabel(entry.dateKey)} 일정을 남겼어요.',
+        updatedAt: entry.updatedAt,
+        actorProfileId: entry.profileId,
+      );
+    }
+    for (final place in _sharedPlaces) {
+      _addUnreadActivity(
+        activities,
+        feature: UnreadActivityFeature.places,
+        id: 'place-${place.id}',
+        title: '새 장소 소식이 있어요',
+        description: '$partnerName님이 "${place.name}"를 업데이트했어요.',
+        updatedAt: place.updatedAt,
+        actorProfileId: place.lastChangedByProfileId,
+      );
+    }
+    for (final card in _curiosityCards) {
+      final description = card.hasReply
+          ? '$partnerName님이 궁금함에 답했어요.'
+          : '$partnerName님이 궁금한 걸 남겼어요.';
+      _addUnreadActivity(
+        activities,
+        feature: UnreadActivityFeature.curiosity,
+        id: 'curiosity-${card.id}',
+        title: '궁금함 한 장이 업데이트됐어요',
+        description: description,
+        updatedAt: card.updatedAt,
+        actorProfileId: card.lastChangedByProfileId,
+      );
+    }
+    for (final story in _stockStories) {
+      final description =
+          story.hasReply && story.repliedByProfileId == _state.partner.id
+          ? '$partnerName님이 "${story.name}" 이야기에 답했어요.'
+          : '$partnerName님이 "${story.name}" 이야기를 남겼어요.';
+      _addUnreadActivity(
+        activities,
+        feature: UnreadActivityFeature.stocks,
+        id: 'stock-story-${story.id}',
+        title: '주식 이야기가 업데이트됐어요',
+        description: description,
+        updatedAt: story.updatedAt,
+        actorProfileId: story.lastChangedByProfileId,
+      );
+    }
+    for (final holding in _stockHoldings) {
+      final description =
+          holding.hasReply && holding.repliedByProfileId == _state.partner.id
+          ? '$partnerName님이 "${holding.name}" 보유 종목에 답했어요.'
+          : '$partnerName님이 "${holding.name}" 보유 종목을 남겼어요.';
+      _addUnreadActivity(
+        activities,
+        feature: UnreadActivityFeature.stocks,
+        id: 'stock-holding-${holding.id}',
+        title: '보유 종목 이야기가 업데이트됐어요',
+        description: description,
+        updatedAt: holding.updatedAt,
+        actorProfileId: holding.lastChangedByProfileId,
+      );
+    }
+    for (final note in _musicNotes) {
+      _addUnreadActivity(
+        activities,
+        feature: UnreadActivityFeature.music,
+        id: 'music-${note.id}',
+        title: '새 음악 노트가 있어요',
+        description: '$partnerName님이 "${note.title}"를 남겼어요.',
+        updatedAt: note.updatedAt,
+        actorProfileId: note.createdByProfileId,
+      );
+    }
+    for (final post in _improvementPosts) {
+      _addUnreadActivity(
+        activities,
+        feature: UnreadActivityFeature.improvements,
+        id: 'improvement-${post.id}',
+        title: '건의함에 새 글이 있어요',
+        description: '$partnerName님이 "${post.title}"을 남겼어요.',
+        updatedAt: post.updatedAt,
+        actorProfileId: post.createdByProfileId,
+      );
+    }
+    activities.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return List<UnreadActivity>.unmodifiable(activities);
+  }
+
+  int get totalUnreadActivityCount => unreadActivities.length;
+
+  int unreadCountForFeature(UnreadActivityFeature feature) {
+    return unreadActivities
+        .where((activity) => activity.feature == feature)
+        .length;
+  }
+
+  void _addUnreadActivity(
+    List<UnreadActivity> activities, {
+    required UnreadActivityFeature feature,
+    required String id,
+    required String title,
+    required String description,
+    required DateTime? updatedAt,
+    required String actorProfileId,
+  }) {
+    if (updatedAt == null) {
+      return;
+    }
+    if (!_isUnreadActivity(feature, updatedAt, actorProfileId)) {
+      return;
+    }
+    activities.add(
+      UnreadActivity(
+        id: id,
+        feature: feature,
+        title: title,
+        description: description,
+        updatedAt: updatedAt,
+        route: feature.route,
+      ),
+    );
+  }
+
+  bool _isUnreadActivity(
+    UnreadActivityFeature feature,
+    DateTime updatedAt,
+    String actorProfileId,
+  ) {
     final spaceId = _spaceId;
-    if (spaceId == null) {
+    if (spaceId == null || actorProfileId != _state.partner.id) {
       return false;
     }
-    final lastSeen = _musicNoteSeenStore.readLastSeenMusicNoteAt(
+    final lastSeen = _musicNoteSeenStore.readLastSeenAt(
       spaceId,
       _state.me.id,
+      feature,
     );
-    return _musicNotes.any((note) {
-      if (note.createdByProfileId != _state.partner.id) {
-        return false;
-      }
-      final updatedAt = note.updatedAt;
-      if (updatedAt == null) {
-        return false;
-      }
-      return lastSeen == null || updatedAt.isAfter(lastSeen);
-    });
+    return lastSeen == null || updatedAt.isAfter(lastSeen);
+  }
+
+  String _compactDateLabel(String dateKey) {
+    final date = DateTime.tryParse(dateKey);
+    if (date == null) {
+      return dateKey;
+    }
+    return '${date.month}/${date.day}';
+  }
+
+  void markFeatureSeen(UnreadActivityFeature feature) {
+    _markFeatureSeen(feature);
+    notifyListeners();
+  }
+
+  void markAllUnreadActivitiesSeen() {
+    for (final feature in UnreadActivityFeature.values) {
+      _markFeatureSeen(feature);
+    }
+    notifyListeners();
   }
 
   void _applyProfilesToSeedData() {
@@ -2131,9 +2511,12 @@ class AlagagiController extends ChangeNotifier {
       ..clear()
       ..addAll(
         seedProfileCards.map((card) {
+          final profileId = card.profile.isMe
+              ? _state.me.id
+              : _state.partner.id;
           return card.copyWith(
             profile: card.profile.isMe ? _state.me : _state.partner,
-            slots: _profileSlotsWithValues(card.slots),
+            slots: _profileSlotsWithValues(card.slots, profileId),
           );
         }),
       );
@@ -2319,16 +2702,19 @@ class AlagagiController extends ChangeNotifier {
         continue;
       }
       final card = _profileCards[cardIndex];
-      final slots = card.slots.map((slot) {
-        if (slot.id != value.slot.id) {
-          return slot;
+      final slots = [...card.slots];
+      final slotIndex = slots.indexWhere((slot) => slot.id == value.slot.id);
+      if (slotIndex == -1) {
+        if (value.slot.custom) {
+          slots.add(_profileSlotFromPersisted(value.slot, value.profileId));
         }
-        return slot.copyWith(
-          value: value.slot.value,
-          locked: false,
-          unlockHint: '',
+      } else {
+        slots[slotIndex] = _profileSlotFromPersisted(
+          value.slot,
+          value.profileId,
+          base: slots[slotIndex],
         );
-      }).toList();
+      }
       _profileCards[cardIndex] = card.copyWith(slots: slots);
     }
 
@@ -2455,16 +2841,48 @@ class AlagagiController extends ChangeNotifier {
     return profileSlotCatalogV2;
   }
 
-  List<ProfileSlot> _profileSlotsWithValues(Iterable<ProfileSlot> values) {
+  List<ProfileSlot> _profileSlotsWithValues(
+    Iterable<ProfileSlot> values,
+    String profileId,
+  ) {
     final valuesById = {for (final slot in values) slot.id: slot};
-    return _profileSlotCatalog().map((catalogSlot) {
+    final catalogIds = _profileSlotCatalog().map((slot) => slot.id).toSet();
+    final catalogSlots = _profileSlotCatalog().map((catalogSlot) {
       final valueSlot = valuesById[catalogSlot.id];
-      final value = valueSlot?.value;
-      if (value == null || value.trim().isEmpty) {
+      if (valueSlot == null) {
         return catalogSlot;
       }
-      return catalogSlot.copyWith(value: value, locked: false, unlockHint: '');
+      return _profileSlotFromPersisted(valueSlot, profileId, base: catalogSlot);
     }).toList();
+    final customSlots = values
+        .where((slot) => slot.custom && !catalogIds.contains(slot.id))
+        .map((slot) => _profileSlotFromPersisted(slot, profileId))
+        .toList();
+    return [...catalogSlots, ...customSlots];
+  }
+
+  ProfileSlot _profileSlotFromPersisted(
+    ProfileSlot persisted,
+    String profileId, {
+    ProfileSlot? base,
+  }) {
+    final custom = persisted.custom;
+    final template = base ?? persisted;
+    return ProfileSlot(
+      id: persisted.id,
+      label: custom ? persisted.label : template.label,
+      icon: custom ? persisted.icon : template.icon,
+      category: custom ? persisted.category : template.category,
+      inputHint: custom ? persisted.inputHint : template.inputHint,
+      value: persisted.hidden ? null : persisted.value,
+      locked: false,
+      unlockHint: '',
+      skipped: persisted.hidden ? false : persisted.skipped,
+      hidden: persisted.hidden,
+      custom: custom,
+      updatedAt: persisted.updatedAt,
+      updatedByProfileId: persisted.updatedByProfileId ?? profileId,
+    );
   }
 
   RelationshipInsight _buildRealInsight() {
@@ -2582,6 +3000,19 @@ class AlagagiController extends ChangeNotifier {
     unawaited(
       repository
           .saveProfileSlot(spaceId, _state.me.id, slot)
+          .catchError((_) {}),
+    );
+  }
+
+  void _persistDeletedProfileSlot(String slotId) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      return;
+    }
+    unawaited(
+      repository
+          .deleteProfileSlot(spaceId, _state.me.id, slotId)
           .catchError((_) {}),
     );
   }
@@ -3231,7 +3662,7 @@ class AlagagiController extends ChangeNotifier {
   ProfileSlot? get todayFillableProfileSlot {
     final myCard = _profileCards.firstWhere((card) => card.profile.isMe);
     for (final slot in myCard.slots) {
-      if (slot.value == null) {
+      if (slot.value == null && !slot.skipped && !slot.hidden) {
         return slot;
       }
     }
@@ -3556,8 +3987,9 @@ class AlagagiController extends ChangeNotifier {
   }
 
   void goTo(AlagagiRoute route) {
-    if (route == AlagagiRoute.music) {
-      _markMusicNotesSeen();
+    final feature = _unreadFeatureForRoute(route);
+    if (feature != null) {
+      _markFeatureSeen(feature);
     }
     _state = _state.copyWith(
       route: route,
@@ -3567,6 +3999,19 @@ class AlagagiController extends ChangeNotifier {
       clearAnswerSaveFeedback: route == AlagagiRoute.answer,
     );
     notifyListeners();
+  }
+
+  void openUnreadActivity(UnreadActivity activity) {
+    if (activity.feature == UnreadActivityFeature.profileCard) {
+      _state = _state.copyWith(profileCardTab: ProfileCardTab.partner);
+    } else if (activity.feature == UnreadActivityFeature.stocks) {
+      _state = _state.copyWith(
+        stockStoryTab: activity.id.startsWith('stock-holding-')
+            ? StockStoryTab.holdings
+            : StockStoryTab.stories,
+      );
+    }
+    goTo(activity.route);
   }
 
   void completeFirstVisitGuide() {
@@ -3612,25 +4057,64 @@ class AlagagiController extends ChangeNotifier {
   }
 
   void _markMusicNotesSeen() {
+    _markFeatureSeen(UnreadActivityFeature.music);
+  }
+
+  void _markFeatureSeen(UnreadActivityFeature feature) {
     final spaceId = _spaceId;
     if (spaceId == null) {
       return;
     }
-    final latestTimestamp = _latestMusicNoteTimestamp();
-    if (latestTimestamp == null) {
-      return;
-    }
-    _musicNoteSeenStore.writeLastSeenMusicNoteAt(
+    final latestTimestamp = _latestFeatureTimestamp(feature) ?? DateTime.now();
+    _musicNoteSeenStore.writeLastSeenAt(
       spaceId,
       _state.me.id,
+      feature,
       latestTimestamp,
     );
   }
 
-  DateTime? _latestMusicNoteTimestamp() {
+  DateTime? _latestFeatureTimestamp(UnreadActivityFeature feature) {
+    return switch (feature) {
+      UnreadActivityFeature.profileCard => _latestProfileCardTimestamp(),
+      UnreadActivityFeature.wishlist => _latestTimestamp(
+        _wishes.map((wish) => wish.updatedAt),
+      ),
+      UnreadActivityFeature.meetings => _latestTimestamp(
+        _scheduleEntries.map((entry) => entry.updatedAt),
+      ),
+      UnreadActivityFeature.places => _latestTimestamp(
+        _sharedPlaces.map((place) => place.updatedAt),
+      ),
+      UnreadActivityFeature.curiosity => _latestTimestamp(
+        _curiosityCards.map((card) => card.updatedAt),
+      ),
+      UnreadActivityFeature.stocks => _latestTimestamp([
+        ..._stockStories.map((story) => story.updatedAt),
+        ..._stockHoldings.map((holding) => holding.updatedAt),
+      ]),
+      UnreadActivityFeature.music => _latestMusicNoteTimestamp(),
+      UnreadActivityFeature.improvements => _latestTimestamp(
+        _improvementPosts.map((post) => post.updatedAt),
+      ),
+    };
+  }
+
+  DateTime? _latestProfileCardTimestamp() {
+    final partnerCard = _profileCards.cast<ProfileCardData?>().firstWhere(
+      (card) => card?.profile.id == _state.partner.id,
+      orElse: () => null,
+    );
+    return _latestTimestamp(
+      (partnerCard?.slots ?? const <ProfileSlot>[])
+          .where((slot) => !slot.hidden && slot.value != null)
+          .map((slot) => slot.updatedAt),
+    );
+  }
+
+  DateTime? _latestTimestamp(Iterable<DateTime?> timestamps) {
     DateTime? latest;
-    for (final note in _musicNotes) {
-      final updatedAt = note.updatedAt;
+    for (final updatedAt in timestamps) {
       if (updatedAt == null) {
         continue;
       }
@@ -3639,6 +4123,23 @@ class AlagagiController extends ChangeNotifier {
       }
     }
     return latest;
+  }
+
+  DateTime? _latestMusicNoteTimestamp() {
+    return _latestTimestamp(_musicNotes.map((note) => note.updatedAt));
+  }
+
+  UnreadActivityFeature? _unreadFeatureForRoute(AlagagiRoute route) {
+    return switch (route) {
+      AlagagiRoute.profileCard => UnreadActivityFeature.profileCard,
+      AlagagiRoute.wishlist => UnreadActivityFeature.wishlist,
+      AlagagiRoute.meetings => UnreadActivityFeature.meetings,
+      AlagagiRoute.places => UnreadActivityFeature.places,
+      AlagagiRoute.stockStory => UnreadActivityFeature.stocks,
+      AlagagiRoute.music => UnreadActivityFeature.music,
+      AlagagiRoute.improvements => UnreadActivityFeature.improvements,
+      _ => null,
+    };
   }
 
   int? _parseMeetingTimeInput(String value) {
@@ -4335,6 +4836,9 @@ class AlagagiController extends ChangeNotifier {
           value: trimmed,
           locked: false,
           unlockHint: '',
+          skipped: false,
+          updatedAt: DateTime.now(),
+          updatedByProfileId: _state.me.id,
         );
         return filledSlot!;
       }
@@ -4351,6 +4855,138 @@ class AlagagiController extends ChangeNotifier {
 
   void saveProfileSlot(String slotId, String value) {
     fillProfileSlot(slotId, value);
+  }
+
+  String? addCustomProfileSlot({
+    required String title,
+    required String value,
+    required String category,
+  }) {
+    final trimmedTitle = title.trim();
+    final trimmedValue = value.trim();
+    final normalizedCategory =
+        const {'취향', '하루', '대화', '함께', '직접'}.contains(category)
+        ? category
+        : '직접';
+    if (trimmedTitle.length < 2) {
+      return '카드 제목은 두 글자 이상 남겨주세요.';
+    }
+    if (trimmedTitle.length > 32) {
+      return '카드 제목은 32자 안으로 남겨주세요.';
+    }
+    if (trimmedValue.isEmpty) {
+      return '소개 내용을 한 줄이라도 남겨주세요.';
+    }
+    if (trimmedValue.length > 120) {
+      return '소개 내용은 120자 안으로 남겨주세요.';
+    }
+
+    final cardIndex = _profileCards.indexWhere((card) => card.profile.isMe);
+    if (cardIndex == -1) {
+      return '내 카드를 찾지 못했어요.';
+    }
+    final now = DateTime.now();
+    final slot = ProfileSlot(
+      id: 'custom_${_state.me.id}_${now.microsecondsSinceEpoch}',
+      label: trimmedTitle,
+      icon: 'custom',
+      category: normalizedCategory,
+      inputHint: '직접 추가한 소개 카드',
+      value: trimmedValue,
+      custom: true,
+      updatedAt: now,
+      updatedByProfileId: _state.me.id,
+    );
+    final card = _profileCards[cardIndex];
+    _profileCards[cardIndex] = card.copyWith(slots: [slot, ...card.slots]);
+    _persistProfileSlot(slot);
+    _state = _state.copyWith(profileCardTab: ProfileCardTab.me);
+    notifyListeners();
+    return null;
+  }
+
+  void skipProfileSlot(String slotId) {
+    _updateMyProfileSlot(
+      slotId,
+      (slot) => slot.copyWith(
+        clearValue: slot.value == null,
+        skipped: true,
+        updatedAt: DateTime.now(),
+        updatedByProfileId: _state.me.id,
+      ),
+    );
+  }
+
+  void hideProfileSlot(String slotId) {
+    _updateMyProfileSlot(
+      slotId,
+      (slot) => slot.copyWith(
+        clearValue: true,
+        skipped: false,
+        hidden: true,
+        updatedAt: DateTime.now(),
+        updatedByProfileId: _state.me.id,
+      ),
+    );
+  }
+
+  void restoreProfileSlot(String slotId) {
+    _updateMyProfileSlot(
+      slotId,
+      (slot) => slot.copyWith(
+        skipped: false,
+        hidden: false,
+        updatedAt: DateTime.now(),
+        updatedByProfileId: _state.me.id,
+      ),
+    );
+  }
+
+  void deleteCustomProfileSlot(String slotId) {
+    final cardIndex = _profileCards.indexWhere((card) => card.profile.isMe);
+    if (cardIndex == -1) {
+      return;
+    }
+    final card = _profileCards[cardIndex];
+    final slot = card.slots.cast<ProfileSlot?>().firstWhere(
+      (candidate) => candidate?.id == slotId,
+      orElse: () => null,
+    );
+    if (slot == null || !slot.custom) {
+      return;
+    }
+    _profileCards[cardIndex] = card.copyWith(
+      slots: card.slots.where((candidate) => candidate.id != slotId).toList(),
+    );
+    _persistDeletedProfileSlot(slotId);
+    _state = _state.copyWith(profileCardTab: ProfileCardTab.me);
+    notifyListeners();
+  }
+
+  void _updateMyProfileSlot(
+    String slotId,
+    ProfileSlot Function(ProfileSlot slot) update,
+  ) {
+    final cardIndex = _profileCards.indexWhere((card) => card.profile.isMe);
+    if (cardIndex == -1) {
+      return;
+    }
+    final card = _profileCards[cardIndex];
+    ProfileSlot? updatedSlot;
+    final slots = card.slots.map((slot) {
+      if (slot.id != slotId) {
+        return slot;
+      }
+      updatedSlot = update(slot);
+      return updatedSlot!;
+    }).toList();
+    if (updatedSlot == null) {
+      return;
+    }
+    _profileCards[cardIndex] = card.copyWith(slots: slots);
+    _persistProfileSlot(updatedSlot!);
+    _state = _state.copyWith(profileCardTab: ProfileCardTab.me);
+    notifyListeners();
   }
 
   void setWishlistFilter(WishlistFilter filter) {
@@ -4402,13 +5038,16 @@ class AlagagiController extends ChangeNotifier {
       return;
     }
 
+    final now = DateTime.now();
     final wish = WishItem(
-      id: 'wish_${_state.me.id}_${DateTime.now().microsecondsSinceEpoch}',
+      id: 'wish_${_state.me.id}_${now.microsecondsSinceEpoch}',
       icon: _wishIconFor(_state.wishDraftKind),
       title: title,
       kind: _state.wishDraftKind,
       createdByProfileId: _state.me.id,
       likedByProfileIds: {_state.me.id},
+      updatedAt: now,
+      updatedByProfileId: _state.me.id,
     );
     _wishes.insert(0, wish);
     _persistWish(wish);
@@ -4440,7 +5079,11 @@ class AlagagiController extends ChangeNotifier {
       return;
     }
     likedBy.add(_state.me.id);
-    final updatedWish = wish.copyWith(likedByProfileIds: likedBy);
+    final updatedWish = wish.copyWith(
+      likedByProfileIds: likedBy,
+      updatedAt: DateTime.now(),
+      updatedByProfileId: _state.me.id,
+    );
     _wishes[index] = updatedWish;
     _persistWish(updatedWish);
     notifyListeners();
@@ -4760,6 +5403,7 @@ class AlagagiController extends ChangeNotifier {
       question: question,
       createdLabel: '오늘',
       updatedAt: now,
+      updatedByProfileId: _state.me.id,
     );
     _curiosityCards.insert(0, card);
     _sortCuriosityCardsByUpdatedAt();
@@ -4823,6 +5467,7 @@ class AlagagiController extends ChangeNotifier {
       reply: reply,
       repliedLabel: card.repliedLabel ?? '오늘',
       updatedAt: DateTime.now(),
+      updatedByProfileId: _state.me.id,
     );
     _curiosityCards[index] = updatedCard;
     _sortCuriosityCardsByUpdatedAt();
@@ -5549,6 +6194,7 @@ class AlagagiController extends ChangeNotifier {
             createdByProfileId: _state.me.id,
             interestedByProfileIds: {_state.me.id},
             updatedAt: now,
+            updatedByProfileId: _state.me.id,
           )
         : canChangePlaceContent
         ? existingPlace.copyWith(
@@ -5561,6 +6207,7 @@ class AlagagiController extends ChangeNotifier {
             longitude: _state.placeDraftLongitude,
             note: note,
             updatedAt: now,
+            updatedByProfileId: _state.me.id,
           )
         : existingPlace.copyWith(
             interestedByProfileIds: {
@@ -5568,6 +6215,7 @@ class AlagagiController extends ChangeNotifier {
               _state.me.id,
             },
             updatedAt: now,
+            updatedByProfileId: _state.me.id,
           );
     if (existingPlace == null) {
       _sharedPlaces.insert(0, place);
@@ -5615,6 +6263,7 @@ class AlagagiController extends ChangeNotifier {
     final updatedPlace = place.copyWith(
       interestedByProfileIds: interestedBy,
       updatedAt: DateTime.now(),
+      updatedByProfileId: _state.me.id,
     );
     _sharedPlaces[index] = updatedPlace;
     _sortSharedPlacesByUpdatedAt();
@@ -5647,6 +6296,7 @@ class AlagagiController extends ChangeNotifier {
           ? place.interestedByProfileIds
           : {...place.interestedByProfileIds, _state.me.id},
       updatedAt: DateTime.now(),
+      updatedByProfileId: _state.me.id,
     );
     _sharedPlaces[index] = updatedPlace;
     _sortSharedPlacesByUpdatedAt();
@@ -5828,6 +6478,7 @@ class AlagagiController extends ChangeNotifier {
       createdByProfileId: _state.me.id,
       createdLabel: '오늘',
       updatedAt: now,
+      updatedByProfileId: _state.me.id,
     );
     _stockStories.insert(0, story);
     _sortStockStoriesByUpdatedAt();
@@ -5914,6 +6565,7 @@ class AlagagiController extends ChangeNotifier {
       repliedByProfileId: _state.me.id,
       repliedLabel: '오늘',
       updatedAt: DateTime.now(),
+      updatedByProfileId: _state.me.id,
     );
     _stockStories[index] = updatedStory;
     _sortStockStoriesByUpdatedAt();
@@ -6106,6 +6758,7 @@ class AlagagiController extends ChangeNotifier {
         concern: concern,
         question: question,
         updatedAt: now,
+        updatedByProfileId: _state.me.id,
       );
       _stockHoldings[editingIndex] = holding;
     }
@@ -6255,6 +6908,7 @@ class AlagagiController extends ChangeNotifier {
       repliedByProfileId: _state.me.id,
       repliedLabel: '오늘',
       updatedAt: DateTime.now(),
+      updatedByProfileId: _state.me.id,
     );
     _stockHoldings[index] = updatedHolding;
     _sortStockHoldingsByUpdatedAt();

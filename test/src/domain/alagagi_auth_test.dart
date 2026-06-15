@@ -1020,6 +1020,242 @@ void main() {
       expect(controller.visibleWishes, isEmpty);
     });
 
+    test(
+      'custom profile cards can be saved, hidden, restored, and deleted',
+      () async {
+        final repository = RecordingAlagagiRepository();
+        final controller = AlagagiController.forSession(
+          firebaseTestSession,
+          repository: repository,
+        );
+
+        final addError = controller.addCustomProfileSlot(
+          title: '내가 편한 질문',
+          value: '천천히 대답할 수 있는 질문이 좋아요.',
+          category: '직접',
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(addError, isNull);
+        final customSlot = controller.myProfileCard.slots.first;
+        expect(customSlot.custom, isTrue);
+        expect(customSlot.label, '내가 편한 질문');
+        expect(repository.savedProfileSlots.last.slot.custom, isTrue);
+        expect(repository.savedProfileSlots.last.slot.value, contains('천천히'));
+
+        controller.hideProfileSlot('rest');
+        await Future<void>.delayed(Duration.zero);
+
+        final hiddenRest = controller.myProfileCard.slots.firstWhere(
+          (slot) => slot.id == 'rest',
+        );
+        expect(hiddenRest.hidden, isTrue);
+        expect(hiddenRest.value, isNull);
+        expect(controller.todayFillableProfileSlot?.id, isNot('rest'));
+        expect(repository.savedProfileSlots.last.slot.hidden, isTrue);
+
+        controller.restoreProfileSlot('rest');
+        await Future<void>.delayed(Duration.zero);
+
+        final restoredRest = controller.myProfileCard.slots.firstWhere(
+          (slot) => slot.id == 'rest',
+        );
+        expect(restoredRest.hidden, isFalse);
+
+        controller.deleteCustomProfileSlot(customSlot.id);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(
+          controller.myProfileCard.slots.where(
+            (slot) => slot.id == customSlot.id,
+          ),
+          isEmpty,
+        );
+        expect(repository.deletedProfileSlots.single.slotId, customSlot.id);
+      },
+    );
+
+    test('partner custom profile cards appear on the partner card', () {
+      final controller = AlagagiController.forSession(
+        firebaseSessionWithData(
+          AlagagiSpaceData(
+            profileSlots: [
+              ProfileSlotValue(
+                profileId: 'minyoungUid',
+                slot: ProfileSlot(
+                  id: 'custom_minyoung_1',
+                  label: '내가 만든 질문',
+                  icon: 'custom',
+                  category: '직접',
+                  inputHint: '직접 추가한 소개 카드',
+                  value: '이 질문이 더 편해서 직접 남겼어요.',
+                  custom: true,
+                  updatedAt: DateTime.parse('2026-06-09T10:00:00.000Z'),
+                  updatedByProfileId: 'minyoungUid',
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      final partnerCustomSlot = controller.activeProfileCard.slots.firstWhere(
+        (slot) => slot.id == 'custom_minyoung_1',
+      );
+
+      expect(partnerCustomSlot.custom, isTrue);
+      expect(partnerCustomSlot.label, '내가 만든 질문');
+      expect(partnerCustomSlot.value, contains('직접 남겼어요'));
+      expect(
+        controller.unreadCountForFeature(UnreadActivityFeature.profileCard),
+        1,
+      );
+    });
+
+    test('unread activities collect partner changes across features', () {
+      final seenStore = MemoryMusicNoteSeenStore()
+        ..writeLastSeenAt(
+          'main',
+          'youngwooUid',
+          UnreadActivityFeature.wishlist,
+          DateTime.parse('2026-06-09T08:00:00.000Z'),
+        );
+      final controller = AlagagiController.forSession(
+        firebaseSessionWithData(
+          AlagagiSpaceData(
+            profileSlots: [
+              ProfileSlotValue(
+                profileId: 'minyoungUid',
+                slot: ProfileSlot(
+                  id: 'food',
+                  label: '먹고 싶은 음식',
+                  icon: 'food',
+                  value: '따뜻한 국물',
+                  updatedAt: DateTime.parse('2026-06-09T10:00:00.000Z'),
+                  updatedByProfileId: 'minyoungUid',
+                ),
+              ),
+            ],
+            wishes: [
+              WishItem(
+                id: 'wish_partner',
+                icon: '✨',
+                title: '한강 산책',
+                kind: WishKind.activity,
+                createdByProfileId: 'minyoungUid',
+                likedByProfileIds: {'minyoungUid'},
+                updatedAt: DateTime.parse('2026-06-09T10:00:00.000Z'),
+                updatedByProfileId: 'minyoungUid',
+              ),
+              WishItem(
+                id: 'wish_mine',
+                icon: '✨',
+                title: '내가 누른 관심',
+                kind: WishKind.activity,
+                createdByProfileId: 'minyoungUid',
+                likedByProfileIds: {'minyoungUid', 'youngwooUid'},
+                updatedAt: DateTime.parse('2026-06-09T11:00:00.000Z'),
+                updatedByProfileId: 'youngwooUid',
+              ),
+            ],
+            scheduleEntries: [
+              ScheduleEntry(
+                dateKey: '2026-06-19',
+                profileId: 'minyoungUid',
+                availability: MeetingAvailability.available,
+                timeSlots: {MeetingTimeSlot.evening},
+                updatedAt: DateTime.parse('2026-06-09T10:05:00.000Z'),
+              ),
+            ],
+            sharedPlaces: [
+              SharedPlace(
+                id: 'place_partner',
+                name: '조용한 카페',
+                address: '서울',
+                category: PlaceCategory.cafe,
+                provider: MapApiProvider.kakao,
+                createdByProfileId: 'minyoungUid',
+                interestedByProfileIds: {'minyoungUid'},
+                updatedAt: DateTime.parse('2026-06-09T10:10:00.000Z'),
+                updatedByProfileId: 'minyoungUid',
+              ),
+            ],
+            stockStories: [
+              StockStory(
+                id: 'stock_partner',
+                name: 'NVDA',
+                reason: '같이 볼 흐름',
+                upside: '성장',
+                risk: '변동성',
+                question: '어떻게 볼까요?',
+                createdByProfileId: 'minyoungUid',
+                createdLabel: '오늘',
+                updatedAt: DateTime.parse('2026-06-09T10:20:00.000Z'),
+                updatedByProfileId: 'minyoungUid',
+              ),
+            ],
+            musicNotes: [
+              MusicNote(
+                id: 'music_partner',
+                title: '밤 산책',
+                artist: '민영',
+                link: '',
+                note: '',
+                mood: '밤',
+                createdByProfileId: 'minyoungUid',
+                createdLabel: '오늘',
+                updatedAt: DateTime.parse('2026-06-09T10:30:00.000Z'),
+              ),
+            ],
+            improvementPosts: [
+              ImprovementPost(
+                id: 'improvement_partner',
+                title: '새 기능',
+                body: '새 소식도 보여주세요.',
+                category: '추가 요청',
+                createdByProfileId: 'minyoungUid',
+                createdLabel: '오늘',
+                updatedAt: DateTime.parse('2026-06-09T10:40:00.000Z'),
+              ),
+            ],
+          ),
+        ),
+        musicNoteSeenStore: seenStore,
+      );
+
+      expect(
+        controller.unreadActivities.map((activity) => activity.feature).toSet(),
+        containsAll({
+          UnreadActivityFeature.profileCard,
+          UnreadActivityFeature.wishlist,
+          UnreadActivityFeature.meetings,
+          UnreadActivityFeature.places,
+          UnreadActivityFeature.stocks,
+          UnreadActivityFeature.music,
+          UnreadActivityFeature.improvements,
+        }),
+      );
+      expect(
+        controller.unreadCountForFeature(UnreadActivityFeature.wishlist),
+        1,
+      );
+
+      controller.goTo(AlagagiRoute.wishlist);
+
+      expect(
+        controller.unreadCountForFeature(UnreadActivityFeature.wishlist),
+        0,
+      );
+      expect(
+        seenStore.readLastSeenAt(
+          'main',
+          'youngwooUid',
+          UnreadActivityFeature.wishlist,
+        ),
+        DateTime.parse('2026-06-09T11:00:00.000Z'),
+      );
+    });
+
     test('answer draft changes do not call repository writes', () {
       final repository = RecordingAlagagiRepository();
       final controller = AlagagiController.forSession(
@@ -2188,6 +2424,8 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   savedBalanceSelections = [];
   final List<({String spaceId, String profileId, ProfileSlot slot})>
   savedProfileSlots = [];
+  final List<({String spaceId, String profileId, String slotId})>
+  deletedProfileSlots = [];
   final List<({String spaceId, WishItem wish})> savedWishes = [];
   final List<({String spaceId, MusicNote note})> savedMusicNotes = [];
   final List<({String spaceId, MusicNote note})> savedMusicListenStates = [];
@@ -2240,6 +2478,19 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
     ProfileSlot slot,
   ) async {
     savedProfileSlots.add((spaceId: spaceId, profileId: profileId, slot: slot));
+  }
+
+  @override
+  Future<void> deleteProfileSlot(
+    String spaceId,
+    String profileId,
+    String slotId,
+  ) async {
+    deletedProfileSlots.add((
+      spaceId: spaceId,
+      profileId: profileId,
+      slotId: slotId,
+    ));
   }
 
   @override

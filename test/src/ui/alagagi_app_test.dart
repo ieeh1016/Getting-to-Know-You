@@ -1760,6 +1760,125 @@ void main() {
     expect(find.text('취소될 문장'), findsNothing);
   });
 
+  testWidgets('profile card can skip and restore awkward prompts', (
+    tester,
+  ) async {
+    final controller = AlagagiController()
+      ..enterSpace('영우')
+      ..goTo(AlagagiRoute.profileCard)
+      ..setProfileCardTab(ProfileCardTab.me);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(controller.todayFillableProfileSlot?.id, 'rest');
+    expect(find.byKey(profileRecommendedSlotSkipButtonKey), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(profileRecommendedSlotSkipButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(profileRecommendedSlotSkipButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(controller.myProfileCard.skippedCount, 1);
+    expect(controller.todayFillableProfileSlot?.id, isNot('rest'));
+    expect(find.text('넘겨둠'), findsOneWidget);
+    expect(find.text('지금은 넘겨둔 질문이에요'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(profileSlotRestoreButtonKey('rest')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(profileSlotRestoreButtonKey('rest')));
+    await tester.pumpAndSettle();
+
+    expect(controller.myProfileCard.skippedCount, 0);
+    expect(controller.todayFillableProfileSlot?.id, 'rest');
+    expect(find.text('지금은 넘겨둔 질문이에요'), findsNothing);
+  });
+
+  testWidgets('profile card can add custom cards and hide default prompts', (
+    tester,
+  ) async {
+    final controller = AlagagiController()
+      ..enterSpace('영우')
+      ..goTo(AlagagiRoute.profileCard)
+      ..setProfileCardTab(ProfileCardTab.me);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(profileCustomCardAddButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(profileCustomCardAddButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(profileCustomCardPanelKey), findsOneWidget);
+    await tester.enterText(
+      find.byKey(profileCustomTitleFieldKey),
+      '나를 편하게 하는 질문',
+    );
+    await tester.enterText(
+      find.byKey(profileCustomBodyFieldKey),
+      '정답 없이 편하게 이야기할 수 있는 질문이 좋아요.',
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(profileCustomSubmitButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(profileCustomSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    final customSlot = controller.myProfileCard.slots.first;
+    expect(customSlot.custom, isTrue);
+    expect(customSlot.category, '직접');
+    expect(find.text('나를 편하게 하는 질문'), findsOneWidget);
+    expect(find.textContaining('정답 없이'), findsOneWidget);
+    expect(
+      find.byKey(profileSlotDeleteButtonKey(customSlot.id)),
+      findsOneWidget,
+    );
+
+    await tester.ensureVisible(find.byKey(profileSlotHideButtonKey('rest')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(profileSlotHideButtonKey('rest')));
+    await tester.pumpAndSettle();
+
+    expect(
+      controller.myProfileCard.slots
+          .firstWhere((slot) => slot.id == 'rest')
+          .hidden,
+      isTrue,
+    );
+    expect(find.byKey(profileHiddenSlotsPanelKey), findsOneWidget);
+    expect(find.byKey(profileSlotCardKey('rest')), findsNothing);
+
+    await tester.ensureVisible(find.byKey(profileSlotRestoreButtonKey('rest')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(profileSlotRestoreButtonKey('rest')));
+    await tester.pumpAndSettle();
+
+    expect(
+      controller.myProfileCard.slots
+          .firstWhere((slot) => slot.id == 'rest')
+          .hidden,
+      isFalse,
+    );
+
+    await tester.ensureVisible(
+      find.byKey(profileSlotDeleteButtonKey(customSlot.id)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(profileSlotDeleteButtonKey(customSlot.id)));
+    await tester.pumpAndSettle();
+
+    expect(
+      controller.myProfileCard.slots.where((slot) => slot.id == customSlot.id),
+      isEmpty,
+    );
+    expect(find.text('나를 편하게 하는 질문'), findsNothing);
+  });
+
   testWidgets('partner profile card shows only filled read cards', (
     tester,
   ) async {
@@ -3112,6 +3231,13 @@ class _FailingSaveRepository implements AlagagiDataRepository {
     String spaceId,
     String profileId,
     ProfileSlot slot,
+  ) async {}
+
+  @override
+  Future<void> deleteProfileSlot(
+    String spaceId,
+    String profileId,
+    String slotId,
   ) async {}
 
   @override

@@ -225,11 +225,33 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           'id': slot.id,
           'label': slot.label,
           'icon': slot.icon,
+          'category': slot.category,
+          'inputHint': slot.inputHint,
           'value': slot.value,
           'locked': slot.locked,
           'unlockHint': slot.unlockHint,
+          'skipped': slot.skipped,
+          'hidden': slot.hidden,
+          'custom': slot.custom,
+          'updatedByProfileId': slot.updatedByProfileId ?? profileId,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> deleteProfileSlot(
+    String spaceId,
+    String profileId,
+    String slotId,
+  ) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('profileCards')
+        .doc(profileId)
+        .collection('slots')
+        .doc(slotId)
+        .delete();
   }
 
   @override
@@ -250,6 +272,8 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           },
           'likedByProfileIds': wish.likedByProfileIds.toList(),
           'done': wish.done,
+          'updatedByProfileId':
+              wish.updatedByProfileId ?? wish.createdByProfileId,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
   }
@@ -326,6 +350,8 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           'createdByProfileId': place.createdByProfileId,
           'interestedByProfileIds': place.interestedByProfileIds.toList(),
           'linkedDateKey': place.linkedDateKey ?? '',
+          'updatedByProfileId':
+              place.updatedByProfileId ?? place.createdByProfileId,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
   }
@@ -355,6 +381,9 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           'reply': card.reply ?? '',
           'createdLabel': card.createdLabel,
           'repliedLabel': card.repliedLabel ?? '',
+          'updatedByProfileId':
+              card.updatedByProfileId ??
+              (card.hasReply ? card.toProfileId : card.fromProfileId),
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
   }
@@ -380,6 +409,10 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           'reply': story.reply ?? '',
           'repliedByProfileId': story.repliedByProfileId ?? '',
           'repliedLabel': story.repliedLabel ?? '',
+          'updatedByProfileId':
+              story.updatedByProfileId ??
+              story.repliedByProfileId ??
+              story.createdByProfileId,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
   }
@@ -407,6 +440,10 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           'reply': holding.reply ?? '',
           'repliedByProfileId': holding.repliedByProfileId ?? '',
           'repliedLabel': holding.repliedLabel ?? '',
+          'updatedByProfileId':
+              holding.updatedByProfileId ??
+              holding.repliedByProfileId ??
+              holding.createdByProfileId,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
   }
@@ -624,9 +661,16 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       id: _readString(data, 'id') ?? fallbackId,
       label: label,
       icon: _readString(data, 'icon') ?? '🌿',
+      category: _readString(data, 'category') ?? '취향',
+      inputHint: _readString(data, 'inputHint') ?? '편한 만큼 적어두기',
       value: _readString(data, 'value'),
       locked: data['locked'] == true,
       unlockHint: _readString(data, 'unlockHint'),
+      skipped: data['skipped'] == true,
+      hidden: data['hidden'] == true,
+      custom: data['custom'] == true,
+      updatedAt: _readDateTime(data, 'updatedAt'),
+      updatedByProfileId: _readString(data, 'updatedByProfileId'),
     );
   }
 
@@ -654,6 +698,8 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           (likedBy.isEmpty ? '' : likedBy.first),
       likedByProfileIds: likedBy,
       done: data['done'] == true,
+      updatedAt: _readDateTime(data, 'updatedAt'),
+      updatedByProfileId: _readString(data, 'updatedByProfileId'),
     );
   }
 
@@ -741,6 +787,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       ).toSet(),
       linkedDateKey: _readString(data, 'linkedDateKey'),
       updatedAt: _readDateTime(data, 'updatedAt'),
+      updatedByProfileId: _readString(data, 'updatedByProfileId'),
     );
   }
 
@@ -763,6 +810,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       reply: _readString(data, 'reply'),
       repliedLabel: _readString(data, 'repliedLabel'),
       updatedAt: _readDateTime(data, 'updatedAt'),
+      updatedByProfileId: _readString(data, 'updatedByProfileId'),
     );
   }
 
@@ -798,6 +846,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       repliedByProfileId: _readString(data, 'repliedByProfileId'),
       repliedLabel: _readString(data, 'repliedLabel'),
       updatedAt: _readDateTime(data, 'updatedAt'),
+      updatedByProfileId: _readString(data, 'updatedByProfileId'),
     );
   }
 
@@ -839,6 +888,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       repliedByProfileId: _readString(data, 'repliedByProfileId'),
       repliedLabel: _readString(data, 'repliedLabel'),
       updatedAt: _readDateTime(data, 'updatedAt'),
+      updatedByProfileId: _readString(data, 'updatedByProfileId'),
     );
   }
 

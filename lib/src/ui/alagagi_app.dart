@@ -68,6 +68,8 @@ Key placeInterestButtonKey(String placeId) =>
 Key placeEditButtonKey(String placeId) => Key('place-edit-button-$placeId');
 Key placeDeleteButtonKey(String placeId) => Key('place-delete-button-$placeId');
 const placeRetryButtonKey = Key('place-retry-button');
+const unreadActivityPanelKey = Key('unread-activity-panel');
+const unreadActivityClearButtonKey = Key('unread-activity-clear-button');
 const homeProgressSummaryKey = Key('home-progress-summary');
 const homeProgressSummaryCtaKey = Key('home-progress-summary-cta');
 const editAnswerButtonKey = Key('edit-answer-button');
@@ -180,7 +182,17 @@ const archiveCalendarNextButtonKey = Key('archive-calendar-next');
 const archiveCalendarTodayButtonKey = Key('archive-calendar-today');
 const lateAnswerButtonKey = Key('late-answer-button');
 const profileRecommendedSlotButtonKey = Key('profile-recommended-slot-button');
+const profileRecommendedSlotSkipButtonKey = Key(
+  'profile-recommended-slot-skip-button',
+);
 const profileEditorPanelKey = Key('profile-editor-panel');
+const profileCustomCardAddButtonKey = Key('profile-custom-card-add-button');
+const profileCustomCardPanelKey = Key('profile-custom-card-panel');
+const profileCustomTitleFieldKey = Key('profile-custom-title-field');
+const profileCustomBodyFieldKey = Key('profile-custom-body-field');
+const profileCustomSubmitButtonKey = Key('profile-custom-submit-button');
+const profileCustomCancelButtonKey = Key('profile-custom-cancel-button');
+const profileHiddenSlotsPanelKey = Key('profile-hidden-slots-panel');
 
 Key archiveCalendarDayButtonKey(String dateKey) =>
     Key('archive-calendar-day-$dateKey');
@@ -207,6 +219,19 @@ Key profileSlotSaveButtonKey(String slotId) => Key('profile-slot-save-$slotId');
 
 Key profileSlotCancelButtonKey(String slotId) =>
     Key('profile-slot-cancel-$slotId');
+
+Key profileSlotSkipButtonKey(String slotId) => Key('profile-slot-skip-$slotId');
+
+Key profileSlotRestoreButtonKey(String slotId) =>
+    Key('profile-slot-restore-$slotId');
+
+Key profileSlotHideButtonKey(String slotId) => Key('profile-slot-hide-$slotId');
+
+Key profileSlotDeleteButtonKey(String slotId) =>
+    Key('profile-slot-delete-$slotId');
+
+Key profileCustomCategoryChipKey(String category) =>
+    Key('profile-custom-category-$category');
 
 const _longAnswerPreviewLength = 120;
 const _compactReadablePreviewLength = 64;
@@ -1306,6 +1331,7 @@ class HomeScreen extends StatelessWidget {
         _HomeHeader(controller: controller),
         const SizedBox(height: 18),
         _ProgressStrip(controller: controller),
+        _UnreadActivityPanel(controller: controller),
         const SizedBox(height: 22),
         const _SectionLabel('오늘의 질문'),
         const SizedBox(height: 12),
@@ -1321,6 +1347,176 @@ class HomeScreen extends StatelessWidget {
         const SizedBox(height: 12),
         _PlusGrid(controller: controller),
       ],
+    );
+  }
+}
+
+class _UnreadActivityPanel extends StatelessWidget {
+  const _UnreadActivityPanel({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final activities = controller.unreadActivities;
+    if (activities.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final visibleActivities = activities.take(3).toList();
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Container(
+        key: unreadActivityPanelKey,
+        decoration: BoxDecoration(
+          color: const Color(0xFFFAFAF5),
+          border: Border.all(color: const Color(0x338A9A7E)),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: AlagagiColors.softSage,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.notifications_none_rounded,
+                    size: 16,
+                    color: AlagagiColors.sageDeep,
+                  ),
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    '새로 도착한 것',
+                    style: sans(
+                      size: 13.5,
+                      weight: FontWeight.w800,
+                      color: const Color(0xFF3F403B),
+                    ),
+                  ),
+                ),
+                TextButton(
+                  key: unreadActivityClearButtonKey,
+                  onPressed: controller.markAllUnreadActivitiesSeen,
+                  style: TextButton.styleFrom(
+                    foregroundColor: AlagagiColors.muted,
+                    visualDensity: VisualDensity.compact,
+                    textStyle: sans(size: 11.5, weight: FontWeight.w800),
+                  ),
+                  child: const Text('모두 확인'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            for (var index = 0; index < visibleActivities.length; index++) ...[
+              _UnreadActivityRow(
+                activity: visibleActivities[index],
+                onTap: () =>
+                    _openUnreadActivity(context, visibleActivities[index]),
+              ),
+              if (index != visibleActivities.length - 1)
+                const Divider(height: 14, color: AlagagiColors.line),
+            ],
+            if (activities.length > visibleActivities.length) ...[
+              const SizedBox(height: 8),
+              Text(
+                '외 ${activities.length - visibleActivities.length}개 더 있어요.',
+                style: sans(size: 11.5, color: AlagagiColors.muted),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openUnreadActivity(BuildContext context, UnreadActivity activity) {
+    if (activity.feature == UnreadActivityFeature.curiosity) {
+      controller.markFeatureSeen(UnreadActivityFeature.curiosity);
+      _showCuriosityMenuSheet(context, controller);
+      return;
+    }
+    controller.openUnreadActivity(activity);
+  }
+}
+
+class _UnreadActivityRow extends StatelessWidget {
+  const _UnreadActivityRow({required this.activity, required this.onTap});
+
+  final UnreadActivity activity;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          child: Row(
+            children: [
+              _TinyUnreadDot(),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      activity.feature.label,
+                      style: sans(
+                        size: 11.2,
+                        weight: FontWeight.w800,
+                        color: AlagagiColors.sageDeep,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      activity.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: sans(
+                        size: 12.4,
+                        height: 1.45,
+                        color: const Color(0xFF4D4C47),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: AlagagiColors.muted,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TinyUnreadDot extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: const BoxDecoration(
+        color: AlagagiColors.sageDeep,
+        shape: BoxShape.circle,
+      ),
     );
   }
 }
@@ -1716,8 +1912,12 @@ void _showHomeMenuSheet(BuildContext context, AlagagiController controller) {
                   icon: Icons.question_answer_outlined,
                   title: '궁금함 한 장',
                   subtitle: '상대에게 짧게 물어보기',
+                  badgeCount: controller.unreadCountForFeature(
+                    UnreadActivityFeature.curiosity,
+                  ),
                   onTap: () {
                     Navigator.of(sheetContext).pop();
+                    controller.markFeatureSeen(UnreadActivityFeature.curiosity);
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       _showCuriosityMenuSheet(context, controller);
                     });
@@ -1729,6 +1929,9 @@ void _showHomeMenuSheet(BuildContext context, AlagagiController controller) {
                   icon: Icons.bar_chart_rounded,
                   title: '주식 이야기',
                   subtitle: '관심 종목과 걱정 포인트를 함께 보기',
+                  badgeCount: controller.unreadCountForFeature(
+                    UnreadActivityFeature.stocks,
+                  ),
                   onTap: () {
                     Navigator.of(sheetContext).pop();
                     controller.goTo(AlagagiRoute.stockStory);
@@ -1740,6 +1943,9 @@ void _showHomeMenuSheet(BuildContext context, AlagagiController controller) {
                   icon: Icons.rate_review_outlined,
                   title: '건의함',
                   subtitle: '개선 아이디어와 추가 요청 남기기',
+                  badgeCount: controller.unreadCountForFeature(
+                    UnreadActivityFeature.improvements,
+                  ),
                   onTap: () {
                     Navigator.of(sheetContext).pop();
                     controller.goTo(AlagagiRoute.improvements);
@@ -1762,9 +1968,19 @@ void _showHomeMenuSheet(BuildContext context, AlagagiController controller) {
                   icon: Icons.badge_outlined,
                   title: '소개 카드',
                   subtitle: '취향과 대화 방식을 편한 만큼 채우기',
+                  badgeCount: controller.unreadCountForFeature(
+                    UnreadActivityFeature.profileCard,
+                  ),
                   onTap: () {
                     Navigator.of(sheetContext).pop();
-                    controller.setProfileCardTab(ProfileCardTab.me);
+                    if (controller.unreadCountForFeature(
+                          UnreadActivityFeature.profileCard,
+                        ) >
+                        0) {
+                      controller.setProfileCardTab(ProfileCardTab.partner);
+                    } else {
+                      controller.setProfileCardTab(ProfileCardTab.me);
+                    }
                     controller.goTo(AlagagiRoute.profileCard);
                   },
                 ),
@@ -1774,6 +1990,9 @@ void _showHomeMenuSheet(BuildContext context, AlagagiController controller) {
                   icon: Icons.bookmark_add_outlined,
                   title: '언젠가, 같이',
                   subtitle: '같이 해보고 싶은 일을 조용히 담기',
+                  badgeCount: controller.unreadCountForFeature(
+                    UnreadActivityFeature.wishlist,
+                  ),
                   onTap: () {
                     Navigator.of(sheetContext).pop();
                     controller.goTo(AlagagiRoute.wishlist);
@@ -1808,6 +2027,7 @@ class _HomeMenuRow extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.badgeCount = 0,
   });
 
   final Key rowKey;
@@ -1815,6 +2035,7 @@ class _HomeMenuRow extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -1870,6 +2091,10 @@ class _HomeMenuRow extends StatelessWidget {
                   ],
                 ),
               ),
+              if (badgeCount > 0) ...[
+                const SizedBox(width: 8),
+                _UnreadCountBadge(count: badgeCount),
+              ],
               const Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
@@ -1878,6 +2103,30 @@ class _HomeMenuRow extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _UnreadCountBadge extends StatelessWidget {
+  const _UnreadCountBadge({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 22,
+      constraints: const BoxConstraints(minWidth: 22),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: const Color(0xFFB18472),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 7),
+      child: Text(
+        count > 9 ? '9+' : '$count',
+        style: sans(size: 10.5, weight: FontWeight.w900, color: Colors.white),
       ),
     );
   }
@@ -6671,6 +6920,7 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
   String? _editingSlotId;
   String _slotDraft = '';
   String _selectedCategory = '전체';
+  bool _customCardDraftVisible = false;
 
   AlagagiController get controller => widget.controller;
 
@@ -6698,6 +6948,43 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
       _editingSlotId = null;
       _slotDraft = '';
     });
+  }
+
+  void _skipSlot(ProfileSlot slot) {
+    controller.skipProfileSlot(slot.id);
+    if (_editingSlotId == slot.id) {
+      _cancelEditing();
+    }
+  }
+
+  void _hideSlot(ProfileSlot slot) {
+    controller.hideProfileSlot(slot.id);
+    if (_editingSlotId == slot.id) {
+      _cancelEditing();
+    }
+  }
+
+  void _restoreSlot(ProfileSlot slot) {
+    controller.restoreProfileSlot(slot.id);
+  }
+
+  void _deleteSlot(ProfileSlot slot) {
+    controller.deleteCustomProfileSlot(slot.id);
+    if (_editingSlotId == slot.id) {
+      _cancelEditing();
+    }
+  }
+
+  String? _saveCustomCard(String title, String body, String category) {
+    final error = controller.addCustomProfileSlot(
+      title: title,
+      value: body,
+      category: category,
+    );
+    if (error == null) {
+      setState(() => _customCardDraftVisible = false);
+    }
+    return error;
   }
 
   void _selectCategory(String category) {
@@ -6755,6 +7042,21 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
         _ProfileSummaryCard(card: card),
         const SizedBox(height: 16),
         if (isMine) ...[
+          _ProfileCustomCardEntry(
+            customCount: card.customCount,
+            onTap: () {
+              _cancelEditing();
+              setState(() => _customCardDraftVisible = true);
+            },
+          ),
+          if (_customCardDraftVisible) ...[
+            const SizedBox(height: 12),
+            _ProfileCustomCardPanel(
+              onSave: _saveCustomCard,
+              onCancel: () => setState(() => _customCardDraftVisible = false),
+            ),
+          ],
+          const SizedBox(height: 16),
           _ProfileCategoryChips(
             selectedCategory: _selectedCategory,
             onSelected: _selectCategory,
@@ -6763,6 +7065,7 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
           _ProfileRecommendCard(
             slot: _recommendedSlot(card),
             onUse: _startEditing,
+            onSkip: _skipSlot,
           ),
           if (selectedSlot != null) ...[
             const SizedBox(height: 14),
@@ -6778,14 +7081,25 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
           _ProfileSectionHeader(
             title: _selectedCategory == '전체' ? '카드팩' : '$_selectedCategory 카드',
             meta:
-                '${_filteredSlots(card.slots).where((slot) => slot.value == null).length}개 비어 있음',
+                '${_filteredSlots(card.slots).where((slot) => slot.value == null && !slot.skipped).length}개 남음 · ${_filteredSlots(card.slots).where((slot) => slot.skipped).length}개 넘김',
           ),
           const SizedBox(height: 10),
           _ProfileSlotGrid(
             slots: _filteredSlots(card.slots),
             editingSlotId: _editingSlotId,
             onEdit: _startEditing,
+            onSkip: _skipSlot,
+            onHide: _hideSlot,
+            onRestore: _restoreSlot,
+            onDelete: _deleteSlot,
           ),
+          if (_hiddenSlots(card.slots).isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _ProfileHiddenSlotsPanel(
+              slots: _hiddenSlots(card.slots),
+              onRestore: _restoreSlot,
+            ),
+          ],
         ] else ...[
           _ProfileCategoryChips(
             selectedCategory: _selectedCategory,
@@ -6801,16 +7115,23 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
   }
 
   List<ProfileSlot> _filteredSlots(List<ProfileSlot> slots) {
+    final visibleSlots = slots.where((slot) => !slot.hidden);
     if (_selectedCategory == '전체') {
-      return slots;
+      return visibleSlots.toList();
     }
-    return slots.where((slot) => slot.category == _selectedCategory).toList();
+    return visibleSlots
+        .where((slot) => slot.category == _selectedCategory)
+        .toList();
+  }
+
+  List<ProfileSlot> _hiddenSlots(List<ProfileSlot> slots) {
+    return slots.where((slot) => slot.hidden && !slot.custom).toList();
   }
 
   ProfileSlot? _recommendedSlot(ProfileCardData card) {
     final filteredEmpty = _filteredSlots(
       card.slots,
-    ).where((slot) => slot.value == null).toList();
+    ).where((slot) => slot.value == null && !slot.skipped).toList();
     if (filteredEmpty.isNotEmpty) {
       return filteredEmpty.first;
     }
@@ -6828,7 +7149,7 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
 
   ProfileSlot? _firstEmptySlot(List<ProfileSlot> slots) {
     for (final slot in slots) {
-      if (slot.value == null) {
+      if (slot.value == null && !slot.skipped && !slot.hidden) {
         return slot;
       }
     }
@@ -6846,6 +7167,7 @@ class _ProfileSummaryCard extends StatelessWidget {
     final progress = card.totalCount == 0
         ? 0.0
         : card.filledCount / card.totalCount;
+    final hiddenMeta = card.hiddenCount > 0 ? ' · ${card.hiddenCount}개 숨김' : '';
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -6895,7 +7217,9 @@ class _ProfileSummaryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      card.profile.isMe ? '편한 만큼만 채워두기' : '채워진 답만 보여요',
+                      card.profile.isMe
+                          ? '${card.openCount}개 남음 · ${card.skippedCount}개 넘김$hiddenMeta'
+                          : '채워진 답만 보여요',
                       style: sans(size: 12, color: AlagagiColors.muted),
                     ),
                   ],
@@ -6935,11 +7259,324 @@ class _ProfileSummaryCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             card.profile.isMe
-                ? '다 채우지 않아도 괜찮아요. 지금 떠오르는 한 칸만 남겨도 충분합니다.'
+                ? '다 채우지 않아도 괜찮아요. 애매한 질문은 넘기고, 별로인 질문은 숨겨도 됩니다.'
                 : '아직 비어 있는 칸은 따로 재촉하지 않습니다. 올라온 답만 천천히 읽어요.',
             style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ProfileCustomCardEntry extends StatelessWidget {
+  const _ProfileCustomCardEntry({
+    required this.customCount,
+    required this.onTap,
+  });
+
+  final int customCount;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      key: profileCustomCardAddButtonKey,
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFFAFAF5),
+          border: Border.all(color: AlagagiColors.line),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        padding: const EdgeInsets.all(15),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: AlagagiColors.softSage,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.add_rounded,
+                size: 22,
+                color: AlagagiColors.sageDeep,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '내 카드 추가',
+                    style: sans(
+                      size: 13.5,
+                      color: const Color(0xFF45443F),
+                      weight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '직접 만든 질문과 답변을 상대 카드에도 공유해요',
+                    style: sans(size: 12, color: AlagagiColors.muted),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              height: 28,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: customCount > 0
+                    ? const Color(0xFFF0EDF4)
+                    : const Color(0xFFF8F8F4),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Text(
+                '$customCount개',
+                style: sans(
+                  size: 11.5,
+                  color: customCount > 0
+                      ? const Color(0xFF7D688F)
+                      : AlagagiColors.muted,
+                  weight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileCustomCardPanel extends StatefulWidget {
+  const _ProfileCustomCardPanel({required this.onSave, required this.onCancel});
+
+  final String? Function(String title, String body, String category) onSave;
+  final VoidCallback onCancel;
+
+  @override
+  State<_ProfileCustomCardPanel> createState() =>
+      _ProfileCustomCardPanelState();
+}
+
+class _ProfileCustomCardPanelState extends State<_ProfileCustomCardPanel> {
+  static const categories = ['직접', '취향', '하루', '대화', '함께'];
+
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _bodyController = TextEditingController();
+  String _selectedCategory = '직접';
+  String? _error;
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _bodyController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final error = widget.onSave(
+      _titleController.text,
+      _bodyController.text,
+      _selectedCategory,
+    );
+    if (error != null) {
+      setState(() => _error = error);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: profileCustomCardPanelKey,
+      decoration: BoxDecoration(
+        color: AlagagiColors.paper,
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 28,
+            offset: Offset(0, 14),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '직접 소개 카드 만들기',
+                  style: serif(context, size: 18, weight: FontWeight.w800),
+                ),
+              ),
+              IconButton(
+                key: profileCustomCancelButtonKey,
+                tooltip: '닫기',
+                onPressed: widget.onCancel,
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '정해진 질문이 애매할 때, 내가 더 편한 질문으로 소개를 남길 수 있어요.',
+            style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.55),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            key: profileCustomTitleFieldKey,
+            controller: _titleController,
+            maxLength: 32,
+            onChanged: (_) => setState(() => _error = null),
+            decoration: InputDecoration(
+              counterText: '',
+              hintText: '예: 요즘 내가 자주 하는 생각',
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: AlagagiColors.line),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: AlagagiColors.line),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: AlagagiColors.sageDeep),
+              ),
+            ),
+            style: sans(size: 13.5),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            key: profileCustomBodyFieldKey,
+            controller: _bodyController,
+            maxLength: 120,
+            minLines: 4,
+            maxLines: 6,
+            onChanged: (_) => setState(() => _error = null),
+            decoration: InputDecoration(
+              counterText: '',
+              hintText: '내가 공유하고 싶은 답변을 편하게 적어주세요',
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: AlagagiColors.line),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: AlagagiColors.line),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: AlagagiColors.sageDeep),
+              ),
+            ),
+            style: sans(size: 13.5, height: 1.65),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final category in categories)
+                _ProfileCustomCategoryChip(
+                  category: category,
+                  selected: _selectedCategory == category,
+                  onTap: () => setState(() {
+                    _selectedCategory = category;
+                    _error = null;
+                  }),
+                ),
+            ],
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              _error!,
+              style: sans(
+                size: 12,
+                color: const Color(0xFFB3605C),
+                weight: FontWeight.w700,
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              key: profileCustomSubmitButtonKey,
+              onPressed: _submit,
+              icon: const Icon(Icons.check_rounded, size: 18),
+              label: const Text('카드 추가'),
+              style: ElevatedButton.styleFrom(
+                elevation: 0,
+                backgroundColor: AlagagiColors.sageDeep,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                textStyle: sans(size: 13.5, weight: FontWeight.w700),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileCustomCategoryChip extends StatelessWidget {
+  const _ProfileCustomCategoryChip({
+    required this.category,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String category;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      key: profileCustomCategoryChipKey(category),
+      borderRadius: BorderRadius.circular(999),
+      onTap: onTap,
+      child: Container(
+        height: 32,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? AlagagiColors.softSage : const Color(0xFFF8F8F4),
+          border: Border.all(
+            color: selected ? const Color(0x338A9A7E) : AlagagiColors.line,
+          ),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 11),
+        child: Text(
+          category,
+          style: sans(
+            size: 12,
+            color: selected ? AlagagiColors.sageDeep : AlagagiColors.muted,
+            weight: FontWeight.w700,
+          ),
+        ),
       ),
     );
   }
@@ -6954,7 +7591,7 @@ class _ProfileCategoryChips extends StatelessWidget {
   final String selectedCategory;
   final ValueChanged<String> onSelected;
 
-  static const categories = ['전체', '취향', '하루', '대화', '함께'];
+  static const categories = ['전체', '취향', '하루', '대화', '함께', '직접'];
 
   @override
   Widget build(BuildContext context) {
@@ -7031,10 +7668,15 @@ class _ProfileCategoryChip extends StatelessWidget {
 }
 
 class _ProfileRecommendCard extends StatelessWidget {
-  const _ProfileRecommendCard({required this.slot, required this.onUse});
+  const _ProfileRecommendCard({
+    required this.slot,
+    required this.onUse,
+    required this.onSkip,
+  });
 
   final ProfileSlot? slot;
   final ValueChanged<ProfileSlot> onUse;
+  final ValueChanged<ProfileSlot> onSkip;
 
   @override
   Widget build(BuildContext context) {
@@ -7081,26 +7723,45 @@ class _ProfileRecommendCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 13),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              key: profileRecommendedSlotButtonKey,
-              onPressed: () => onUse(slot),
-              icon: const Icon(Icons.add_rounded, size: 16),
-              label: const Text('이 질문 쓰기'),
-              style: TextButton.styleFrom(
-                backgroundColor: AlagagiColors.sageDeep,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              TextButton.icon(
+                key: profileRecommendedSlotButtonKey,
+                onPressed: () => onUse(slot),
+                icon: const Icon(Icons.add_rounded, size: 16),
+                label: const Text('이 질문 쓰기'),
+                style: TextButton.styleFrom(
+                  backgroundColor: AlagagiColors.sageDeep,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 13,
+                    vertical: 10,
+                  ),
+                  textStyle: sans(size: 12, weight: FontWeight.w700),
                 ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 13,
-                  vertical: 10,
-                ),
-                textStyle: sans(size: 12, weight: FontWeight.w700),
               ),
-            ),
+              TextButton(
+                key: profileRecommendedSlotSkipButtonKey,
+                onPressed: () => onSkip(slot),
+                style: TextButton.styleFrom(
+                  foregroundColor: AlagagiColors.muted,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  textStyle: sans(size: 12, weight: FontWeight.w700),
+                ),
+                child: const Text('오늘은 넘기기'),
+              ),
+            ],
           ),
         ],
       ),
@@ -7380,11 +8041,19 @@ class _ProfileSlotGrid extends StatelessWidget {
     required this.slots,
     required this.editingSlotId,
     required this.onEdit,
+    required this.onSkip,
+    required this.onHide,
+    required this.onRestore,
+    required this.onDelete,
   });
 
   final List<ProfileSlot> slots;
   final String? editingSlotId;
   final ValueChanged<ProfileSlot> onEdit;
+  final ValueChanged<ProfileSlot> onSkip;
+  final ValueChanged<ProfileSlot> onHide;
+  final ValueChanged<ProfileSlot> onRestore;
+  final ValueChanged<ProfileSlot> onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -7405,6 +8074,10 @@ class _ProfileSlotGrid extends StatelessWidget {
                   slot: slot,
                   selected: editingSlotId == slot.id,
                   onEdit: () => onEdit(slot),
+                  onSkip: () => onSkip(slot),
+                  onHide: () => onHide(slot),
+                  onRestore: () => onRestore(slot),
+                  onDelete: () => onDelete(slot),
                 ),
               ),
           ],
@@ -7414,20 +8087,98 @@ class _ProfileSlotGrid extends StatelessWidget {
   }
 }
 
+class _ProfileHiddenSlotsPanel extends StatelessWidget {
+  const _ProfileHiddenSlotsPanel({
+    required this.slots,
+    required this.onRestore,
+  });
+
+  final List<ProfileSlot> slots;
+  final ValueChanged<ProfileSlot> onRestore;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: profileHiddenSlotsPanelKey,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAFAF5),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      padding: const EdgeInsets.all(15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '숨긴 질문',
+            style: sans(
+              size: 13,
+              color: const Color(0xFF45443F),
+              weight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '기본 질문은 삭제 대신 숨겨두고, 필요하면 다시 꺼낼 수 있어요.',
+            style: sans(size: 12, color: AlagagiColors.muted, height: 1.5),
+          ),
+          const SizedBox(height: 10),
+          for (final slot in slots) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    slot.label,
+                    style: sans(
+                      size: 12.5,
+                      color: const Color(0xFF45443F),
+                      weight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  key: profileSlotRestoreButtonKey(slot.id),
+                  onPressed: () => onRestore(slot),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AlagagiColors.sageDeep,
+                    textStyle: sans(size: 12, weight: FontWeight.w700),
+                  ),
+                  child: const Text('다시 보기'),
+                ),
+              ],
+            ),
+            if (slot != slots.last)
+              const Divider(height: 14, color: AlagagiColors.line),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _ProfileSlotCard extends StatelessWidget {
   const _ProfileSlotCard({
     required this.slot,
     required this.selected,
     required this.onEdit,
+    required this.onSkip,
+    required this.onHide,
+    required this.onRestore,
+    required this.onDelete,
   });
 
   final ProfileSlot slot;
   final bool selected;
   final VoidCallback onEdit;
+  final VoidCallback onSkip;
+  final VoidCallback onHide;
+  final VoidCallback onRestore;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final filled = slot.value != null;
+    final skipped = slot.skipped && !filled;
     void openFull() => _showReadableDetailSheet(
       context,
       label: '소개 카드',
@@ -7439,11 +8190,11 @@ class _ProfileSlotCard extends StatelessWidget {
     return InkWell(
       key: profileSlotCardKey(slot.id),
       borderRadius: BorderRadius.circular(20),
-      onTap: onEdit,
+      onTap: skipped ? onRestore : onEdit,
       child: Container(
         constraints: const BoxConstraints(minHeight: 134),
         decoration: BoxDecoration(
-          color: AlagagiColors.paper,
+          color: skipped ? const Color(0xFFF8F8F4) : AlagagiColors.paper,
           border: Border.all(
             color: selected ? AlagagiColors.sageDeep : AlagagiColors.line,
           ),
@@ -7476,16 +8227,24 @@ class _ProfileSlotCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: filled
                         ? const Color(0xFFF0EDF4)
+                        : skipped
+                        ? const Color(0xFFECEAE2)
                         : const Color(0xFFF8F8F4),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Text(
-                    filled ? '작성됨' : '비어 있음',
+                    filled
+                        ? '작성됨'
+                        : skipped
+                        ? '넘겨둠'
+                        : '비어 있음',
                     style: sans(
                       size: 10.5,
                       color: filled
                           ? const Color(0xFF7D688F)
+                          : skipped
+                          ? const Color(0xFF8A8175)
                           : AlagagiColors.muted,
                       weight: FontWeight.w700,
                     ),
@@ -7505,7 +8264,11 @@ class _ProfileSlotCard extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              filled ? slot.value! : '아직 비어 있어요',
+              filled
+                  ? slot.value!
+                  : skipped
+                  ? '지금은 넘겨둔 질문이에요'
+                  : '아직 비어 있어요',
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style:
@@ -7520,13 +8283,40 @@ class _ProfileSlotCard extends StatelessWidget {
                   ),
             ),
             const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: _InlineTextAction(
-                key: profileSlotEditButtonKey(slot.id),
-                label: filled ? '수정' : '작성',
-                onPressed: onEdit,
-              ),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                _InlineTextAction(
+                  key: skipped
+                      ? profileSlotRestoreButtonKey(slot.id)
+                      : profileSlotEditButtonKey(slot.id),
+                  label: skipped
+                      ? '다시 보기'
+                      : filled
+                      ? '수정'
+                      : '작성',
+                  onPressed: skipped ? onRestore : onEdit,
+                ),
+                if (slot.custom)
+                  _InlineTextAction(
+                    key: profileSlotDeleteButtonKey(slot.id),
+                    label: '삭제',
+                    onPressed: onDelete,
+                  )
+                else
+                  _InlineTextAction(
+                    key: profileSlotHideButtonKey(slot.id),
+                    label: '숨기기',
+                    onPressed: onHide,
+                  ),
+                if (!filled && !skipped)
+                  _InlineTextAction(
+                    key: profileSlotSkipButtonKey(slot.id),
+                    label: '나중에',
+                    onPressed: onSkip,
+                  ),
+              ],
             ),
           ],
         ),
@@ -14886,7 +15676,11 @@ class _BottomNav extends StatelessWidget {
               icon: Icons.music_note_outlined,
               label: '음악',
               selected: controller.state.route == AlagagiRoute.music,
-              showBadge: controller.hasNewPartnerMusicNotes,
+              showBadge:
+                  controller.unreadCountForFeature(
+                    UnreadActivityFeature.music,
+                  ) >
+                  0,
               onTap: () => controller.goTo(AlagagiRoute.music),
             ),
           ),
@@ -14895,6 +15689,11 @@ class _BottomNav extends StatelessWidget {
               icon: Icons.event_available_outlined,
               label: '약속',
               selected: controller.state.route == AlagagiRoute.meetings,
+              showBadge:
+                  controller.unreadCountForFeature(
+                    UnreadActivityFeature.meetings,
+                  ) >
+                  0,
               onTap: () => controller.goTo(AlagagiRoute.meetings),
             ),
           ),
@@ -14903,6 +15702,11 @@ class _BottomNav extends StatelessWidget {
               icon: Icons.place_outlined,
               label: '장소',
               selected: controller.state.route == AlagagiRoute.places,
+              showBadge:
+                  controller.unreadCountForFeature(
+                    UnreadActivityFeature.places,
+                  ) >
+                  0,
               onTap: () => controller.goTo(AlagagiRoute.places),
             ),
           ),
