@@ -179,11 +179,13 @@ class BalanceSelection {
     required this.questionId,
     required this.profileId,
     required this.optionId,
+    this.reason,
   });
 
   final String questionId;
   final String profileId;
   final String optionId;
+  final String? reason;
 }
 
 class ProfileSlotValue {
@@ -2174,6 +2176,8 @@ class AlagagiController extends ChangeNotifier {
   final Map<String, AnswerComment> _answerCommentsByKey = {};
   final Map<String, String> _balanceSelections = {};
   final Map<String, String> _partnerBalanceSelections = {};
+  final Map<String, String> _balanceReasons = {};
+  final Map<String, String> _partnerBalanceReasons = {};
   final List<ProfileCardData> _profileCards = [];
   final List<WishItem> _wishes = [];
   final List<MusicNote> _musicNotes = [];
@@ -2708,11 +2712,21 @@ class AlagagiController extends ChangeNotifier {
 
     _balanceSelections.clear();
     _partnerBalanceSelections.clear();
+    _balanceReasons.clear();
+    _partnerBalanceReasons.clear();
     for (final selection in data.balanceSelections) {
       if (selection.profileId == _state.me.id) {
         _balanceSelections[selection.questionId] = selection.optionId;
+        final reason = selection.reason;
+        if (reason != null && reason.isNotEmpty) {
+          _balanceReasons[selection.questionId] = reason;
+        }
       } else if (selection.profileId == _state.partner.id) {
         _partnerBalanceSelections[selection.questionId] = selection.optionId;
+        final reason = selection.reason;
+        if (reason != null && reason.isNotEmpty) {
+          _partnerBalanceReasons[selection.questionId] = reason;
+        }
       }
     }
 
@@ -3696,8 +3710,39 @@ class AlagagiController extends ChangeNotifier {
       _balanceSelections[activeBalanceQuestion.id];
 
   String? get activePartnerBalanceSelection {
-    return _partnerBalanceSelections[activeBalanceQuestion.id] ??
-        (_usesDemoData ? activeBalanceQuestion.partnerChoiceId : null);
+    return partnerBalanceSelectionFor(activeBalanceQuestion);
+  }
+
+  String? get activeBalanceReason => balanceReasonFor(activeBalanceQuestion);
+
+  String? balanceSelectionFor(BalanceQuestion question) {
+    return _balanceSelections[question.id];
+  }
+
+  String? partnerBalanceSelectionFor(BalanceQuestion question) {
+    return _partnerBalanceSelections[question.id] ??
+        (_usesDemoData ? question.partnerChoiceId : null);
+  }
+
+  String? balanceReasonFor(BalanceQuestion question) {
+    return _balanceReasons[question.id];
+  }
+
+  String? partnerBalanceReasonFor(BalanceQuestion question) {
+    return _partnerBalanceReasons[question.id];
+  }
+
+  int get balanceCompletedCount {
+    return balanceQuestions
+        .where((question) => _balanceSelections.containsKey(question.id))
+        .length;
+  }
+
+  int get balanceResolvedCount {
+    return balanceQuestions.where((question) {
+      return _balanceSelections.containsKey(question.id) &&
+          partnerBalanceSelectionFor(question) != null;
+    }).length;
   }
 
   ProfileSlot? get todayFillableProfileSlot {
@@ -4890,9 +4935,36 @@ class AlagagiController extends ChangeNotifier {
       questionId: question.id,
       profileId: _state.me.id,
       optionId: optionId,
+      reason: _balanceReasons[question.id],
     );
     _balanceSelections[question.id] = optionId;
     _persistBalanceSelection(selection);
+    notifyListeners();
+  }
+
+  void saveBalanceReason(String value) {
+    final question = activeBalanceQuestion;
+    final optionId = _balanceSelections[question.id];
+    if (optionId == null) {
+      return;
+    }
+    final reason = value.trim();
+    if (reason.length > 80) {
+      throw ArgumentError.value(value, 'value', '80자 안으로 남겨주세요.');
+    }
+    if (reason.isEmpty) {
+      _balanceReasons.remove(question.id);
+    } else {
+      _balanceReasons[question.id] = reason;
+    }
+    _persistBalanceSelection(
+      BalanceSelection(
+        questionId: question.id,
+        profileId: _state.me.id,
+        optionId: optionId,
+        reason: reason.isEmpty ? null : reason,
+      ),
+    );
     notifyListeners();
   }
 

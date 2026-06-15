@@ -2003,12 +2003,12 @@ void main() {
     await tester.drag(find.byType(Scrollable), const Offset(0, -600));
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.text('밸런스 게임'));
+    await tester.ensureVisible(find.text('취향 매치'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('밸런스 게임'));
+    await tester.tap(find.text('취향 매치'));
     await tester.pumpAndSettle();
     expect(find.byKey(balanceDeckKey), findsOneWidget);
-    expect(find.text('짧게 고르고,\n나중에 이야기로 이어져요'), findsOneWidget);
+    expect(find.text('둘 중 하나만 골라도\n취향 기록이 쌓여요'), findsOneWidget);
     expect(find.textContaining('궁합'), findsNothing);
     expect(find.textContaining('%'), findsNothing);
     expect(find.textContaining('점수'), findsNothing);
@@ -2057,9 +2057,9 @@ void main() {
 
     await tester.drag(find.byType(Scrollable), const Offset(0, -600));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('밸런스 게임'));
+    await tester.ensureVisible(find.text('취향 매치'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('밸런스 게임'));
+    await tester.tap(find.text('취향 매치'));
     await tester.pumpAndSettle();
 
     final beforeSelection = tester.widget<FilledButton>(
@@ -2067,11 +2067,21 @@ void main() {
     );
     expect(beforeSelection.onPressed, isNull);
 
+    await tester.ensureVisible(find.text('조용한 바다'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('조용한 바다'));
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.byKey(balanceReasonFieldKey));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(balanceReasonFieldKey), '조용한 바다가 끌려요');
+    await tester.tap(find.byKey(balanceReasonSaveButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('조용한 바다가 끌려요'), findsWidgets);
+
     final afterSelection = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, '다음 질문'),
+      find.widgetWithText(FilledButton, '다음 취향'),
     );
     expect(afterSelection.onPressed, isNotNull);
   });
@@ -2106,7 +2116,7 @@ void main() {
     expect(backIcon.color, const Color(0xFF656D5E));
 
     final titleStyles = tester
-        .widgetList<Text>(find.text('밸런스 게임'))
+        .widgetList<Text>(find.text('취향 매치'))
         .map((text) => text.style)
         .where((style) => style?.fontSize == 18);
     expect(titleStyles, isNotEmpty);

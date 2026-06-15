@@ -217,7 +217,7 @@ If the app grows, bottom navigation may become:
 - 전체 보기/닫기/scroll은 Firestore read/write를 만들지 않는 local UI interaction이다.
 - 적용 대상은 홈 오늘의 질문 답변/댓글, 질문함 선택/기록 답변, 마이 최근 내 흔적, 음악 노트, 소개 카드 읽기 preview다.
 - 소개 카드처럼 작은 타일이 반복되는 화면은 텍스트형 전체 보기 action 대신 우상단 icon affordance를 사용한다.
-- 밸런스 게임처럼 긴 자유 입력이 없는 기능은 이 패턴의 필수 적용 대상이 아니다.
+- 취향 매치처럼 긴 자유 입력이 없는 기능은 이 패턴의 필수 적용 대상이 아니다.
 
 ### MVP v0.15 Brand Identity
 
@@ -232,7 +232,7 @@ If the app grows, bottom navigation may become:
 
 - 홈 header는 단순 텍스트 제목 대신 작은 새싹 표식, `조금씩` 한글 워드마크, `천천히 알아가는 기록` 보조 문구로 앱 브랜드를 보여준다.
 - 홈의 핵심 시선은 `Today's Question` 카드에 남겨두고, 추가 기능은 질문 카드 아래의 작은 `궁금함` 상태 카드로만 진입시킨다.
-- 홈 header menu는 `기능 모아보기` 역할을 하며 `궁금함 한 장`, `주식 이야기`, `건의함`, `밸런스 게임`, `소개 카드`, `언젠가, 같이`, `처음 안내`로 바로 이동할 수 있다.
+- 홈 header menu는 `기능 모아보기` 역할을 하며 `궁금함 한 장`, `주식 이야기`, `건의함`, `취향 매치`, `소개 카드`, `언젠가, 같이`, `처음 안내`로 바로 이동할 수 있다.
 - `궁금함` 상태 카드는 받은 질문, 보낸 질문, 답장 완료 상태를 낮은 압력의 문구로 요약한다.
 - `궁금함` 상태 카드를 누르면 bottom sheet가 열리고, 받은 질문 답장 입력, 내가 보낸 질문 상태, 새 질문 작성 흐름을 보여준다.
 - 질문 작성과 답장 저장은 사용자가 명시적으로 `질문 보내기` 또는 `답장 저장하기`를 눌렀을 때만 `spaces/{spaceId}/curiosityCards/{cardId}`에 기록한다.
@@ -305,7 +305,7 @@ If the app grows, bottom navigation may become:
 - 오늘은 패스
 - 질문함 목록
 - 알아간 기록 화면
-- 밸런스 게임 1세트
+- 취향 매치 1세트
 - 소개 카드 화면
 - 언젠가 같이 위시리스트 화면
 - 로컬 메모리 상태 기반 화면 전환
@@ -356,7 +356,7 @@ If the app grows, bottom navigation may become:
 - 오늘의 질문은 실제 질문 카탈로그에서 날짜/순번/depth 기준으로 선택한다.
 - 아카이브는 실제 저장된 답변/패스만 보여준다.
 - 알아간 기록은 실제 답변 수, 함께 답한 수, 겹치는 키워드 기반으로 계산한다.
-- 밸런스 게임은 실제 선택 전에는 상대 선택을 노출하지 않는다.
+- 취향 매치는 실제 선택 전에는 상대 선택을 노출하지 않는다.
 - 소개 카드는 실제 작성한 슬롯만 채워진 상태로 보여준다.
 - 위시리스트는 실제 추가/관심 표시/완료 데이터만 보여준다.
 
@@ -1179,7 +1179,7 @@ Acceptance Criteria:
 - 타임라인은 최신순으로 표시된다.
 - 기록이 없으면 빈 상태 문구를 보여준다.
 
-### 10.6 Balance Game Screen
+### 10.6 Taste Match Screen
 
 Reference: `balance.html`, `docs/design/wishlist_balance_redesign.html`
 
@@ -1191,11 +1191,11 @@ Purpose:
 
 Required UI:
 
-- Header: `밸런스 게임`
+- Header: `취향 매치`
 - Progress: `{current} / {total}`
 - Hero copy:
   - `짧게 고르고, 나중에 이야기로 이어져요`
-  - `정답을 맞히는 게임보다 취향의 방향을 남기는 작은 카드 덱이에요.`
+  - `둘 중 하나만 골라도 취향 기록이 쌓여요.`
 - Deck card:
   - `QUESTION {current}`
   - category chip or short label
@@ -1234,8 +1234,8 @@ Acceptance Criteria:
 - 결과 문장은 `궁합`, `%`, `점수`, `완벽` 같은 과한 호환성 표현을 사용하지 않는다.
 - 같은 선택은 가벼운 취향 힌트로, 다른 선택은 대화거리로 설명한다.
 - 밸런스 선택 저장은 기존처럼 해당 question/user selection document 1개 write 이하로 유지한다.
-- 선택 전에는 `다음 질문` CTA가 강한 primary 상태로 보이지 않으며, 먼저 하나를 고르도록 안내한다.
-- 다음 질문을 누르면 다음 밸런스 질문으로 이동한다.
+- 선택 전에는 `다음 취향` CTA가 강한 primary 상태로 보이지 않으며, 먼저 하나를 고르도록 안내한다.
+- 다음 취향을 누르면 다음 취향 매치 질문으로 이동한다.
 - 마지막 질문에서 완료를 누르면 첫 질문으로 순환하지 않고 홈으로 돌아간다.
 
 ### 10.7 Profile Card Screen

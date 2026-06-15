@@ -204,9 +204,11 @@ void main() {
       await tester.pumpAndSettle();
       await tester.drag(find.byType(Scrollable), const Offset(0, -700));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('밸런스 게임'));
+      await tester.ensureVisible(find.text('취향 매치'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('밸런스 게임'));
+      await tester.tap(find.text('취향 매치'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('조용한 바다'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('조용한 바다'));
       await tester.pumpAndSettle();
@@ -216,6 +218,8 @@ void main() {
       );
       expect(find.textContaining('민영님은'), findsNothing);
 
+      await tester.ensureVisible(find.byKey(subScreenBackButtonKey));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(subScreenBackButtonKey));
       await tester.pumpAndSettle();
       await tester.drag(find.byType(Scrollable), const Offset(0, -700));

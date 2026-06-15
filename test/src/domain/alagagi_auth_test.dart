@@ -984,6 +984,35 @@ void main() {
       expect(controller.activeBalanceQuestion.id, 'b008');
     });
 
+    test('balance reason is saved with my selection', () async {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        firebaseTestSession,
+        repository: repository,
+      );
+
+      controller.selectBalanceOption('sea');
+      repository.savedBalanceSelections.clear();
+
+      controller.saveBalanceReason('조용한 곳이 더 끌려요');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.activeBalanceReason, '조용한 곳이 더 끌려요');
+      expect(repository.savedBalanceSelections, hasLength(1));
+      expect(
+        repository.savedBalanceSelections.single.selection.questionId,
+        'b001',
+      );
+      expect(
+        repository.savedBalanceSelections.single.selection.optionId,
+        'sea',
+      );
+      expect(
+        repository.savedBalanceSelections.single.selection.reason,
+        '조용한 곳이 더 끌려요',
+      );
+    });
+
     test('wish draft creates and saves my wish', () {
       final repository = RecordingAlagagiRepository();
       final controller = AlagagiController.forSession(

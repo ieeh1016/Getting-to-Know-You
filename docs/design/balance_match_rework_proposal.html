@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>조금씩 · 밸런스 게임 전면 개편 기안</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --outer:#e8e7e0;
+    --bg:#f4f3ef;
+    --paper:#fcfcfa;
+    --ink:#2f2f2b;
+    --text:#4b4943;
+    --muted:#8d887e;
+    --line:#e5e1d8;
+    --soft:#f8f8f4;
+    --sage:#8a9a7e;
+    --sage-deep:#637458;
+    --sage-soft:#edf3e8;
+    --gold:#c7ab63;
+    --gold-soft:#f8efd9;
+    --clay:#b18472;
+    --clay-soft:#f7ebe6;
+    --lav:#9d90b1;
+    --lav-soft:#f0edf5;
+    --blue:#7894a4;
+    --blue-soft:#e7eef2;
+    --rose:#bd8f96;
+    --rose-soft:#f7e9ea;
+    --shadow:0 26px 70px rgba(60,58,50,.15);
+  }
+  body{
+    min-height:100vh;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0) 380px),
+      var(--outer);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Noto Sans KR","Apple SD Gothic Neo",sans-serif;
+    font-weight:400;
+    padding:38px 18px 64px;
+  }
+  h1,h2,h3,h4{font-family:Georgia,"Times New Roman","Nanum Myeongjo",serif;font-weight:700;letter-spacing:0}
+  button,input,textarea{font:inherit}
+  button{border:0;background:none}
+  .wrap{max-width:1260px;margin:0 auto}
+  .page-title{max-width:880px;margin:0 auto 30px;text-align:center}
+  .eyebrow{
+    display:block;
+    margin-bottom:8px;
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:2.4px;
+  }
+  .page-title h1{font-size:33px;line-height:1.34}
+  .page-title p{
+    margin:12px auto 0;
+    max-width:760px;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.75;
+  }
+  .decision{
+    max-width:1080px;
+    margin:0 auto 34px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+  }
+  .decision-card{
+    border:1px solid rgba(229,225,216,.95);
+    border-radius:22px;
+    background:rgba(252,252,250,.82);
+    padding:18px 19px;
+    box-shadow:0 14px 32px rgba(62,60,52,.045);
+  }
+  .decision-card strong{
+    display:inline-flex;
+    min-height:24px;
+    align-items:center;
+    padding:0 9px;
+    border-radius:999px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:800;
+    letter-spacing:1.3px;
+  }
+  .decision-card h2{margin-top:10px;font-size:18px;line-height:1.38}
+  .decision-card p{margin-top:8px;color:var(--muted);font-size:12.6px;line-height:1.72}
+  .section-head{
+    max-width:1120px;
+    margin:34px auto 18px;
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:22px;
+  }
+  .section-head h2{font-size:25px;line-height:1.35}
+  .section-head p{max-width:610px;color:var(--muted);font-size:13px;line-height:1.72}
+  .stage{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(276px,1fr));
+    gap:22px;
+    align-items:start;
+  }
+  .caption{margin:0 2px 12px}
+  .tag{
+    display:inline-flex;
+    min-height:23px;
+    align-items:center;
+    padding:0 9px;
+    border-radius:999px;
+    border:1px solid rgba(99,116,88,.22);
+    background:rgba(252,252,250,.88);
+    color:var(--sage-deep);
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:1.4px;
+  }
+  .caption h3{margin-top:8px;font-size:18.5px;line-height:1.35}
+  .caption p{margin-top:5px;color:var(--muted);font-size:12.2px;line-height:1.64}
+  .phone{
+    width:100%;
+    max-width:344px;
+    min-height:742px;
+    margin:0 auto;
+    position:relative;
+    overflow:hidden;
+    border:8px solid #fff;
+    border-radius:38px;
+    background:var(--bg);
+    box-shadow:var(--shadow);
+  }
+  .screen{padding:24px 22px 98px}
+  .topbar{min-height:42px;display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+  .circle{
+    width:38px;height:38px;border:1px solid var(--line);border-radius:50%;
+    background:rgba(252,252,250,.88);display:grid;place-items:center;color:var(--sage-deep);
+  }
+  .title{font-family:Georgia,"Times New Roman","Nanum Myeongjo",serif;font-size:20px;font-weight:700}
+  .icon{font-size:18px;line-height:1}
+  .hero{
+    border:1px solid var(--line);
+    border-radius:24px;
+    background:linear-gradient(145deg,#fcfcfa,#f2f5ee);
+    padding:17px 18px;
+    margin-bottom:13px;
+  }
+  .hero.dark{background:var(--ink);border-color:var(--ink);color:#fff}
+  .hero small{display:block;color:var(--sage-deep);font-size:10px;font-weight:800;letter-spacing:1.8px}
+  .hero.dark small{color:rgba(255,255,255,.62)}
+  .hero h4{margin-top:8px;font-size:22px;line-height:1.35}
+  .hero p{margin-top:7px;color:var(--muted);font-size:12px;line-height:1.6}
+  .hero.dark p{color:rgba(255,255,255,.72)}
+  .summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:13px}
+  .stat{
+    min-height:66px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:rgba(252,252,250,.9);
+    padding:10px;
+  }
+  .stat strong{display:block;font-size:18px;line-height:1.1}
+  .stat span{display:block;margin-top:6px;color:var(--muted);font-size:10.5px;line-height:1.3}
+  .card{
+    border:1px solid var(--line);
+    border-radius:22px;
+    background:rgba(252,252,250,.94);
+    padding:16px;
+    margin-bottom:12px;
+  }
+  .card.soft{background:var(--soft)}
+  .card.dark{background:var(--ink);border-color:var(--ink);color:#fff}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .pill{
+    display:inline-flex;align-items:center;justify-content:center;min-height:25px;
+    padding:0 9px;border-radius:999px;background:var(--sage-soft);
+    color:var(--sage-deep);font-size:10.5px;font-weight:800;white-space:nowrap;
+  }
+  .pill.gold{background:var(--gold-soft);color:#8d7131}
+  .pill.lav{background:var(--lav-soft);color:#726288}
+  .pill.clay{background:var(--clay-soft);color:#8f5f51}
+  .pill.blue{background:var(--blue-soft);color:#5f7888}
+  .pill.dark{background:rgba(255,255,255,.14);color:rgba(255,255,255,.86)}
+  .match-card{
+    border:1px solid var(--line);
+    border-radius:24px;
+    background:rgba(252,252,250,.96);
+    padding:17px;
+    margin-bottom:12px;
+  }
+  .match-card h4{font-size:21px;line-height:1.38}
+  .match-card p{margin-top:7px;color:var(--muted);font-size:12px;line-height:1.58}
+  .choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  .choice{
+    min-height:146px;
+    border:1px solid var(--line);
+    border-radius:22px;
+    background:#fff;
+    padding:14px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+  }
+  .choice.selected{
+    border-color:rgba(99,116,88,.48);
+    background:linear-gradient(150deg,#edf3e8,#fcfcfa);
+    box-shadow:0 10px 22px rgba(99,116,88,.12);
+  }
+  .choice.other{
+    border-color:rgba(199,171,99,.52);
+    background:linear-gradient(150deg,#fff5d9,#fcfcfa);
+  }
+  .choice-icon{
+    width:42px;height:42px;border-radius:16px;display:grid;place-items:center;
+    background:var(--sage-soft);font-size:20px;
+  }
+  .choice.other .choice-icon{background:var(--gold-soft)}
+  .choice b{display:block;margin-top:10px;font-size:15px;line-height:1.35}
+  .choice span{display:block;margin-top:6px;color:var(--muted);font-size:10.8px;line-height:1.45}
+  .lock-note{
+    margin-top:12px;
+    border:1px dashed rgba(141,136,126,.35);
+    border-radius:18px;
+    background:rgba(248,248,244,.7);
+    padding:12px;
+    color:var(--muted);
+    font-size:11.8px;
+    line-height:1.55;
+  }
+  .reason{
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:#fff;
+    padding:13px;
+    margin-top:12px;
+  }
+  .reason label{display:block;color:var(--muted);font-size:10.5px;font-weight:800;letter-spacing:1.1px}
+  .reason div{margin-top:8px;color:var(--text);font-size:12px;line-height:1.55}
+  .primary{
+    height:46px;
+    width:100%;
+    border-radius:16px;
+    background:var(--ink);
+    color:#fff;
+    font-size:13px;
+    font-weight:800;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-top:12px;
+  }
+  .secondary{
+    height:42px;
+    border:1px solid var(--line);
+    border-radius:15px;
+    background:#fff;
+    color:var(--text);
+    font-size:12px;
+    font-weight:800;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .result-band{
+    border-radius:24px;
+    padding:18px;
+    margin-bottom:12px;
+    color:#fff;
+    background:
+      radial-gradient(circle at 20% 20%,rgba(225,199,122,.32),transparent 28%),
+      linear-gradient(145deg,#2f2f2b,#45423a);
+  }
+  .result-band small{display:block;color:rgba(255,255,255,.68);font-size:10px;font-weight:800;letter-spacing:1.8px}
+  .result-band h4{margin-top:8px;font-size:22px;line-height:1.35}
+  .result-band p{margin-top:8px;color:rgba(255,255,255,.74);font-size:12px;line-height:1.62}
+  .profile-picks{display:grid;gap:9px;margin:13px 0}
+  .pick-row{
+    border:1px solid rgba(255,255,255,.16);
+    border-radius:18px;
+    background:rgba(255,255,255,.08);
+    padding:12px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .avatar{
+    width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+    background:#fff;color:var(--sage-deep);font-size:17px;flex:0 0 auto;
+  }
+  .pick-row b{display:block;font-size:12.5px}
+  .pick-row span{display:block;margin-top:2px;color:rgba(255,255,255,.72);font-size:11px}
+  .bridge-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+  .bridge{
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:#fff;
+    min-height:84px;
+    padding:12px;
+  }
+  .bridge strong{display:block;font-size:13px;line-height:1.3}
+  .bridge span{display:block;margin-top:7px;color:var(--muted);font-size:10.8px;line-height:1.45}
+  .history-list{display:grid;gap:9px}
+  .history{
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:#fff;
+    padding:13px;
+  }
+  .history .meta{display:flex;justify-content:space-between;gap:8px;margin-bottom:8px}
+  .history h5{font-family:Georgia,"Times New Roman","Nanum Myeongjo",serif;font-size:15.5px;line-height:1.35}
+  .history p{margin-top:6px;color:var(--muted);font-size:11px;line-height:1.5}
+  .tabbar{
+    position:absolute;left:0;right:0;bottom:0;height:76px;
+    background:rgba(252,252,250,.95);
+    border-top:1px solid var(--line);
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    padding:8px 14px 10px;
+  }
+  .tab{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:4px;color:var(--muted);font-size:10px;font-weight:700;
+  }
+  .tab.active{color:var(--ink)}
+  .tab .tab-icon{font-size:17px}
+  .tab.active::after{
+    content:"";
+    width:17px;height:3px;border-radius:999px;background:var(--sage-deep);
+  }
+  .proposal-grid{
+    max-width:1120px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns:1.1fr .9fr;
+    gap:18px;
+  }
+  .proposal{
+    border:1px solid rgba(229,225,216,.95);
+    border-radius:24px;
+    background:rgba(252,252,250,.84);
+    padding:22px;
+    box-shadow:0 14px 32px rgba(62,60,52,.045);
+  }
+  .proposal h3{font-size:22px;line-height:1.35}
+  .proposal p{margin-top:9px;color:var(--muted);font-size:13px;line-height:1.72}
+  .proposal ul{margin-top:14px;display:grid;gap:9px;list-style:none}
+  .proposal li{
+    position:relative;
+    padding-left:18px;
+    color:var(--text);
+    font-size:12.8px;
+    line-height:1.62;
+  }
+  .proposal li::before{
+    content:"";
+    position:absolute;
+    left:0;top:.72em;
+    width:6px;height:6px;border-radius:50%;
+    background:var(--sage);
+  }
+  .model-table{width:100%;border-collapse:collapse;margin-top:14px;font-size:12px;line-height:1.45}
+  .model-table th,.model-table td{border-top:1px solid var(--line);padding:10px 0;text-align:left;vertical-align:top}
+  .model-table th{width:34%;color:var(--sage-deep);font-weight:800}
+  .phase-list{counter-reset:phase;display:grid;gap:10px;margin-top:14px}
+  .phase{
+    counter-increment:phase;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:#fff;
+    padding:13px;
+  }
+  .phase strong{display:flex;align-items:center;gap:8px;font-size:13px}
+  .phase strong::before{
+    content:counter(phase);
+    width:22px;height:22px;border-radius:50%;
+    background:var(--ink);color:#fff;
+    display:grid;place-items:center;font-size:11px;
+  }
+  .phase span{display:block;margin-top:7px;color:var(--muted);font-size:11.8px;line-height:1.58}
+  .copy-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+  .copy-card{
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:#fff;
+    padding:14px;
+  }
+  .copy-card strong{display:block;color:var(--sage-deep);font-size:11px;font-weight:800}
+  .copy-card p{margin-top:7px;color:var(--text);font-size:12.3px;line-height:1.55}
+  @media(max-width:1180px){
+    .stage{grid-template-columns:repeat(2,minmax(280px,1fr))}
+    .decision{grid-template-columns:repeat(2,1fr)}
+  }
+  @media(max-width:760px){
+    body{padding:28px 14px 44px}
+    .page-title h1{font-size:27px}
+    .decision,.stage,.proposal-grid,.copy-grid{grid-template-columns:1fr}
+    .section-head{display:block}
+    .section-head p{margin-top:8px}
+  }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="page-title">
+      <span class="eyebrow">BALANCE GAME REWORK</span>
+      <h1>밸런스 게임을<br>“취향 매치”로 전면 개편하는 기안</h1>
+      <p>
+        지금의 밸런스 게임은 선택 이후의 보상이 약해서 사용 이유가 흐립니다.
+        전면 개편 방향은 단순 A/B 선택이 아니라, 서로의 선택을 열어보고 이유를 남기며
+        장소·만남·음악으로 자연스럽게 이어지는 작은 발견 경험으로 바꾸는 것입니다.
+      </p>
+    </header>
+
+    <section class="decision" aria-label="핵심 의사결정">
+      <article class="decision-card">
+        <strong>NAME</strong>
+        <h2>밸런스 게임 → 취향 매치</h2>
+        <p>게임보다 덜 가볍고, 질문/소개카드와 다르게 “둘의 차이와 닮음”을 즉시 보여주는 이름입니다.</p>
+      </article>
+      <article class="decision-card">
+        <strong>ROLE</strong>
+        <h2>대화 소재를 만드는 기능</h2>
+        <p>정답을 맞히는 기능이 아니라, 서로의 선택 이유를 보고 다음 대화를 여는 기능으로 둡니다.</p>
+      </article>
+      <article class="decision-card">
+        <strong>PAYOFF</strong>
+        <h2>결과 후 연결 행동</h2>
+        <p>장소 후보, 만남 계획, 음악 노트로 이어져야 탭이 독립된 섬처럼 보이지 않습니다.</p>
+      </article>
+      <article class="decision-card">
+        <strong>TONE</strong>
+        <h2>승패 없이 다정하게</h2>
+        <p>같으면 “닮았어요”, 다르면 “다르게 좋아해요”처럼 평가 대신 발견의 문구를 씁니다.</p>
+      </article>
+    </section>
+
+    <section class="section-head">
+      <div>
+        <span class="eyebrow">SCREEN PROPOSAL</span>
+        <h2>제안 화면 흐름</h2>
+      </div>
+      <p>
+        아래 네 화면은 실제 개발 시 하나의 탭 안에서 이어지는 핵심 상태입니다.
+        홈형 진입, 선택 전, 결과 공개, 기록/연결까지 한 흐름으로 설계합니다.
+      </p>
+    </section>
+
+    <section class="stage" aria-label="취향 매치 화면 목업">
+      <article>
+        <div class="caption">
+          <span class="tag">01 · ENTRY</span>
+          <h3>오늘의 취향 카드</h3>
+          <p>탭에 들어오자마자 오늘 고를 카드와 최근 결과 요약을 보여줍니다.</p>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="topbar">
+              <div class="circle"><span class="icon">←</span></div>
+              <div class="title">취향 매치</div>
+              <div class="circle"><span class="icon">☰</span></div>
+            </div>
+            <section class="hero dark">
+              <small>TODAY'S MATCH</small>
+              <h4>오늘은<br>쉬는 방식이 궁금해요</h4>
+              <p>가볍게 하나만 고르면, 민영님의 선택도 함께 열려요.</p>
+            </section>
+            <div class="summary-row">
+              <div class="stat"><strong>12</strong><span>함께 고른 질문</span></div>
+              <div class="stat"><strong>7</strong><span>같았던 선택</span></div>
+              <div class="stat"><strong>3</strong><span>만남에 연결</span></div>
+            </div>
+            <section class="match-card">
+              <div class="row">
+                <span class="pill gold">새 질문</span>
+                <span class="pill">쉬는 방식</span>
+              </div>
+              <h4 style="margin-top:11px">토요일 오후라면?</h4>
+              <p>둘 중 더 끌리는 쪽을 골라요. 이유는 선택 후에 한 줄로 남길 수 있어요.</p>
+              <div class="choice-grid">
+                <div class="choice">
+                  <div>
+                    <div class="choice-icon">🏠</div>
+                    <b>집에서 천천히</b>
+                    <span>충전하고 싶은 날</span>
+                  </div>
+                  <span class="pill">A</span>
+                </div>
+                <div class="choice other">
+                  <div>
+                    <div class="choice-icon">☕</div>
+                    <b>조용한 카페</b>
+                    <span>살짝 나가고 싶은 날</span>
+                  </div>
+                  <span class="pill gold">B</span>
+                </div>
+              </div>
+            </section>
+          </div>
+          <nav class="tabbar">
+            <div class="tab"><span class="tab-icon">⌂</span>홈</div>
+            <div class="tab"><span class="tab-icon">▣</span>질문</div>
+            <div class="tab active"><span class="tab-icon">◐</span>매치</div>
+            <div class="tab"><span class="tab-icon">♡</span>만남</div>
+            <div class="tab"><span class="tab-icon">⌕</span>장소</div>
+          </nav>
+        </div>
+      </article>
+
+      <article>
+        <div class="caption">
+          <span class="tag">02 · PICK</span>
+          <h3>선택 전/후 상태</h3>
+          <p>내가 고르기 전에는 상대 선택을 숨기고, 선택 후에는 이유 입력을 유도합니다.</p>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="topbar">
+              <div class="circle"><span class="icon">←</span></div>
+              <div class="title">취향 매치</div>
+              <div class="circle"><span class="icon">?</span></div>
+            </div>
+            <section class="match-card">
+              <div class="row">
+                <span class="pill lav">대화 취향</span>
+                <span class="pill">D-오늘</span>
+              </div>
+              <h4 style="margin-top:11px">처음 만나는 장소에서는?</h4>
+              <p>정답 없이 더 편한 쪽을 골라요.</p>
+              <div class="choice-grid">
+                <div class="choice selected">
+                  <div>
+                    <div class="choice-icon">💬</div>
+                    <b>조용히 깊은 얘기</b>
+                    <span>천천히 오래 듣기</span>
+                  </div>
+                  <span class="pill">내 선택</span>
+                </div>
+                <div class="choice">
+                  <div>
+                    <div class="choice-icon">🎈</div>
+                    <b>가벼운 얘기부터</b>
+                    <span>편하게 분위기 풀기</span>
+                  </div>
+                  <span class="pill">B</span>
+                </div>
+              </div>
+              <div class="reason">
+                <label>내 이유 한 줄</label>
+                <div>처음엔 천천히 듣고 말하는 게 더 편해요.</div>
+              </div>
+              <button class="primary">선택 저장하기</button>
+              <div class="lock-note">
+                민영님 선택은 내가 고른 뒤에만 열려요. 아직 고르지 않은 질문은 홈의 새 소식에도 표시됩니다.
+              </div>
+            </section>
+            <section class="card soft">
+              <div class="row">
+                <h4 style="font-size:18px">다음 추천 질문</h4>
+                <span class="pill">장소 취향</span>
+              </div>
+              <p style="margin-top:8px;color:var(--muted);font-size:12px;line-height:1.6">
+                “비 오는 날엔 전시 vs 카페?”처럼 장소 기능으로 이어질 수 있는 질문을 우선 추천합니다.
+              </p>
+            </section>
+          </div>
+          <nav class="tabbar">
+            <div class="tab"><span class="tab-icon">⌂</span>홈</div>
+            <div class="tab"><span class="tab-icon">▣</span>질문</div>
+            <div class="tab active"><span class="tab-icon">◐</span>매치</div>
+            <div class="tab"><span class="tab-icon">♡</span>만남</div>
+            <div class="tab"><span class="tab-icon">⌕</span>장소</div>
+          </nav>
+        </div>
+      </article>
+
+      <article>
+        <div class="caption">
+          <span class="tag">03 · RESULT</span>
+          <h3>결과 공개와 연결</h3>
+          <p>같음/다름을 보여주고 바로 앱의 다른 기능으로 이어지는 버튼을 둡니다.</p>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="topbar">
+              <div class="circle"><span class="icon">←</span></div>
+              <div class="title">취향 매치</div>
+              <div class="circle"><span class="icon">↗</span></div>
+            </div>
+            <section class="result-band">
+              <small>MATCH RESULT</small>
+              <h4>둘 다<br>조용한 카페를 골랐어요</h4>
+              <p>취향이 겹치는 선택이에요. 이번 만남에 바로 써먹기 좋아 보여요.</p>
+              <div class="profile-picks">
+                <div class="pick-row">
+                  <div class="avatar">🌿</div>
+                  <div><b>영우 · 조용한 카페</b><span>“밖에 나가되 너무 북적이지 않으면 좋아요.”</span></div>
+                </div>
+                <div class="pick-row">
+                  <div class="avatar">🪻</div>
+                  <div><b>민영 · 조용한 카페</b><span>“이야기하기 편한 곳이면 좋겠어요.”</span></div>
+                </div>
+              </div>
+            </section>
+            <section class="card">
+              <div class="row">
+                <h4 style="font-size:18px">이 선택으로 할 수 있는 것</h4>
+                <span class="pill gold">추천</span>
+              </div>
+              <div class="bridge-grid">
+                <div class="bridge">
+                  <strong>장소 후보 찾기</strong>
+                  <span>카카오 지도 검색으로 조용한 카페를 담아요.</span>
+                </div>
+                <div class="bridge">
+                  <strong>만남 계획에 추가</strong>
+                  <span>영우·민영의 계획에 “카페 가기”를 넣어요.</span>
+                </div>
+              </div>
+              <button class="primary">장소 후보로 이어가기</button>
+            </section>
+            <section class="card soft">
+              <span class="pill blue">다른 선택일 때</span>
+              <p style="margin-top:8px;color:var(--muted);font-size:12px;line-height:1.62">
+                선택이 다르면 “각자 다르게 좋아해요”로 보여주고, 한 번씩 번갈아 해보는 제안을 둡니다.
+              </p>
+            </section>
+          </div>
+          <nav class="tabbar">
+            <div class="tab"><span class="tab-icon">⌂</span>홈</div>
+            <div class="tab"><span class="tab-icon">▣</span>질문</div>
+            <div class="tab active"><span class="tab-icon">◐</span>매치</div>
+            <div class="tab"><span class="tab-icon">♡</span>만남</div>
+            <div class="tab"><span class="tab-icon">⌕</span>장소</div>
+          </nav>
+        </div>
+      </article>
+
+      <article>
+        <div class="caption">
+          <span class="tag">04 · LIBRARY</span>
+          <h3>기록과 필터</h3>
+          <p>선택이 쌓이면 “둘의 취향 지도”처럼 다시 볼 수 있는 기록 화면을 둡니다.</p>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="topbar">
+              <div class="circle"><span class="icon">←</span></div>
+              <div class="title">취향 기록</div>
+              <div class="circle"><span class="icon">⌕</span></div>
+            </div>
+            <section class="hero">
+              <small>YOUNGWOO · MINYOUNG</small>
+              <h4>우리의 선택이<br>조금씩 쌓이고 있어요</h4>
+              <p>같았던 선택, 달랐던 선택, 만남으로 이어진 선택을 따로 볼 수 있어요.</p>
+            </section>
+            <div class="summary-row">
+              <div class="stat"><strong>58%</strong><span>같은 선택</span></div>
+              <div class="stat"><strong>5</strong><span>장소 연결</span></div>
+              <div class="stat"><strong>2</strong><span>음악 연결</span></div>
+            </div>
+            <div class="row" style="margin-bottom:11px">
+              <span class="pill">전체</span>
+              <span class="pill gold">같았던 선택</span>
+              <span class="pill lav">달랐던 선택</span>
+            </div>
+            <div class="history-list">
+              <article class="history">
+                <div class="meta">
+                  <span class="pill gold">같음</span>
+                  <span class="pill">장소 연결</span>
+                </div>
+                <h5>비 오는 날엔?</h5>
+                <p>둘 다 “조용한 카페”를 골랐고, 작은 서점 근처 카페를 장소 후보로 담았어요.</p>
+              </article>
+              <article class="history">
+                <div class="meta">
+                  <span class="pill lav">다름</span>
+                  <span class="pill">대화 취향</span>
+                </div>
+                <h5>처음엔 어떤 대화?</h5>
+                <p>영우는 깊은 얘기, 민영은 가벼운 얘기부터. 다음 만남에서는 가볍게 시작해보기.</p>
+              </article>
+              <article class="history">
+                <div class="meta">
+                  <span class="pill blue">음악</span>
+                  <span class="pill">노트 연결</span>
+                </div>
+                <h5>밤 산책엔?</h5>
+                <p>잔잔한 곡을 골라 음악 노트에 “밤 산책” 플레이리스트로 남겼어요.</p>
+              </article>
+            </div>
+          </div>
+          <nav class="tabbar">
+            <div class="tab"><span class="tab-icon">⌂</span>홈</div>
+            <div class="tab"><span class="tab-icon">▣</span>질문</div>
+            <div class="tab active"><span class="tab-icon">◐</span>매치</div>
+            <div class="tab"><span class="tab-icon">♡</span>만남</div>
+            <div class="tab"><span class="tab-icon">⌕</span>장소</div>
+          </nav>
+        </div>
+      </article>
+    </section>
+
+    <section class="section-head">
+      <div>
+        <span class="eyebrow">DEVELOPMENT BRIEF</span>
+        <h2>개발 기안</h2>
+      </div>
+      <p>
+        기존 밸런스 선택 저장 구조를 완전히 버리기보다, 선택/결과/연결 정보를 확장하는 쪽이 안전합니다.
+        MVP는 “선택 + 이유 + 결과 공개 + 기록 필터”까지, 2차에서 장소/만남/음악 연결을 붙이는 흐름을 권장합니다.
+      </p>
+    </section>
+
+    <section class="proposal-grid" aria-label="개발 기안 상세">
+      <article class="proposal">
+        <h3>핵심 기능 범위</h3>
+        <p>취향 매치는 질문형 기능과 겹치지 않도록 “둘 중 하나를 고르고, 둘의 결과를 비교하는 기능”으로 명확히 분리합니다.</p>
+        <ul>
+          <li>매일 또는 주기적으로 추천되는 `오늘의 취향 카드`를 제공한다.</li>
+          <li>사용자가 선택하기 전에는 상대 선택을 숨기고, 선택 후 결과를 공개한다.</li>
+          <li>선택 이유는 선택 후 선택적으로 한 줄만 남길 수 있게 한다.</li>
+          <li>결과는 같음/다름/아직 기다림 세 상태로 구분한다.</li>
+          <li>장소형, 만남형, 음악형 질문은 결과 화면에서 관련 기능으로 이어지는 버튼을 제공한다.</li>
+          <li>기록 화면은 전체, 같았던 선택, 달랐던 선택, 연결된 선택으로 필터링한다.</li>
+        </ul>
+      </article>
+
+      <article class="proposal">
+        <h3>추천 데이터 모델</h3>
+        <table class="model-table">
+          <tr>
+            <th>balancePrompts</th>
+            <td>질문 카탈로그. id, title, category, optionA, optionB, bridgeType, active 여부.</td>
+          </tr>
+          <tr>
+            <th>balanceSelections</th>
+            <td>사용자 선택. promptId, profileId, optionId, reason, createdAt, updatedAt.</td>
+          </tr>
+          <tr>
+            <th>balanceLinks</th>
+            <td>결과에서 연결한 기능. promptId, linkedType(place/meeting/music), linkedTargetId.</td>
+          </tr>
+          <tr>
+            <th>local seen state</th>
+            <td>새 매치/상대 선택 도착 여부는 홈 새 소식과 연결. 읽음 상태는 localStorage 우선.</td>
+          </tr>
+        </table>
+      </article>
+
+      <article class="proposal">
+        <h3>개발 단계</h3>
+        <div class="phase-list">
+          <div class="phase">
+            <strong>MVP: 취향 매치 탭 리브랜딩</strong>
+            <span>탭 이름/카피/화면 구조를 바꾸고, 기존 밸런스 선택 저장 로직을 새 카드 UI에 연결합니다.</span>
+          </div>
+          <div class="phase">
+            <strong>결과 공개와 이유 한 줄</strong>
+            <span>내 선택 저장 후 상대 선택이 있으면 결과를 공개하고, 선택 이유 필드를 추가합니다.</span>
+          </div>
+          <div class="phase">
+            <strong>기록 필터와 새 소식</strong>
+            <span>같음/다름/기다림 상태를 기준으로 기록을 필터링하고, 상대의 새 선택을 홈에서 알려줍니다.</span>
+          </div>
+          <div class="phase">
+            <strong>다른 기능으로 연결</strong>
+            <span>장소 후보 담기, 만남 계획 추가, 음악 노트 작성 진입을 결과 화면 액션으로 연결합니다.</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="proposal">
+        <h3>검증 기준</h3>
+        <ul>
+          <li>선택 전에는 상대 선택이 화면에 노출되지 않는다.</li>
+          <li>내 선택 저장은 명시적 버튼 탭에서만 Firestore write를 만든다.</li>
+          <li>상대 선택이 이미 있으면 결과 카드가 즉시 열린다.</li>
+          <li>결과가 다른 기능으로 연결되어도 원본 선택 기록은 유지된다.</li>
+          <li>질문 카피는 사귀는 관계를 전제하지 않고, 부담 없는 취향 발견 톤을 유지한다.</li>
+          <li>모바일에서 A/B 카드 텍스트가 넘치지 않고 터치 영역이 충분하다.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="section-head">
+      <div>
+        <span class="eyebrow">COPY DIRECTION</span>
+        <h2>추천 문구</h2>
+      </div>
+      <p>기능명을 바꿀 때 중요한 건 “게임”보다 “둘의 발견”에 초점을 맞추는 것입니다.</p>
+    </section>
+
+    <section class="copy-grid" aria-label="추천 문구">
+      <article class="copy-card">
+        <strong>탭 이름</strong>
+        <p>취향 매치</p>
+      </article>
+      <article class="copy-card">
+        <strong>상단 설명</strong>
+        <p>둘 중 하나를 고르며 서로의 취향을 가볍게 알아가요.</p>
+      </article>
+      <article class="copy-card">
+        <strong>선택 전</strong>
+        <p>내가 고른 뒤에 상대 선택이 열려요.</p>
+      </article>
+      <article class="copy-card">
+        <strong>같은 선택</strong>
+        <p>둘 다 같은 쪽에 마음이 갔어요.</p>
+      </article>
+      <article class="copy-card">
+        <strong>다른 선택</strong>
+        <p>서로 다르게 좋아하는 지점이에요.</p>
+      </article>
+      <article class="copy-card">
+        <strong>기록 화면</strong>
+        <p>우리의 선택이 조금씩 쌓이고 있어요.</p>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

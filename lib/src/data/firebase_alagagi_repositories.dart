@@ -204,6 +204,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           'questionId': selection.questionId,
           'profileId': selection.profileId,
           'optionId': selection.optionId,
+          'reason': selection.reason,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
   }
@@ -647,6 +648,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       questionId: questionId,
       profileId: profileId,
       optionId: optionId,
+      reason: _readString(data, 'reason'),
     );
   }
 
