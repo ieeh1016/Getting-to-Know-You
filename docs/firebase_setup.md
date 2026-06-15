@@ -714,14 +714,53 @@ service cloud.firestore {
         allow read: if isSpaceMember(spaceId);
         allow create, update: if isSpaceMember(spaceId)
           && profileId == request.auth.uid
+          && request.resource.data.keys().hasOnly([
+            'id',
+            'label',
+            'icon',
+            'category',
+            'inputHint',
+            'value',
+            'locked',
+            'unlockHint',
+            'skipped',
+            'hidden',
+            'custom',
+            'updatedByProfileId',
+            'updatedAt'
+          ])
           && request.resource.data.id == slotId
           && request.resource.data.label is string
+          && request.resource.data.label.size() > 0
+          && request.resource.data.label.size() <= 40
           && request.resource.data.icon is string
-          && (!request.resource.data.keys().hasAny(['value'])
-            || request.resource.data.value is string)
-          && (!request.resource.data.keys().hasAny(['locked'])
-            || request.resource.data.locked is bool);
-        allow delete: if false;
+          && request.resource.data.icon.size() <= 24
+          && request.resource.data.category in ['취향', '하루', '대화', '함께', '직접']
+          && request.resource.data.inputHint is string
+          && request.resource.data.inputHint.size() <= 80
+          && (
+            request.resource.data.value == null
+            || (
+              request.resource.data.value is string
+              && request.resource.data.value.size() <= 120
+            )
+          )
+          && request.resource.data.locked is bool
+          && (
+            request.resource.data.unlockHint == null
+            || (
+              request.resource.data.unlockHint is string
+              && request.resource.data.unlockHint.size() <= 80
+            )
+          )
+          && request.resource.data.skipped is bool
+          && request.resource.data.hidden is bool
+          && request.resource.data.custom is bool
+          && request.resource.data.updatedByProfileId == request.auth.uid
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isSpaceMember(spaceId)
+          && profileId == request.auth.uid
+          && resource.data.custom == true;
       }
 
       match /wishes/{wishId} {
