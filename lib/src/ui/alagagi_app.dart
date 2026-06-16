@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../app/app_shell.dart';
+import '../app/test_keys.dart';
 import '../data/external_link_opener.dart';
 import '../data/first_visit_guide_store.dart';
 import '../data/firebase_alagagi_repositories.dart';
@@ -15,8 +16,10 @@ import '../features/home/home_insight_grid.dart';
 import '../features/home/home_plus_grid.dart';
 import '../features/home/home_progress_summary_card.dart';
 import '../features/home/unread_activity_panel.dart';
+import '../features/meeting/meeting_common.dart';
 import '../features/music/music_screen.dart';
 import '../features/my/my_screen.dart';
+import '../features/place/place_common.dart';
 import '../shared/ui_components.dart';
 import '../shared/ui_style.dart';
 import 'kakao_map_panel.dart';
@@ -42,58 +45,6 @@ const balanceResultToggleButtonKey = Key('balance-result-toggle-button');
 Key balanceRecordFilterButtonKey(String filter) =>
     Key('balance-record-filter-$filter');
 Key balanceTabButtonKey(String tab) => Key('balance-tab-$tab');
-const meetingCalendarKey = Key('meeting-calendar');
-const meetingSharedMemoFieldKey = Key('meeting-shared-memo-field');
-const meetingSubmitButtonKey = Key('meeting-submit-button');
-const meetingRetryButtonKey = Key('meeting-retry-button');
-const meetingTimeBlockStartFieldKey = Key('meeting-time-block-start-field');
-const meetingTimeBlockEndFieldKey = Key('meeting-time-block-end-field');
-const meetingTimeBlockTitleFieldKey = Key('meeting-time-block-title-field');
-const meetingTimeBlockAddButtonKey = Key('meeting-time-block-add-button');
-const meetingDayTimeFieldKey = Key('meeting-day-time-field');
-const meetingDayNoteFieldKey = Key('meeting-day-note-field');
-const meetingDayPlanFieldKey = Key('meeting-day-plan-field');
-const meetingDaySaveButtonKey = Key('meeting-day-save-button');
-const meetingPlanScreenKey = Key('meeting-plan-screen');
-const meetingPlanDraftFieldKey = Key('meeting-plan-draft-field');
-const meetingPlanItemAddButtonKey = Key('meeting-plan-item-add-button');
-const meetingPlanSaveButtonKey = Key('meeting-plan-save-button');
-const meetingPlanPlaceMoreButtonKey = Key('meeting-plan-place-more-button');
-Key meetingTimeBlockPresetButtonKey(String presetId) =>
-    Key('meeting-time-block-preset-$presetId');
-Key meetingDateButtonKey(String dateKey) => Key('meeting-date-$dateKey');
-Key meetingPlanDateButtonKey(String dateKey) =>
-    Key('meeting-plan-date-$dateKey');
-Key meetingPlanPlaceLinkButtonKey(String placeId) =>
-    Key('meeting-plan-place-link-$placeId');
-Key meetingPlanItemRemoveButtonKey(int index) =>
-    Key('meeting-plan-item-remove-$index');
-Key meetingDayIndicatorKey(String dateKey) =>
-    Key('meeting-day-indicator-$dateKey');
-Key meetingMutualIndicatorKey(String dateKey) =>
-    Key('meeting-mutual-indicator-$dateKey');
-Key meetingMyEntryIndicatorKey(String dateKey) =>
-    Key('meeting-my-entry-indicator-$dateKey');
-Key meetingPartnerEntryIndicatorKey(String dateKey) =>
-    Key('meeting-partner-entry-indicator-$dateKey');
-Key meetingTimeSlotButtonKey(String slot) => Key('meeting-time-slot-$slot');
-Key meetingTimeBlockRemoveButtonKey(String blockId) =>
-    Key('meeting-time-block-remove-$blockId');
-const placeBoardKey = Key('place-board');
-const placeAddButtonKey = Key('place-add-button');
-const placeSearchFieldKey = Key('place-search-field');
-const placeSearchButtonKey = Key('place-search-button');
-const placeNameFieldKey = Key('place-name-field');
-const placeAddressFieldKey = Key('place-address-field');
-const placeNoteFieldKey = Key('place-note-field');
-const placeSubmitButtonKey = Key('place-submit-button');
-Key placeSearchResultButtonKey(String placeId) =>
-    Key('place-search-result-$placeId');
-Key placeInterestButtonKey(String placeId) =>
-    Key('place-interest-button-$placeId');
-Key placeEditButtonKey(String placeId) => Key('place-edit-button-$placeId');
-Key placeDeleteButtonKey(String placeId) => Key('place-delete-button-$placeId');
-const placeRetryButtonKey = Key('place-retry-button');
 const editAnswerButtonKey = Key('edit-answer-button');
 const homeQuestionCardKey = Key('home-question-card');
 const homeQuestionAnswerButtonKey = Key('home-question-answer-button');
@@ -8865,7 +8816,7 @@ class _MeetingPlanHeroCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _meetingDateLabel(entry.dateKey),
+                      meetingDateLabel(entry.dateKey),
                       style: serif(context, size: 20, weight: FontWeight.w800),
                     ),
                     const SizedBox(height: 3),
@@ -9093,7 +9044,7 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
                   ),
                   const SizedBox(width: 8),
                   AlagagiSmallBadge(
-                    label: _meetingDateShortLabel(entry.dateKey),
+                    label: meetingDateShortLabel(entry.dateKey),
                   ),
                 ],
               ),
@@ -9116,7 +9067,7 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
                 onPressed: controller.submitMeetingPlanDraft,
                 color: AlagagiColors.ink,
               ),
-              _MeetingSaveStatus(controller: controller),
+              MeetingSaveStatus(controller: controller),
             ],
           ),
         ),
@@ -9127,7 +9078,7 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
             AlagagiSmallBadge(label: '${linkedPlaces.length}곳'),
           ],
         ),
-        _PlaceSaveStatus(controller: controller),
+        PlaceSaveStatus(controller: controller),
         const SizedBox(height: 10),
         if (linkedPlaces.isEmpty)
           const AlagagiEmptyStateCard(text: '장소 탭에서 저장한 곳을 이 날 후보로 붙여볼 수 있어요.')
@@ -9298,7 +9249,7 @@ class _MeetingPlanTaskComposer extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-          child: _MeetingTextField(
+          child: MeetingTextField(
             fieldKey: meetingPlanDraftFieldKey,
             label: '추가할 계획',
             hint: '예: 전시 보기',
@@ -9420,7 +9371,7 @@ class _MeetingPlanPlaceRow extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: Icon(
-              _placeCategoryIcon(place.category),
+              placeCategoryIcon(place.category),
               size: 21,
               color: linked ? const Color(0xFF8A6F2D) : AlagagiColors.sageDeep,
             ),
@@ -9439,7 +9390,7 @@ class _MeetingPlanPlaceRow extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   [
-                    _placeCategoryLabel(place.category),
+                    placeCategoryLabel(place.category),
                     if (place.isMutual) '서로 관심',
                     if (place.address.isNotEmpty) place.address,
                   ].join(' · '),
@@ -9501,7 +9452,7 @@ class _MeetingHeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final meetingTimeLabel = meetingDayEntry?.meetingTimeLabel.trim() ?? '';
     final heroTitle = meetingDayEntry != null
-        ? '${_meetingDateShortLabel(meetingDayEntry!.dateKey)}\n만나는 날이에요'
+        ? '${meetingDateShortLabel(meetingDayEntry!.dateKey)}\n만나는 날이에요'
         : candidateCount == 0
         ? '가능한 날을\n하나씩 남겨볼까요?'
         : '이번 달엔\n$candidateCount일이 서로 괜찮아요';
@@ -9927,12 +9878,12 @@ class _MeetingDetailCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  _meetingDateLabel(controller.selectedMeetingDateKey),
+                  meetingDateLabel(controller.selectedMeetingDateKey),
                   style: serif(context, size: 21, weight: FontWeight.w800),
                 ),
               ),
               AlagagiSmallBadge(
-                label: _meetingAvailabilityLabel(myEntry?.availability),
+                label: meetingAvailabilityLabel(myEntry?.availability),
               ),
             ],
           ),
@@ -10001,7 +9952,7 @@ class _MeetingDetailCard extends StatelessWidget {
               for (final slot in MeetingTimeSlot.values)
                 AlagagiFilterPill(
                   key: meetingTimeSlotButtonKey(slot.name),
-                  label: _meetingTimeSlotLabel(slot),
+                  label: meetingTimeSlotLabel(slot),
                   selected: controller.state.meetingDraftTimeSlots.contains(
                     slot,
                   ),
@@ -10038,7 +9989,7 @@ class _MeetingDetailCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _MeetingTextField(
+                child: MeetingTextField(
                   fieldKey: meetingTimeBlockStartFieldKey,
                   label: '시작',
                   hint: '14:00',
@@ -10054,7 +10005,7 @@ class _MeetingDetailCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _MeetingTextField(
+                child: MeetingTextField(
                   fieldKey: meetingTimeBlockEndFieldKey,
                   label: '종료',
                   hint: '16:00',
@@ -10071,7 +10022,7 @@ class _MeetingDetailCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          _MeetingTextField(
+          MeetingTextField(
             fieldKey: meetingTimeBlockTitleFieldKey,
             label: '일정 내용',
             hint: '예: 병원 예약, 친구 약속',
@@ -10114,7 +10065,7 @@ class _MeetingDetailCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 14),
-          _MeetingTextField(
+          MeetingTextField(
             fieldKey: meetingSharedMemoFieldKey,
             label: '상대에게 남길 한마디',
             hint: '예: 19:30 이후면 편해요',
@@ -10139,7 +10090,7 @@ class _MeetingDetailCard extends StatelessWidget {
             onPressed: controller.submitMeetingDraft,
             color: AlagagiColors.sageDeep,
           ),
-          _MeetingSaveStatus(controller: controller),
+          MeetingSaveStatus(controller: controller),
         ],
       ),
     );
@@ -10161,7 +10112,7 @@ class _MeetingDayPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final slotLabel = sharedSlots.isEmpty
         ? '겹치는 시간을 확인하고 있어요.'
-        : '${sharedSlots.map(_meetingTimeSlotLabel).join(', ')}에 서로 괜찮아요.';
+        : '${sharedSlots.map(meetingTimeSlotLabel).join(', ')}에 서로 괜찮아요.';
     return Container(
       decoration: BoxDecoration(
         color: alreadyMeetingDay ? AlagagiColors.ink : const Color(0xFFF3F6EE),
@@ -10209,7 +10160,7 @@ class _MeetingDayPanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          _MeetingTextField(
+          MeetingTextField(
             fieldKey: meetingDayTimeFieldKey,
             label: '만나는 시간',
             hint: '예: 19:00-21:00, 저녁 7시쯤',
@@ -10222,7 +10173,7 @@ class _MeetingDayPanel extends StatelessWidget {
                 controller.updateMeetingDayDraft(timeLabel: value),
           ),
           const SizedBox(height: 9),
-          _MeetingTextField(
+          MeetingTextField(
             fieldKey: meetingDayNoteFieldKey,
             label: '만나는 날 메모',
             hint: '예: 장소는 성수 쪽으로 천천히 보기',
@@ -10248,76 +10199,6 @@ class _MeetingDayPanel extends StatelessWidget {
   }
 }
 
-class _MeetingSaveStatus extends StatelessWidget {
-  const _MeetingSaveStatus({required this.controller});
-
-  final AlagagiController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final state = controller.state;
-    final status = state.meetingSaveStatus;
-    final message = switch (status) {
-      SaveStatus.saving => '일정을 저장하고 있어요.',
-      SaveStatus.saved => state.meetingSaveFeedback,
-      SaveStatus.failed => state.meetingDraftError,
-      SaveStatus.idle => null,
-    };
-    if (message == null || message.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    final failed = status == SaveStatus.failed;
-    return Padding(
-      padding: const EdgeInsets.only(top: 10),
-      child: Container(
-        decoration: BoxDecoration(
-          color: failed ? const Color(0xFFFFF7F3) : const Color(0xFFF7F8F3),
-          border: Border.all(
-            color: failed ? const Color(0x33B18472) : const Color(0x338A9A7E),
-          ),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            Icon(
-              failed
-                  ? Icons.error_outline_rounded
-                  : status == SaveStatus.saving
-                  ? Icons.sync_rounded
-                  : Icons.check_circle_outline_rounded,
-              size: 16,
-              color: failed ? const Color(0xFFB18472) : AlagagiColors.sageDeep,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                message,
-                style: sans(
-                  size: 12,
-                  color: failed
-                      ? const Color(0xFFB18472)
-                      : AlagagiColors.sageDeep,
-                  weight: FontWeight.w700,
-                ),
-              ),
-            ),
-            if (failed && controller.canRetryMeetingSave)
-              TextButton(
-                key: meetingRetryButtonKey,
-                onPressed: controller.retryMeetingSave,
-                child: Text(
-                  '다시 시도',
-                  style: sans(size: 12, weight: FontWeight.w800),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _MeetingPersonRow extends StatelessWidget {
   const _MeetingPersonRow({
     required this.name,
@@ -10333,7 +10214,7 @@ class _MeetingPersonRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status = _meetingAvailabilityLabel(entry?.availability);
+    final status = meetingAvailabilityLabel(entry?.availability);
     final sharedMemo = entry?.sharedMemo.trim() ?? '';
     final meetingTimeLabel = entry?.meetingTimeLabel.trim() ?? '';
     final meetingNote = entry?.meetingNote.trim() ?? '';
@@ -10358,7 +10239,7 @@ class _MeetingPersonRow extends StatelessWidget {
                   [
                     status,
                     if (entry != null && entry!.timeSlots.isNotEmpty)
-                      entry!.timeSlots.map(_meetingTimeSlotLabel).join(', '),
+                      entry!.timeSlots.map(meetingTimeSlotLabel).join(', '),
                   ].join(' · '),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -10374,7 +10255,7 @@ class _MeetingPersonRow extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
-                        _meetingTimeBlockLabel(block),
+                        meetingTimeBlockLabel(block),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: sans(
@@ -10447,7 +10328,7 @@ class _MeetingTimeBlockRow extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              _meetingTimeBlockLabel(block),
+              meetingTimeBlockLabel(block),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: sans(size: 12.2, color: const Color(0xFF56544D)),
@@ -10509,13 +10390,13 @@ class _MeetingCandidateCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _meetingDateLabel(candidate.dateKey),
+                  meetingDateLabel(candidate.dateKey),
                   style: sans(size: 13.5, weight: FontWeight.w800),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   [
-                    '${candidate.sharedSlots.map(_meetingTimeSlotLabel).join(', ')}에 겹쳐요',
+                    '${candidate.sharedSlots.map(meetingTimeSlotLabel).join(', ')}에 겹쳐요',
                     if (detailCount > 0) '상세 일정 $detailCount개',
                   ].join(' · '),
                   style: sans(size: 11.5, color: AlagagiColors.muted),
@@ -10525,93 +10406,6 @@ class _MeetingCandidateCard extends StatelessWidget {
           ),
           const AlagagiSmallBadge(label: '추천'),
         ],
-      ),
-    );
-  }
-}
-
-class _MeetingTextField extends StatefulWidget {
-  const _MeetingTextField({
-    required this.fieldKey,
-    required this.label,
-    required this.hint,
-    required this.initialValue,
-    required this.maxLength,
-    required this.helperText,
-    required this.onChanged,
-    this.minLines = 2,
-    this.maxLines = 3,
-    this.keyboardType,
-  });
-
-  final Key fieldKey;
-  final String label;
-  final String hint;
-  final String initialValue;
-  final int maxLength;
-  final String helperText;
-  final ValueChanged<String> onChanged;
-  final int minLines;
-  final int maxLines;
-  final TextInputType? keyboardType;
-
-  @override
-  State<_MeetingTextField> createState() => _MeetingTextFieldState();
-}
-
-class _MeetingTextFieldState extends State<_MeetingTextField> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialValue);
-  }
-
-  @override
-  void didUpdateWidget(covariant _MeetingTextField oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.initialValue != widget.initialValue &&
-        _controller.text != widget.initialValue) {
-      _controller.text = widget.initialValue;
-      _controller.selection = TextSelection.collapsed(
-        offset: widget.initialValue.length,
-      );
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
-        border: Border.all(color: AlagagiColors.line),
-        borderRadius: BorderRadius.circular(15),
-      ),
-      padding: const EdgeInsets.fromLTRB(14, 7, 14, 7),
-      child: TextFormField(
-        key: widget.fieldKey,
-        controller: _controller,
-        maxLength: widget.maxLength,
-        minLines: widget.minLines,
-        maxLines: widget.maxLines,
-        keyboardType: widget.keyboardType,
-        onChanged: widget.onChanged,
-        decoration: InputDecoration(
-          labelText: widget.label,
-          hintText: widget.hint,
-          helperText: widget.helperText.isEmpty ? null : widget.helperText,
-          counterText: '',
-          isDense: true,
-          border: InputBorder.none,
-        ),
-        style: sans(size: 13, height: 1.45),
       ),
     );
   }
@@ -10668,7 +10462,7 @@ class _PlaceBoardScreenState extends State<PlaceBoardScreen> {
           places: places,
           overlayVisible: _mapOverlayVisible,
         ),
-        _PlaceSaveStatus(controller: controller),
+        PlaceSaveStatus(controller: controller),
         const SizedBox(height: 14),
         if (controller.state.placeDraftVisible)
           _PlaceDraftCard(controller: controller)
@@ -10960,76 +10754,6 @@ class _PlaceMapOverlayButton extends StatelessWidget {
   }
 }
 
-class _PlaceSaveStatus extends StatelessWidget {
-  const _PlaceSaveStatus({required this.controller});
-
-  final AlagagiController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final state = controller.state;
-    final status = state.placeSaveStatus;
-    final message = switch (status) {
-      SaveStatus.saving => '장소를 저장 중이에요...',
-      SaveStatus.saved => state.placeSaveFeedback,
-      SaveStatus.failed => state.placeError,
-      SaveStatus.idle => null,
-    };
-    if (message == null || message.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    final failed = status == SaveStatus.failed;
-    return Padding(
-      padding: const EdgeInsets.only(top: 10),
-      child: Container(
-        decoration: BoxDecoration(
-          color: failed ? const Color(0xFFFFF7F3) : const Color(0xFFF7F8F3),
-          border: Border.all(
-            color: failed ? const Color(0x33B18472) : const Color(0x338A9A7E),
-          ),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            Icon(
-              failed
-                  ? Icons.error_outline_rounded
-                  : status == SaveStatus.saving
-                  ? Icons.sync_rounded
-                  : Icons.check_circle_outline_rounded,
-              size: 16,
-              color: failed ? const Color(0xFFB18472) : AlagagiColors.sageDeep,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                message,
-                style: sans(
-                  size: 12,
-                  color: failed
-                      ? const Color(0xFFB18472)
-                      : AlagagiColors.sageDeep,
-                  weight: FontWeight.w700,
-                ),
-              ),
-            ),
-            if (failed && controller.canRetryPlaceSave)
-              TextButton(
-                key: placeRetryButtonKey,
-                onPressed: controller.retryPlaceSave,
-                child: Text(
-                  '다시 시도',
-                  style: sans(size: 12, weight: FontWeight.w800),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _PlaceMapFallback extends StatelessWidget {
   const _PlaceMapFallback({
     required this.reason,
@@ -11184,7 +10908,7 @@ class _PlaceDraftCard extends StatelessWidget {
             children: [
               for (final category in PlaceCategory.values)
                 AlagagiFilterPill(
-                  label: _placeCategoryLabel(category),
+                  label: placeCategoryLabel(category),
                   selected: controller.state.placeDraftCategory == category,
                   onTap: () => controller.setPlaceDraftCategory(category),
                 ),
@@ -11949,7 +11673,7 @@ class _PlaceCard extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: Icon(
-                  _placeCategoryIcon(place.category),
+                  placeCategoryIcon(place.category),
                   size: 22,
                   color: AlagagiColors.sageDeep,
                 ),
@@ -11979,7 +11703,7 @@ class _PlaceCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${_placeCategoryLabel(place.category)} · $creator 저장',
+                      '${placeCategoryLabel(place.category)} · $creator 저장',
                       style: sans(size: 11.3, color: AlagagiColors.muted),
                     ),
                     if (place.address.isNotEmpty) ...[
@@ -12271,44 +11995,6 @@ String _dateKeyForUi(DateTime date) {
   return '${date.year}-${twoDigits(date.month)}-${twoDigits(date.day)}';
 }
 
-String _meetingDateLabel(String dateKey) {
-  final date = DateTime.tryParse(dateKey);
-  if (date == null) {
-    return dateKey;
-  }
-  const weekdays = ['월', '화', '수', '목', '금', '토', '일'];
-  return '${date.month}월 ${date.day}일 ${weekdays[date.weekday - 1]}요일';
-}
-
-String _meetingDateShortLabel(String dateKey) {
-  final date = DateTime.tryParse(dateKey);
-  if (date == null) {
-    return dateKey;
-  }
-  return '${date.month}월 ${date.day}일';
-}
-
-String _meetingAvailabilityLabel(MeetingAvailability? availability) {
-  return switch (availability) {
-    MeetingAvailability.available => '가능',
-    MeetingAvailability.maybe => '조율 필요',
-    MeetingAvailability.busy => '어려움',
-    null => '아직 없음',
-  };
-}
-
-String _meetingTimeSlotLabel(MeetingTimeSlot slot) {
-  return switch (slot) {
-    MeetingTimeSlot.morning => '오전',
-    MeetingTimeSlot.afternoon => '오후',
-    MeetingTimeSlot.evening => '저녁',
-  };
-}
-
-String _meetingTimeBlockLabel(ScheduleTimeBlock block) {
-  return '${block.timeLabel} · ${block.title}';
-}
-
 String? _kakaoPlaceUrl(SharedPlace place) {
   final providerPlaceId = place.providerPlaceId.trim();
   if (providerPlaceId.isNotEmpty) {
@@ -12328,26 +12014,6 @@ String _kakaoMapFallbackMessage(String reason) {
     return '지도를 불러오지 못했어요. 도메인 등록과 JavaScript Key를 확인해주세요.';
   }
   return reason.isEmpty ? '지도를 준비하고 있어요.' : reason;
-}
-
-String _placeCategoryLabel(PlaceCategory category) {
-  return switch (category) {
-    PlaceCategory.cafe => '카페',
-    PlaceCategory.food => '식사',
-    PlaceCategory.exhibition => '전시',
-    PlaceCategory.walk => '산책',
-    PlaceCategory.activity => '활동',
-  };
-}
-
-IconData _placeCategoryIcon(PlaceCategory category) {
-  return switch (category) {
-    PlaceCategory.cafe => Icons.local_cafe_outlined,
-    PlaceCategory.food => Icons.restaurant_outlined,
-    PlaceCategory.exhibition => Icons.museum_outlined,
-    PlaceCategory.walk => Icons.directions_walk_rounded,
-    PlaceCategory.activity => Icons.auto_awesome_motion_outlined,
-  };
 }
 
 String _providerLabel(MapApiProvider provider) {

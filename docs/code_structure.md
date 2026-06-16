@@ -74,6 +74,10 @@ publishing, or Flutter-free domain testing.
   traces, help, and account card.
 - `lib/src/features/music/music_screen.dart`: Music note list, filters, draft
   editor, listened state, and link actions.
+- `lib/src/features/meeting/meeting_common.dart`: Meeting date labels, time
+  labels, save status, and shared schedule text field widgets.
+- `lib/src/features/place/place_common.dart`: Shared place category labels,
+  icons, and save status widget used by meeting plans and the place board.
 
 ## Extraction Order
 
