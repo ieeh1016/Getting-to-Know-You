@@ -100,6 +100,10 @@ publishing, or Flutter-free domain testing.
 - `lib/src/features/profile/profile_card_screen.dart`: Profile card tabs,
   custom card creation, category filters, editor panels, hidden slots, and
   read-only partner card views.
+- `lib/src/features/questions/question_view_switch.dart`: Shared archive/records
+  segmented switch for question-related views.
+- `lib/src/features/records/records_screen.dart`: Relationship insight summary,
+  matched keywords, stats grid, and timeline view.
 
 ## Extraction Order
 
