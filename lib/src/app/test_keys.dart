@@ -30,6 +30,7 @@ const homeProgressSummaryCtaKey = Key('home-progress-summary-cta');
 const homeBrandLogoKey = Key('home-brand-logo');
 const homeMenuButtonKey = Key('home-menu-button');
 const homeMenuSheetKey = Key('home-menu-sheet');
+const homeMenuRefreshButtonKey = Key('home-menu-refresh-button');
 const homeMenuCuriosityButtonKey = Key('home-menu-curiosity-button');
 const homeMenuStockStoryButtonKey = Key('home-menu-stock-story-button');
 const homeMenuImprovementButtonKey = Key('home-menu-improvement-button');

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../app/test_keys.dart';
@@ -150,6 +152,8 @@ void showHomeMenuSheet({
   required AlagagiController controller,
   required VoidCallback onOpenCuriosity,
   required VoidCallback onOpenGuideBook,
+  Future<void> Function()? onRefresh,
+  bool isRefreshing = false,
 }) {
   showModalBottomSheet<void>(
     context: context,
@@ -205,6 +209,25 @@ void showHomeMenuSheet({
                   ),
                 ),
                 const SizedBox(height: 14),
+                if (onRefresh != null) ...[
+                  _HomeMenuRow(
+                    rowKey: homeMenuRefreshButtonKey,
+                    icon: isRefreshing
+                        ? Icons.hourglass_top_rounded
+                        : Icons.refresh_rounded,
+                    title: isRefreshing ? '최신 내용 확인 중' : '최신 내용 확인',
+                    subtitle: '상대가 새로 남긴 내용을 다시 불러오기',
+                    onTap: isRefreshing
+                        ? null
+                        : () {
+                            Navigator.of(sheetContext).pop();
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              unawaited(onRefresh());
+                            });
+                          },
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 _HomeMenuRow(
                   rowKey: homeMenuCuriosityButtonKey,
                   icon: Icons.question_answer_outlined,
@@ -324,7 +347,7 @@ class _HomeMenuRow extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
-    required this.onTap,
+    this.onTap,
     this.badgeCount = 0,
   });
 
@@ -332,11 +355,12 @@ class _HomeMenuRow extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
+    final enabled = onTap != null;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -346,7 +370,7 @@ class _HomeMenuRow extends StatelessWidget {
         child: Container(
           constraints: const BoxConstraints(minHeight: 64),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8F8F4),
+            color: enabled ? const Color(0xFFF8F8F4) : const Color(0xFFF1F0EB),
             border: Border.all(color: AlagagiColors.line),
             borderRadius: BorderRadius.circular(17),
           ),
@@ -361,7 +385,13 @@ class _HomeMenuRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 alignment: Alignment.center,
-                child: Icon(icon, size: 19, color: AlagagiColors.sageDeep),
+                child: Icon(
+                  icon,
+                  size: 19,
+                  color: enabled
+                      ? AlagagiColors.sageDeep
+                      : const Color(0xFF9A988E),
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -374,7 +404,9 @@ class _HomeMenuRow extends StatelessWidget {
                       style: sans(
                         size: 13.1,
                         weight: FontWeight.w800,
-                        color: const Color(0xFF46443F),
+                        color: enabled
+                            ? const Color(0xFF46443F)
+                            : const Color(0xFF77746C),
                       ),
                     ),
                     const SizedBox(height: 3),

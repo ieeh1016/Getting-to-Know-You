@@ -9,11 +9,13 @@ class AlagagiScreenScroll extends StatelessWidget {
     super.key,
     required this.children,
     this.bottomNavigation,
+    this.onRefresh,
     this.padding = const EdgeInsets.fromLTRB(28, 34, 28, 112),
   });
 
   final List<Widget> children;
   final Widget? bottomNavigation;
+  final Future<void> Function()? onRefresh;
   final EdgeInsets padding;
 
   @override
@@ -27,6 +29,7 @@ class AlagagiScreenScroll extends StatelessWidget {
 
     final scrollable = ListView(
       padding: EdgeInsets.zero,
+      physics: onRefresh == null ? null : const AlwaysScrollableScrollPhysics(),
       children: [
         Padding(
           padding: effectivePadding,
@@ -37,14 +40,22 @@ class AlagagiScreenScroll extends StatelessWidget {
         ),
       ],
     );
+    final refreshable = onRefresh == null
+        ? scrollable
+        : RefreshIndicator(
+            onRefresh: onRefresh!,
+            color: AlagagiColors.sageDeep,
+            backgroundColor: AlagagiColors.paper,
+            child: scrollable,
+          );
 
     if (bottomNavigation == null) {
-      return scrollable;
+      return refreshable;
     }
 
     return Column(
       children: [
-        Expanded(child: scrollable),
+        Expanded(child: refreshable),
         bottomNavigation!,
       ],
     );

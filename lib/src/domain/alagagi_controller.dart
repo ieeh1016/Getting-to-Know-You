@@ -2264,8 +2264,8 @@ class AlagagiController extends ChangeNotifier {
   final String? _spaceId;
   final bool _usesDemoData;
 
-  final DailyQuestion _todayQuestion;
-  final DailyQuestionProgress _dailyProgress;
+  DailyQuestion _todayQuestion;
+  DailyQuestionProgress _dailyProgress;
   final List<DailyQuestion> questions;
   final List<BalanceQuestion> balanceQuestions;
 
@@ -2304,6 +2304,34 @@ class AlagagiController extends ChangeNotifier {
   _FailedPersistenceAction? _lastFailedStockHoldingAction;
 
   AlagagiState get state => _state;
+
+  bool canApplySession(AlagagiSession session) {
+    return !_usesDemoData && _spaceId == session.spaceId;
+  }
+
+  void refreshFromSession(AlagagiSession session, {String? todayDateKey}) {
+    if (!canApplySession(session)) {
+      return;
+    }
+    _dailyProgress = _resolveDailyQuestionProgress(
+      questions,
+      session.data.dailyProgress,
+      todayDateKey: todayDateKey,
+    );
+    _todayQuestion = _questionForProgress(questions, _dailyProgress);
+    final personalization = _normalizeBrandPersonalization(
+      session.data.personalization,
+    );
+    _state = _state.copyWith(
+      me: session.me,
+      partner: session.partner,
+      personalization: personalization,
+      personalizationDraft: personalization,
+    );
+    _applySessionData(session.data);
+    _persistDailyQuestionProgressIfChanged(session.data.dailyProgress);
+    notifyListeners();
+  }
 
   DailyQuestion get todayQuestion => _todayQuestion;
 

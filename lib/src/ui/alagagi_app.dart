@@ -105,6 +105,8 @@ class AlagagiRoot extends StatefulWidget {
     this.musicNoteSeenStore,
     this.firstVisitGuideStore,
     this.onOpenExternalLink,
+    this.onRefreshSession,
+    this.sessionRefreshInProgress = false,
   });
 
   final AlagagiController? controller;
@@ -112,6 +114,8 @@ class AlagagiRoot extends StatefulWidget {
   final MusicNoteSeenStore? musicNoteSeenStore;
   final FirstVisitGuideStore? firstVisitGuideStore;
   final ValueChanged<String>? onOpenExternalLink;
+  final Future<void> Function()? onRefreshSession;
+  final bool sessionRefreshInProgress;
 
   @override
   State<AlagagiRoot> createState() => _AlagagiRootState();
@@ -171,6 +175,8 @@ class _AlagagiRootState extends State<AlagagiRoot> {
         controller: _controller,
         brandKicker: _brandKicker,
         onOpenGuideBook: () => showFirstVisitGuideBook(context),
+        onRefresh: widget.onRefreshSession,
+        isRefreshing: widget.sessionRefreshInProgress,
       ),
       AlagagiRoute.answer => AnswerScreen(controller: _controller),
       AlagagiRoute.archive => ArchiveScreen(controller: _controller),
@@ -353,6 +359,7 @@ class _SessionGate extends StatefulWidget {
 class _SessionGateState extends State<_SessionGate> {
   late Future<AlagagiSession?> _sessionFuture;
   AlagagiController? _controller;
+  bool _sessionRefreshInProgress = false;
 
   @override
   void initState() {
@@ -377,6 +384,67 @@ class _SessionGateState extends State<_SessionGate> {
     super.dispose();
   }
 
+  AlagagiController _createController(AlagagiSession session) {
+    return AlagagiController.forSession(
+      session,
+      repository: widget.dataRepository,
+      musicNoteSeenStore:
+          widget.musicNoteSeenStore ?? createDefaultMusicNoteSeenStore(),
+      firstVisitGuideStore:
+          widget.firstVisitGuideStore ?? createDefaultFirstVisitGuideStore(),
+    );
+  }
+
+  Future<void> _refreshSession() async {
+    if (_sessionRefreshInProgress) {
+      return;
+    }
+    setState(() {
+      _sessionRefreshInProgress = true;
+    });
+    try {
+      final session = await widget.dataRepository.loadSession(widget.user);
+      if (!mounted) {
+        return;
+      }
+      if (session == null) {
+        _controller?.dispose();
+        _controller = null;
+        setState(() {
+          _sessionFuture = Future<AlagagiSession?>.value();
+        });
+        return;
+      }
+      final controller = _controller;
+      if (controller == null || !controller.canApplySession(session)) {
+        controller?.dispose();
+        _controller = _createController(session);
+        setState(() {
+          _sessionFuture = Future<AlagagiSession?>.value(session);
+        });
+      } else {
+        controller.refreshFromSession(session);
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('최신 내용으로 다시 확인했어요.')));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('새로 불러오지 못했어요. 다시 시도해 주세요.')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _sessionRefreshInProgress = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<AlagagiSession?>(
@@ -396,19 +464,14 @@ class _SessionGateState extends State<_SessionGate> {
           );
         }
 
-        _controller ??= AlagagiController.forSession(
-          session,
-          repository: widget.dataRepository,
-          musicNoteSeenStore:
-              widget.musicNoteSeenStore ?? createDefaultMusicNoteSeenStore(),
-          firstVisitGuideStore:
-              widget.firstVisitGuideStore ??
-              createDefaultFirstVisitGuideStore(),
-        );
+        _controller ??= _createController(session);
         return AlagagiRoot(
+          key: ValueKey('root-${widget.user.uid}-${session.spaceId}'),
           controller: _controller,
           onSignOut: widget.authRepository.signOut,
           onOpenExternalLink: widget.onOpenExternalLink,
+          onRefreshSession: _refreshSession,
+          sessionRefreshInProgress: _sessionRefreshInProgress,
         );
       },
     );

@@ -21,15 +21,20 @@ class HomeScreen extends StatelessWidget {
     required this.controller,
     required this.brandKicker,
     required this.onOpenGuideBook,
+    this.onRefresh,
+    this.isRefreshing = false,
   });
 
   final AlagagiController controller;
   final String brandKicker;
   final VoidCallback onOpenGuideBook;
+  final Future<void> Function()? onRefresh;
+  final bool isRefreshing;
 
   @override
   Widget build(BuildContext context) {
     return AlagagiScreenScroll(
+      onRefresh: onRefresh,
       bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
         HomeHeader(
@@ -40,6 +45,8 @@ class HomeScreen extends StatelessWidget {
             controller: controller,
             onOpenCuriosity: () => showCuriosityMenuSheet(context, controller),
             onOpenGuideBook: onOpenGuideBook,
+            onRefresh: onRefresh,
+            isRefreshing: isRefreshing,
           ),
         ),
         const SizedBox(height: 18),

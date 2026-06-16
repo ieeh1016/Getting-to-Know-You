@@ -103,6 +103,64 @@ void main() {
       expect(find.text('오늘의 질문'), findsOneWidget);
     });
 
+    testWidgets('home refresh reloads the Firebase session', (tester) async {
+      final auth = FakeAlagagiAuthRepository(
+        initialUser: const AlagagiAuthUser(
+          uid: 'youngwooUid',
+          loginId: 'youngwoo',
+          email: 'youngwoo@gettoknow.local',
+        ),
+      );
+      final sessions = <String, AlagagiSession>{'youngwooUid': testSession};
+      final data = FakeAlagagiDataRepository(sessionsByUid: sessions);
+
+      await tester.pumpWidget(
+        AlagagiApp(
+          firebaseEnabled: true,
+          authRepository: auth,
+          dataRepository: data,
+          firstVisitGuideStore: _seenGuideStore(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(RefreshIndicator), findsOneWidget);
+      expect(find.text('다시 불러온 조금씩'), findsNothing);
+      expect(data.loadedUsers.length, 1);
+
+      sessions['youngwooUid'] = const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          personalization: SpacePersonalization(
+            appTitle: '다시 불러온 조금씩',
+            homeLine: '서버에서 새로 온 문구',
+          ),
+        ),
+      );
+
+      await tester.tap(find.byKey(homeMenuButtonKey));
+      await tester.pumpAndSettle();
+      expect(find.byKey(homeMenuRefreshButtonKey), findsOneWidget);
+      await tester.tap(find.byKey(homeMenuRefreshButtonKey));
+      await tester.pumpAndSettle();
+
+      expect(data.loadedUsers.length, 2);
+      expect(find.text('다시 불러온 조금씩'), findsOneWidget);
+      expect(find.text('서버에서 새로 온 문구'), findsOneWidget);
+    });
+
     testWidgets('missing user profile shows Firebase setup state', (
       tester,
     ) async {
