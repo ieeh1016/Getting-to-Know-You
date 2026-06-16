@@ -53,6 +53,15 @@ The local one-command gate is:
 - Keep copy quiet, warm, and low-pressure.
 - Mobile UI comes first. Check 390px-class layouts for text clipping, overlapping, and awkward bottom navigation spacing.
 
+## Code Organization Guardrails
+
+- Follow `docs/code_structure.md` for new code and refactors.
+- Do not add new feature screens or large panels to `lib/src/ui/alagagi_app.dart`.
+- Put new user-facing feature UI under `lib/src/features/<feature>/`.
+- Put reusable colors, typography, widgets, and sheet primitives under `lib/src/shared/`.
+- Keep `alagagi_app.dart` as the temporary app root and route switchboard while extracting old screens incrementally.
+- Prefer real Dart libraries over `part` files.
+
 ## Firebase Guardrails
 
 - Never commit Firebase service account files, passwords, API secrets, or local password helper scripts.

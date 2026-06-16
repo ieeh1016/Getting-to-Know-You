@@ -17,6 +17,14 @@ Testing keeps SDD changes traceable and prevents UI regressions in a mobile-firs
 - Widget tests cover visible Korean copy, navigation, editing, filters, and owner/partner actions.
 - Firestore-related changes include rules/doc updates and at least one repository/controller test when practical.
 - UI changes should verify long Korean text, 390px-class layout, bottom navigation spacing, and absence of overlapping content.
+- Refactors that extract UI from `alagagi_app.dart` must preserve existing widget keys and run focused tests for the moved feature.
+
+## Code Structure Verification
+
+- New feature UI should be placed under `lib/src/features/<feature>/`.
+- Shared styling and primitives should be placed under `lib/src/shared/`.
+- Cross-file widget keys should live under `lib/src/app/test_keys.dart`.
+- `docs/code_structure.md` is the implementation guide for ongoing file/module extraction.
 
 ## Fail-First Preference
 

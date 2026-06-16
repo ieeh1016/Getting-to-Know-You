@@ -8,6 +8,7 @@
 - SDD: [docs/sdd.md](docs/sdd.md)는 기존 MVP 기록이며, 새 개발은 Product Spec을 기준으로 진행합니다.
 - TDD: 새 행동은 domain/widget test로 먼저 표현하고 구현합니다.
 - AI Harness: [AGENTS.md](AGENTS.md)에 AI/maintainer 작업 순서와 guardrail을 고정합니다.
+- Code Structure: [docs/code_structure.md](docs/code_structure.md)에 feature-first 분리 기준을 고정합니다.
 - 배포: v0.1은 Flutter Web 링크 공유를 우선합니다.
 
 ## 시작하기
