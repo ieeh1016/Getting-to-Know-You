@@ -15,7 +15,7 @@ The screen is split into three tabs:
 ## Required Behavior
 
 - Selecting a card saves the choice immediately.
-- Tapping the already-selected card keeps the selection; it does not clear it.
+- Tapping the already-selected card clears the selection, reason, and personal reveal state.
 - Tapping the other card changes the selection.
 - Reason text is optional and auto-saved after a short delay.
 - Results are not shown automatically.
@@ -26,6 +26,7 @@ The screen is split into three tabs:
 ## Data Rules
 
 - `balanceSelections` stores `questionId`, `profileId`, `optionId`, optional `reason`, optional `resultRevealedAt`, and `updatedAt`.
+- Clearing a selected card deletes the user's own `balanceSelections/{questionId_uid}` document.
 - Result reveal state is personal. A user revealing a result does not force the partner's UI open.
 - Reason typing must not write on every keystroke; it is debounced.
 

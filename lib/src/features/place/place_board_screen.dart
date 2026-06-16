@@ -13,6 +13,8 @@ const _mapCenterLongitude = 126.9780;
 const _placeBoardMapHorizontalBleed = 12.0;
 const _selectedPlaceMiniMapHeight = 204.0;
 
+enum _PlaceBoardFilter { all, mutual, mine, partner }
+
 double _placeBoardMapHeight(BuildContext context) {
   final viewportHeight = MediaQuery.sizeOf(context).height;
   return (viewportHeight * 0.58).clamp(386.0, 440.0).toDouble();
@@ -34,12 +36,14 @@ class PlaceBoardScreen extends StatefulWidget {
 
 class _PlaceBoardScreenState extends State<PlaceBoardScreen> {
   bool _mapOverlayVisible = true;
+  _PlaceBoardFilter _filter = _PlaceBoardFilter.all;
 
   @override
   Widget build(BuildContext context) {
     final controller = widget.controller;
     final onOpenExternalLink = widget.onOpenExternalLink;
     final places = controller.sharedPlaces;
+    final filteredPlaces = _filteredPlaces(controller, places);
     final mutualCount = places.where((place) => place.isMutual).length;
     return AlagagiScreenScroll(
       bottomNavigation: AlagagiBottomNav(controller: controller),
@@ -83,13 +87,22 @@ class _PlaceBoardScreenState extends State<PlaceBoardScreen> {
           ],
         ),
         const SizedBox(height: 12),
+        if (places.isNotEmpty) ...[
+          _PlaceBoardFilterBar(
+            selected: _filter,
+            onChanged: (filter) => setState(() => _filter = filter),
+          ),
+          const SizedBox(height: 12),
+        ],
         if (places.isEmpty)
           const AlagagiEmptyStateCard(text: '가보고 싶은 곳을 하나만 담아볼까요?')
+        else if (filteredPlaces.isEmpty)
+          AlagagiEmptyStateCard(text: _placeFilterEmptyText(_filter))
         else
           Column(
             key: placeBoardKey,
             children: [
-              for (final place in places) ...[
+              for (final place in filteredPlaces) ...[
                 _PlaceCard(
                   controller: controller,
                   place: place,
@@ -106,6 +119,75 @@ class _PlaceBoardScreenState extends State<PlaceBoardScreen> {
   void _toggleMapOverlay() {
     setState(() => _mapOverlayVisible = !_mapOverlayVisible);
   }
+
+  List<SharedPlace> _filteredPlaces(
+    AlagagiController controller,
+    List<SharedPlace> places,
+  ) {
+    return switch (_filter) {
+      _PlaceBoardFilter.all => places,
+      _PlaceBoardFilter.mutual =>
+        places.where((place) => place.isMutual).toList(),
+      _PlaceBoardFilter.mine =>
+        places
+            .where(
+              (place) => place.createdByProfileId == controller.state.me.id,
+            )
+            .toList(),
+      _PlaceBoardFilter.partner =>
+        places
+            .where(
+              (place) =>
+                  place.createdByProfileId == controller.state.partner.id,
+            )
+            .toList(),
+    };
+  }
+}
+
+class _PlaceBoardFilterBar extends StatelessWidget {
+  const _PlaceBoardFilterBar({required this.selected, required this.onChanged});
+
+  final _PlaceBoardFilter selected;
+  final ValueChanged<_PlaceBoardFilter> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final filter in _PlaceBoardFilter.values) ...[
+            AlagagiFilterPill(
+              label: _placeFilterLabel(filter),
+              selected: selected == filter,
+              onTap: () => onChanged(filter),
+            ),
+            if (filter != _PlaceBoardFilter.values.last)
+              const SizedBox(width: 7),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+String _placeFilterLabel(_PlaceBoardFilter filter) {
+  return switch (filter) {
+    _PlaceBoardFilter.all => '전체',
+    _PlaceBoardFilter.mutual => '서로 관심',
+    _PlaceBoardFilter.mine => '내가 저장',
+    _PlaceBoardFilter.partner => '상대 저장',
+  };
+}
+
+String _placeFilterEmptyText(_PlaceBoardFilter filter) {
+  return switch (filter) {
+    _PlaceBoardFilter.all => '가보고 싶은 곳을 하나만 담아볼까요?',
+    _PlaceBoardFilter.mutual => '서로 관심을 표시한 장소는 아직 없어요.',
+    _PlaceBoardFilter.mine => '내가 저장한 장소는 아직 없어요.',
+    _PlaceBoardFilter.partner => '상대가 저장한 장소는 아직 없어요.',
+  };
 }
 
 class _PlaceMapPreview extends StatefulWidget {

@@ -37,6 +37,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
 
     return AlagagiScreenScroll(
       padding: const EdgeInsets.fromLTRB(24, 34, 24, 44),
+      bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
         AlagagiTopBar(
           title: '취향 매치',
@@ -52,7 +53,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
         const SizedBox(height: 12),
         _BalanceTabBar(
           activeTab: _activeTab,
-          resultCount: controller.balanceRevealedCount,
+          resultCount: controller.balanceResolvedCount,
           noteCount: controller.balanceCompletedCount,
           onChanged: (tab) {
             setState(() {
@@ -69,9 +70,6 @@ class _BalanceScreenState extends State<BalanceScreen> {
             activeIndex: controller.state.activeBalanceIndex,
             count: controller.balanceQuestions.length,
             onSelect: (optionId) {
-              if (selected == optionId) {
-                return;
-              }
               controller.selectBalanceOption(optionId);
               setState(() => _visibleResultQuestionId = null);
             },
@@ -468,7 +466,9 @@ class _BalanceDeckCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '지금 더 끌리는 쪽을 바로 골라주세요.',
+            selected == null
+                ? '지금 더 끌리는 쪽을 바로 골라주세요.'
+                : '선택한 카드를 한 번 더 누르면 취소돼요.',
             textAlign: TextAlign.center,
             style: sans(size: 12, color: AlagagiColors.muted, height: 1.5),
           ),
@@ -583,7 +583,7 @@ class _BalanceDeckOption extends StatelessWidget {
                   ),
                   const SizedBox(height: 7),
                   Text(
-                    selectedByMe ? '내 선택' : '끌리는 쪽 고르기',
+                    selectedByMe ? '다시 누르면 취소' : '끌리는 쪽 고르기',
                     style: sans(
                       size: 11.5,
                       color: AlagagiColors.muted,
@@ -605,7 +605,7 @@ class _BalanceDeckOption extends StatelessWidget {
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 9),
                   child: Text(
-                    selectedByMe ? '선택됨' : '고르기',
+                    selectedByMe ? '취소 가능' : '고르기',
                     style: sans(
                       size: 10.5,
                       color: selectedByMe

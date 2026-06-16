@@ -43,8 +43,10 @@ class MusicScreen extends StatelessWidget {
           '각자의 요즘을 한 곡씩 조용히 남겨요',
           style: sans(size: 12.5, color: AlagagiColors.muted),
         ),
-        const SizedBox(height: 18),
-        const _MusicHeroCard(),
+        if (totalCount == 0) ...[
+          const SizedBox(height: 18),
+          const _MusicHeroCard(),
+        ],
         if (controller.state.musicDraftVisible) ...[
           const SizedBox(height: 16),
           _MusicDraftCard(

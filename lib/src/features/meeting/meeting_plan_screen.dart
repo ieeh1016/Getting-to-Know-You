@@ -298,9 +298,16 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
     final controller = widget.controller;
     final entry = widget.entry;
     final linkedPlaces = controller.placesForMeetingPlan(entry.dateKey);
-    final boardPlaces = controller.sharedPlaces
-        .where((place) => place.linkedDateKey != entry.dateKey)
-        .toList();
+    final boardPlaces =
+        controller.sharedPlaces
+            .where((place) => place.linkedDateKey != entry.dateKey)
+            .toList()
+          ..sort((a, b) {
+            if (a.isMutual != b.isMutual) {
+              return a.isMutual ? -1 : 1;
+            }
+            return a.name.compareTo(b.name);
+          });
     final hiddenBoardPlaceCount = boardPlaces.length > 4
         ? boardPlaces.length - 4
         : 0;

@@ -1013,7 +1013,7 @@ void main() {
       );
     });
 
-    test('selecting the same balance option keeps the existing selection', () {
+    test('selecting the same balance option clears the existing selection', () {
       final repository = RecordingAlagagiRepository();
       final session = firebaseSessionWithData(
         const AlagagiSpaceData(
@@ -1035,8 +1035,11 @@ void main() {
 
       controller.selectBalanceOption('sea');
 
-      expect(controller.activeBalanceSelection, 'sea');
+      expect(controller.activeBalanceSelection, isNull);
       expect(repository.savedBalanceSelections, isEmpty);
+      expect(repository.deletedBalanceSelections, [
+        (spaceId: 'main', questionId: 'b001', profileId: 'youngwooUid'),
+      ]);
     });
 
     test('revealing a balance result is saved separately from selection', () {
@@ -2520,6 +2523,8 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   final List<({String spaceId, Answer answer})> savedAnswers = [];
   final List<({String spaceId, BalanceSelection selection})>
   savedBalanceSelections = [];
+  final List<({String spaceId, String questionId, String profileId})>
+  deletedBalanceSelections = [];
   final List<({String spaceId, String profileId, ProfileSlot slot})>
   savedProfileSlots = [];
   final List<({String spaceId, String profileId, String slotId})>
@@ -2567,6 +2572,19 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
     BalanceSelection selection,
   ) async {
     savedBalanceSelections.add((spaceId: spaceId, selection: selection));
+  }
+
+  @override
+  Future<void> deleteBalanceSelection(
+    String spaceId,
+    String questionId,
+    String profileId,
+  ) async {
+    deletedBalanceSelections.add((
+      spaceId: spaceId,
+      questionId: questionId,
+      profileId: profileId,
+    ));
   }
 
   @override

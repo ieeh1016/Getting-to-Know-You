@@ -381,6 +381,13 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   ) async {}
 
   @override
+  Future<void> deleteBalanceSelection(
+    String spaceId,
+    String questionId,
+    String profileId,
+  ) async {}
+
+  @override
   Future<void> saveProfileSlot(
     String spaceId,
     String profileId,

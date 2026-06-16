@@ -7,15 +7,34 @@ import '../../shared/readable_detail_sheet.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
-class ImprovementBoardScreen extends StatelessWidget {
+enum _ImprovementFilter {
+  all,
+  mine,
+  partner,
+  improvement,
+  feature,
+  friction,
+  idea,
+}
+
+class ImprovementBoardScreen extends StatefulWidget {
   const ImprovementBoardScreen({super.key, required this.controller});
 
   final AlagagiController controller;
 
   @override
+  State<ImprovementBoardScreen> createState() => _ImprovementBoardScreenState();
+}
+
+class _ImprovementBoardScreenState extends State<ImprovementBoardScreen> {
+  _ImprovementFilter _filter = _ImprovementFilter.all;
+
+  @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
     final posts = controller.improvementPosts;
     final state = controller.state;
+    final visiblePosts = _visiblePosts(controller, posts);
     return AlagagiScreenScroll(
       bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
@@ -52,16 +71,106 @@ class ImprovementBoardScreen extends StatelessWidget {
         _ImprovementSummaryCard(controller: controller),
         _ImprovementSaveStatus(controller: controller),
         const SizedBox(height: 12),
+        if (posts.isNotEmpty) ...[
+          _ImprovementFilterBar(
+            selected: _filter,
+            onChanged: (filter) => setState(() => _filter = filter),
+          ),
+          const SizedBox(height: 12),
+        ],
         if (posts.isEmpty)
           const AlagagiEmptyStateCard(text: '생각나는 개선점이나 추가 요청을 하나만 남겨볼까요?')
+        else if (visiblePosts.isEmpty)
+          AlagagiEmptyStateCard(text: _improvementFilterEmptyText(_filter))
         else
-          for (final post in posts) ...[
+          for (final post in visiblePosts) ...[
             _ImprovementPostCard(controller: controller, post: post),
             const SizedBox(height: 12),
           ],
       ],
     );
   }
+
+  List<ImprovementPost> _visiblePosts(
+    AlagagiController controller,
+    List<ImprovementPost> posts,
+  ) {
+    return switch (_filter) {
+      _ImprovementFilter.all => posts,
+      _ImprovementFilter.mine =>
+        posts
+            .where((post) => post.createdByProfileId == controller.state.me.id)
+            .toList(),
+      _ImprovementFilter.partner =>
+        posts
+            .where(
+              (post) => post.createdByProfileId == controller.state.partner.id,
+            )
+            .toList(),
+      _ImprovementFilter.improvement =>
+        posts.where((post) => post.category == '개선').toList(),
+      _ImprovementFilter.feature =>
+        posts.where((post) => post.category == '추가 요청').toList(),
+      _ImprovementFilter.friction =>
+        posts.where((post) => post.category == '불편함').toList(),
+      _ImprovementFilter.idea =>
+        posts.where((post) => post.category == '아이디어').toList(),
+    };
+  }
+}
+
+class _ImprovementFilterBar extends StatelessWidget {
+  const _ImprovementFilterBar({
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final _ImprovementFilter selected;
+  final ValueChanged<_ImprovementFilter> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final filter in _ImprovementFilter.values) ...[
+            AlagagiFilterPill(
+              label: _improvementFilterLabel(filter),
+              selected: selected == filter,
+              onTap: () => onChanged(filter),
+            ),
+            if (filter != _ImprovementFilter.values.last)
+              const SizedBox(width: 7),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+String _improvementFilterLabel(_ImprovementFilter filter) {
+  return switch (filter) {
+    _ImprovementFilter.all => '전체',
+    _ImprovementFilter.mine => '내 글',
+    _ImprovementFilter.partner => '상대 글',
+    _ImprovementFilter.improvement => '개선',
+    _ImprovementFilter.feature => '추가 요청',
+    _ImprovementFilter.friction => '불편함',
+    _ImprovementFilter.idea => '아이디어',
+  };
+}
+
+String _improvementFilterEmptyText(_ImprovementFilter filter) {
+  return switch (filter) {
+    _ImprovementFilter.all => '생각나는 개선점이나 추가 요청을 하나만 남겨볼까요?',
+    _ImprovementFilter.mine => '내가 남긴 글은 아직 없어요.',
+    _ImprovementFilter.partner => '상대가 남긴 글은 아직 없어요.',
+    _ImprovementFilter.improvement => '개선으로 남긴 글은 아직 없어요.',
+    _ImprovementFilter.feature => '추가 요청으로 남긴 글은 아직 없어요.',
+    _ImprovementFilter.friction => '불편함으로 남긴 글은 아직 없어요.',
+    _ImprovementFilter.idea => '아이디어로 남긴 글은 아직 없어요.',
+  };
 }
 
 class _ImprovementHeroCard extends StatelessWidget {

@@ -216,7 +216,7 @@ class _WishlistAddButton extends StatelessWidget {
   }
 }
 
-class _WishlistBoard extends StatelessWidget {
+class _WishlistBoard extends StatefulWidget {
   const _WishlistBoard({
     required this.wishes,
     required this.mutualWishes,
@@ -232,7 +232,15 @@ class _WishlistBoard extends StatelessWidget {
   final AlagagiController controller;
 
   @override
+  State<_WishlistBoard> createState() => _WishlistBoardState();
+}
+
+class _WishlistBoardState extends State<_WishlistBoard> {
+  final Set<String> _expandedLanes = {};
+
+  @override
   Widget build(BuildContext context) {
+    final wishes = widget.wishes;
     if (wishes.isEmpty) {
       return const AlagagiEmptyStateCard(text: '같이 해보고 싶은 걸 하나만 담아볼까요?');
     }
@@ -243,28 +251,42 @@ class _WishlistBoard extends StatelessWidget {
         _WishlistLane(
           title: '서로 관심 있어요',
           meta: '다음에 꺼내기 좋은 것',
-          wishes: mutualWishes,
+          wishes: widget.mutualWishes,
           emptyText: '서로 관심이 겹친 항목은 여기에 모여요.',
-          controller: controller,
+          controller: widget.controller,
+          expanded: _expandedLanes.contains('mutual'),
+          onToggleExpanded: () => _toggleLane('mutual'),
         ),
         const SizedBox(height: 18),
         _WishlistLane(
           title: '조용한 제안',
           meta: '관심 표시 전',
-          wishes: quietWishes,
+          wishes: widget.quietWishes,
           emptyText: '아직 한 명만 담아둔 제안이 없어요.',
-          controller: controller,
+          controller: widget.controller,
+          expanded: _expandedLanes.contains('quiet'),
+          onToggleExpanded: () => _toggleLane('quiet'),
         ),
         const SizedBox(height: 18),
         _WishlistLane(
           title: '함께했어요',
           meta: '가볍게 남은 기록',
-          wishes: doneWishes,
+          wishes: widget.doneWishes,
           emptyText: '함께한 뒤에는 여기에 조용히 쌓여요.',
-          controller: controller,
+          controller: widget.controller,
+          expanded: _expandedLanes.contains('done'),
+          onToggleExpanded: () => _toggleLane('done'),
         ),
       ],
     );
+  }
+
+  void _toggleLane(String laneId) {
+    setState(() {
+      if (!_expandedLanes.add(laneId)) {
+        _expandedLanes.remove(laneId);
+      }
+    });
   }
 }
 
@@ -275,6 +297,8 @@ class _WishlistLane extends StatelessWidget {
     required this.wishes,
     required this.emptyText,
     required this.controller,
+    required this.expanded,
+    required this.onToggleExpanded,
   });
 
   final String title;
@@ -282,9 +306,13 @@ class _WishlistLane extends StatelessWidget {
   final List<WishItem> wishes;
   final String emptyText;
   final AlagagiController controller;
+  final bool expanded;
+  final VoidCallback onToggleExpanded;
 
   @override
   Widget build(BuildContext context) {
+    final visibleWishes = expanded ? wishes : wishes.take(3).toList();
+    final hiddenCount = wishes.length - visibleWishes.length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -302,8 +330,8 @@ class _WishlistLane extends StatelessWidget {
         const SizedBox(height: 10),
         if (wishes.isEmpty)
           AlagagiInlineEmptyState(text: emptyText)
-        else
-          for (final wish in wishes) ...[
+        else ...[
+          for (final wish in visibleWishes) ...[
             _WishCard(
               wish: wish,
               meId: controller.state.me.id,
@@ -313,7 +341,49 @@ class _WishlistLane extends StatelessWidget {
             ),
             const SizedBox(height: 10),
           ],
+          if (wishes.length > 3)
+            _WishlistLaneMoreButton(
+              expanded: expanded,
+              hiddenCount: hiddenCount,
+              onPressed: onToggleExpanded,
+            ),
+        ],
       ],
+    );
+  }
+}
+
+class _WishlistLaneMoreButton extends StatelessWidget {
+  const _WishlistLaneMoreButton({
+    required this.expanded,
+    required this.hiddenCount,
+    required this.onPressed,
+  });
+
+  final bool expanded;
+  final int hiddenCount;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 38,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(
+          expanded ? Icons.keyboard_arrow_up_rounded : Icons.more_horiz_rounded,
+          size: 17,
+        ),
+        label: Text(expanded ? '접기' : '$hiddenCount개 더 보기'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AlagagiColors.sageDeep,
+          side: const BorderSide(color: Color(0x338A9A7E)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+          textStyle: sans(size: 12.2, weight: FontWeight.w800),
+        ),
+      ),
     );
   }
 }

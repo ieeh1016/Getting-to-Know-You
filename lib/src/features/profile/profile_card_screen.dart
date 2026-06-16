@@ -21,6 +21,7 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
   String _slotDraft = '';
   String _selectedCategory = '전체';
   bool _customCardDraftVisible = false;
+  bool _showAllPendingSlots = false;
 
   AlagagiController get controller => widget.controller;
 
@@ -88,7 +89,10 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
   }
 
   void _selectCategory(String category) {
-    setState(() => _selectedCategory = category);
+    setState(() {
+      _selectedCategory = category;
+      _showAllPendingSlots = false;
+    });
   }
 
   @override
@@ -101,6 +105,10 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
     final filteredSlots = _filteredSlots(card.slots);
     final filledSlots = _filledSlots(filteredSlots);
     final pendingSlots = _pendingSlots(filteredSlots);
+    final visiblePendingSlots = _showAllPendingSlots
+        ? pendingSlots
+        : pendingSlots.take(6).toList();
+    final hiddenPendingCount = pendingSlots.length - visiblePendingSlots.length;
     final recommendedSlot = _recommendedSlot(card);
     return AlagagiScreenScroll(
       bottomNavigation: AlagagiBottomNav(controller: controller),
@@ -206,7 +214,7 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
           if (pendingSlots.isNotEmpty) ...[
             const SizedBox(height: 10),
             _ProfileSlotGrid(
-              slots: pendingSlots,
+              slots: visiblePendingSlots,
               editingSlotId: _editingSlotId,
               onEdit: _startEditing,
               onSkip: _skipSlot,
@@ -214,6 +222,16 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
               onRestore: _restoreSlot,
               onDelete: _deleteSlot,
             ),
+            if (pendingSlots.length > 6) ...[
+              const SizedBox(height: 10),
+              _ProfilePendingMoreButton(
+                expanded: _showAllPendingSlots,
+                hiddenCount: hiddenPendingCount,
+                onPressed: () => setState(
+                  () => _showAllPendingSlots = !_showAllPendingSlots,
+                ),
+              ),
+            ],
           ],
           if (_hiddenSlots(card.slots).isNotEmpty) ...[
             const SizedBox(height: 16),
@@ -1507,6 +1525,41 @@ class _ProfileSlotGrid extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _ProfilePendingMoreButton extends StatelessWidget {
+  const _ProfilePendingMoreButton({
+    required this.expanded,
+    required this.hiddenCount,
+    required this.onPressed,
+  });
+
+  final bool expanded;
+  final int hiddenCount;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 40,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(
+          expanded ? Icons.keyboard_arrow_up_rounded : Icons.more_horiz_rounded,
+          size: 18,
+        ),
+        label: Text(expanded ? '접기' : '$hiddenCount개 더 보기'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AlagagiColors.sageDeep,
+          side: const BorderSide(color: Color(0x338A9A7E)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+          textStyle: sans(size: 12.5, weight: FontWeight.w800),
+        ),
+      ),
     );
   }
 }

@@ -751,7 +751,8 @@ service cloud.firestore {
             request.resource.data.resultRevealedAt == null
             || request.resource.data.resultRevealedAt is timestamp
           );
-        allow delete: if false;
+        allow delete: if isSpaceMember(spaceId)
+          && resource.data.profileId == request.auth.uid;
       }
 
       match /profileCards/{profileId}/slots/{slotId} {

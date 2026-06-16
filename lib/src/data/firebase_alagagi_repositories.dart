@@ -215,6 +215,20 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
   }
 
   @override
+  Future<void> deleteBalanceSelection(
+    String spaceId,
+    String questionId,
+    String profileId,
+  ) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('balanceSelections')
+        .doc('${questionId}_$profileId')
+        .delete();
+  }
+
+  @override
   Future<void> saveProfileSlot(
     String spaceId,
     String profileId,

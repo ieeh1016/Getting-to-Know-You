@@ -41,6 +41,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
     final isSaving = state.answerSaveStatus == SaveStatus.saving;
     final isEditing = state.editingAnswer;
     final isToday = widget.controller.isActiveAnswerToday;
+    final hasTodayPartnerAnswer = widget.controller.todayPartnerAnswer != null;
     final selectedDateContext = isToday
         ? null
         : questionDateContext(state.selectedArchiveDateKey, question);
@@ -187,9 +188,11 @@ class _AnswerScreenState extends State<AnswerScreen> {
                 AlagagiPrimaryButton(
                   label: isEditing
                       ? '수정 저장하기'
-                      : isToday
+                      : !isToday
+                      ? '저장하기'
+                      : hasTodayPartnerAnswer
                       ? '답 남기고 ${state.partner.nickname}님 답 열어보기'
-                      : '저장하기',
+                      : '답 남기기',
                   onPressed: isSaving
                       ? null
                       : widget.controller.submitActiveAnswer,

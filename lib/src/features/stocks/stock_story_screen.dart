@@ -439,14 +439,23 @@ class _StockStoryDraftCard extends StatelessWidget {
   }
 }
 
-class _StockStoryCard extends StatelessWidget {
+class _StockStoryCard extends StatefulWidget {
   const _StockStoryCard({required this.controller, required this.story});
 
   final AlagagiController controller;
   final StockStory story;
 
   @override
+  State<_StockStoryCard> createState() => _StockStoryCardState();
+}
+
+class _StockStoryCardState extends State<_StockStoryCard> {
+  bool _replyComposerVisible = false;
+
+  @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
+    final story = widget.story;
     final isMine = story.createdByProfileId == controller.state.me.id;
     final creator = isMine
         ? controller.state.me.nickname
@@ -544,7 +553,13 @@ class _StockStoryCard extends StatelessWidget {
               _StockStoryReplyBlock(story: story),
             ] else if (!isMine) ...[
               const SizedBox(height: 12),
-              _StockStoryReplyComposer(controller: controller, story: story),
+              if (_replyComposerVisible)
+                _StockStoryReplyComposer(controller: controller, story: story)
+              else
+                _StockReplyOpenButton(
+                  label: '답장 남기기',
+                  onPressed: () => setState(() => _replyComposerVisible = true),
+                ),
             ],
             if (controller.state.stockStoryReplyError != null && !isMine) ...[
               const SizedBox(height: 8),
@@ -690,6 +705,33 @@ class _StockStoryReplyBlock extends StatelessWidget {
           const SizedBox(height: 5),
           Text(story.reply ?? '', style: sans(size: 12.5, height: 1.5)),
         ],
+      ),
+    );
+  }
+}
+
+class _StockReplyOpenButton extends StatelessWidget {
+  const _StockReplyOpenButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 38,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: const Icon(Icons.chat_bubble_outline_rounded, size: 15),
+        label: Text(label),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AlagagiColors.sageDeep,
+          side: const BorderSide(color: Color(0x338A9A7E)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+          textStyle: sans(size: 12.5, weight: FontWeight.w800),
+        ),
       ),
     );
   }
@@ -1129,14 +1171,23 @@ class _StockHoldingChoiceGroup extends StatelessWidget {
   }
 }
 
-class _StockHoldingCard extends StatelessWidget {
+class _StockHoldingCard extends StatefulWidget {
   const _StockHoldingCard({required this.controller, required this.holding});
 
   final AlagagiController controller;
   final StockHolding holding;
 
   @override
+  State<_StockHoldingCard> createState() => _StockHoldingCardState();
+}
+
+class _StockHoldingCardState extends State<_StockHoldingCard> {
+  bool _replyComposerVisible = false;
+
+  @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
+    final holding = widget.holding;
     final isMine = holding.createdByProfileId == controller.state.me.id;
     final creator = isMine
         ? controller.state.me.nickname
@@ -1240,10 +1291,16 @@ class _StockHoldingCard extends StatelessWidget {
               _StockHoldingReplyBlock(holding: holding),
             ] else if (!isMine) ...[
               const SizedBox(height: 12),
-              _StockHoldingReplyComposer(
-                controller: controller,
-                holding: holding,
-              ),
+              if (_replyComposerVisible)
+                _StockHoldingReplyComposer(
+                  controller: controller,
+                  holding: holding,
+                )
+              else
+                _StockReplyOpenButton(
+                  label: '답장 남기기',
+                  onPressed: () => setState(() => _replyComposerVisible = true),
+                ),
             ],
             if (controller.state.stockHoldingReplyError != null && !isMine) ...[
               const SizedBox(height: 8),

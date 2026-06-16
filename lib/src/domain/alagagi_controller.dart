@@ -216,6 +216,12 @@ abstract class AlagagiDataRepository {
 
   Future<void> saveBalanceSelection(String spaceId, BalanceSelection selection);
 
+  Future<void> deleteBalanceSelection(
+    String spaceId,
+    String questionId,
+    String profileId,
+  );
+
   Future<void> saveProfileSlot(
     String spaceId,
     String profileId,
@@ -3054,6 +3060,19 @@ class AlagagiController extends ChangeNotifier {
     );
   }
 
+  void _deletePersistedBalanceSelection(String questionId) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      return;
+    }
+    unawaited(
+      repository
+          .deleteBalanceSelection(spaceId, questionId, _state.me.id)
+          .catchError((_) {}),
+    );
+  }
+
   void _persistProfileSlot(ProfileSlot slot) {
     final repository = _repository;
     final spaceId = _spaceId;
@@ -4958,6 +4977,11 @@ class AlagagiController extends ChangeNotifier {
       throw ArgumentError.value(optionId, 'optionId');
     }
     if (_balanceSelections[question.id] == optionId) {
+      _balanceSelections.remove(question.id);
+      _balanceReasons.remove(question.id);
+      _balanceResultRevealedAt.remove(question.id);
+      _deletePersistedBalanceSelection(question.id);
+      notifyListeners();
       return;
     }
     final selection = BalanceSelection(

@@ -778,7 +778,7 @@ void main() {
     await tester.tap(find.text('답 남기기'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(answerFieldKey), '노을 질 때가 좋아요.');
-    await tester.tap(find.text('답 남기고 영우님 답 열어보기'));
+    await tester.tap(find.widgetWithText(FilledButton, '답 남기기'));
     await tester.pumpAndSettle();
 
     expect(find.text('노을 질 때가 좋아요.'), findsOneWidget);
@@ -796,7 +796,7 @@ void main() {
     await tester.tap(find.text('답 남기기'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(answerFieldKey), '처음 남긴 답이에요.');
-    await tester.tap(find.text('답 남기고 영우님 답 열어보기'));
+    await tester.tap(find.widgetWithText(FilledButton, '답 남기기'));
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.byKey(editAnswerButtonKey));
@@ -2073,6 +2073,18 @@ void main() {
     await tester.tap(find.text('조용한 바다'));
     await tester.pumpAndSettle();
 
+    expect(find.text('선택한 카드를 한 번 더 누르면 취소돼요.'), findsOneWidget);
+    await tester.tap(find.text('조용한 바다'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(balanceReasonFieldKey), findsNothing);
+    final clearedSelection = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, '먼저 하나를 골라주세요'),
+    );
+    expect(clearedSelection.onPressed, isNull);
+
+    await tester.tap(find.text('조용한 바다'));
+    await tester.pumpAndSettle();
+
     await tester.ensureVisible(find.byKey(balanceReasonFieldKey));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(balanceReasonFieldKey), '조용한 바다가 끌려요');
@@ -2368,6 +2380,67 @@ void main() {
     );
   });
 
+  testWidgets('meeting candidate list expands and selects candidate dates', (
+    tester,
+  ) async {
+    const candidateDates = [
+      '2026-06-11',
+      '2026-06-12',
+      '2026-06-13',
+      '2026-06-14',
+    ];
+    final controller = AlagagiController.forSession(
+      AlagagiSession(
+        spaceId: 'main',
+        me: const AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: const AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          scheduleEntries: [
+            for (final dateKey in candidateDates) ...[
+              ScheduleEntry(
+                dateKey: dateKey,
+                profileId: 'youngwooUid',
+                availability: MeetingAvailability.available,
+                timeSlots: {MeetingTimeSlot.evening},
+              ),
+              ScheduleEntry(
+                dateKey: dateKey,
+                profileId: 'minyoungUid',
+                availability: MeetingAvailability.available,
+                timeSlots: {MeetingTimeSlot.evening},
+              ),
+            ],
+          ],
+        ),
+      ),
+    )..goTo(AlagagiRoute.meetings);
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(meetingCandidateCardKey('2026-06-14')), findsNothing);
+    await tester.ensureVisible(find.byKey(meetingCandidateMoreButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(meetingCandidateMoreButtonKey));
+    await tester.pumpAndSettle();
+    expect(find.byKey(meetingCandidateCardKey('2026-06-14')), findsOneWidget);
+
+    await tester.tap(find.byKey(meetingCandidateCardKey('2026-06-14')));
+    await tester.pumpAndSettle();
+    expect(controller.selectedMeetingDateKey, '2026-06-14');
+  });
+
   testWidgets('meeting candidate saves free-form meeting day details', (
     tester,
   ) async {
@@ -2621,7 +2694,7 @@ void main() {
     expect(find.text('만남 계획을 저장했어요.'), findsOneWidget);
 
     expect(
-      find.byKey(meetingPlanPlaceLinkButtonKey('place_activity')),
+      find.byKey(meetingPlanPlaceLinkButtonKey('place_cafe')),
       findsNothing,
     );
     await tester.ensureVisible(find.byKey(meetingPlanPlaceMoreButtonKey));
@@ -2629,7 +2702,7 @@ void main() {
     await tester.tap(find.byKey(meetingPlanPlaceMoreButtonKey));
     await tester.pumpAndSettle();
     expect(
-      find.byKey(meetingPlanPlaceLinkButtonKey('place_activity')),
+      find.byKey(meetingPlanPlaceLinkButtonKey('place_cafe')),
       findsOneWidget,
     );
 
@@ -3583,6 +3656,13 @@ class _FailingSaveRepository implements AlagagiDataRepository {
   Future<void> saveBalanceSelection(
     String spaceId,
     BalanceSelection selection,
+  ) async {}
+
+  @override
+  Future<void> deleteBalanceSelection(
+    String spaceId,
+    String questionId,
+    String profileId,
   ) async {}
 
   @override

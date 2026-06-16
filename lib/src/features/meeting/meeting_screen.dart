@@ -7,15 +7,27 @@ import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 import 'meeting_common.dart';
 
-class MeetingScreen extends StatelessWidget {
+class MeetingScreen extends StatefulWidget {
   const MeetingScreen({super.key, required this.controller});
 
   final AlagagiController controller;
 
   @override
+  State<MeetingScreen> createState() => _MeetingScreenState();
+}
+
+class _MeetingScreenState extends State<MeetingScreen> {
+  bool _showAllCandidates = false;
+
+  @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
     final candidates = controller.meetingCandidates;
     final meetingDayEntry = controller.nextMeetingDayEntry;
+    final visibleCandidates = _showAllCandidates
+        ? candidates
+        : candidates.take(3).toList();
+    final hiddenCandidateCount = candidates.length - visibleCandidates.length;
     return AlagagiScreenScroll(
       bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
@@ -42,11 +54,22 @@ class MeetingScreen extends StatelessWidget {
         const SizedBox(height: 10),
         if (candidates.isEmpty)
           const AlagagiEmptyStateCard(text: '둘 다 가능하다고 남긴 날이 생기면 여기에 모여요.')
-        else
-          for (final candidate in candidates.take(3)) ...[
-            _MeetingCandidateCard(candidate: candidate),
+        else ...[
+          for (final candidate in visibleCandidates) ...[
+            _MeetingCandidateCard(
+              candidate: candidate,
+              onTap: () => controller.selectMeetingDate(candidate.dateKey),
+            ),
             const SizedBox(height: 10),
           ],
+          if (candidates.length > 3)
+            _MeetingCandidateMoreButton(
+              expanded: _showAllCandidates,
+              hiddenCount: hiddenCandidateCount,
+              onPressed: () =>
+                  setState(() => _showAllCandidates = !_showAllCandidates),
+            ),
+        ],
       ],
     );
   }
@@ -806,6 +829,25 @@ class _MeetingDayPanel extends StatelessWidget {
                 ? AlagagiColors.sageDeep
                 : AlagagiColors.ink,
           ),
+          if (alreadyMeetingDay) ...[
+            const SizedBox(height: 9),
+            SizedBox(
+              height: 38,
+              child: OutlinedButton.icon(
+                onPressed: () => controller.goTo(AlagagiRoute.meetingPlans),
+                icon: const Icon(Icons.favorite_border_rounded, size: 16),
+                label: const Text('만남에서 계획하기'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.28)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  textStyle: sans(size: 12.5, weight: FontWeight.w800),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -965,60 +1007,105 @@ class _MeetingTimeBlockRow extends StatelessWidget {
   }
 }
 
+class _MeetingCandidateMoreButton extends StatelessWidget {
+  const _MeetingCandidateMoreButton({
+    required this.expanded,
+    required this.hiddenCount,
+    required this.onPressed,
+  });
+
+  final bool expanded;
+  final int hiddenCount;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 40,
+      child: OutlinedButton.icon(
+        key: meetingCandidateMoreButtonKey,
+        onPressed: onPressed,
+        icon: Icon(
+          expanded ? Icons.keyboard_arrow_up_rounded : Icons.more_horiz_rounded,
+          size: 18,
+        ),
+        label: Text(expanded ? '접기' : '$hiddenCount일 더 보기'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AlagagiColors.sageDeep,
+          side: const BorderSide(color: Color(0x338A9A7E)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+          textStyle: sans(size: 12.5, weight: FontWeight.w800),
+        ),
+      ),
+    );
+  }
+}
+
 class _MeetingCandidateCard extends StatelessWidget {
-  const _MeetingCandidateCard({required this.candidate});
+  const _MeetingCandidateCard({required this.candidate, required this.onTap});
 
   final MeetingCandidate candidate;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final detailCount =
         (candidate.myEntry?.timeBlocks.length ?? 0) +
         (candidate.partnerEntry?.timeBlocks.length ?? 0);
-    return AlagagiPaperCard(
-      radius: 18,
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AlagagiColors.ink,
-              borderRadius: BorderRadius.circular(15),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              DateTime.tryParse(candidate.dateKey)?.day.toString() ?? '',
-              style: sans(
-                size: 15,
-                weight: FontWeight.w800,
-                color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: meetingCandidateCardKey(candidate.dateKey),
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: AlagagiPaperCard(
+          radius: 18,
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AlagagiColors.ink,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  DateTime.tryParse(candidate.dateKey)?.day.toString() ?? '',
+                  style: sans(
+                    size: 15,
+                    weight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  meetingDateLabel(candidate.dateKey),
-                  style: sans(size: 13.5, weight: FontWeight.w800),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      meetingDateLabel(candidate.dateKey),
+                      style: sans(size: 13.5, weight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      [
+                        '${candidate.sharedSlots.map(meetingTimeSlotLabel).join(', ')}에 겹쳐요',
+                        if (detailCount > 0) '상세 일정 $detailCount개',
+                      ].join(' · '),
+                      style: sans(size: 11.5, color: AlagagiColors.muted),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  [
-                    '${candidate.sharedSlots.map(meetingTimeSlotLabel).join(', ')}에 겹쳐요',
-                    if (detailCount > 0) '상세 일정 $detailCount개',
-                  ].join(' · '),
-                  style: sans(size: 11.5, color: AlagagiColors.muted),
-                ),
-              ],
-            ),
+              ),
+              const AlagagiSmallBadge(label: '보기'),
+            ],
           ),
-          const AlagagiSmallBadge(label: '추천'),
-        ],
+        ),
       ),
     );
   }
