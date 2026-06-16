@@ -2,6 +2,18 @@ import 'package:flutter/material.dart';
 
 const bottomNavigationKey = Key('bottom-navigation');
 const subScreenBackButtonKey = Key('sub-screen-back-button');
+const musicTitleFieldKey = Key('music-title-field');
+const musicArtistFieldKey = Key('music-artist-field');
+const musicLinkFieldKey = Key('music-link-field');
+const musicNoteFieldKey = Key('music-note-field');
+const musicSubmitButtonKey = Key('music-submit-button');
+const musicAddButtonKey = Key('music-add-button');
+Key musicEditButtonKey(String noteId) => Key('music-edit-button-$noteId');
+Key musicLinkButtonKey(String noteId) => Key('music-link-button-$noteId');
+Key musicListenedButtonKey(String noteId) =>
+    Key('music-listened-button-$noteId');
+Key musicListFilterButtonKey(String filter) => Key('music-list-filter-$filter');
+Key musicNoteCardKey(String noteId) => Key('music-note-card-$noteId');
 const unreadActivityPanelKey = Key('unread-activity-panel');
 const unreadActivityClearButtonKey = Key('unread-activity-clear-button');
 const unreadActivityMoreButtonKey = Key('unread-activity-more-button');

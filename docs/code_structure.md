@@ -52,8 +52,8 @@ publishing, or Flutter-free domain testing.
 
 - `lib/src/shared/ui_style.dart`: shared colors and typography helpers.
 - `lib/src/shared/ui_components.dart`: shared buttons, cards, chips, labels,
-  brand marks, avatar stacks, and progress indicators used across feature
-  screens.
+  brand marks, avatar stacks, badges, quiet metrics, and progress indicators
+  used across feature screens.
 - `lib/src/app/test_keys.dart`: cross-file widget keys for extracted widgets.
 - `lib/src/app/app_shell.dart`: reusable screen scroll shell, bottom navigation,
   and sub-screen top bar.
@@ -72,6 +72,8 @@ publishing, or Flutter-free domain testing.
 - `lib/src/features/home/home_plus_grid.dart`: Home plus-feature launcher grid.
 - `lib/src/features/my/my_screen.dart`: My dashboard, next actions, recent
   traces, help, and account card.
+- `lib/src/features/music/music_screen.dart`: Music note list, filters, draft
+  editor, listened state, and link actions.
 
 ## Extraction Order
 

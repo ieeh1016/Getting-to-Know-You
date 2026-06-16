@@ -271,6 +271,73 @@ class AlagagiKeywordChip extends StatelessWidget {
   }
 }
 
+class AlagagiSmallBadge extends StatelessWidget {
+  const AlagagiSmallBadge({super.key, required this.label, this.dark = false});
+
+  final String label;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: dark
+            ? Colors.white.withValues(alpha: 0.14)
+            : const Color(0xFFF0F2EB),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      child: Text(
+        label,
+        style: sans(
+          size: 10.5,
+          color: dark ? Colors.white : AlagagiColors.sageDeep,
+        ),
+      ),
+    );
+  }
+}
+
+class AlagagiQuietMetric extends StatelessWidget {
+  const AlagagiQuietMetric({
+    super.key,
+    required this.label,
+    required this.value,
+    this.muted = false,
+  });
+
+  final String label;
+  final String value;
+  final bool muted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: muted ? const Color(0xFFF8F8F4) : const Color(0xFFF1F4EC),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: sans(size: 10.5, color: AlagagiColors.muted)),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: serif(
+              context,
+              size: 19,
+              weight: FontWeight.w800,
+              color: muted ? AlagagiColors.muted : AlagagiColors.sageDeep,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class AlagagiSimilarityBadge extends StatelessWidget {
   const AlagagiSimilarityBadge({super.key, required this.keyword});
 
