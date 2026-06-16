@@ -131,6 +131,14 @@ const answerCommentSubmitButtonKey = Key('answer-comment-submit-button');
 Key answerPreviewBlockKey(String questionId, String profileId) =>
     Key('answer-preview-$questionId-$profileId');
 
+const archiveCalendarKey = Key('archive-question-calendar');
+const archiveCalendarPreviousButtonKey = Key('archive-calendar-previous');
+const archiveCalendarNextButtonKey = Key('archive-calendar-next');
+const archiveCalendarTodayButtonKey = Key('archive-calendar-today');
+const lateAnswerButtonKey = Key('late-answer-button');
+Key archiveCalendarDayButtonKey(String dateKey) =>
+    Key('archive-calendar-day-$dateKey');
+
 const balanceDeckKey = Key('balance-deck');
 const balanceReasonFieldKey = Key('balance-reason-field');
 const balanceReasonSaveButtonKey = Key('balance-reason-save-button');

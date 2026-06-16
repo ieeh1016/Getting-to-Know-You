@@ -76,6 +76,9 @@ publishing, or Flutter-free domain testing.
 - `lib/src/features/home/home_plus_grid.dart`: Home plus-feature launcher grid.
 - `lib/src/features/answer/answer_screen.dart`: Today and late-answer editor,
   answer hints, partner lock copy, and save retry controls.
+- `lib/src/features/archive/archive_screen.dart`: Question archive calendar,
+  selected-date detail, late-answer entry point, archive filters, and archived
+  answer cards.
 - `lib/src/features/improvements/improvement_board_screen.dart`: Improvement
   board, request draft form, owner edit/delete actions, and save status UI.
 - `lib/src/features/my/my_screen.dart`: My dashboard, next actions, recent
