@@ -15,6 +15,16 @@ void main() {
       indexHtml,
       contains('<meta name="apple-mobile-web-app-title" content="조금씩">'),
     );
+    expect(
+      indexHtml,
+      contains('<meta name="apple-mobile-web-app-capable" content="yes">'),
+    );
+    expect(
+      indexHtml,
+      contains(
+        '<link rel="apple-touch-icon" sizes="180x180" href="icons/Icon-180.png">',
+      ),
+    );
     expect(indexHtml, contains('천천히 서로를 알아가는 비공개 웹앱'));
     expect(indexHtml, isNot(contains('<title>알아가기</title>')));
 
@@ -27,6 +37,7 @@ void main() {
 
   test('web icon assets keep required png sizes', () {
     expect(_pngSize('web/favicon.png'), const PngSize(16, 16));
+    expect(_pngSize('web/icons/Icon-180.png'), const PngSize(180, 180));
     expect(_pngSize('web/icons/Icon-192.png'), const PngSize(192, 192));
     expect(_pngSize('web/icons/Icon-512.png'), const PngSize(512, 512));
     expect(
