@@ -50,13 +50,16 @@ publishing, or Flutter-free domain testing.
 ## Current Extracted Modules
 
 - `lib/src/shared/ui_style.dart`: shared colors and typography helpers.
-- `lib/src/shared/ui_components.dart`: shared buttons, cards, chips, labels, and
-  progress indicators used across feature screens.
+- `lib/src/shared/ui_components.dart`: shared buttons, cards, chips, labels,
+  brand marks, avatar stacks, and progress indicators used across feature
+  screens.
 - `lib/src/app/test_keys.dart`: cross-file widget keys for extracted widgets.
 - `lib/src/features/home/unread_activity_panel.dart`: Home unread activity
   preview and full-list sheet.
 - `lib/src/features/home/home_progress_summary_card.dart`: Home progress summary
   card.
+- `lib/src/features/home/home_header.dart`: Home brand header, menu sheet, and
+  progress strip.
 - `lib/src/features/home/home_insight_grid.dart`: Home answer/record summary
   metric grid.
 - `lib/src/features/home/home_plus_grid.dart`: Home plus-feature launcher grid.

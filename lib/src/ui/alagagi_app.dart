@@ -7,6 +7,7 @@ import '../data/first_visit_guide_store.dart';
 import '../data/firebase_alagagi_repositories.dart';
 import '../data/music_note_seen_store.dart';
 import '../domain/alagagi_controller.dart';
+import '../features/home/home_header.dart';
 import '../features/home/home_insight_grid.dart';
 import '../features/home/home_plus_grid.dart';
 import '../features/home/home_progress_summary_card.dart';
@@ -109,16 +110,6 @@ const answerCommentCancelButtonKey = Key('answer-comment-cancel-button');
 const answerCommentSubmitButtonKey = Key('answer-comment-submit-button');
 const readableDetailSheetKey = Key('readable-detail-sheet');
 const readableDetailBodyKey = Key('readable-detail-body');
-const homeBrandLogoKey = Key('home-brand-logo');
-const homeMenuButtonKey = Key('home-menu-button');
-const homeMenuSheetKey = Key('home-menu-sheet');
-const homeMenuCuriosityButtonKey = Key('home-menu-curiosity-button');
-const homeMenuStockStoryButtonKey = Key('home-menu-stock-story-button');
-const homeMenuImprovementButtonKey = Key('home-menu-improvement-button');
-const homeMenuBalanceButtonKey = Key('home-menu-balance-button');
-const homeMenuProfileCardButtonKey = Key('home-menu-profile-card-button');
-const homeMenuWishlistButtonKey = Key('home-menu-wishlist-button');
-const homeMenuGuideButtonKey = Key('home-menu-guide-button');
 const homeCuriosityEntryKey = Key('home-curiosity-entry');
 const homeCuriositySheetKey = Key('home-curiosity-sheet');
 const curiosityQuestionFieldKey = Key('curiosity-question-field');
@@ -1049,53 +1040,7 @@ class _InviteSeal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _BrandLeafMark(size: 80, iconSize: 34);
-  }
-}
-
-class _BrandLeafMark extends StatelessWidget {
-  const _BrandLeafMark({this.size = 42, this.iconSize = 20});
-
-  final double size;
-  final double iconSize;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AlagagiColors.paper,
-        border: Border.all(color: AlagagiColors.line),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0F57624C),
-            blurRadius: 18,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      alignment: Alignment.center,
-      child: Container(
-        width: size * 0.62,
-        height: size * 0.62,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-            colors: [Color(0xFFEEF2EA), Color(0xFFFCFCFA)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        alignment: Alignment.center,
-        child: Icon(
-          Icons.eco_outlined,
-          size: iconSize,
-          color: AlagagiColors.sageDeep,
-        ),
-      ),
-    );
+    return const AlagagiBrandLeafMark(size: 80, iconSize: 34);
   }
 }
 
@@ -1286,9 +1231,18 @@ class HomeScreen extends StatelessWidget {
     return _ScreenScroll(
       bottomNavigation: _BottomNav(controller: controller),
       children: [
-        _HomeHeader(controller: controller),
+        HomeHeader(
+          controller: controller,
+          brandKicker: _brandKicker,
+          onOpenMenu: () => showHomeMenuSheet(
+            context: context,
+            controller: controller,
+            onOpenCuriosity: () => _showCuriosityMenuSheet(context, controller),
+            onOpenGuideBook: () => _showFirstVisitGuideBook(context),
+          ),
+        ),
         const SizedBox(height: 18),
-        _ProgressStrip(controller: controller),
+        HomeProgressStrip(controller: controller),
         UnreadActivityPanel(
           controller: controller,
           onOpenCuriosity: (context) =>
@@ -1569,459 +1523,6 @@ class _FirstVisitPathRow extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _HomeHeader extends StatelessWidget {
-  const _HomeHeader({required this.controller});
-
-  final AlagagiController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Semantics(
-            key: homeBrandLogoKey,
-            label: '${controller.state.personalization.appTitle} 로고',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const _BrandLeafMark(),
-                    const SizedBox(width: 11),
-                    Expanded(
-                      child: Text(
-                        controller.state.personalization.appTitle,
-                        style: serif(
-                          context,
-                          size: 24,
-                          weight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Padding(
-                  padding: const EdgeInsets.only(left: 53),
-                  child: Text(
-                    _brandKicker,
-                    style: sans(
-                      size: 10.5,
-                      weight: FontWeight.w800,
-                      color: AlagagiColors.sageDeep,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Tooltip(
-          message: '조금씩 메뉴',
-          child: IconButton(
-            key: homeMenuButtonKey,
-            onPressed: () => _showHomeMenuSheet(context, controller),
-            icon: const Icon(Icons.menu_rounded, size: 20),
-            color: AlagagiColors.sageDeep,
-            style: IconButton.styleFrom(
-              backgroundColor: AlagagiColors.paper,
-              shape: RoundedRectangleBorder(
-                side: const BorderSide(color: AlagagiColors.line),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              fixedSize: const Size(42, 42),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-void _showHomeMenuSheet(BuildContext context, AlagagiController controller) {
-  showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (sheetContext) {
-      final maxHeight = MediaQuery.sizeOf(sheetContext).height * 0.88;
-      return SafeArea(
-        child: Container(
-          key: homeMenuSheetKey,
-          margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-          constraints: BoxConstraints(maxHeight: maxHeight),
-          decoration: BoxDecoration(
-            color: AlagagiColors.paper,
-            border: Border.all(color: AlagagiColors.line),
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x2E2C2B25),
-                blurRadius: 44,
-                offset: Offset(0, 18),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.fromLTRB(18, 11, 18, 18),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD7D5CC),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 17),
-                Text(
-                  '기능 모아보기',
-                  style: serif(context, size: 21, weight: FontWeight.w800),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '오늘 질문을 방해하지 않는 선에서, 가끔 꺼내볼 기능을 한곳에 모았어요.',
-                  style: sans(
-                    size: 12.3,
-                    color: AlagagiColors.muted,
-                    height: 1.55,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                _HomeMenuRow(
-                  rowKey: homeMenuCuriosityButtonKey,
-                  icon: Icons.question_answer_outlined,
-                  title: '궁금함 한 장',
-                  subtitle: '상대에게 짧게 물어보기',
-                  badgeCount: controller.unreadCountForFeature(
-                    UnreadActivityFeature.curiosity,
-                  ),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    controller.markFeatureSeen(UnreadActivityFeature.curiosity);
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      _showCuriosityMenuSheet(context, controller);
-                    });
-                  },
-                ),
-                const SizedBox(height: 8),
-                _HomeMenuRow(
-                  rowKey: homeMenuStockStoryButtonKey,
-                  icon: Icons.bar_chart_rounded,
-                  title: '주식 이야기',
-                  subtitle: '관심 종목과 걱정 포인트를 함께 보기',
-                  badgeCount: controller.unreadCountForFeature(
-                    UnreadActivityFeature.stocks,
-                  ),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    controller.goTo(AlagagiRoute.stockStory);
-                  },
-                ),
-                const SizedBox(height: 8),
-                _HomeMenuRow(
-                  rowKey: homeMenuImprovementButtonKey,
-                  icon: Icons.rate_review_outlined,
-                  title: '건의함',
-                  subtitle: '개선 아이디어와 추가 요청 남기기',
-                  badgeCount: controller.unreadCountForFeature(
-                    UnreadActivityFeature.improvements,
-                  ),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    controller.goTo(AlagagiRoute.improvements);
-                  },
-                ),
-                const SizedBox(height: 8),
-                _HomeMenuRow(
-                  rowKey: homeMenuBalanceButtonKey,
-                  icon: Icons.swap_horiz_rounded,
-                  title: '취향 매치',
-                  subtitle: '둘 중 하나를 고르고 서로의 취향 보기',
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    controller.goTo(AlagagiRoute.balance);
-                  },
-                ),
-                const SizedBox(height: 8),
-                _HomeMenuRow(
-                  rowKey: homeMenuProfileCardButtonKey,
-                  icon: Icons.badge_outlined,
-                  title: '소개 카드',
-                  subtitle: '취향과 대화 방식을 편한 만큼 채우기',
-                  badgeCount: controller.unreadCountForFeature(
-                    UnreadActivityFeature.profileCard,
-                  ),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    if (controller.unreadCountForFeature(
-                          UnreadActivityFeature.profileCard,
-                        ) >
-                        0) {
-                      controller.setProfileCardTab(ProfileCardTab.partner);
-                    } else {
-                      controller.setProfileCardTab(ProfileCardTab.me);
-                    }
-                    controller.goTo(AlagagiRoute.profileCard);
-                  },
-                ),
-                const SizedBox(height: 8),
-                _HomeMenuRow(
-                  rowKey: homeMenuWishlistButtonKey,
-                  icon: Icons.bookmark_add_outlined,
-                  title: '언젠가, 같이',
-                  subtitle: '같이 해보고 싶은 일을 조용히 담기',
-                  badgeCount: controller.unreadCountForFeature(
-                    UnreadActivityFeature.wishlist,
-                  ),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    controller.goTo(AlagagiRoute.wishlist);
-                  },
-                ),
-                const SizedBox(height: 8),
-                _HomeMenuRow(
-                  rowKey: homeMenuGuideButtonKey,
-                  icon: Icons.info_outline_rounded,
-                  title: '처음 안내',
-                  subtitle: '조금씩 사용하는 방법 다시 보기',
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      _showFirstVisitGuideBook(context);
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    },
-  );
-}
-
-class _HomeMenuRow extends StatelessWidget {
-  const _HomeMenuRow({
-    required this.rowKey,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-    this.badgeCount = 0,
-  });
-
-  final Key rowKey;
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-  final int badgeCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        key: rowKey,
-        borderRadius: BorderRadius.circular(17),
-        onTap: onTap,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 64),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8F8F4),
-            border: Border.all(color: AlagagiColors.line),
-            borderRadius: BorderRadius.circular(17),
-          ),
-          padding: const EdgeInsets.all(10),
-          child: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEEF2EA),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                alignment: Alignment.center,
-                child: Icon(icon, size: 19, color: AlagagiColors.sageDeep),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      title,
-                      style: sans(
-                        size: 13.1,
-                        weight: FontWeight.w800,
-                        color: const Color(0xFF46443F),
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      subtitle,
-                      style: sans(
-                        size: 11.2,
-                        color: AlagagiColors.muted,
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (badgeCount > 0) ...[
-                const SizedBox(width: 8),
-                _UnreadCountBadge(count: badgeCount),
-              ],
-              const Icon(
-                Icons.chevron_right_rounded,
-                size: 20,
-                color: AlagagiColors.muted,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _UnreadCountBadge extends StatelessWidget {
-  const _UnreadCountBadge({required this.count});
-
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 22,
-      constraints: const BoxConstraints(minWidth: 22),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: const Color(0xFFB18472),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 7),
-      child: Text(
-        count > 9 ? '9+' : '$count',
-        style: sans(size: 10.5, weight: FontWeight.w900, color: Colors.white),
-      ),
-    );
-  }
-}
-
-class _ProgressStrip extends StatelessWidget {
-  const _ProgressStrip({required this.controller});
-
-  final AlagagiController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AlagagiColors.ink,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'DAY ${controller.todayQuestion.day} · 서로의 ${controller.todayQuestion.number}번째 질문',
-                  style: sans(
-                    size: 11,
-                    color: const Color(0xFFB8B6AD),
-                    letterSpacing: 1,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  controller.state.personalization.homeLine,
-                  style: serif(
-                    context,
-                    size: 16,
-                    weight: FontWeight.w700,
-                    color: AlagagiColors.appBackground,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _AvatarStack(
-            me: controller.state.me,
-            partner: controller.state.partner,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AvatarStack extends StatelessWidget {
-  const _AvatarStack({required this.me, required this.partner});
-
-  final AppProfile me;
-  final AppProfile partner;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 60,
-      height: 36,
-      child: Stack(
-        children: [
-          Positioned(
-            left: 0,
-            child: _SmallAvatar(profile: me, color: AlagagiColors.sagePanel),
-          ),
-          Positioned(
-            left: 26,
-            child: _SmallAvatar(
-              profile: partner,
-              color: const Color(0xFFD8CCE2),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SmallAvatar extends StatelessWidget {
-  const _SmallAvatar({required this.profile, required this.color});
-
-  final AppProfile profile;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 34,
-      height: 34,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
-        border: Border.all(color: AlagagiColors.ink, width: 2),
-      ),
-      alignment: Alignment.center,
-      child: Text(profile.avatar, style: const TextStyle(fontSize: 15)),
     );
   }
 }
@@ -5473,9 +4974,9 @@ class RecordsScreen extends StatelessWidget {
           padding: const EdgeInsets.all(26),
           child: Column(
             children: [
-              _AvatarStack(
-                me: controller.state.me,
-                partner: controller.state.partner,
+              AlagagiAvatarStack(
+                meAvatar: controller.state.me.avatar,
+                partnerAvatar: controller.state.partner.avatar,
               ),
               const SizedBox(height: 12),
               Text(
