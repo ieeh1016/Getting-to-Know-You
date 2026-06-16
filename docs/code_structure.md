@@ -89,6 +89,8 @@ publishing, or Flutter-free domain testing.
   icons, and save status widget used by meeting plans and the place board.
 - `lib/src/features/place/place_board_screen.dart`: Place board tab, Kakao
   place search, map preview/fallback UI, and shared place card actions.
+- `lib/src/features/stocks/stock_story_screen.dart`: Stock story and holdings
+  tabs, draft forms, filters, reply composers, and owner edit/delete actions.
 
 ## Extraction Order
 

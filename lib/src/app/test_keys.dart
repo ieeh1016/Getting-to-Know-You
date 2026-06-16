@@ -115,3 +115,46 @@ Key improvementEditButtonKey(String postId) =>
     Key('improvement-edit-button-$postId');
 Key improvementDeleteButtonKey(String postId) =>
     Key('improvement-delete-button-$postId');
+
+const stockStoryAddButtonKey = Key('stock-story-add-button');
+const stockStoryNameFieldKey = Key('stock-story-name-field');
+const stockStoryReasonFieldKey = Key('stock-story-reason-field');
+const stockStoryUpsideFieldKey = Key('stock-story-upside-field');
+const stockStoryRiskFieldKey = Key('stock-story-risk-field');
+const stockStoryQuestionFieldKey = Key('stock-story-question-field');
+const stockStorySubmitButtonKey = Key('stock-story-submit-button');
+const stockStoryTabStoriesKey = Key('stock-story-tab-stories');
+const stockStoryTabHoldingsKey = Key('stock-story-tab-holdings');
+Key stockStoryCardKey(String storyId) => Key('stock-story-card-$storyId');
+Key stockStoryReplyFieldKey(String storyId) =>
+    Key('stock-story-reply-field-$storyId');
+Key stockStoryReplySubmitButtonKey(String storyId) =>
+    Key('stock-story-reply-submit-$storyId');
+Key stockStoryReplyToneKey(String storyId, String tone) =>
+    Key('stock-story-reply-tone-$storyId-$tone');
+Key stockStoryListFilterButtonKey(String filter) =>
+    Key('stock-story-list-filter-$filter');
+
+const stockHoldingAddButtonKey = Key('stock-holding-add-button');
+const stockHoldingNameFieldKey = Key('stock-holding-name-field');
+const stockHoldingReasonFieldKey = Key('stock-holding-reason-field');
+const stockHoldingWatchFieldKey = Key('stock-holding-watch-field');
+const stockHoldingConcernFieldKey = Key('stock-holding-concern-field');
+const stockHoldingQuestionFieldKey = Key('stock-holding-question-field');
+const stockHoldingSubmitButtonKey = Key('stock-holding-submit-button');
+Key stockHoldingCardKey(String holdingId) =>
+    Key('stock-holding-card-$holdingId');
+Key stockHoldingEditButtonKey(String holdingId) =>
+    Key('stock-holding-edit-button-$holdingId');
+Key stockHoldingDeleteButtonKey(String holdingId) =>
+    Key('stock-holding-delete-button-$holdingId');
+Key stockHoldingStatusKey(String status) => Key('stock-holding-status-$status');
+Key stockHoldingWeightKey(String weight) => Key('stock-holding-weight-$weight');
+Key stockHoldingReplyFieldKey(String holdingId) =>
+    Key('stock-holding-reply-field-$holdingId');
+Key stockHoldingReplySubmitButtonKey(String holdingId) =>
+    Key('stock-holding-reply-submit-$holdingId');
+Key stockHoldingReplyToneKey(String holdingId, String tone) =>
+    Key('stock-holding-reply-tone-$holdingId-$tone');
+Key stockHoldingListFilterButtonKey(String filter) =>
+    Key('stock-holding-list-filter-$filter');
