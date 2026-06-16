@@ -76,6 +76,8 @@ publishing, or Flutter-free domain testing.
   editor, listened state, and link actions.
 - `lib/src/features/meeting/meeting_common.dart`: Meeting date labels, time
   labels, save status, and shared schedule text field widgets.
+- `lib/src/features/meeting/meeting_plan_screen.dart`: Fixed meeting day plan
+  tab, including date strip, shared plan items, and linked place candidates.
 - `lib/src/features/place/place_common.dart`: Shared place category labels,
   icons, and save status widget used by meeting plans and the place board.
 
