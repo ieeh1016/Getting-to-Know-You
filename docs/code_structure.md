@@ -8,6 +8,7 @@ screen code to `lib/src/ui/alagagi_app.dart`.
 
 ```text
 lib/src/app/
+  app_shell.dart
   test_keys.dart
 
 lib/src/shared/
@@ -54,6 +55,8 @@ publishing, or Flutter-free domain testing.
   brand marks, avatar stacks, and progress indicators used across feature
   screens.
 - `lib/src/app/test_keys.dart`: cross-file widget keys for extracted widgets.
+- `lib/src/app/app_shell.dart`: reusable screen scroll shell, bottom navigation,
+  and sub-screen top bar.
 - `lib/src/features/home/unread_activity_panel.dart`: Home unread activity
   preview and full-list sheet.
 - `lib/src/features/home/first_visit_guide_overlay.dart`: First-visit Home

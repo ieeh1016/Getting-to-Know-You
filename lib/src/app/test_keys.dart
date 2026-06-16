@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+const bottomNavigationKey = Key('bottom-navigation');
+const subScreenBackButtonKey = Key('sub-screen-back-button');
 const unreadActivityPanelKey = Key('unread-activity-panel');
 const unreadActivityClearButtonKey = Key('unread-activity-clear-button');
 const unreadActivityMoreButtonKey = Key('unread-activity-more-button');

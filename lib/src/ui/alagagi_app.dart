@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../app/app_shell.dart';
 import '../data/external_link_opener.dart';
 import '../data/first_visit_guide_store.dart';
 import '../data/firebase_alagagi_repositories.dart';
@@ -19,6 +20,7 @@ import '../shared/ui_style.dart';
 import 'kakao_map_panel.dart';
 
 export '../app/test_keys.dart';
+export '../app/app_shell.dart';
 export '../shared/ui_components.dart';
 export '../shared/ui_style.dart';
 
@@ -104,7 +106,6 @@ const placeRetryButtonKey = Key('place-retry-button');
 const editAnswerButtonKey = Key('edit-answer-button');
 const homeQuestionCardKey = Key('home-question-card');
 const homeQuestionAnswerButtonKey = Key('home-question-answer-button');
-const subScreenBackButtonKey = Key('sub-screen-back-button');
 const answerRetryButtonKey = Key('answer-retry-button');
 const answerCommentFieldKey = Key('answer-comment-field');
 const answerCommentEditButtonKey = Key('answer-comment-edit-button');
@@ -184,7 +185,6 @@ double _placeBoardMapHeight(BuildContext context) {
 Key stockHoldingReplyToneKey(String holdingId, String tone) =>
     Key('stock-holding-reply-tone-$holdingId-$tone');
 const alagagiShellKey = Key('alagagi-shell');
-const bottomNavigationKey = Key('bottom-navigation');
 const archiveCalendarKey = Key('archive-question-calendar');
 const archiveCalendarPreviousButtonKey = Key('archive-calendar-previous');
 const archiveCalendarNextButtonKey = Key('archive-calendar-next');
@@ -483,52 +483,6 @@ class _PhoneShell extends StatelessWidget {
           child: child,
         ),
       ),
-    );
-  }
-}
-
-class _ScreenScroll extends StatelessWidget {
-  const _ScreenScroll({
-    required this.children,
-    this.bottomNavigation,
-    this.padding = const EdgeInsets.fromLTRB(28, 34, 28, 112),
-  });
-
-  final List<Widget> children;
-  final Widget? bottomNavigation;
-  final EdgeInsets padding;
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomPadding = bottomNavigation == null
-        ? padding.bottom
-        : padding.bottom > 72
-        ? 24.0
-        : padding.bottom;
-    final effectivePadding = padding.copyWith(bottom: bottomPadding);
-
-    final scrollable = ListView(
-      padding: EdgeInsets.zero,
-      children: [
-        Padding(
-          padding: effectivePadding,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: children,
-          ),
-        ),
-      ],
-    );
-
-    if (bottomNavigation == null) {
-      return scrollable;
-    }
-
-    return Column(
-      children: [
-        Expanded(child: scrollable),
-        bottomNavigation!,
-      ],
     );
   }
 }
@@ -877,7 +831,7 @@ class FirebaseSetupRequiredScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _ScreenScroll(
+    return AlagagiScreenScroll(
       padding: const EdgeInsets.fromLTRB(28, 34, 28, 34),
       children: [
         const SizedBox(height: 30),
@@ -1223,8 +1177,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _ScreenScroll(
-      bottomNavigation: _BottomNav(controller: controller),
+    return AlagagiScreenScroll(
+      bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
         HomeHeader(
           controller: controller,
@@ -2940,10 +2894,10 @@ class _AnswerScreenState extends State<AnswerScreen> {
 
     return Stack(
       children: [
-        _ScreenScroll(
+        AlagagiScreenScroll(
           padding: const EdgeInsets.fromLTRB(28, 34, 28, 166),
           children: [
-            _TopBar(
+            AlagagiTopBar(
               title: isToday ? '오늘의 질문' : '늦게 답하기',
               trailing: 'DAY ${question.day}',
               onBack: () => widget.controller.goTo(
@@ -3183,8 +3137,8 @@ class ArchiveScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = controller.archiveItems;
-    return _ScreenScroll(
-      bottomNavigation: _BottomNav(controller: controller),
+    return AlagagiScreenScroll(
+      bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
         Text('질문', style: serif(context, size: 23, weight: FontWeight.w800)),
         const SizedBox(height: 4),
@@ -4062,8 +4016,8 @@ class RecordsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final insight = controller.insight;
     final isEmpty = insight.questionCount == 0;
-    return _ScreenScroll(
-      bottomNavigation: _BottomNav(controller: controller),
+    return AlagagiScreenScroll(
+      bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
         Text('질문', style: serif(context, size: 23, weight: FontWeight.w800)),
         const SizedBox(height: 4),
@@ -4362,10 +4316,10 @@ class _BalanceScreenState extends State<BalanceScreen> {
     final progressLabel =
         '${controller.state.activeBalanceIndex + 1} / ${controller.balanceQuestions.length}';
 
-    return _ScreenScroll(
+    return AlagagiScreenScroll(
       padding: const EdgeInsets.fromLTRB(24, 34, 24, 44),
       children: [
-        _TopBar(
+        AlagagiTopBar(
           title: '취향 매치',
           trailing: progressLabel,
           onBack: () => controller.goTo(AlagagiRoute.home),
@@ -6247,10 +6201,10 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
     final filledSlots = _filledSlots(filteredSlots);
     final pendingSlots = _pendingSlots(filteredSlots);
     final recommendedSlot = _recommendedSlot(card);
-    return _ScreenScroll(
-      bottomNavigation: _BottomNav(controller: controller),
+    return AlagagiScreenScroll(
+      bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
-        _TopBar(
+        AlagagiTopBar(
           title: '소개 카드',
           trailing: '',
           onBack: () => controller.goTo(AlagagiRoute.home),
@@ -8249,10 +8203,10 @@ class WishlistScreen extends StatelessWidget {
         .toList();
     final doneWishes = wishes.where((wish) => wish.done).toList();
 
-    return _ScreenScroll(
-      bottomNavigation: _BottomNav(controller: controller),
+    return AlagagiScreenScroll(
+      bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
-        _TopBar(
+        AlagagiTopBar(
           title: '언젠가, 같이',
           trailing: '',
           onBack: () => controller.goTo(AlagagiRoute.home),
@@ -8833,10 +8787,10 @@ class MeetingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final candidates = controller.meetingCandidates;
     final meetingDayEntry = controller.nextMeetingDayEntry;
-    return _ScreenScroll(
-      bottomNavigation: _BottomNav(controller: controller),
+    return AlagagiScreenScroll(
+      bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
-        _TopBar(title: '만날 수 있는 날', trailing: ''),
+        AlagagiTopBar(title: '만날 수 있는 날', trailing: ''),
         const SizedBox(height: 4),
         Text(
           '각자의 일정 내용은 지키면서 겹치는 여유만 맞춰요',
@@ -8878,10 +8832,10 @@ class MeetingPlanScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final entries = controller.meetingDayEntries;
     final selectedEntry = controller.selectedMeetingPlanEntry;
-    return _ScreenScroll(
-      bottomNavigation: _BottomNav(controller: controller),
+    return AlagagiScreenScroll(
+      bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
-        _TopBar(title: '만남', trailing: ''),
+        AlagagiTopBar(title: '만남', trailing: ''),
         const SizedBox(height: 4),
         Text(
           '정해진 날만 모아서 뭐하고 어디 갈지 정리해요',
@@ -10764,10 +10718,10 @@ class _PlaceBoardScreenState extends State<PlaceBoardScreen> {
     final onOpenExternalLink = widget.onOpenExternalLink;
     final places = controller.sharedPlaces;
     final mutualCount = places.where((place) => place.isMutual).length;
-    return _ScreenScroll(
-      bottomNavigation: _BottomNav(controller: controller),
+    return AlagagiScreenScroll(
+      bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
-        _TopBar(title: '가보고 싶은 곳', trailing: ''),
+        AlagagiTopBar(title: '가보고 싶은 곳', trailing: ''),
         const SizedBox(height: 4),
         Row(
           children: [
@@ -12519,10 +12473,10 @@ class ImprovementBoardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final posts = controller.improvementPosts;
     final state = controller.state;
-    return _ScreenScroll(
-      bottomNavigation: _BottomNav(controller: controller),
+    return AlagagiScreenScroll(
+      bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
-        _TopBar(
+        AlagagiTopBar(
           title: '건의함',
           trailing: '',
           onBack: () => controller.goTo(AlagagiRoute.home),
@@ -13016,10 +12970,10 @@ class StockStoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activeTab = controller.state.stockStoryTab;
-    return _ScreenScroll(
-      bottomNavigation: _BottomNav(controller: controller),
+    return AlagagiScreenScroll(
+      bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
-        _TopBar(
+        AlagagiTopBar(
           title: '주식 이야기',
           trailing: '',
           onBack: () => controller.goTo(AlagagiRoute.home),
@@ -14477,8 +14431,8 @@ class MusicScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final notes = controller.visibleMusicNotes;
     final totalCount = controller.musicNotes.length;
-    return _ScreenScroll(
-      bottomNavigation: _BottomNav(controller: controller),
+    return AlagagiScreenScroll(
+      bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
         Text('음악 노트', style: serif(context, size: 23, weight: FontWeight.w800)),
         const SizedBox(height: 4),
@@ -15204,10 +15158,10 @@ class MyScreen extends StatelessWidget {
     final musicActionLabel = myMusicNotes.isEmpty ? '음악 노트 남기기' : '내 음악 노트 다듬기';
     final musicActionState = myMusicNotes.isEmpty ? '아직 없음' : '최근 1곡';
 
-    return _ScreenScroll(
-      bottomNavigation: _BottomNav(controller: controller),
+    return AlagagiScreenScroll(
+      bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
-        _TopBar(title: '마이', trailing: ''),
+        AlagagiTopBar(title: '마이', trailing: ''),
         const SizedBox(height: 18),
         Column(
           key: myDashboardKey,
@@ -16010,281 +15964,6 @@ class _MyAccountCard extends StatelessWidget {
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _BottomNav extends StatelessWidget {
-  const _BottomNav({required this.controller});
-
-  final AlagagiController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      key: bottomNavigationKey,
-      decoration: BoxDecoration(
-        color: AlagagiColors.paper.withValues(alpha: 0.94),
-        border: const Border(top: BorderSide(color: AlagagiColors.line)),
-      ),
-      padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
-      child: Row(
-        children: [
-          Expanded(
-            child: _NavItem(
-              icon: Icons.home_outlined,
-              label: '홈',
-              selected: controller.state.route == AlagagiRoute.home,
-              onTap: () => controller.goTo(AlagagiRoute.home),
-            ),
-          ),
-          Expanded(
-            child: _NavItem(
-              icon: Icons.menu_book_outlined,
-              label: '질문',
-              selected:
-                  controller.state.route == AlagagiRoute.archive ||
-                  controller.state.route == AlagagiRoute.records,
-              onTap: () => controller.goTo(AlagagiRoute.archive),
-            ),
-          ),
-          Expanded(
-            child: _NavItem(
-              icon: Icons.music_note_outlined,
-              label: '음악',
-              selected: controller.state.route == AlagagiRoute.music,
-              showBadge:
-                  controller.unreadCountForFeature(
-                    UnreadActivityFeature.music,
-                  ) >
-                  0,
-              onTap: () => controller.goTo(AlagagiRoute.music),
-            ),
-          ),
-          Expanded(
-            child: _NavItem(
-              icon: Icons.event_available_outlined,
-              label: '약속',
-              selected: controller.state.route == AlagagiRoute.meetings,
-              showBadge:
-                  controller.unreadCountForFeature(
-                    UnreadActivityFeature.meetings,
-                  ) >
-                  0,
-              onTap: () => controller.goTo(AlagagiRoute.meetings),
-            ),
-          ),
-          Expanded(
-            child: _NavItem(
-              icon: Icons.favorite_border_rounded,
-              label: '만남',
-              selected: controller.state.route == AlagagiRoute.meetingPlans,
-              showBadge:
-                  controller.unreadCountForFeature(
-                    UnreadActivityFeature.meetings,
-                  ) >
-                  0,
-              onTap: () => controller.goTo(AlagagiRoute.meetingPlans),
-            ),
-          ),
-          Expanded(
-            child: _NavItem(
-              icon: Icons.place_outlined,
-              label: '장소',
-              selected: controller.state.route == AlagagiRoute.places,
-              showBadge:
-                  controller.unreadCountForFeature(
-                    UnreadActivityFeature.places,
-                  ) >
-                  0,
-              onTap: () => controller.goTo(AlagagiRoute.places),
-            ),
-          ),
-          Expanded(
-            child: _NavItem(
-              icon: Icons.person_outline_rounded,
-              label: '마이',
-              selected: controller.state.route == AlagagiRoute.my,
-              onTap: () => controller.goTo(AlagagiRoute.my),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.showBadge = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final bool showBadge;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(14),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(
-                  icon,
-                  size: 19,
-                  color: selected ? AlagagiColors.ink : AlagagiColors.muted,
-                ),
-                if (showBadge)
-                  Positioned(
-                    right: -4,
-                    top: -4,
-                    child: Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: const Color(0xFFB18472),
-                        border: Border.all(
-                          color: AlagagiColors.paper,
-                          width: 1.2,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: sans(
-                size: 10,
-                weight: selected ? FontWeight.w700 : FontWeight.w400,
-                color: selected ? AlagagiColors.ink : AlagagiColors.muted,
-              ),
-            ),
-            const SizedBox(height: 4),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              width: selected ? 16 : 0,
-              height: 4,
-              decoration: BoxDecoration(
-                color: selected ? AlagagiColors.sageDeep : Colors.transparent,
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TopBar extends StatelessWidget {
-  const _TopBar({required this.title, required this.trailing, this.onBack});
-
-  final String title;
-  final String trailing;
-  final VoidCallback? onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        SizedBox(
-          width: 56,
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: onBack == null
-                ? const SizedBox.shrink()
-                : _BackButton(onTap: onBack!),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            title,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: serif(
-              context,
-              size: 18,
-              weight: FontWeight.w700,
-              color: AlagagiColors.ink,
-            ),
-          ),
-        ),
-        SizedBox(
-          width: 56,
-          child: Text(
-            trailing,
-            textAlign: TextAlign.right,
-            style: serif(
-              context,
-              size: 13,
-              color: AlagagiColors.sageDeep,
-              weight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _BackButton extends StatelessWidget {
-  const _BackButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: '뒤로',
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(19),
-        child: InkWell(
-          key: subScreenBackButtonKey,
-          borderRadius: BorderRadius.circular(19),
-          onTap: onTap,
-          child: Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: AlagagiColors.paper,
-              border: Border.all(color: AlagagiColors.line),
-              borderRadius: BorderRadius.circular(19),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x0A505046),
-                  blurRadius: 18,
-                  offset: Offset(0, 8),
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: const Icon(
-              Icons.chevron_left_rounded,
-              size: 21,
-              color: Color(0xFF656D5E),
-            ),
-          ),
-        ),
       ),
     );
   }
