@@ -4,6 +4,11 @@ import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
 import '../../shared/ui_style.dart';
 
+String dateKeyForUi(DateTime date) {
+  String twoDigits(int value) => value.toString().padLeft(2, '0');
+  return '${date.year}-${twoDigits(date.month)}-${twoDigits(date.day)}';
+}
+
 String meetingDateLabel(String dateKey) {
   final date = DateTime.tryParse(dateKey);
   if (date == null) {
