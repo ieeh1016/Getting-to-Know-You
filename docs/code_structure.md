@@ -54,6 +54,9 @@ publishing, or Flutter-free domain testing.
   preview and full-list sheet.
 - `lib/src/features/home/home_progress_summary_card.dart`: Home progress summary
   card.
+- `lib/src/features/home/home_insight_grid.dart`: Home answer/record summary
+  metric grid.
+- `lib/src/features/home/home_plus_grid.dart`: Home plus-feature launcher grid.
 
 ## Extraction Order
 

@@ -7,6 +7,8 @@ import '../data/first_visit_guide_store.dart';
 import '../data/firebase_alagagi_repositories.dart';
 import '../data/music_note_seen_store.dart';
 import '../domain/alagagi_controller.dart';
+import '../features/home/home_insight_grid.dart';
+import '../features/home/home_plus_grid.dart';
 import '../features/home/home_progress_summary_card.dart';
 import '../features/home/unread_activity_panel.dart';
 import '../shared/ui_style.dart';
@@ -1299,11 +1301,11 @@ class HomeScreen extends StatelessWidget {
         const SizedBox(height: 22),
         const _SectionLabel('알아간 기록'),
         const SizedBox(height: 12),
-        _InsightGrid(controller: controller),
+        HomeInsightGrid(controller: controller),
         const SizedBox(height: 24),
         const _SectionLabel('가볍게 알아가는 것들'),
         const SizedBox(height: 12),
-        _PlusGrid(controller: controller),
+        HomePlusGrid(controller: controller),
       ],
     );
   }
@@ -4292,207 +4294,6 @@ class _AnswerSaveStatus extends StatelessWidget {
               onPressed: controller.retryAnswerSave,
             ),
         ],
-      ),
-    );
-  }
-}
-
-class _InsightGrid extends StatelessWidget {
-  const _InsightGrid({required this.controller});
-
-  final AlagagiController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final insight = controller.insight;
-
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _InsightBox(
-                title: '함께 답한 질문',
-                value: '${insight.matchCount}',
-                suffix: '개',
-                highlighted: true,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: _InsightBox(
-                title: '주고받은 질문',
-                value: '${insight.questionCount}',
-                suffix: '개',
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _InsightBox extends StatelessWidget {
-  const _InsightBox({
-    required this.title,
-    required this.value,
-    required this.suffix,
-    this.highlighted = false,
-  });
-
-  final String title;
-  final String value;
-  final String suffix;
-  final bool highlighted;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: highlighted ? null : AlagagiColors.paper,
-        gradient: highlighted
-            ? const LinearGradient(
-                colors: [AlagagiColors.softSage, AlagagiColors.sagePanel],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              )
-            : null,
-        border: highlighted ? null : Border.all(color: AlagagiColors.line),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: sans(size: 11, color: AlagagiColors.muted)),
-          const SizedBox(height: 8),
-          Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(text: value),
-                TextSpan(
-                  text: suffix,
-                  style: serif(
-                    context,
-                    size: 13,
-                    color: AlagagiColors.muted,
-                    weight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-            style: serif(
-              context,
-              size: 30,
-              weight: FontWeight.w800,
-              color: highlighted ? AlagagiColors.sageDeep : AlagagiColors.ink,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PlusGrid extends StatelessWidget {
-  const _PlusGrid({required this.controller});
-
-  final AlagagiController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _PlusTile(
-          icon: Icons.swap_horiz_rounded,
-          title: '취향 매치',
-          body: '둘 중 하나로 남기는 취향 힌트',
-          onTap: () => controller.goTo(AlagagiRoute.balance),
-        ),
-        const SizedBox(height: 10),
-        _PlusTile(
-          icon: Icons.person_outline_rounded,
-          title: '소개 카드',
-          body: '편한 만큼 내 취향 남기기',
-          onTap: () => controller.goTo(AlagagiRoute.profileCard),
-        ),
-        const SizedBox(height: 10),
-        _PlusTile(
-          icon: Icons.bookmark_border_rounded,
-          title: '언젠가, 같이',
-          body: '같이 해보고 싶은 것 담기',
-          onTap: () => controller.goTo(AlagagiRoute.wishlist),
-        ),
-      ],
-    );
-  }
-}
-
-class _PlusTile extends StatelessWidget {
-  const _PlusTile({
-    required this.icon,
-    required this.title,
-    required this.body,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String body;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AlagagiColors.paper,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: AlagagiColors.line),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0F2EB),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                alignment: Alignment.center,
-                child: Icon(icon, size: 22, color: AlagagiColors.sageDeep),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: serif(context, size: 17, weight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      body,
-                      style: sans(size: 12.5, color: AlagagiColors.muted),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(
-                Icons.arrow_forward_rounded,
-                size: 17,
-                color: AlagagiColors.sageDeep,
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
