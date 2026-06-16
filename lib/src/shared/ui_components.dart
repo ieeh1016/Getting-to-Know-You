@@ -492,6 +492,31 @@ class AlagagiInlineEmptyState extends StatelessWidget {
   }
 }
 
+class AlagagiInlineTextAction extends StatelessWidget {
+  const AlagagiInlineTextAction({
+    super.key,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: AlagagiColors.sageDeep,
+        minimumSize: const Size(0, 30),
+        padding: EdgeInsets.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Text(label, style: sans(size: 12, weight: FontWeight.w700)),
+    );
+  }
+}
+
 class AlagagiTextField extends StatelessWidget {
   const AlagagiTextField({
     super.key,

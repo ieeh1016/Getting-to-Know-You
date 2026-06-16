@@ -129,6 +129,36 @@ Key balanceRecordFilterButtonKey(String filter) =>
     Key('balance-record-filter-$filter');
 Key balanceTabButtonKey(String tab) => Key('balance-tab-$tab');
 
+const profileRecommendedSlotButtonKey = Key('profile-recommended-slot-button');
+const profileRecommendedSlotSkipButtonKey = Key(
+  'profile-recommended-slot-skip-button',
+);
+const profileEditorPanelKey = Key('profile-editor-panel');
+const profileCustomCardAddButtonKey = Key('profile-custom-card-add-button');
+const profileCustomCardPanelKey = Key('profile-custom-card-panel');
+const profileCustomTitleFieldKey = Key('profile-custom-title-field');
+const profileCustomBodyFieldKey = Key('profile-custom-body-field');
+const profileCustomSubmitButtonKey = Key('profile-custom-submit-button');
+const profileCustomCancelButtonKey = Key('profile-custom-cancel-button');
+const profileHiddenSlotsPanelKey = Key('profile-hidden-slots-panel');
+Key profileCategoryChipKey(String category) =>
+    Key('profile-category-chip-$category');
+Key profileSlotCardKey(String slotId) => Key('profile-slot-card-$slotId');
+Key profileSlotReadButtonKey(String slotId) => Key('profile-slot-read-$slotId');
+Key profileSlotEditButtonKey(String slotId) => Key('profile-slot-edit-$slotId');
+Key profileSlotFieldKey(String slotId) => Key('profile-slot-field-$slotId');
+Key profileSlotSaveButtonKey(String slotId) => Key('profile-slot-save-$slotId');
+Key profileSlotCancelButtonKey(String slotId) =>
+    Key('profile-slot-cancel-$slotId');
+Key profileSlotSkipButtonKey(String slotId) => Key('profile-slot-skip-$slotId');
+Key profileSlotRestoreButtonKey(String slotId) =>
+    Key('profile-slot-restore-$slotId');
+Key profileSlotHideButtonKey(String slotId) => Key('profile-slot-hide-$slotId');
+Key profileSlotDeleteButtonKey(String slotId) =>
+    Key('profile-slot-delete-$slotId');
+Key profileCustomCategoryChipKey(String category) =>
+    Key('profile-custom-category-$category');
+
 const stockStoryAddButtonKey = Key('stock-story-add-button');
 const stockStoryNameFieldKey = Key('stock-story-name-field');
 const stockStoryReasonFieldKey = Key('stock-story-reason-field');

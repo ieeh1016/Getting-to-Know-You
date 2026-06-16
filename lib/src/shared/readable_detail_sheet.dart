@@ -3,6 +3,14 @@ import 'package:flutter/material.dart';
 import '../app/test_keys.dart';
 import 'ui_style.dart';
 
+const int alagagiReadablePreviewLength = 120;
+
+bool showsReadableCue(
+  String body, {
+  int threshold = alagagiReadablePreviewLength,
+  bool expanded = false,
+}) => !expanded && body.trim().length > threshold;
+
 void showReadableDetailSheet(
   BuildContext context, {
   required String label,
@@ -184,6 +192,38 @@ void showReadableDetailSheet(
       );
     },
   );
+}
+
+class AlagagiOpenReadableIconButton extends StatelessWidget {
+  const AlagagiOpenReadableIconButton({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: '전체 보기',
+      onPressed: onPressed,
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+      icon: Container(
+        width: 31,
+        height: 31,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F4ED),
+          border: Border.all(color: const Color(0x336F7F63)),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        alignment: Alignment.center,
+        child: const Icon(
+          Icons.open_in_full_rounded,
+          size: 15,
+          color: AlagagiColors.sageDeep,
+        ),
+      ),
+    );
+  }
 }
 
 class _ReadableDetailMark extends StatelessWidget {

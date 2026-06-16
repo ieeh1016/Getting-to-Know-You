@@ -52,10 +52,12 @@ publishing, or Flutter-free domain testing.
 
 - `lib/src/shared/ui_style.dart`: shared colors and typography helpers.
 - `lib/src/shared/ui_components.dart`: shared buttons, cards, chips, labels,
-  brand marks, avatar stacks, badges, quiet metrics, text fields, and progress
-  indicators, and inline empty states used across feature screens.
+  brand marks, avatar stacks, badges, quiet metrics, text fields, inline text
+  actions, progress indicators, and inline empty states used across feature
+  screens.
 - `lib/src/shared/readable_detail_sheet.dart`: Reusable full-text bottom sheet
-  for long answers, notes, comments, profile cards, music, stocks, and posts.
+  for long answers, notes, comments, profile cards, music, stocks, and posts,
+  including shared readable-preview cues and open-full icon controls.
 - `lib/src/app/test_keys.dart`: cross-file widget keys for extracted widgets.
 - `lib/src/app/app_shell.dart`: reusable screen scroll shell, bottom navigation,
   and sub-screen top bar.
@@ -95,6 +97,9 @@ publishing, or Flutter-free domain testing.
   wish draft form, filters, mutual-interest lanes, and wish cards.
 - `lib/src/features/balance/balance_screen.dart`: Taste match deck, result
   privacy flow, result box, and personal taste note tabs.
+- `lib/src/features/profile/profile_card_screen.dart`: Profile card tabs,
+  custom card creation, category filters, editor panels, hidden slots, and
+  read-only partner card views.
 
 ## Extraction Order
 
