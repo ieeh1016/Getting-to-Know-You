@@ -57,6 +57,8 @@ const myFirstVisitGuideButtonKey = Key('my-first-visit-guide-button');
 Key myTraceCardKey(String type) => Key('my-trace-card-$type');
 
 const meetingCalendarKey = Key('meeting-calendar');
+const meetingCalendarPreviousButtonKey = Key('meeting-calendar-previous');
+const meetingCalendarNextButtonKey = Key('meeting-calendar-next');
 const meetingSharedMemoFieldKey = Key('meeting-shared-memo-field');
 const meetingSubmitButtonKey = Key('meeting-submit-button');
 const meetingRetryButtonKey = Key('meeting-retry-button');
@@ -160,6 +162,7 @@ const homeCuriosityEntryKey = Key('home-curiosity-entry');
 const firstVisitGuideBookSheetKey = Key('first-visit-guide-book-sheet');
 
 const balanceDeckKey = Key('balance-deck');
+const balanceReasonToggleButtonKey = Key('balance-reason-toggle-button');
 const balanceReasonFieldKey = Key('balance-reason-field');
 const balanceReasonSaveButtonKey = Key('balance-reason-save-button');
 const balanceResultToggleButtonKey = Key('balance-result-toggle-button');

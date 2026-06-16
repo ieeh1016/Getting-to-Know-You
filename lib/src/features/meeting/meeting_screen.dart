@@ -169,17 +169,36 @@ class _MeetingCalendar extends StatelessWidget {
         children: [
           Row(
             children: [
+              _MeetingMonthButton(
+                buttonKey: meetingCalendarPreviousButtonKey,
+                icon: Icons.chevron_left_rounded,
+                tooltip: '이전 달',
+                onPressed: () =>
+                    _selectMeetingMonth(controller, selectedDate, -1),
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   '${selectedDate.year}년 ${selectedDate.month}월',
+                  textAlign: TextAlign.center,
                   style: serif(context, size: 18, weight: FontWeight.w800),
                 ),
               ),
-              Text(
-                '상세 일정 표시',
-                style: sans(size: 11.5, color: AlagagiColors.muted),
+              const SizedBox(width: 8),
+              _MeetingMonthButton(
+                buttonKey: meetingCalendarNextButtonKey,
+                icon: Icons.chevron_right_rounded,
+                tooltip: '다음 달',
+                onPressed: () =>
+                    _selectMeetingMonth(controller, selectedDate, 1),
               ),
             ],
+          ),
+          const SizedBox(height: 7),
+          Text(
+            '앞뒤 한 달씩 넘겨 가까운 약속을 추가하거나 수정할 수 있어요.',
+            textAlign: TextAlign.center,
+            style: sans(size: 11.2, color: AlagagiColors.muted),
           ),
           const SizedBox(height: 13),
           Row(
@@ -262,6 +281,64 @@ class _MeetingCalendar extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  void _selectMeetingMonth(
+    AlagagiController controller,
+    DateTime selectedDate,
+    int monthOffset,
+  ) {
+    final targetMonth = DateTime(
+      selectedDate.year,
+      selectedDate.month + monthOffset,
+    );
+    final targetMonthLastDay = DateTime(
+      targetMonth.year,
+      targetMonth.month + 1,
+      0,
+    ).day;
+    final targetDay = selectedDate.day.clamp(1, targetMonthLastDay).toInt();
+    controller.selectMeetingDate(
+      dateKeyForUi(DateTime(targetMonth.year, targetMonth.month, targetDay)),
+    );
+  }
+}
+
+class _MeetingMonthButton extends StatelessWidget {
+  const _MeetingMonthButton({
+    required this.buttonKey,
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final Key buttonKey;
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: IconButton(
+        key: buttonKey,
+        onPressed: onPressed,
+        icon: Icon(icon, size: 19),
+        style: IconButton.styleFrom(
+          fixedSize: const Size(36, 36),
+          minimumSize: const Size(36, 36),
+          padding: EdgeInsets.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          backgroundColor: const Color(0xFFF8F8F4),
+          foregroundColor: AlagagiColors.sageDeep,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(13),
+            side: const BorderSide(color: AlagagiColors.line),
+          ),
+        ),
       ),
     );
   }

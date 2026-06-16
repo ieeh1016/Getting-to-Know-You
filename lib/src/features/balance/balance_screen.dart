@@ -25,6 +25,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
   _BalanceTab _activeTab = _BalanceTab.choose;
   _BalanceRecordFilter _filter = _BalanceRecordFilter.all;
   String? _visibleResultQuestionId;
+  final Set<String> _expandedReasonQuestionIds = {};
 
   @override
   Widget build(BuildContext context) {
@@ -80,6 +81,14 @@ class _BalanceScreenState extends State<BalanceScreen> {
               question: question,
               selected: selected,
               initialReason: controller.activeBalanceReason ?? '',
+              expanded: _expandedReasonQuestionIds.contains(question.id),
+              onToggle: () {
+                setState(() {
+                  if (!_expandedReasonQuestionIds.add(question.id)) {
+                    _expandedReasonQuestionIds.remove(question.id);
+                  }
+                });
+              },
               onSave: controller.saveBalanceReason,
             ),
             const SizedBox(height: 14),
@@ -629,17 +638,22 @@ class _BalanceReasonCard extends StatelessWidget {
     required this.question,
     required this.selected,
     required this.initialReason,
+    required this.expanded,
+    required this.onToggle,
     required this.onSave,
   });
 
   final BalanceQuestion question;
   final String selected;
   final String initialReason;
+  final bool expanded;
+  final VoidCallback onToggle;
   final ValueChanged<String> onSave;
 
   @override
   Widget build(BuildContext context) {
     final selectedLabel = _balanceOptionLabel(question, selected);
+    final hasReason = initialReason.trim().isNotEmpty;
     return Container(
       decoration: BoxDecoration(
         color: AlagagiColors.paper,
@@ -650,17 +664,99 @@ class _BalanceReasonCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '선택 이유 한 줄',
-            style: serif(context, size: 16, weight: FontWeight.w800),
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: hasReason
+                      ? AlagagiColors.softSage
+                      : const Color(0xFFF8F8F4),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  hasReason
+                      ? Icons.check_circle_outline_rounded
+                      : Icons.edit_note_rounded,
+                  size: 18,
+                  color: AlagagiColors.sageDeep,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '선택 이유 한 줄',
+                      style: serif(context, size: 16, weight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      hasReason ? '저장된 이유가 있어요.' : '이유 없이 넘어가도 괜찮아요.',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: sans(size: 11.8, color: AlagagiColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                height: 34,
+                child: OutlinedButton.icon(
+                  key: balanceReasonToggleButtonKey,
+                  onPressed: onToggle,
+                  icon: Icon(
+                    expanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    size: 16,
+                  ),
+                  label: Text(
+                    expanded
+                        ? '접기'
+                        : hasReason
+                        ? '수정'
+                        : '쓰기',
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AlagagiColors.sageDeep,
+                    side: const BorderSide(color: Color(0x338A9A7E)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    textStyle: sans(size: 11.5, weight: FontWeight.w800),
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            '$selectedLabel 쪽을 고른 이유를 짧게 남기면 나중에 더 잘 기억나요.',
-            style: sans(size: 12, color: AlagagiColors.muted, height: 1.55),
-          ),
-          const SizedBox(height: 12),
-          _BalanceReasonField(initialValue: initialReason, onSave: onSave),
+          if (!expanded && hasReason) ...[
+            const SizedBox(height: 10),
+            Text(
+              initialReason.trim(),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: sans(
+                size: 12.5,
+                color: const Color(0xFF5F5D57),
+                height: 1.5,
+              ),
+            ),
+          ],
+          if (expanded) ...[
+            const SizedBox(height: 12),
+            Text(
+              '$selectedLabel 쪽을 고른 이유를 짧게 남기면 나중에 더 잘 기억나요.',
+              style: sans(size: 12, color: AlagagiColors.muted, height: 1.55),
+            ),
+            const SizedBox(height: 12),
+            _BalanceReasonField(initialValue: initialReason, onSave: onSave),
+          ],
         ],
       ),
     );

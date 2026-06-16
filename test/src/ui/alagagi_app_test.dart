@@ -2093,6 +2093,12 @@ void main() {
     await tester.tap(find.text('조용한 바다'));
     await tester.pumpAndSettle();
 
+    expect(find.byKey(balanceReasonFieldKey), findsNothing);
+    expect(find.text('이유 없이 넘어가도 괜찮아요.'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(balanceReasonToggleButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(balanceReasonToggleButtonKey));
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(balanceReasonFieldKey));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(balanceReasonFieldKey), '조용한 바다가 끌려요');
@@ -2302,6 +2308,46 @@ void main() {
       '저녁 약속',
     );
     expect(find.text('일정을 저장했어요.'), findsOneWidget);
+  });
+
+  testWidgets('meeting calendar moves to nearby months for editing', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+      ),
+    );
+    controller
+      ..goTo(AlagagiRoute.meetings)
+      ..selectMeetingDate('2026-01-31');
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('2026년 1월'), findsOneWidget);
+    await tester.tap(find.byKey(meetingCalendarNextButtonKey));
+    await tester.pumpAndSettle();
+    expect(controller.selectedMeetingDateKey, '2026-02-28');
+    expect(find.text('2026년 2월'), findsOneWidget);
+
+    await tester.tap(find.byKey(meetingCalendarPreviousButtonKey));
+    await tester.pumpAndSettle();
+    expect(controller.selectedMeetingDateKey, '2026-01-28');
+    expect(find.text('2026년 1월'), findsOneWidget);
   });
 
   testWidgets('meeting calendar marks my saved date before partner input', (
