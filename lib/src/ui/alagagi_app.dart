@@ -90,6 +90,8 @@ Key placeDeleteButtonKey(String placeId) => Key('place-delete-button-$placeId');
 const placeRetryButtonKey = Key('place-retry-button');
 const unreadActivityPanelKey = Key('unread-activity-panel');
 const unreadActivityClearButtonKey = Key('unread-activity-clear-button');
+const unreadActivityMoreButtonKey = Key('unread-activity-more-button');
+const unreadActivitySheetKey = Key('unread-activity-sheet');
 const homeProgressSummaryKey = Key('home-progress-summary');
 const homeProgressSummaryCtaKey = Key('home-progress-summary-cta');
 const editAnswerButtonKey = Key('edit-answer-button');
@@ -1448,9 +1450,23 @@ class _UnreadActivityPanel extends StatelessWidget {
             ],
             if (activities.length > visibleActivities.length) ...[
               const SizedBox(height: 8),
-              Text(
-                '외 ${activities.length - visibleActivities.length}개 더 있어요.',
-                style: sans(size: 11.5, color: AlagagiColors.muted),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  key: unreadActivityMoreButtonKey,
+                  onPressed: () =>
+                      _showUnreadActivitySheet(context, controller),
+                  icon: const Icon(Icons.expand_more_rounded, size: 16),
+                  label: Text(
+                    '외 ${activities.length - visibleActivities.length}개 더 보기',
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AlagagiColors.sageDeep,
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    textStyle: sans(size: 11.5, weight: FontWeight.w800),
+                  ),
+                ),
               ),
             ],
           ],
@@ -1460,13 +1476,145 @@ class _UnreadActivityPanel extends StatelessWidget {
   }
 
   void _openUnreadActivity(BuildContext context, UnreadActivity activity) {
-    if (activity.feature == UnreadActivityFeature.curiosity) {
-      controller.markFeatureSeen(UnreadActivityFeature.curiosity);
-      _showCuriosityMenuSheet(context, controller);
-      return;
-    }
-    controller.openUnreadActivity(activity);
+    _openUnreadActivityFromHome(context, controller, activity);
   }
+}
+
+void _showUnreadActivitySheet(
+  BuildContext parentContext,
+  AlagagiController controller,
+) {
+  showModalBottomSheet<void>(
+    context: parentContext,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return DraggableScrollableSheet(
+        initialChildSize: 0.64,
+        minChildSize: 0.38,
+        maxChildSize: 0.88,
+        expand: false,
+        builder: (_, scrollController) {
+          return AnimatedBuilder(
+            animation: controller,
+            builder: (context, _) {
+              final activities = controller.unreadActivities;
+              return SafeArea(
+                child: Container(
+                  key: unreadActivitySheetKey,
+                  margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                  decoration: BoxDecoration(
+                    color: AlagagiColors.paper,
+                    border: Border.all(color: AlagagiColors.line),
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x2E2C2B25),
+                        blurRadius: 44,
+                        offset: Offset(0, 18),
+                      ),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 10),
+                      Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD7D5CC),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '새로 도착한 것',
+                                    style: serif(
+                                      sheetContext,
+                                      size: 21,
+                                      weight: FontWeight.w800,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 7),
+                                  Text(
+                                    '${activities.length}개의 새 소식을 최신순으로 모아봤어요.',
+                                    style: sans(
+                                      size: 12.3,
+                                      color: AlagagiColors.muted,
+                                      height: 1.58,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: '닫기',
+                              onPressed: () => Navigator.of(sheetContext).pop(),
+                              icon: const Icon(Icons.close_rounded, size: 20),
+                              color: AlagagiColors.muted,
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: ListView.separated(
+                          controller: scrollController,
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+                          itemCount: activities.length,
+                          separatorBuilder: (_, _) => const Divider(
+                            height: 14,
+                            color: AlagagiColors.line,
+                          ),
+                          itemBuilder: (rowContext, index) {
+                            final activity = activities[index];
+                            return _UnreadActivityRow(
+                              activity: activity,
+                              onTap: () {
+                                Navigator.of(sheetContext).pop();
+                                _openUnreadActivityFromHome(
+                                  parentContext,
+                                  controller,
+                                  activity,
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      );
+    },
+  );
+}
+
+void _openUnreadActivityFromHome(
+  BuildContext context,
+  AlagagiController controller,
+  UnreadActivity activity,
+) {
+  if (activity.feature == UnreadActivityFeature.curiosity) {
+    controller.markFeatureSeen(UnreadActivityFeature.curiosity);
+    _showCuriosityMenuSheet(context, controller);
+    return;
+  }
+  controller.openUnreadActivity(activity);
 }
 
 class _UnreadActivityRow extends StatelessWidget {

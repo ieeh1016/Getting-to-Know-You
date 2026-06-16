@@ -3240,6 +3240,133 @@ void main() {
     expect(find.text('최근 음악 노트 1곡'), findsOneWidget);
   });
 
+  testWidgets('home unread panel opens a scrollable full activity sheet', (
+    tester,
+  ) async {
+    final guideStore = MemoryFirstVisitGuideStore()
+      ..markFirstVisitGuideSeen('main', 'youngwooUid');
+    final controller = AlagagiController.forSession(
+      AlagagiSession(
+        spaceId: 'main',
+        me: const AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: const AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          musicNotes: [
+            MusicNote(
+              id: 'music_partner_new',
+              title: '밤 산책',
+              artist: '민영의 추천',
+              link: '',
+              note: '',
+              mood: '밤',
+              createdByProfileId: 'minyoungUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-09T10:03:00.000Z'),
+            ),
+          ],
+          sharedPlaces: [
+            SharedPlace(
+              id: 'place_partner_new',
+              name: '조용한 카페',
+              address: '서울',
+              category: PlaceCategory.cafe,
+              provider: MapApiProvider.kakao,
+              createdByProfileId: 'minyoungUid',
+              interestedByProfileIds: {'minyoungUid'},
+              updatedAt: DateTime.parse('2026-06-09T10:04:00.000Z'),
+              updatedByProfileId: 'minyoungUid',
+            ),
+          ],
+          stockStories: [
+            StockStory(
+              id: 'stock_partner_new',
+              name: 'NVDA',
+              reason: '같이 볼 흐름',
+              upside: '성장',
+              risk: '변동성',
+              question: '어떻게 볼까요?',
+              createdByProfileId: 'minyoungUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-09T10:02:00.000Z'),
+              updatedByProfileId: 'minyoungUid',
+            ),
+          ],
+          scheduleEntries: [
+            ScheduleEntry(
+              dateKey: '2026-06-19',
+              profileId: 'minyoungUid',
+              availability: MeetingAvailability.available,
+              timeSlots: {MeetingTimeSlot.evening},
+              updatedAt: DateTime.parse('2026-06-09T10:01:00.000Z'),
+            ),
+          ],
+          improvementPosts: [
+            ImprovementPost(
+              id: 'improvement_partner_new',
+              title: '루틴 공유',
+              body: '서로의 루틴도 남기고 싶어요.',
+              category: '추가 요청',
+              createdByProfileId: 'minyoungUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-09T10:05:00.000Z'),
+            ),
+          ],
+        ),
+      ),
+      firstVisitGuideStore: guideStore,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(unreadActivityPanelKey), findsOneWidget);
+    expect(find.text('외 2개 더 보기'), findsOneWidget);
+    expect(find.textContaining('루틴 공유'), findsOneWidget);
+    expect(find.textContaining('조용한 카페'), findsOneWidget);
+    expect(find.textContaining('밤 산책'), findsOneWidget);
+    expect(find.textContaining('NVDA'), findsNothing);
+
+    await tester.ensureVisible(find.byKey(unreadActivityMoreButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(unreadActivityMoreButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(unreadActivitySheetKey), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(unreadActivitySheetKey),
+        matching: find.text('5개의 새 소식을 최신순으로 모아봤어요.'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(unreadActivitySheetKey),
+        matching: find.textContaining('NVDA'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(unreadActivitySheetKey),
+        matching: find.textContaining('6/19 일정을'),
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets(
     'first visit guide appears once and stores start choice locally',
     (tester) async {

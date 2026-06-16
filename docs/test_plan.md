@@ -70,6 +70,7 @@
 - First visit guide visibility는 session/profile/space와 device-local seen state로만 계산한다.
 - First visit guide dismiss/tour start는 local seen state만 갱신하고 repository write를 호출하지 않는다.
 - 홈 진행 요약 primary action은 `오늘 답하기` > `질문함 보기` > `음악 보기` 우선순위로 하나만 선택한다.
+- 홈 새 소식 패널은 최신 3개만 요약하고, 4개 이상이면 `더 보기`로 전체 새 소식 bottom sheet를 연다.
 - 내 music note 수정은 기존 값을 draft panel에 채우고 같은 note id/document를 덮어쓴다.
 - 상대 music note는 수정 action을 보여주지 않고 저장 호출도 허용하지 않는다.
 - 저장 operation state는 idle/saving/saved/failed/offline을 구분하고 failed/offline 상태에서 draft를 유지한다.
