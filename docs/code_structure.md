@@ -53,7 +53,7 @@ publishing, or Flutter-free domain testing.
 - `lib/src/shared/ui_style.dart`: shared colors and typography helpers.
 - `lib/src/shared/ui_components.dart`: shared buttons, cards, chips, labels,
   brand marks, avatar stacks, badges, quiet metrics, text fields, and progress
-  indicators used across feature screens.
+  indicators, and inline empty states used across feature screens.
 - `lib/src/shared/readable_detail_sheet.dart`: Reusable full-text bottom sheet
   for long answers, notes, comments, profile cards, music, stocks, and posts.
 - `lib/src/app/test_keys.dart`: cross-file widget keys for extracted widgets.
@@ -91,6 +91,8 @@ publishing, or Flutter-free domain testing.
   place search, map preview/fallback UI, and shared place card actions.
 - `lib/src/features/stocks/stock_story_screen.dart`: Stock story and holdings
   tabs, draft forms, filters, reply composers, and owner edit/delete actions.
+- `lib/src/features/wishlist/wishlist_screen.dart`: Shared wishlist board,
+  wish draft form, filters, mutual-interest lanes, and wish cards.
 
 ## Extraction Order
 

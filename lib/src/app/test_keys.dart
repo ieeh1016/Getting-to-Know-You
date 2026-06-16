@@ -116,6 +116,11 @@ Key improvementEditButtonKey(String postId) =>
 Key improvementDeleteButtonKey(String postId) =>
     Key('improvement-delete-button-$postId');
 
+const wishTitleFieldKey = Key('wish-title-field');
+const wishSubmitButtonKey = Key('wish-submit-button');
+const wishAddButtonKey = Key('wish-add-button');
+const wishlistBoardKey = Key('wishlist-board');
+
 const stockStoryAddButtonKey = Key('stock-story-add-button');
 const stockStoryNameFieldKey = Key('stock-story-name-field');
 const stockStoryReasonFieldKey = Key('stock-story-reason-field');

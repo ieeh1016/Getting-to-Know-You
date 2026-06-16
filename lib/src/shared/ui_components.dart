@@ -469,6 +469,29 @@ class AlagagiFullTextCue extends StatelessWidget {
   }
 }
 
+class AlagagiInlineEmptyState extends StatelessWidget {
+  const AlagagiInlineEmptyState({super.key, required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.5),
+      ),
+    );
+  }
+}
+
 class AlagagiTextField extends StatelessWidget {
   const AlagagiTextField({
     super.key,
