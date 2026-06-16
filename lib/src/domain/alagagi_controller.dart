@@ -236,9 +236,13 @@ abstract class AlagagiDataRepository {
 
   Future<void> saveWish(String spaceId, WishItem wish);
 
+  Future<void> deleteWish(String spaceId, String wishId);
+
   Future<void> saveMusicNote(String spaceId, MusicNote note);
 
   Future<void> saveMusicNoteListenState(String spaceId, MusicNote note);
+
+  Future<void> deleteMusicNote(String spaceId, String noteId);
 
   Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry);
 
@@ -249,6 +253,8 @@ abstract class AlagagiDataRepository {
   Future<void> saveCuriosityCard(String spaceId, CuriosityCard card);
 
   Future<void> saveStockStory(String spaceId, StockStory story);
+
+  Future<void> deleteStockStory(String spaceId, String storyId);
 
   Future<void> saveStockHolding(String spaceId, StockHolding holding);
 
@@ -826,6 +832,9 @@ class WishItem {
   String get lastChangedByProfileId => updatedByProfileId ?? createdByProfileId;
 
   WishItem copyWith({
+    String? title,
+    WishKind? kind,
+    String? icon,
     String? createdByProfileId,
     Set<String>? likedByProfileIds,
     bool? done,
@@ -834,9 +843,9 @@ class WishItem {
   }) {
     return WishItem(
       id: id,
-      icon: icon,
-      title: title,
-      kind: kind,
+      icon: icon ?? this.icon,
+      title: title ?? this.title,
+      kind: kind ?? this.kind,
       createdByProfileId: createdByProfileId ?? this.createdByProfileId,
       likedByProfileIds: likedByProfileIds ?? this.likedByProfileIds,
       done: done ?? this.done,
@@ -1496,6 +1505,10 @@ class AlagagiState {
     this.wishDraftVisible = false,
     this.wishDraftTitle = '',
     this.wishDraftKind = WishKind.activity,
+    this.editingWishId,
+    this.wishSaveStatus = SaveStatus.idle,
+    this.wishSaveFeedback,
+    this.wishSaveTargetId,
     this.musicDraftVisible = false,
     this.musicDraftTitle = '',
     this.musicDraftArtist = '',
@@ -1504,6 +1517,9 @@ class AlagagiState {
     this.musicDraftMood = '차분한',
     this.musicListFilter = MusicListFilter.all,
     this.editingMusicNoteId,
+    this.musicSaveStatus = SaveStatus.idle,
+    this.musicSaveFeedback,
+    this.musicSaveTargetId,
     this.selectedMeetingDateKey,
     this.selectedMeetingPlanDateKey,
     this.meetingDraftAvailability = MeetingAvailability.available,
@@ -1547,6 +1563,9 @@ class AlagagiState {
     this.stockStoryDraftRisk = '',
     this.stockStoryDraftQuestion = '',
     this.stockStoryDraftError,
+    this.stockStorySaveStatus = SaveStatus.idle,
+    this.stockStorySaveFeedback,
+    this.stockStorySaveTargetId,
     this.stockStoryReplyDraftsByStoryId = const {},
     this.stockStoryReplyTonesByStoryId = const {},
     this.stockStoryReplyError,
@@ -1560,6 +1579,9 @@ class AlagagiState {
     this.stockHoldingDraftQuestion = '',
     this.stockHoldingDraftError,
     this.editingStockHoldingId,
+    this.stockHoldingSaveStatus = SaveStatus.idle,
+    this.stockHoldingSaveFeedback,
+    this.stockHoldingSaveTargetId,
     this.stockHoldingReplyDraftsByHoldingId = const {},
     this.stockHoldingReplyTonesByHoldingId = const {},
     this.stockHoldingReplyError,
@@ -1613,6 +1635,10 @@ class AlagagiState {
   final bool wishDraftVisible;
   final String wishDraftTitle;
   final WishKind wishDraftKind;
+  final String? editingWishId;
+  final SaveStatus wishSaveStatus;
+  final String? wishSaveFeedback;
+  final String? wishSaveTargetId;
   final bool musicDraftVisible;
   final String musicDraftTitle;
   final String musicDraftArtist;
@@ -1621,6 +1647,9 @@ class AlagagiState {
   final String musicDraftMood;
   final MusicListFilter musicListFilter;
   final String? editingMusicNoteId;
+  final SaveStatus musicSaveStatus;
+  final String? musicSaveFeedback;
+  final String? musicSaveTargetId;
   final String? selectedMeetingDateKey;
   final String? selectedMeetingPlanDateKey;
   final MeetingAvailability meetingDraftAvailability;
@@ -1664,6 +1693,9 @@ class AlagagiState {
   final String stockStoryDraftRisk;
   final String stockStoryDraftQuestion;
   final String? stockStoryDraftError;
+  final SaveStatus stockStorySaveStatus;
+  final String? stockStorySaveFeedback;
+  final String? stockStorySaveTargetId;
   final Map<String, String> stockStoryReplyDraftsByStoryId;
   final Map<String, String> stockStoryReplyTonesByStoryId;
   final String? stockStoryReplyError;
@@ -1677,6 +1709,9 @@ class AlagagiState {
   final String stockHoldingDraftQuestion;
   final String? stockHoldingDraftError;
   final String? editingStockHoldingId;
+  final SaveStatus stockHoldingSaveStatus;
+  final String? stockHoldingSaveFeedback;
+  final String? stockHoldingSaveTargetId;
   final Map<String, String> stockHoldingReplyDraftsByHoldingId;
   final Map<String, String> stockHoldingReplyTonesByHoldingId;
   final String? stockHoldingReplyError;
@@ -1730,6 +1765,13 @@ class AlagagiState {
     bool? wishDraftVisible,
     String? wishDraftTitle,
     WishKind? wishDraftKind,
+    String? editingWishId,
+    bool clearEditingWishId = false,
+    SaveStatus? wishSaveStatus,
+    String? wishSaveFeedback,
+    bool clearWishSaveFeedback = false,
+    String? wishSaveTargetId,
+    bool clearWishSaveTargetId = false,
     bool? musicDraftVisible,
     String? musicDraftTitle,
     String? musicDraftArtist,
@@ -1739,6 +1781,11 @@ class AlagagiState {
     MusicListFilter? musicListFilter,
     String? editingMusicNoteId,
     bool clearEditingMusicNoteId = false,
+    SaveStatus? musicSaveStatus,
+    String? musicSaveFeedback,
+    bool clearMusicSaveFeedback = false,
+    String? musicSaveTargetId,
+    bool clearMusicSaveTargetId = false,
     String? selectedMeetingDateKey,
     String? selectedMeetingPlanDateKey,
     bool clearSelectedMeetingPlanDateKey = false,
@@ -1793,6 +1840,11 @@ class AlagagiState {
     String? stockStoryDraftQuestion,
     String? stockStoryDraftError,
     bool clearStockStoryDraftError = false,
+    SaveStatus? stockStorySaveStatus,
+    String? stockStorySaveFeedback,
+    bool clearStockStorySaveFeedback = false,
+    String? stockStorySaveTargetId,
+    bool clearStockStorySaveTargetId = false,
     Map<String, String>? stockStoryReplyDraftsByStoryId,
     Map<String, String>? stockStoryReplyTonesByStoryId,
     String? stockStoryReplyError,
@@ -1809,6 +1861,11 @@ class AlagagiState {
     bool clearStockHoldingDraftError = false,
     String? editingStockHoldingId,
     bool clearEditingStockHoldingId = false,
+    SaveStatus? stockHoldingSaveStatus,
+    String? stockHoldingSaveFeedback,
+    bool clearStockHoldingSaveFeedback = false,
+    String? stockHoldingSaveTargetId,
+    bool clearStockHoldingSaveTargetId = false,
     Map<String, String>? stockHoldingReplyDraftsByHoldingId,
     Map<String, String>? stockHoldingReplyTonesByHoldingId,
     String? stockHoldingReplyError,
@@ -1881,6 +1938,16 @@ class AlagagiState {
       wishDraftVisible: wishDraftVisible ?? this.wishDraftVisible,
       wishDraftTitle: wishDraftTitle ?? this.wishDraftTitle,
       wishDraftKind: wishDraftKind ?? this.wishDraftKind,
+      editingWishId: clearEditingWishId
+          ? null
+          : editingWishId ?? this.editingWishId,
+      wishSaveStatus: wishSaveStatus ?? this.wishSaveStatus,
+      wishSaveFeedback: clearWishSaveFeedback
+          ? null
+          : wishSaveFeedback ?? this.wishSaveFeedback,
+      wishSaveTargetId: clearWishSaveTargetId
+          ? null
+          : wishSaveTargetId ?? this.wishSaveTargetId,
       musicDraftVisible: musicDraftVisible ?? this.musicDraftVisible,
       musicDraftTitle: musicDraftTitle ?? this.musicDraftTitle,
       musicDraftArtist: musicDraftArtist ?? this.musicDraftArtist,
@@ -1891,6 +1958,13 @@ class AlagagiState {
       editingMusicNoteId: clearEditingMusicNoteId
           ? null
           : editingMusicNoteId ?? this.editingMusicNoteId,
+      musicSaveStatus: musicSaveStatus ?? this.musicSaveStatus,
+      musicSaveFeedback: clearMusicSaveFeedback
+          ? null
+          : musicSaveFeedback ?? this.musicSaveFeedback,
+      musicSaveTargetId: clearMusicSaveTargetId
+          ? null
+          : musicSaveTargetId ?? this.musicSaveTargetId,
       selectedMeetingDateKey:
           selectedMeetingDateKey ?? this.selectedMeetingDateKey,
       selectedMeetingPlanDateKey: clearSelectedMeetingPlanDateKey
@@ -1972,6 +2046,13 @@ class AlagagiState {
       stockStoryDraftError: clearStockStoryDraftError
           ? null
           : stockStoryDraftError ?? this.stockStoryDraftError,
+      stockStorySaveStatus: stockStorySaveStatus ?? this.stockStorySaveStatus,
+      stockStorySaveFeedback: clearStockStorySaveFeedback
+          ? null
+          : stockStorySaveFeedback ?? this.stockStorySaveFeedback,
+      stockStorySaveTargetId: clearStockStorySaveTargetId
+          ? null
+          : stockStorySaveTargetId ?? this.stockStorySaveTargetId,
       stockStoryReplyDraftsByStoryId:
           stockStoryReplyDraftsByStoryId ?? this.stockStoryReplyDraftsByStoryId,
       stockStoryReplyTonesByStoryId:
@@ -2001,6 +2082,14 @@ class AlagagiState {
       editingStockHoldingId: clearEditingStockHoldingId
           ? null
           : editingStockHoldingId ?? this.editingStockHoldingId,
+      stockHoldingSaveStatus:
+          stockHoldingSaveStatus ?? this.stockHoldingSaveStatus,
+      stockHoldingSaveFeedback: clearStockHoldingSaveFeedback
+          ? null
+          : stockHoldingSaveFeedback ?? this.stockHoldingSaveFeedback,
+      stockHoldingSaveTargetId: clearStockHoldingSaveTargetId
+          ? null
+          : stockHoldingSaveTargetId ?? this.stockHoldingSaveTargetId,
       stockHoldingReplyDraftsByHoldingId:
           stockHoldingReplyDraftsByHoldingId ??
           this.stockHoldingReplyDraftsByHoldingId,
@@ -2093,6 +2182,8 @@ class AlagagiState {
     );
   }
 }
+
+enum _FailedPersistenceAction { save, delete }
 
 class AlagagiController extends ChangeNotifier {
   AlagagiController({
@@ -2203,6 +2294,14 @@ class AlagagiController extends ChangeNotifier {
   SharedPlace? _lastFailedSharedPlace;
   CuriosityCard? _lastFailedCuriosityCard;
   ImprovementPost? _lastFailedImprovementPost;
+  WishItem? _lastFailedWish;
+  _FailedPersistenceAction? _lastFailedWishAction;
+  MusicNote? _lastFailedMusicNote;
+  _FailedPersistenceAction? _lastFailedMusicNoteAction;
+  StockStory? _lastFailedStockStory;
+  _FailedPersistenceAction? _lastFailedStockStoryAction;
+  StockHolding? _lastFailedStockHolding;
+  _FailedPersistenceAction? _lastFailedStockHoldingAction;
 
   AlagagiState get state => _state;
 
@@ -3103,18 +3202,183 @@ class AlagagiController extends ChangeNotifier {
     final repository = _repository;
     final spaceId = _spaceId;
     if (repository == null || spaceId == null) {
+      _lastFailedWish = null;
+      _lastFailedWishAction = null;
+      _state = _state.copyWith(
+        wishSaveStatus: SaveStatus.saved,
+        wishSaveFeedback: '위시를 저장했어요.',
+        wishSaveTargetId: wish.id,
+        clearWishDraftError: true,
+      );
+      notifyListeners();
       return;
     }
-    unawaited(repository.saveWish(spaceId, wish).catchError((_) {}));
+    unawaited(
+      repository
+          .saveWish(spaceId, wish)
+          .then<void>((_) {
+            _lastFailedWish = null;
+            _lastFailedWishAction = null;
+            _state = _state.copyWith(
+              wishSaveStatus: SaveStatus.saved,
+              wishSaveFeedback: '위시를 저장했어요.',
+              wishSaveTargetId: wish.id,
+              clearWishDraftError: true,
+            );
+            notifyListeners();
+          })
+          .catchError((Object _) {
+            _lastFailedWish = wish;
+            _lastFailedWishAction = _FailedPersistenceAction.save;
+            _state = _state.copyWith(
+              wishDraftError: '위시를 저장하지 못했어요. 다시 시도해 주세요.',
+              wishSaveStatus: SaveStatus.failed,
+              wishSaveTargetId: wish.id,
+              clearWishSaveFeedback: true,
+            );
+            notifyListeners();
+          }),
+    );
+  }
+
+  void _deletePersistedWish(WishItem wish, int previousIndex) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      _lastFailedWish = null;
+      _lastFailedWishAction = null;
+      _state = _state.copyWith(
+        wishSaveStatus: SaveStatus.saved,
+        wishSaveFeedback: '위시를 삭제했어요.',
+        wishSaveTargetId: wish.id,
+        clearWishDraftError: true,
+      );
+      notifyListeners();
+      return;
+    }
+    unawaited(
+      repository
+          .deleteWish(spaceId, wish.id)
+          .then<void>((_) {
+            _lastFailedWish = null;
+            _lastFailedWishAction = null;
+            _state = _state.copyWith(
+              wishSaveStatus: SaveStatus.saved,
+              wishSaveFeedback: '위시를 삭제했어요.',
+              wishSaveTargetId: wish.id,
+              clearWishDraftError: true,
+            );
+            notifyListeners();
+          })
+          .catchError((Object _) {
+            final boundedIndex = previousIndex.clamp(0, _wishes.length).toInt();
+            if (!_wishes.any((candidate) => candidate.id == wish.id)) {
+              _wishes.insert(boundedIndex, wish);
+            }
+            _lastFailedWish = wish;
+            _lastFailedWishAction = _FailedPersistenceAction.delete;
+            _state = _state.copyWith(
+              wishDraftError: '위시를 삭제하지 못했어요. 다시 시도해 주세요.',
+              wishSaveStatus: SaveStatus.failed,
+              wishSaveTargetId: wish.id,
+              clearWishSaveFeedback: true,
+            );
+            notifyListeners();
+          }),
+    );
   }
 
   void _persistMusicNote(MusicNote note) {
     final repository = _repository;
     final spaceId = _spaceId;
     if (repository == null || spaceId == null) {
+      _lastFailedMusicNote = null;
+      _lastFailedMusicNoteAction = null;
+      _state = _state.copyWith(
+        musicSaveStatus: SaveStatus.saved,
+        musicSaveFeedback: '음악 노트를 저장했어요.',
+        musicSaveTargetId: note.id,
+        clearMusicDraftError: true,
+      );
+      notifyListeners();
       return;
     }
-    unawaited(repository.saveMusicNote(spaceId, note).catchError((_) {}));
+    unawaited(
+      repository
+          .saveMusicNote(spaceId, note)
+          .then<void>((_) {
+            _lastFailedMusicNote = null;
+            _lastFailedMusicNoteAction = null;
+            _state = _state.copyWith(
+              musicSaveStatus: SaveStatus.saved,
+              musicSaveFeedback: '음악 노트를 저장했어요.',
+              musicSaveTargetId: note.id,
+              clearMusicDraftError: true,
+            );
+            notifyListeners();
+          })
+          .catchError((Object _) {
+            _lastFailedMusicNote = note;
+            _lastFailedMusicNoteAction = _FailedPersistenceAction.save;
+            _state = _state.copyWith(
+              musicDraftError: '음악 노트를 저장하지 못했어요. 다시 시도해 주세요.',
+              musicSaveStatus: SaveStatus.failed,
+              musicSaveTargetId: note.id,
+              clearMusicSaveFeedback: true,
+            );
+            notifyListeners();
+          }),
+    );
+  }
+
+  void _deletePersistedMusicNote(MusicNote note, int previousIndex) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      _lastFailedMusicNote = null;
+      _lastFailedMusicNoteAction = null;
+      _state = _state.copyWith(
+        musicSaveStatus: SaveStatus.saved,
+        musicSaveFeedback: '음악 노트를 삭제했어요.',
+        musicSaveTargetId: note.id,
+        clearMusicDraftError: true,
+      );
+      notifyListeners();
+      return;
+    }
+    unawaited(
+      repository
+          .deleteMusicNote(spaceId, note.id)
+          .then<void>((_) {
+            _lastFailedMusicNote = null;
+            _lastFailedMusicNoteAction = null;
+            _state = _state.copyWith(
+              musicSaveStatus: SaveStatus.saved,
+              musicSaveFeedback: '음악 노트를 삭제했어요.',
+              musicSaveTargetId: note.id,
+              clearMusicDraftError: true,
+            );
+            notifyListeners();
+          })
+          .catchError((Object _) {
+            final boundedIndex = previousIndex
+                .clamp(0, _musicNotes.length)
+                .toInt();
+            if (!_musicNotes.any((candidate) => candidate.id == note.id)) {
+              _musicNotes.insert(boundedIndex, note);
+              _sortMusicNotesByUpdatedAt();
+            }
+            _lastFailedMusicNote = note;
+            _lastFailedMusicNoteAction = _FailedPersistenceAction.delete;
+            _state = _state.copyWith(
+              musicDraftError: '음악 노트를 삭제하지 못했어요. 다시 시도해 주세요.',
+              musicSaveStatus: SaveStatus.failed,
+              musicSaveTargetId: note.id,
+              clearMusicSaveFeedback: true,
+            );
+            notifyListeners();
+          }),
+    );
   }
 
   void _persistMusicNoteListenState(MusicNote note) {
@@ -3394,28 +3658,187 @@ class AlagagiController extends ChangeNotifier {
     final repository = _repository;
     final spaceId = _spaceId;
     if (repository == null || spaceId == null) {
+      _lastFailedStockStory = null;
+      _lastFailedStockStoryAction = null;
+      _state = _state.copyWith(
+        stockStorySaveStatus: SaveStatus.saved,
+        stockStorySaveFeedback: '주식 이야기를 저장했어요.',
+        stockStorySaveTargetId: story.id,
+        clearStockStoryDraftError: true,
+      );
+      notifyListeners();
       return;
     }
-    unawaited(repository.saveStockStory(spaceId, story).catchError((_) {}));
+    unawaited(
+      repository
+          .saveStockStory(spaceId, story)
+          .then<void>((_) {
+            _lastFailedStockStory = null;
+            _lastFailedStockStoryAction = null;
+            _state = _state.copyWith(
+              stockStorySaveStatus: SaveStatus.saved,
+              stockStorySaveFeedback: '주식 이야기를 저장했어요.',
+              stockStorySaveTargetId: story.id,
+              clearStockStoryDraftError: true,
+            );
+            notifyListeners();
+          })
+          .catchError((Object _) {
+            _lastFailedStockStory = story;
+            _lastFailedStockStoryAction = _FailedPersistenceAction.save;
+            _state = _state.copyWith(
+              stockStoryDraftError: '주식 이야기를 저장하지 못했어요. 다시 시도해 주세요.',
+              stockStorySaveStatus: SaveStatus.failed,
+              stockStorySaveTargetId: story.id,
+              clearStockStorySaveFeedback: true,
+            );
+            notifyListeners();
+          }),
+    );
+  }
+
+  void _deletePersistedStockStory(StockStory story, int previousIndex) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      _lastFailedStockStory = null;
+      _lastFailedStockStoryAction = null;
+      _state = _state.copyWith(
+        stockStorySaveStatus: SaveStatus.saved,
+        stockStorySaveFeedback: '주식 이야기를 삭제했어요.',
+        stockStorySaveTargetId: story.id,
+        clearStockStoryDraftError: true,
+      );
+      notifyListeners();
+      return;
+    }
+    unawaited(
+      repository
+          .deleteStockStory(spaceId, story.id)
+          .then<void>((_) {
+            _lastFailedStockStory = null;
+            _lastFailedStockStoryAction = null;
+            _state = _state.copyWith(
+              stockStorySaveStatus: SaveStatus.saved,
+              stockStorySaveFeedback: '주식 이야기를 삭제했어요.',
+              stockStorySaveTargetId: story.id,
+              clearStockStoryDraftError: true,
+            );
+            notifyListeners();
+          })
+          .catchError((Object _) {
+            final boundedIndex = previousIndex
+                .clamp(0, _stockStories.length)
+                .toInt();
+            if (!_stockStories.any((candidate) => candidate.id == story.id)) {
+              _stockStories.insert(boundedIndex, story);
+              _sortStockStoriesByUpdatedAt();
+            }
+            _lastFailedStockStory = story;
+            _lastFailedStockStoryAction = _FailedPersistenceAction.delete;
+            _state = _state.copyWith(
+              stockStoryDraftError: '주식 이야기를 삭제하지 못했어요. 다시 시도해 주세요.',
+              stockStorySaveStatus: SaveStatus.failed,
+              stockStorySaveTargetId: story.id,
+              clearStockStorySaveFeedback: true,
+            );
+            notifyListeners();
+          }),
+    );
   }
 
   void _persistStockHolding(StockHolding holding) {
     final repository = _repository;
     final spaceId = _spaceId;
     if (repository == null || spaceId == null) {
-      return;
-    }
-    unawaited(repository.saveStockHolding(spaceId, holding).catchError((_) {}));
-  }
-
-  void _deletePersistedStockHolding(String holdingId) {
-    final repository = _repository;
-    final spaceId = _spaceId;
-    if (repository == null || spaceId == null) {
+      _lastFailedStockHolding = null;
+      _lastFailedStockHoldingAction = null;
+      _state = _state.copyWith(
+        stockHoldingSaveStatus: SaveStatus.saved,
+        stockHoldingSaveFeedback: '보유 종목을 저장했어요.',
+        stockHoldingSaveTargetId: holding.id,
+        clearStockHoldingDraftError: true,
+      );
+      notifyListeners();
       return;
     }
     unawaited(
-      repository.deleteStockHolding(spaceId, holdingId).catchError((_) {}),
+      repository
+          .saveStockHolding(spaceId, holding)
+          .then<void>((_) {
+            _lastFailedStockHolding = null;
+            _lastFailedStockHoldingAction = null;
+            _state = _state.copyWith(
+              stockHoldingSaveStatus: SaveStatus.saved,
+              stockHoldingSaveFeedback: '보유 종목을 저장했어요.',
+              stockHoldingSaveTargetId: holding.id,
+              clearStockHoldingDraftError: true,
+            );
+            notifyListeners();
+          })
+          .catchError((Object _) {
+            _lastFailedStockHolding = holding;
+            _lastFailedStockHoldingAction = _FailedPersistenceAction.save;
+            _state = _state.copyWith(
+              stockHoldingDraftError: '보유 종목을 저장하지 못했어요. 다시 시도해 주세요.',
+              stockHoldingSaveStatus: SaveStatus.failed,
+              stockHoldingSaveTargetId: holding.id,
+              clearStockHoldingSaveFeedback: true,
+            );
+            notifyListeners();
+          }),
+    );
+  }
+
+  void _deletePersistedStockHolding(StockHolding holding, int previousIndex) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      _lastFailedStockHolding = null;
+      _lastFailedStockHoldingAction = null;
+      _state = _state.copyWith(
+        stockHoldingSaveStatus: SaveStatus.saved,
+        stockHoldingSaveFeedback: '보유 종목을 삭제했어요.',
+        stockHoldingSaveTargetId: holding.id,
+        clearStockHoldingDraftError: true,
+      );
+      notifyListeners();
+      return;
+    }
+    unawaited(
+      repository
+          .deleteStockHolding(spaceId, holding.id)
+          .then<void>((_) {
+            _lastFailedStockHolding = null;
+            _lastFailedStockHoldingAction = null;
+            _state = _state.copyWith(
+              stockHoldingSaveStatus: SaveStatus.saved,
+              stockHoldingSaveFeedback: '보유 종목을 삭제했어요.',
+              stockHoldingSaveTargetId: holding.id,
+              clearStockHoldingDraftError: true,
+            );
+            notifyListeners();
+          })
+          .catchError((Object _) {
+            final boundedIndex = previousIndex
+                .clamp(0, _stockHoldings.length)
+                .toInt();
+            if (!_stockHoldings.any(
+              (candidate) => candidate.id == holding.id,
+            )) {
+              _stockHoldings.insert(boundedIndex, holding);
+              _sortStockHoldingsByUpdatedAt();
+            }
+            _lastFailedStockHolding = holding;
+            _lastFailedStockHoldingAction = _FailedPersistenceAction.delete;
+            _state = _state.copyWith(
+              stockHoldingDraftError: '보유 종목을 삭제하지 못했어요. 다시 시도해 주세요.',
+              stockHoldingSaveStatus: SaveStatus.failed,
+              stockHoldingSaveTargetId: holding.id,
+              clearStockHoldingSaveFeedback: true,
+            );
+            notifyListeners();
+          }),
     );
   }
 
@@ -3873,6 +4296,14 @@ class AlagagiController extends ChangeNotifier {
   bool get canRetryMeetingSave => _lastFailedScheduleEntry != null;
 
   bool get canRetryPlaceSave => _lastFailedSharedPlace != null;
+
+  bool get canRetryWishSave => _lastFailedWish != null;
+
+  bool get canRetryMusicSave => _lastFailedMusicNote != null;
+
+  bool get canRetryStockStorySave => _lastFailedStockStory != null;
+
+  bool get canRetryStockHoldingSave => _lastFailedStockHolding != null;
 
   String get selectedMeetingDateKey =>
       _state.selectedMeetingDateKey ?? _todayDateKey();
@@ -5252,7 +5683,34 @@ class AlagagiController extends ChangeNotifier {
       wishDraftVisible: true,
       wishDraftTitle: '',
       wishDraftKind: WishKind.activity,
+      clearEditingWishId: true,
       clearWishDraftError: true,
+      clearWishSaveFeedback: true,
+      clearWishSaveTargetId: true,
+    );
+    notifyListeners();
+  }
+
+  void startWishEdit(String wishId) {
+    final wish = _wishes.cast<WishItem?>().firstWhere(
+      (candidate) => candidate?.id == wishId,
+      orElse: () => null,
+    );
+    if (wish == null || wish.createdByProfileId != _state.me.id) {
+      _state = _state.copyWith(wishDraftError: '내가 담은 위시만 수정할 수 있어요.');
+      notifyListeners();
+      return;
+    }
+    _state = _state.copyWith(
+      route: AlagagiRoute.wishlist,
+      wishlistFilter: WishlistFilter.all,
+      wishDraftVisible: true,
+      wishDraftTitle: wish.title,
+      wishDraftKind: wish.kind,
+      editingWishId: wish.id,
+      clearWishDraftError: true,
+      clearWishSaveFeedback: true,
+      clearWishSaveTargetId: true,
     );
     notifyListeners();
   }
@@ -5262,6 +5720,7 @@ class AlagagiController extends ChangeNotifier {
       wishDraftVisible: false,
       wishDraftTitle: '',
       wishDraftKind: WishKind.activity,
+      clearEditingWishId: true,
       clearWishDraftError: true,
     );
     notifyListeners();
@@ -5291,26 +5750,56 @@ class AlagagiController extends ChangeNotifier {
     }
 
     final now = DateTime.now();
-    final wish = WishItem(
-      id: 'wish_${_state.me.id}_${now.microsecondsSinceEpoch}',
-      icon: _wishIconFor(_state.wishDraftKind),
-      title: title,
-      kind: _state.wishDraftKind,
-      createdByProfileId: _state.me.id,
-      likedByProfileIds: {_state.me.id},
-      updatedAt: now,
-      updatedByProfileId: _state.me.id,
-    );
-    _wishes.insert(0, wish);
-    _persistWish(wish);
+    final editingId = _state.editingWishId;
+    final editingIndex = editingId == null
+        ? -1
+        : _wishes.indexWhere((wish) => wish.id == editingId);
+    final WishItem wish;
+    if (editingId != null) {
+      if (editingIndex == -1) {
+        _state = _state.copyWith(wishDraftError: '수정할 위시를 찾지 못했어요.');
+        notifyListeners();
+        return;
+      }
+      if (_wishes[editingIndex].createdByProfileId != _state.me.id) {
+        _state = _state.copyWith(wishDraftError: '내가 담은 위시만 수정할 수 있어요.');
+        notifyListeners();
+        return;
+      }
+      wish = _wishes[editingIndex].copyWith(
+        title: title,
+        kind: _state.wishDraftKind,
+        icon: _wishIconFor(_state.wishDraftKind),
+        updatedAt: now,
+        updatedByProfileId: _state.me.id,
+      );
+      _wishes[editingIndex] = wish;
+    } else {
+      wish = WishItem(
+        id: 'wish_${_state.me.id}_${now.microsecondsSinceEpoch}',
+        icon: _wishIconFor(_state.wishDraftKind),
+        title: title,
+        kind: _state.wishDraftKind,
+        createdByProfileId: _state.me.id,
+        likedByProfileIds: {_state.me.id},
+        updatedAt: now,
+        updatedByProfileId: _state.me.id,
+      );
+      _wishes.insert(0, wish);
+    }
     _state = _state.copyWith(
       wishlistFilter: WishlistFilter.all,
       wishDraftVisible: false,
       wishDraftTitle: '',
       wishDraftKind: WishKind.activity,
+      wishSaveStatus: SaveStatus.saving,
+      wishSaveTargetId: wish.id,
+      clearEditingWishId: true,
       clearWishDraftError: true,
+      clearWishSaveFeedback: true,
     );
     notifyListeners();
+    _persistWish(wish);
   }
 
   String _wishIconFor(WishKind kind) {
@@ -5337,8 +5826,99 @@ class AlagagiController extends ChangeNotifier {
       updatedByProfileId: _state.me.id,
     );
     _wishes[index] = updatedWish;
-    _persistWish(updatedWish);
+    _state = _state.copyWith(
+      wishSaveStatus: SaveStatus.saving,
+      wishSaveTargetId: updatedWish.id,
+      clearWishDraftError: true,
+      clearWishSaveFeedback: true,
+    );
     notifyListeners();
+    _persistWish(updatedWish);
+  }
+
+  void toggleWishDone(String wishId) {
+    final index = _wishes.indexWhere((wish) => wish.id == wishId);
+    if (index == -1) {
+      return;
+    }
+    final wish = _wishes[index];
+    final allowed =
+        wish.createdByProfileId == _state.me.id ||
+        wish.likedByProfileIds.contains(_state.me.id);
+    if (!allowed) {
+      _state = _state.copyWith(wishDraftError: '관심 표시한 위시만 함께함으로 옮길 수 있어요.');
+      notifyListeners();
+      return;
+    }
+    final updatedWish = wish.copyWith(
+      done: !wish.done,
+      updatedAt: DateTime.now(),
+      updatedByProfileId: _state.me.id,
+    );
+    _wishes[index] = updatedWish;
+    _state = _state.copyWith(
+      wishSaveStatus: SaveStatus.saving,
+      wishSaveTargetId: updatedWish.id,
+      clearWishDraftError: true,
+      clearWishSaveFeedback: true,
+    );
+    notifyListeners();
+    _persistWish(updatedWish);
+  }
+
+  void deleteWish(String wishId) {
+    final index = _wishes.indexWhere((wish) => wish.id == wishId);
+    if (index == -1) {
+      _state = _state.copyWith(wishDraftError: '삭제할 위시를 찾지 못했어요.');
+      notifyListeners();
+      return;
+    }
+    final wish = _wishes[index];
+    if (wish.createdByProfileId != _state.me.id) {
+      _state = _state.copyWith(wishDraftError: '내가 담은 위시만 삭제할 수 있어요.');
+      notifyListeners();
+      return;
+    }
+    _wishes.removeAt(index);
+    final wasEditing = _state.editingWishId == wishId;
+    _state = _state.copyWith(
+      wishDraftVisible: wasEditing ? false : _state.wishDraftVisible,
+      wishDraftTitle: wasEditing ? '' : _state.wishDraftTitle,
+      wishDraftKind: wasEditing ? WishKind.activity : _state.wishDraftKind,
+      wishSaveStatus: SaveStatus.saving,
+      wishSaveTargetId: wish.id,
+      clearEditingWishId: wasEditing,
+      clearWishDraftError: true,
+      clearWishSaveFeedback: true,
+    );
+    notifyListeners();
+    _deletePersistedWish(wish, index);
+  }
+
+  void retryWishSave() {
+    final wish = _lastFailedWish;
+    if (wish == null || _state.wishSaveStatus == SaveStatus.saving) {
+      return;
+    }
+    final previousIndex = _wishes.indexWhere(
+      (candidate) => candidate.id == wish.id,
+    );
+    if (_lastFailedWishAction == _FailedPersistenceAction.delete &&
+        previousIndex != -1) {
+      _wishes.removeAt(previousIndex);
+    }
+    _state = _state.copyWith(
+      wishSaveStatus: SaveStatus.saving,
+      wishSaveTargetId: wish.id,
+      clearWishDraftError: true,
+      clearWishSaveFeedback: true,
+    );
+    notifyListeners();
+    if (_lastFailedWishAction == _FailedPersistenceAction.delete) {
+      _deletePersistedWish(wish, previousIndex == -1 ? 0 : previousIndex);
+    } else {
+      _persistWish(wish);
+    }
   }
 
   String curiosityReplyDraftFor(String cardId) {
@@ -5764,6 +6344,8 @@ class AlagagiController extends ChangeNotifier {
       musicDraftMood: musicMoodOptions.first,
       clearEditingMusicNoteId: true,
       clearMusicDraftError: true,
+      clearMusicSaveFeedback: true,
+      clearMusicSaveTargetId: true,
     );
     notifyListeners();
   }
@@ -5787,6 +6369,8 @@ class AlagagiController extends ChangeNotifier {
       musicDraftMood: note.mood,
       editingMusicNoteId: note.id,
       clearMusicDraftError: true,
+      clearMusicSaveFeedback: true,
+      clearMusicSaveTargetId: true,
     );
     notifyListeners();
   }
@@ -5801,6 +6385,7 @@ class AlagagiController extends ChangeNotifier {
       musicDraftMood: musicMoodOptions.first,
       clearEditingMusicNoteId: true,
       clearMusicDraftError: true,
+      clearMusicSaveFeedback: true,
     );
     notifyListeners();
   }
@@ -5817,6 +6402,8 @@ class AlagagiController extends ChangeNotifier {
       musicDraftLink: link,
       musicDraftNote: note,
       clearMusicDraftError: true,
+      clearMusicSaveFeedback: true,
+      clearMusicSaveTargetId: true,
     );
     notifyListeners();
   }
@@ -5919,7 +6506,6 @@ class AlagagiController extends ChangeNotifier {
       );
       _musicNotes[editIndex] = updatedNote;
       _sortMusicNotesByUpdatedAt();
-      _persistMusicNote(updatedNote);
       _state = _state.copyWith(
         musicDraftVisible: false,
         musicDraftTitle: '',
@@ -5927,10 +6513,14 @@ class AlagagiController extends ChangeNotifier {
         musicDraftLink: '',
         musicDraftNote: '',
         musicDraftMood: musicMoodOptions.first,
+        musicSaveStatus: SaveStatus.saving,
+        musicSaveTargetId: updatedNote.id,
         clearEditingMusicNoteId: true,
         clearMusicDraftError: true,
+        clearMusicSaveFeedback: true,
       );
       notifyListeners();
+      _persistMusicNote(updatedNote);
       return;
     }
 
@@ -5948,7 +6538,6 @@ class AlagagiController extends ChangeNotifier {
     );
     _musicNotes.insert(0, note);
     _sortMusicNotesByUpdatedAt();
-    _persistMusicNote(note);
     _state = _state.copyWith(
       musicDraftVisible: false,
       musicDraftTitle: '',
@@ -5956,10 +6545,75 @@ class AlagagiController extends ChangeNotifier {
       musicDraftLink: '',
       musicDraftNote: '',
       musicDraftMood: musicMoodOptions.first,
+      musicSaveStatus: SaveStatus.saving,
+      musicSaveTargetId: note.id,
       clearEditingMusicNoteId: true,
       clearMusicDraftError: true,
+      clearMusicSaveFeedback: true,
     );
     notifyListeners();
+    _persistMusicNote(note);
+  }
+
+  void deleteMusicNote(String noteId) {
+    final index = _musicNotes.indexWhere((note) => note.id == noteId);
+    if (index == -1) {
+      _state = _state.copyWith(musicDraftError: '삭제할 음악 노트를 찾지 못했어요.');
+      notifyListeners();
+      return;
+    }
+    final note = _musicNotes[index];
+    if (note.createdByProfileId != _state.me.id) {
+      _state = _state.copyWith(musicDraftError: '내가 남긴 음악 노트만 삭제할 수 있어요.');
+      notifyListeners();
+      return;
+    }
+    _musicNotes.removeAt(index);
+    final wasEditing = _state.editingMusicNoteId == noteId;
+    _state = _state.copyWith(
+      musicDraftVisible: wasEditing ? false : _state.musicDraftVisible,
+      musicDraftTitle: wasEditing ? '' : _state.musicDraftTitle,
+      musicDraftArtist: wasEditing ? '' : _state.musicDraftArtist,
+      musicDraftLink: wasEditing ? '' : _state.musicDraftLink,
+      musicDraftNote: wasEditing ? '' : _state.musicDraftNote,
+      musicDraftMood: wasEditing
+          ? musicMoodOptions.first
+          : _state.musicDraftMood,
+      musicSaveStatus: SaveStatus.saving,
+      musicSaveTargetId: note.id,
+      clearEditingMusicNoteId: wasEditing,
+      clearMusicDraftError: true,
+      clearMusicSaveFeedback: true,
+    );
+    notifyListeners();
+    _deletePersistedMusicNote(note, index);
+  }
+
+  void retryMusicSave() {
+    final note = _lastFailedMusicNote;
+    if (note == null || _state.musicSaveStatus == SaveStatus.saving) {
+      return;
+    }
+    final previousIndex = _musicNotes.indexWhere(
+      (candidate) => candidate.id == note.id,
+    );
+    if (_lastFailedMusicNoteAction == _FailedPersistenceAction.delete &&
+        previousIndex != -1) {
+      _musicNotes.removeAt(previousIndex);
+      _sortMusicNotesByUpdatedAt();
+    }
+    _state = _state.copyWith(
+      musicSaveStatus: SaveStatus.saving,
+      musicSaveTargetId: note.id,
+      clearMusicDraftError: true,
+      clearMusicSaveFeedback: true,
+    );
+    notifyListeners();
+    if (_lastFailedMusicNoteAction == _FailedPersistenceAction.delete) {
+      _deletePersistedMusicNote(note, previousIndex == -1 ? 0 : previousIndex);
+    } else {
+      _persistMusicNote(note);
+    }
   }
 
   void selectMeetingDate(String dateKey) {
@@ -6811,6 +7465,8 @@ class AlagagiController extends ChangeNotifier {
       clearStockHoldingDraftError: true,
       clearStockStoryReplyError: true,
       clearStockHoldingReplyError: true,
+      clearStockStorySaveFeedback: true,
+      clearStockHoldingSaveFeedback: true,
     );
     notifyListeners();
   }
@@ -6842,6 +7498,8 @@ class AlagagiController extends ChangeNotifier {
       stockStoryDraftRisk: '',
       stockStoryDraftQuestion: '',
       clearStockStoryDraftError: true,
+      clearStockStorySaveFeedback: true,
+      clearStockStorySaveTargetId: true,
     );
     notifyListeners();
   }
@@ -6855,6 +7513,7 @@ class AlagagiController extends ChangeNotifier {
       stockStoryDraftRisk: '',
       stockStoryDraftQuestion: '',
       clearStockStoryDraftError: true,
+      clearStockStorySaveFeedback: true,
     );
     notifyListeners();
   }
@@ -6873,6 +7532,8 @@ class AlagagiController extends ChangeNotifier {
       stockStoryDraftRisk: risk,
       stockStoryDraftQuestion: question,
       clearStockStoryDraftError: true,
+      clearStockStorySaveFeedback: true,
+      clearStockStorySaveTargetId: true,
     );
     notifyListeners();
   }
@@ -6880,9 +7541,14 @@ class AlagagiController extends ChangeNotifier {
   void submitStockStoryDraft() {
     final name = _state.stockStoryDraftName.trim();
     final reason = _state.stockStoryDraftReason.trim();
-    final upside = _state.stockStoryDraftUpside.trim();
-    final risk = _state.stockStoryDraftRisk.trim();
-    final question = _state.stockStoryDraftQuestion.trim();
+    final rawUpside = _state.stockStoryDraftUpside.trim();
+    final rawRisk = _state.stockStoryDraftRisk.trim();
+    final rawQuestion = _state.stockStoryDraftQuestion.trim();
+    final upside = rawUpside.isEmpty ? '좋아 보이는 점은 더 살펴볼게요.' : rawUpside;
+    final risk = rawRisk.isEmpty ? '조심할 점은 같이 보면서 정리할게요.' : rawRisk;
+    final question = rawQuestion.isEmpty
+        ? '이 종목을 같이 어떻게 볼지 궁금해요.'
+        : rawQuestion;
 
     String? error;
     if (name.isEmpty) {
@@ -6893,12 +7559,8 @@ class AlagagiController extends ChangeNotifier {
       error = '관심 이유를 한 줄만 남겨주세요.';
     } else if (reason.length > 120) {
       error = '관심 이유는 120자 안으로 남겨주세요.';
-    } else if (upside.isEmpty || risk.isEmpty) {
-      error = '기대와 걱정을 함께 남겨주세요.';
     } else if (upside.length > 80 || risk.length > 80) {
       error = '기대와 걱정은 각각 80자 안으로 남겨주세요.';
-    } else if (question.isEmpty) {
-      error = '상대에게 묻고 싶은 점을 남겨주세요.';
     } else if (question.length > 100) {
       error = '질문은 100자 안으로 남겨주세요.';
     }
@@ -6923,7 +7585,6 @@ class AlagagiController extends ChangeNotifier {
     );
     _stockStories.insert(0, story);
     _sortStockStoriesByUpdatedAt();
-    _persistStockStory(story);
     _state = _state.copyWith(
       stockStoryDraftVisible: false,
       stockStoryDraftName: '',
@@ -6931,9 +7592,69 @@ class AlagagiController extends ChangeNotifier {
       stockStoryDraftUpside: '',
       stockStoryDraftRisk: '',
       stockStoryDraftQuestion: '',
+      stockStorySaveStatus: SaveStatus.saving,
+      stockStorySaveTargetId: story.id,
       clearStockStoryDraftError: true,
+      clearStockStorySaveFeedback: true,
     );
     notifyListeners();
+    _persistStockStory(story);
+  }
+
+  void deleteStockStory(String storyId) {
+    final index = _stockStories.indexWhere((story) => story.id == storyId);
+    if (index == -1) {
+      _state = _state.copyWith(stockStoryDraftError: '삭제할 주식 이야기를 찾지 못했어요.');
+      notifyListeners();
+      return;
+    }
+    final story = _stockStories[index];
+    if (story.createdByProfileId != _state.me.id) {
+      _state = _state.copyWith(
+        stockStoryDraftError: '내가 남긴 주식 이야기만 삭제할 수 있어요.',
+      );
+      notifyListeners();
+      return;
+    }
+    _stockStories.removeAt(index);
+    _state = _state.copyWith(
+      stockStorySaveStatus: SaveStatus.saving,
+      stockStorySaveTargetId: story.id,
+      clearStockStoryDraftError: true,
+      clearStockStorySaveFeedback: true,
+    );
+    notifyListeners();
+    _deletePersistedStockStory(story, index);
+  }
+
+  void retryStockStorySave() {
+    final story = _lastFailedStockStory;
+    if (story == null || _state.stockStorySaveStatus == SaveStatus.saving) {
+      return;
+    }
+    final previousIndex = _stockStories.indexWhere(
+      (candidate) => candidate.id == story.id,
+    );
+    if (_lastFailedStockStoryAction == _FailedPersistenceAction.delete &&
+        previousIndex != -1) {
+      _stockStories.removeAt(previousIndex);
+      _sortStockStoriesByUpdatedAt();
+    }
+    _state = _state.copyWith(
+      stockStorySaveStatus: SaveStatus.saving,
+      stockStorySaveTargetId: story.id,
+      clearStockStoryDraftError: true,
+      clearStockStorySaveFeedback: true,
+    );
+    notifyListeners();
+    if (_lastFailedStockStoryAction == _FailedPersistenceAction.delete) {
+      _deletePersistedStockStory(
+        story,
+        previousIndex == -1 ? 0 : previousIndex,
+      );
+    } else {
+      _persistStockStory(story);
+    }
   }
 
   String stockStoryReplyDraftFor(String storyId) {
@@ -7010,7 +7731,6 @@ class AlagagiController extends ChangeNotifier {
     );
     _stockStories[index] = updatedStory;
     _sortStockStoriesByUpdatedAt();
-    _persistStockStory(updatedStory);
     final drafts = Map<String, String>.of(_state.stockStoryReplyDraftsByStoryId)
       ..remove(storyId);
     final tones = Map<String, String>.of(_state.stockStoryReplyTonesByStoryId)
@@ -7018,9 +7738,13 @@ class AlagagiController extends ChangeNotifier {
     _state = _state.copyWith(
       stockStoryReplyDraftsByStoryId: Map<String, String>.unmodifiable(drafts),
       stockStoryReplyTonesByStoryId: Map<String, String>.unmodifiable(tones),
+      stockStorySaveStatus: SaveStatus.saving,
+      stockStorySaveTargetId: updatedStory.id,
       clearStockStoryReplyError: true,
+      clearStockStorySaveFeedback: true,
     );
     notifyListeners();
+    _persistStockStory(updatedStory);
   }
 
   void startStockHoldingDraft() {
@@ -7120,9 +7844,14 @@ class AlagagiController extends ChangeNotifier {
     final status = _state.stockHoldingDraftStatus.trim();
     final weightLabel = _state.stockHoldingDraftWeightLabel.trim();
     final reason = _state.stockHoldingDraftReason.trim();
-    final watchPoint = _state.stockHoldingDraftWatchPoint.trim();
-    final concern = _state.stockHoldingDraftConcern.trim();
-    final question = _state.stockHoldingDraftQuestion.trim();
+    final rawWatchPoint = _state.stockHoldingDraftWatchPoint.trim();
+    final rawConcern = _state.stockHoldingDraftConcern.trim();
+    final rawQuestion = _state.stockHoldingDraftQuestion.trim();
+    final watchPoint = rawWatchPoint.isEmpty ? '앞으로 같이 더 볼게요.' : rawWatchPoint;
+    final concern = rawConcern.isEmpty ? '걱정되는 점은 보면서 정리할게요.' : rawConcern;
+    final question = rawQuestion.isEmpty
+        ? '이 종목을 어떻게 볼지 같이 이야기해보고 싶어요.'
+        : rawQuestion;
 
     String? error;
     if (name.isEmpty) {
@@ -7137,13 +7866,9 @@ class AlagagiController extends ChangeNotifier {
       error = '보유 이유를 한 줄만 남겨주세요.';
     } else if (reason.length > 120) {
       error = '보유 이유는 120자 안으로 남겨주세요.';
-    } else if (watchPoint.isEmpty || concern.isEmpty) {
-      error = '보고 싶은 점과 걱정을 함께 남겨주세요.';
-    } else if (watchPoint.length > 80 || concern.length > 80) {
+    } else if (rawWatchPoint.length > 80 || rawConcern.length > 80) {
       error = '보고 싶은 점과 걱정은 각각 80자 안으로 남겨주세요.';
-    } else if (question.isEmpty) {
-      error = '상대에게 묻고 싶은 점을 남겨주세요.';
-    } else if (question.length > 100) {
+    } else if (rawQuestion.length > 100) {
       error = '질문은 100자 안으로 남겨주세요.';
     }
     if (error != null) {
@@ -7204,7 +7929,6 @@ class AlagagiController extends ChangeNotifier {
       _stockHoldings[editingIndex] = holding;
     }
     _sortStockHoldingsByUpdatedAt();
-    _persistStockHolding(holding);
     _state = _state.copyWith(
       stockHoldingDraftVisible: false,
       stockHoldingDraftName: '',
@@ -7216,8 +7940,12 @@ class AlagagiController extends ChangeNotifier {
       stockHoldingDraftQuestion: '',
       clearStockHoldingDraftError: true,
       clearEditingStockHoldingId: true,
+      stockHoldingSaveStatus: SaveStatus.saving,
+      stockHoldingSaveTargetId: holding.id,
+      clearStockHoldingSaveFeedback: true,
     );
     notifyListeners();
+    _persistStockHolding(holding);
   }
 
   void deleteStockHolding(String holdingId) {
@@ -7239,7 +7967,6 @@ class AlagagiController extends ChangeNotifier {
     }
 
     _stockHoldings.removeAt(index);
-    _deletePersistedStockHolding(holdingId);
     final wasEditing = _state.editingStockHoldingId == holdingId;
     _state = _state.copyWith(
       stockHoldingDraftVisible: wasEditing
@@ -7265,8 +7992,42 @@ class AlagagiController extends ChangeNotifier {
       clearStockHoldingDraftError: true,
       clearStockHoldingReplyError: true,
       clearEditingStockHoldingId: wasEditing,
+      stockHoldingSaveStatus: SaveStatus.saving,
+      stockHoldingSaveTargetId: holding.id,
+      clearStockHoldingSaveFeedback: true,
     );
     notifyListeners();
+    _deletePersistedStockHolding(holding, index);
+  }
+
+  void retryStockHoldingSave() {
+    final holding = _lastFailedStockHolding;
+    if (holding == null || _state.stockHoldingSaveStatus == SaveStatus.saving) {
+      return;
+    }
+    final previousIndex = _stockHoldings.indexWhere(
+      (candidate) => candidate.id == holding.id,
+    );
+    if (_lastFailedStockHoldingAction == _FailedPersistenceAction.delete &&
+        previousIndex != -1) {
+      _stockHoldings.removeAt(previousIndex);
+      _sortStockHoldingsByUpdatedAt();
+    }
+    _state = _state.copyWith(
+      stockHoldingSaveStatus: SaveStatus.saving,
+      stockHoldingSaveTargetId: holding.id,
+      clearStockHoldingSaveFeedback: true,
+      clearStockHoldingDraftError: true,
+    );
+    notifyListeners();
+    if (_lastFailedStockHoldingAction == _FailedPersistenceAction.delete) {
+      _deletePersistedStockHolding(
+        holding,
+        previousIndex == -1 ? 0 : previousIndex,
+      );
+    } else {
+      _persistStockHolding(holding);
+    }
   }
 
   String stockHoldingReplyDraftFor(String holdingId) {
@@ -7353,7 +8114,6 @@ class AlagagiController extends ChangeNotifier {
     );
     _stockHoldings[index] = updatedHolding;
     _sortStockHoldingsByUpdatedAt();
-    _persistStockHolding(updatedHolding);
     final drafts = Map<String, String>.of(
       _state.stockHoldingReplyDraftsByHoldingId,
     )..remove(holdingId);
@@ -7368,8 +8128,12 @@ class AlagagiController extends ChangeNotifier {
         tones,
       ),
       clearStockHoldingReplyError: true,
+      stockHoldingSaveStatus: SaveStatus.saving,
+      stockHoldingSaveTargetId: updatedHolding.id,
+      clearStockHoldingSaveFeedback: true,
     );
     notifyListeners();
+    _persistStockHolding(updatedHolding);
   }
 }
 

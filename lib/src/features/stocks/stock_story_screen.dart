@@ -138,6 +138,16 @@ class _StockStoriesPane extends StatelessWidget {
           _StockStoryDraftCard(controller: controller),
           const SizedBox(height: 18),
         ],
+        _StockSaveStatus(
+          status: controller.state.stockStorySaveStatus,
+          feedback: controller.state.stockStorySaveFeedback,
+          error: controller.state.stockStoryDraftError,
+          savingMessage: '주식 이야기를 저장하는 중이에요.',
+          fallbackError: '주식 이야기를 저장하지 못했어요.',
+          canRetry: controller.canRetryStockStorySave,
+          onRetry: controller.retryStockStorySave,
+          retryKey: stockStoryRetryButtonKey,
+        ),
         Row(
           children: [
             const Expanded(child: AlagagiSectionLabel('같이 볼 이야기')),
@@ -327,13 +337,115 @@ class _StockStoryAddButton extends StatelessWidget {
   }
 }
 
-class _StockStoryDraftCard extends StatelessWidget {
+class _StockSaveStatus extends StatelessWidget {
+  const _StockSaveStatus({
+    required this.status,
+    required this.feedback,
+    required this.error,
+    required this.savingMessage,
+    required this.fallbackError,
+    required this.canRetry,
+    required this.onRetry,
+    required this.retryKey,
+  });
+
+  final SaveStatus status;
+  final String? feedback;
+  final String? error;
+  final String savingMessage;
+  final String fallbackError;
+  final bool canRetry;
+  final VoidCallback onRetry;
+  final Key retryKey;
+
+  @override
+  Widget build(BuildContext context) {
+    if (status == SaveStatus.idle && feedback == null && error == null) {
+      return const SizedBox.shrink();
+    }
+    final failed = status == SaveStatus.failed;
+    final saving = status == SaveStatus.saving;
+    final message = saving
+        ? savingMessage
+        : failed
+        ? error ?? fallbackError
+        : feedback ?? '저장됐어요.';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: failed ? const Color(0xFFFFF7ED) : const Color(0xFFF5F7F1),
+          border: Border.all(
+            color: failed ? const Color(0xFFEBC9A2) : AlagagiColors.line,
+          ),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            Icon(
+              failed
+                  ? Icons.error_outline_rounded
+                  : saving
+                  ? Icons.sync_rounded
+                  : Icons.check_circle_outline_rounded,
+              size: 17,
+              color: failed ? const Color(0xFF9A5A1F) : AlagagiColors.sageDeep,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: sans(
+                  size: 12.2,
+                  color: failed
+                      ? const Color(0xFF8C511E)
+                      : AlagagiColors.sageDeep,
+                  weight: FontWeight.w700,
+                ),
+              ),
+            ),
+            if (failed && canRetry)
+              TextButton(
+                key: retryKey,
+                onPressed: onRetry,
+                child: Text(
+                  '다시 시도',
+                  style: sans(size: 12, weight: FontWeight.w800),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StockStoryDraftCard extends StatefulWidget {
   const _StockStoryDraftCard({required this.controller});
 
   final AlagagiController controller;
 
   @override
+  State<_StockStoryDraftCard> createState() => _StockStoryDraftCardState();
+}
+
+class _StockStoryDraftCardState extends State<_StockStoryDraftCard> {
+  bool _detailsVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final state = widget.controller.state;
+    _detailsVisible =
+        state.stockStoryDraftUpside.trim().isNotEmpty ||
+        state.stockStoryDraftRisk.trim().isNotEmpty ||
+        state.stockStoryDraftQuestion.trim().isNotEmpty;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
     return AlagagiPaperCard(
       radius: 22,
       padding: const EdgeInsets.all(18),
@@ -352,7 +464,7 @@ class _StockStoryDraftCard extends StatelessWidget {
           ),
           const SizedBox(height: 7),
           Text(
-            '결론보다 이유와 걱정을 함께 남기면 충분해요.',
+            '종목명과 관심 이유만 적어도 저장할 수 있어요. 더 자세한 관점은 필요할 때만 열어 적어요.',
             style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
           ),
           const SizedBox(height: 16),
@@ -376,35 +488,43 @@ class _StockStoryDraftCard extends StatelessWidget {
                 controller.updateStockStoryDraft(reason: value),
           ),
           const SizedBox(height: 10),
-          AlagagiTextField(
-            fieldKey: stockStoryUpsideFieldKey,
-            label: '기대 포인트',
-            hint: '좋아 보이는 점',
-            initialValue: controller.state.stockStoryDraftUpside,
-            maxLength: 80,
-            onChanged: (value) =>
-                controller.updateStockStoryDraft(upside: value),
+          _StockDraftDetailToggle(
+            expanded: _detailsVisible,
+            onPressed: () => setState(() => _detailsVisible = !_detailsVisible),
           ),
-          const SizedBox(height: 10),
-          AlagagiTextField(
-            fieldKey: stockStoryRiskFieldKey,
-            label: '걱정 포인트',
-            hint: '조심해서 볼 점',
-            initialValue: controller.state.stockStoryDraftRisk,
-            maxLength: 80,
-            onChanged: (value) => controller.updateStockStoryDraft(risk: value),
-          ),
-          const SizedBox(height: 10),
-          AlagagiTextField(
-            fieldKey: stockStoryQuestionFieldKey,
-            label: '궁금한 점',
-            hint: '상대에게 묻고 싶은 것',
-            initialValue: controller.state.stockStoryDraftQuestion,
-            maxLength: 100,
-            maxLines: 2,
-            onChanged: (value) =>
-                controller.updateStockStoryDraft(question: value),
-          ),
+          if (_detailsVisible) ...[
+            const SizedBox(height: 10),
+            AlagagiTextField(
+              fieldKey: stockStoryUpsideFieldKey,
+              label: '기대 포인트',
+              hint: '좋아 보이는 점',
+              initialValue: controller.state.stockStoryDraftUpside,
+              maxLength: 80,
+              onChanged: (value) =>
+                  controller.updateStockStoryDraft(upside: value),
+            ),
+            const SizedBox(height: 10),
+            AlagagiTextField(
+              fieldKey: stockStoryRiskFieldKey,
+              label: '걱정 포인트',
+              hint: '조심해서 볼 점',
+              initialValue: controller.state.stockStoryDraftRisk,
+              maxLength: 80,
+              onChanged: (value) =>
+                  controller.updateStockStoryDraft(risk: value),
+            ),
+            const SizedBox(height: 10),
+            AlagagiTextField(
+              fieldKey: stockStoryQuestionFieldKey,
+              label: '궁금한 점',
+              hint: '상대에게 묻고 싶은 것',
+              initialValue: controller.state.stockStoryDraftQuestion,
+              maxLength: 100,
+              maxLines: 2,
+              onChanged: (value) =>
+                  controller.updateStockStoryDraft(question: value),
+            ),
+          ],
           if (controller.state.stockStoryDraftError != null) ...[
             const SizedBox(height: 10),
             Text(
@@ -434,6 +554,39 @@ class _StockStoryDraftCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StockDraftDetailToggle extends StatelessWidget {
+  const _StockDraftDetailToggle({
+    required this.expanded,
+    required this.onPressed,
+  });
+
+  final bool expanded;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 38,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(
+          expanded ? Icons.keyboard_arrow_up_rounded : Icons.tune_rounded,
+          size: 16,
+        ),
+        label: Text(expanded ? '간단히 보기' : '자세히 적기'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AlagagiColors.sageDeep,
+          side: const BorderSide(color: Color(0x338A9A7E)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+          textStyle: sans(size: 12, weight: FontWeight.w800),
+        ),
       ),
     );
   }
@@ -566,6 +719,27 @@ class _StockStoryCardState extends State<_StockStoryCard> {
               Text(
                 controller.state.stockStoryReplyError!,
                 style: sans(size: 12, color: AlagagiColors.sageDeep),
+              ),
+            ],
+            if (isMine) ...[
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: OutlinedButton.icon(
+                  key: stockStoryDeleteButtonKey(story.id),
+                  onPressed: () => controller.deleteStockStory(story.id),
+                  icon: const Icon(Icons.delete_outline_rounded, size: 15),
+                  label: const Text('삭제'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF9A5A45),
+                    side: const BorderSide(color: Color(0x339A5A45)),
+                    visualDensity: VisualDensity.compact,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    textStyle: sans(size: 12, weight: FontWeight.w800),
+                  ),
+                ),
               ),
             ],
           ],
@@ -845,6 +1019,16 @@ class _StockHoldingsPane extends StatelessWidget {
           _StockHoldingDraftCard(controller: controller),
           const SizedBox(height: 18),
         ],
+        _StockSaveStatus(
+          status: controller.state.stockHoldingSaveStatus,
+          feedback: controller.state.stockHoldingSaveFeedback,
+          error: controller.state.stockHoldingDraftError,
+          savingMessage: '보유 종목을 저장하는 중이에요.',
+          fallbackError: '보유 종목을 저장하지 못했어요.',
+          canRetry: controller.canRetryStockHoldingSave,
+          onRetry: controller.retryStockHoldingSave,
+          retryKey: stockHoldingRetryButtonKey,
+        ),
         Row(
           children: [
             const Expanded(child: AlagagiSectionLabel('공유한 보유 종목')),
@@ -988,13 +1172,32 @@ class _StockHoldingAddButton extends StatelessWidget {
   }
 }
 
-class _StockHoldingDraftCard extends StatelessWidget {
+class _StockHoldingDraftCard extends StatefulWidget {
   const _StockHoldingDraftCard({required this.controller});
 
   final AlagagiController controller;
 
   @override
+  State<_StockHoldingDraftCard> createState() => _StockHoldingDraftCardState();
+}
+
+class _StockHoldingDraftCardState extends State<_StockHoldingDraftCard> {
+  bool _detailsVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final state = widget.controller.state;
+    _detailsVisible =
+        state.editingStockHoldingId != null ||
+        state.stockHoldingDraftWatchPoint.trim().isNotEmpty ||
+        state.stockHoldingDraftConcern.trim().isNotEmpty ||
+        state.stockHoldingDraftQuestion.trim().isNotEmpty;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
     final state = controller.state;
     final isEditing = state.editingStockHoldingId != null;
     return AlagagiPaperCard(
@@ -1017,7 +1220,7 @@ class _StockHoldingDraftCard extends StatelessWidget {
           Text(
             isEditing
                 ? '처음 남긴 답장과 기록은 유지하고, 내가 적은 내용만 고칠 수 있어요.'
-                : '수량이나 금액 없이도 보유 상태와 지켜볼 점만 공유할 수 있어요.',
+                : '수량이나 금액 없이도 종목명과 보유 이유만으로 먼저 공유할 수 있어요.',
             style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
           ),
           const SizedBox(height: 16),
@@ -1060,36 +1263,43 @@ class _StockHoldingDraftCard extends StatelessWidget {
                 controller.updateStockHoldingDraft(reason: value),
           ),
           const SizedBox(height: 10),
-          AlagagiTextField(
-            fieldKey: stockHoldingWatchFieldKey,
-            label: '보고 싶은 점',
-            hint: '앞으로 확인할 지점',
-            initialValue: state.stockHoldingDraftWatchPoint,
-            maxLength: 80,
-            onChanged: (value) =>
-                controller.updateStockHoldingDraft(watchPoint: value),
+          _StockDraftDetailToggle(
+            expanded: _detailsVisible,
+            onPressed: () => setState(() => _detailsVisible = !_detailsVisible),
           ),
-          const SizedBox(height: 10),
-          AlagagiTextField(
-            fieldKey: stockHoldingConcernFieldKey,
-            label: '걱정 포인트',
-            hint: '조심해서 볼 점',
-            initialValue: state.stockHoldingDraftConcern,
-            maxLength: 80,
-            onChanged: (value) =>
-                controller.updateStockHoldingDraft(concern: value),
-          ),
-          const SizedBox(height: 10),
-          AlagagiTextField(
-            fieldKey: stockHoldingQuestionFieldKey,
-            label: '물어보고 싶은 점',
-            hint: '상대에게 묻고 싶은 것',
-            initialValue: state.stockHoldingDraftQuestion,
-            maxLength: 100,
-            maxLines: 2,
-            onChanged: (value) =>
-                controller.updateStockHoldingDraft(question: value),
-          ),
+          if (_detailsVisible) ...[
+            const SizedBox(height: 10),
+            AlagagiTextField(
+              fieldKey: stockHoldingWatchFieldKey,
+              label: '보고 싶은 점',
+              hint: '앞으로 확인할 지점',
+              initialValue: state.stockHoldingDraftWatchPoint,
+              maxLength: 80,
+              onChanged: (value) =>
+                  controller.updateStockHoldingDraft(watchPoint: value),
+            ),
+            const SizedBox(height: 10),
+            AlagagiTextField(
+              fieldKey: stockHoldingConcernFieldKey,
+              label: '걱정 포인트',
+              hint: '조심해서 볼 점',
+              initialValue: state.stockHoldingDraftConcern,
+              maxLength: 80,
+              onChanged: (value) =>
+                  controller.updateStockHoldingDraft(concern: value),
+            ),
+            const SizedBox(height: 10),
+            AlagagiTextField(
+              fieldKey: stockHoldingQuestionFieldKey,
+              label: '물어보고 싶은 점',
+              hint: '상대에게 묻고 싶은 것',
+              initialValue: state.stockHoldingDraftQuestion,
+              maxLength: 100,
+              maxLines: 2,
+              onChanged: (value) =>
+                  controller.updateStockHoldingDraft(question: value),
+            ),
+          ],
           if (state.stockHoldingDraftError != null) ...[
             const SizedBox(height: 10),
             Text(

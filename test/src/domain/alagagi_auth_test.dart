@@ -2530,12 +2530,15 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   final List<({String spaceId, String profileId, String slotId})>
   deletedProfileSlots = [];
   final List<({String spaceId, WishItem wish})> savedWishes = [];
+  final List<({String spaceId, String wishId})> deletedWishes = [];
   final List<({String spaceId, MusicNote note})> savedMusicNotes = [];
   final List<({String spaceId, MusicNote note})> savedMusicListenStates = [];
+  final List<({String spaceId, String noteId})> deletedMusicNotes = [];
   final List<({String spaceId, ScheduleEntry entry})> savedScheduleEntries = [];
   final List<({String spaceId, SharedPlace place})> savedSharedPlaces = [];
   final List<({String spaceId, String placeId})> deletedSharedPlaces = [];
   final List<({String spaceId, StockStory story})> savedStockStories = [];
+  final List<({String spaceId, String storyId})> deletedStockStories = [];
   final List<({String spaceId, StockHolding holding})> savedStockHoldings = [];
   final List<({String spaceId, String holdingId})> deletedStockHoldings = [];
   final List<({String spaceId, ImprovementPost post})> savedImprovementPosts =
@@ -2615,6 +2618,11 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   }
 
   @override
+  Future<void> deleteWish(String spaceId, String wishId) async {
+    deletedWishes.add((spaceId: spaceId, wishId: wishId));
+  }
+
+  @override
   Future<void> saveMusicNote(String spaceId, MusicNote note) async {
     savedMusicNotes.add((spaceId: spaceId, note: note));
   }
@@ -2622,6 +2630,11 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   @override
   Future<void> saveMusicNoteListenState(String spaceId, MusicNote note) async {
     savedMusicListenStates.add((spaceId: spaceId, note: note));
+  }
+
+  @override
+  Future<void> deleteMusicNote(String spaceId, String noteId) async {
+    deletedMusicNotes.add((spaceId: spaceId, noteId: noteId));
   }
 
   @override
@@ -2657,6 +2670,11 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   @override
   Future<void> saveStockStory(String spaceId, StockStory story) async {
     savedStockStories.add((spaceId: spaceId, story: story));
+  }
+
+  @override
+  Future<void> deleteStockStory(String spaceId, String storyId) async {
+    deletedStockStories.add((spaceId: spaceId, storyId: storyId));
   }
 
   @override

@@ -44,6 +44,7 @@ class WishlistScreen extends StatelessWidget {
           const SizedBox(height: 14),
           _WishDraftCard(controller: controller),
         ],
+        _WishlistSaveStatus(controller: controller),
         const SizedBox(height: 16),
         _WishlistHero(
           mutualCount: mutualWishes.length,
@@ -338,6 +339,9 @@ class _WishlistLane extends StatelessWidget {
               partnerId: controller.state.partner.id,
               partnerName: controller.state.partner.nickname,
               onInterest: () => controller.toggleWishLike(wish.id),
+              onDone: () => controller.toggleWishDone(wish.id),
+              onEdit: () => controller.startWishEdit(wish.id),
+              onDelete: () => controller.deleteWish(wish.id),
             ),
             const SizedBox(height: 10),
           ],
@@ -388,13 +392,52 @@ class _WishlistLaneMoreButton extends StatelessWidget {
   }
 }
 
-class _WishDraftCard extends StatelessWidget {
+class _WishDraftCard extends StatefulWidget {
   const _WishDraftCard({required this.controller});
 
   final AlagagiController controller;
 
   @override
+  State<_WishDraftCard> createState() => _WishDraftCardState();
+}
+
+class _WishDraftCardState extends State<_WishDraftCard> {
+  late final TextEditingController _titleController;
+  String? _lastEditingId;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(
+      text: widget.controller.state.wishDraftTitle,
+    );
+    _lastEditingId = widget.controller.state.editingWishId;
+  }
+
+  @override
+  void didUpdateWidget(covariant _WishDraftCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final state = widget.controller.state;
+    if (_lastEditingId != state.editingWishId ||
+        _titleController.text != state.wishDraftTitle) {
+      _titleController.value = TextEditingValue(
+        text: state.wishDraftTitle,
+        selection: TextSelection.collapsed(offset: state.wishDraftTitle.length),
+      );
+      _lastEditingId = state.editingWishId;
+    }
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
+    final isEditing = controller.state.editingWishId != null;
     return AlagagiPaperCard(
       radius: 18,
       padding: const EdgeInsets.all(16),
@@ -403,12 +446,12 @@ class _WishDraftCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            '새 위시 담기',
+            isEditing ? '위시 다듬기' : '새 위시 담기',
             style: serif(context, size: 17, weight: FontWeight.w800),
           ),
           const SizedBox(height: 6),
           Text(
-            '언젠가 같이 해보고 싶은 걸 한 줄로 적어봐요.',
+            isEditing ? '문구나 분류를 가볍게 고쳐둘 수 있어요.' : '언젠가 같이 해보고 싶은 걸 한 줄로 적어봐요.',
             style: sans(size: 12.5, color: AlagagiColors.muted),
           ),
           const SizedBox(height: 14),
@@ -421,6 +464,7 @@ class _WishDraftCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: TextField(
               key: wishTitleFieldKey,
+              controller: _titleController,
               maxLength: 60,
               onChanged: controller.updateWishDraftTitle,
               decoration: const InputDecoration(
@@ -468,7 +512,7 @@ class _WishDraftCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: AlagagiPrimaryButton(
-                  label: '담기',
+                  label: isEditing ? '수정 저장' : '담기',
                   onPressed: controller.submitWishDraft,
                   color: AlagagiColors.sageDeep,
                   buttonKey: wishSubmitButtonKey,
@@ -477,6 +521,78 @@ class _WishDraftCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _WishlistSaveStatus extends StatelessWidget {
+  const _WishlistSaveStatus({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = controller.state;
+    final status = state.wishSaveStatus;
+    if (status == SaveStatus.idle &&
+        state.wishSaveFeedback == null &&
+        state.wishDraftError == null) {
+      return const SizedBox.shrink();
+    }
+    final failed = status == SaveStatus.failed;
+    final saving = status == SaveStatus.saving;
+    final message = saving
+        ? '위시를 저장하는 중이에요.'
+        : failed
+        ? state.wishDraftError ?? '위시를 저장하지 못했어요.'
+        : state.wishSaveFeedback ?? '저장됐어요.';
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: failed ? const Color(0xFFFFF7ED) : const Color(0xFFF5F7F1),
+          border: Border.all(
+            color: failed ? const Color(0xFFEBC9A2) : AlagagiColors.line,
+          ),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            Icon(
+              failed
+                  ? Icons.error_outline_rounded
+                  : saving
+                  ? Icons.sync_rounded
+                  : Icons.check_circle_outline_rounded,
+              size: 17,
+              color: failed ? const Color(0xFF9A5A1F) : AlagagiColors.sageDeep,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: sans(
+                  size: 12.2,
+                  color: failed
+                      ? const Color(0xFF8C511E)
+                      : AlagagiColors.sageDeep,
+                  weight: FontWeight.w700,
+                ),
+              ),
+            ),
+            if (failed && controller.canRetryWishSave)
+              TextButton(
+                key: wishRetryButtonKey,
+                onPressed: controller.retryWishSave,
+                child: Text(
+                  '다시 시도',
+                  style: sans(size: 12, weight: FontWeight.w800),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -526,6 +642,9 @@ class _WishCard extends StatelessWidget {
     required this.partnerId,
     required this.partnerName,
     required this.onInterest,
+    required this.onDone,
+    required this.onEdit,
+    required this.onDelete,
   });
 
   final WishItem wish;
@@ -533,15 +652,20 @@ class _WishCard extends StatelessWidget {
   final String partnerId;
   final String partnerName;
   final VoidCallback onInterest;
+  final VoidCallback onDone;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final likedByMe = wish.likedByProfileIds.contains(meId);
+    final isMine = wish.createdByProfileId == meId;
+    final canMarkDone = wish.done || wish.isMutual || likedByMe;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
-        onTap: onInterest,
+        onTap: wish.done || likedByMe ? null : onInterest,
         child: Container(
           decoration: BoxDecoration(
             color: wish.isMutual ? null : AlagagiColors.paper,
@@ -558,60 +682,136 @@ class _WishCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
           ),
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Column(
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0F2EB),
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                alignment: Alignment.center,
-                child: _WishKindIcon(kind: wish.kind, done: wish.done),
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0F2EB),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    alignment: Alignment.center,
+                    child: _WishKindIcon(kind: wish.kind, done: wish.done),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          wish.title,
+                          style:
+                              sans(
+                                size: 14.5,
+                                weight: FontWeight.w500,
+                                color: wish.done
+                                    ? AlagagiColors.muted
+                                    : const Color(0xFF33332F),
+                              ).copyWith(
+                                decoration: wish.done
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          wish.isMutual
+                              ? '둘 다 표시함'
+                              : wish.createdByProfileId == partnerId
+                              ? '$partnerName님이 담음'
+                              : '내가 담음',
+                          style: sans(size: 11, color: AlagagiColors.muted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _InterestBadge(
+                    label: wish.done
+                        ? '함께함'
+                        : likedByMe
+                        ? '관심 표시됨'
+                        : '관심 표시',
+                    selected: likedByMe || wish.done,
+                  ),
+                ],
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              if (isMine || canMarkDone) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
-                    Text(
-                      wish.title,
-                      style:
-                          sans(
-                            size: 14.5,
-                            weight: FontWeight.w500,
-                            color: wish.done
-                                ? AlagagiColors.muted
-                                : const Color(0xFF33332F),
-                          ).copyWith(
-                            decoration: wish.done
-                                ? TextDecoration.lineThrough
-                                : null,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      wish.isMutual
-                          ? '둘 다 표시함'
-                          : wish.createdByProfileId == partnerId
-                          ? '$partnerName님이 담음'
-                          : '내가 담음',
-                      style: sans(size: 11, color: AlagagiColors.muted),
-                    ),
+                    if (canMarkDone)
+                      _WishActionChip(
+                        key: wishDoneButtonKey(wish.id),
+                        icon: wish.done
+                            ? Icons.undo_rounded
+                            : Icons.done_all_rounded,
+                        label: wish.done ? '되돌리기' : '함께했어요',
+                        onPressed: onDone,
+                      ),
+                    if (isMine)
+                      _WishActionChip(
+                        key: wishEditButtonKey(wish.id),
+                        icon: Icons.edit_outlined,
+                        label: '수정',
+                        onPressed: onEdit,
+                      ),
+                    if (isMine)
+                      _WishActionChip(
+                        key: wishDeleteButtonKey(wish.id),
+                        icon: Icons.delete_outline_rounded,
+                        label: '삭제',
+                        danger: true,
+                        onPressed: onDelete,
+                      ),
                   ],
                 ),
-              ),
-              _InterestBadge(
-                label: wish.done
-                    ? '완료'
-                    : likedByMe
-                    ? '관심 표시됨'
-                    : '관심 표시',
-                selected: likedByMe || wish.done,
-              ),
+              ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WishActionChip extends StatelessWidget {
+  const _WishActionChip({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.danger = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = danger ? const Color(0xFFB35A49) : AlagagiColors.sageDeep;
+    return SizedBox(
+      height: 34,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 15),
+        label: Text(label),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: color,
+          side: BorderSide(
+            color: danger ? const Color(0x33B35A49) : const Color(0x338A9A7E),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          textStyle: sans(size: 11.5, weight: FontWeight.w800),
         ),
       ),
     );

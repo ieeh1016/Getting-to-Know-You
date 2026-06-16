@@ -407,6 +407,9 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   }
 
   @override
+  Future<void> deleteWish(String spaceId, String wishId) async {}
+
+  @override
   Future<void> saveMusicNote(String spaceId, MusicNote note) async {
     savedMusicNotes.add(note);
   }
@@ -415,6 +418,9 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   Future<void> saveMusicNoteListenState(String spaceId, MusicNote note) async {
     savedMusicNotes.add(note);
   }
+
+  @override
+  Future<void> deleteMusicNote(String spaceId, String noteId) async {}
 
   @override
   Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry) async {
@@ -438,6 +444,9 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   Future<void> saveStockStory(String spaceId, StockStory story) async {
     savedStockStories.add(story);
   }
+
+  @override
+  Future<void> deleteStockStory(String spaceId, String storyId) async {}
 
   @override
   Future<void> saveStockHolding(String spaceId, StockHolding holding) async {

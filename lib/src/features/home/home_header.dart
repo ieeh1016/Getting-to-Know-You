@@ -19,6 +19,7 @@ class HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final unreadCount = controller.totalUnreadActivityCount;
     return Row(
       children: [
         Expanded(
@@ -63,19 +64,30 @@ class HomeHeader extends StatelessWidget {
         const SizedBox(width: 10),
         Tooltip(
           message: '조금씩 메뉴',
-          child: IconButton(
-            key: homeMenuButtonKey,
-            onPressed: onOpenMenu,
-            icon: const Icon(Icons.menu_rounded, size: 20),
-            color: AlagagiColors.sageDeep,
-            style: IconButton.styleFrom(
-              backgroundColor: AlagagiColors.paper,
-              shape: RoundedRectangleBorder(
-                side: const BorderSide(color: AlagagiColors.line),
-                borderRadius: BorderRadius.circular(999),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                key: homeMenuButtonKey,
+                onPressed: onOpenMenu,
+                icon: const Icon(Icons.menu_rounded, size: 20),
+                color: AlagagiColors.sageDeep,
+                style: IconButton.styleFrom(
+                  backgroundColor: AlagagiColors.paper,
+                  shape: RoundedRectangleBorder(
+                    side: const BorderSide(color: AlagagiColors.line),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  fixedSize: const Size(42, 42),
+                ),
               ),
-              fixedSize: const Size(42, 42),
-            ),
+              if (unreadCount > 0)
+                Positioned(
+                  right: -2,
+                  top: -4,
+                  child: _UnreadCountBadge(count: unreadCount),
+                ),
+            ],
           ),
         ),
       ],

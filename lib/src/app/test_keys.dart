@@ -13,7 +13,9 @@ const musicLinkFieldKey = Key('music-link-field');
 const musicNoteFieldKey = Key('music-note-field');
 const musicSubmitButtonKey = Key('music-submit-button');
 const musicAddButtonKey = Key('music-add-button');
+const musicRetryButtonKey = Key('music-retry-button');
 Key musicEditButtonKey(String noteId) => Key('music-edit-button-$noteId');
+Key musicDeleteButtonKey(String noteId) => Key('music-delete-button-$noteId');
 Key musicLinkButtonKey(String noteId) => Key('music-link-button-$noteId');
 Key musicListenedButtonKey(String noteId) =>
     Key('music-listened-button-$noteId');
@@ -127,7 +129,11 @@ Key improvementDeleteButtonKey(String postId) =>
 const wishTitleFieldKey = Key('wish-title-field');
 const wishSubmitButtonKey = Key('wish-submit-button');
 const wishAddButtonKey = Key('wish-add-button');
+const wishRetryButtonKey = Key('wish-retry-button');
 const wishlistBoardKey = Key('wishlist-board');
+Key wishEditButtonKey(String wishId) => Key('wish-edit-button-$wishId');
+Key wishDoneButtonKey(String wishId) => Key('wish-done-button-$wishId');
+Key wishDeleteButtonKey(String wishId) => Key('wish-delete-button-$wishId');
 
 const answerFieldKey = Key('answer-field');
 const answerRetryButtonKey = Key('answer-retry-button');
@@ -197,9 +203,12 @@ const stockStoryUpsideFieldKey = Key('stock-story-upside-field');
 const stockStoryRiskFieldKey = Key('stock-story-risk-field');
 const stockStoryQuestionFieldKey = Key('stock-story-question-field');
 const stockStorySubmitButtonKey = Key('stock-story-submit-button');
+const stockStoryRetryButtonKey = Key('stock-story-retry-button');
 const stockStoryTabStoriesKey = Key('stock-story-tab-stories');
 const stockStoryTabHoldingsKey = Key('stock-story-tab-holdings');
 Key stockStoryCardKey(String storyId) => Key('stock-story-card-$storyId');
+Key stockStoryDeleteButtonKey(String storyId) =>
+    Key('stock-story-delete-button-$storyId');
 Key stockStoryReplyFieldKey(String storyId) =>
     Key('stock-story-reply-field-$storyId');
 Key stockStoryReplySubmitButtonKey(String storyId) =>
@@ -216,6 +225,7 @@ const stockHoldingWatchFieldKey = Key('stock-holding-watch-field');
 const stockHoldingConcernFieldKey = Key('stock-holding-concern-field');
 const stockHoldingQuestionFieldKey = Key('stock-holding-question-field');
 const stockHoldingSubmitButtonKey = Key('stock-holding-submit-button');
+const stockHoldingRetryButtonKey = Key('stock-holding-retry-button');
 Key stockHoldingCardKey(String holdingId) =>
     Key('stock-holding-card-$holdingId');
 Key stockHoldingEditButtonKey(String holdingId) =>

@@ -56,6 +56,7 @@ class MusicScreen extends StatelessWidget {
             controller: controller,
           ),
         ],
+        _MusicSaveStatus(controller: controller),
         const SizedBox(height: 18),
         Row(
           children: [
@@ -381,6 +382,78 @@ class _MusicDraftCard extends StatelessWidget {
   }
 }
 
+class _MusicSaveStatus extends StatelessWidget {
+  const _MusicSaveStatus({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = controller.state;
+    final status = state.musicSaveStatus;
+    if (status == SaveStatus.idle &&
+        state.musicSaveFeedback == null &&
+        state.musicDraftError == null) {
+      return const SizedBox.shrink();
+    }
+    final failed = status == SaveStatus.failed;
+    final saving = status == SaveStatus.saving;
+    final message = saving
+        ? '음악 노트를 저장하는 중이에요.'
+        : failed
+        ? state.musicDraftError ?? '음악 노트를 저장하지 못했어요.'
+        : state.musicSaveFeedback ?? '저장됐어요.';
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: failed ? const Color(0xFFFFF7ED) : const Color(0xFFF5F7F1),
+          border: Border.all(
+            color: failed ? const Color(0xFFEBC9A2) : AlagagiColors.line,
+          ),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            Icon(
+              failed
+                  ? Icons.error_outline_rounded
+                  : saving
+                  ? Icons.sync_rounded
+                  : Icons.check_circle_outline_rounded,
+              size: 17,
+              color: failed ? const Color(0xFF9A5A1F) : AlagagiColors.sageDeep,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: sans(
+                  size: 12.2,
+                  color: failed
+                      ? const Color(0xFF8C511E)
+                      : AlagagiColors.sageDeep,
+                  weight: FontWeight.w700,
+                ),
+              ),
+            ),
+            if (failed && controller.canRetryMusicSave)
+              TextButton(
+                key: musicRetryButtonKey,
+                onPressed: controller.retryMusicSave,
+                child: Text(
+                  '다시 시도',
+                  style: sans(size: 12, weight: FontWeight.w800),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _MusicTextField extends StatelessWidget {
   const _MusicTextField({
     required this.fieldKey,
@@ -507,6 +580,25 @@ class _MusicNoteCard extends StatelessWidget {
                             onPressed: () => controller.startMusicEdit(note.id),
                             icon: const Icon(Icons.edit_rounded, size: 17),
                             color: AlagagiColors.sageDeep,
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints.tightFor(
+                              width: 32,
+                              height: 32,
+                            ),
+                          ),
+                        ),
+                        Tooltip(
+                          message: '음악 노트 삭제',
+                          child: IconButton(
+                            key: musicDeleteButtonKey(note.id),
+                            onPressed: () =>
+                                controller.deleteMusicNote(note.id),
+                            icon: const Icon(
+                              Icons.delete_outline_rounded,
+                              size: 17,
+                            ),
+                            color: const Color(0xFFB35A49),
                             visualDensity: VisualDensity.compact,
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints.tightFor(

@@ -15,6 +15,8 @@ const _selectedPlaceMiniMapHeight = 204.0;
 
 enum _PlaceBoardFilter { all, mutual, mine, partner }
 
+enum _PlaceBoardMode { map, board }
+
 double _placeBoardMapHeight(BuildContext context) {
   final viewportHeight = MediaQuery.sizeOf(context).height;
   return (viewportHeight * 0.58).clamp(386.0, 440.0).toDouble();
@@ -37,6 +39,7 @@ class PlaceBoardScreen extends StatefulWidget {
 class _PlaceBoardScreenState extends State<PlaceBoardScreen> {
   bool _mapOverlayVisible = true;
   _PlaceBoardFilter _filter = _PlaceBoardFilter.all;
+  _PlaceBoardMode _mode = _PlaceBoardMode.map;
 
   @override
   Widget build(BuildContext context) {
@@ -59,20 +62,33 @@ class _PlaceBoardScreenState extends State<PlaceBoardScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            _PlaceMapOverlayButton(
-              visible: _mapOverlayVisible,
-              onPressed: _toggleMapOverlay,
-            ),
+            if (_mode == _PlaceBoardMode.map)
+              _PlaceMapOverlayButton(
+                visible: _mapOverlayVisible,
+                onPressed: _toggleMapOverlay,
+              ),
           ],
         ),
-        const SizedBox(height: 14),
-        _PlaceMapPreview(
-          controller: controller,
-          mutualCount: mutualCount,
-          totalCount: places.length,
-          places: places,
-          overlayVisible: _mapOverlayVisible,
+        const SizedBox(height: 12),
+        _PlaceBoardModeToggle(
+          selected: _mode,
+          onChanged: (mode) => setState(() => _mode = mode),
         ),
+        const SizedBox(height: 14),
+        if (_mode == _PlaceBoardMode.map)
+          _PlaceMapPreview(
+            controller: controller,
+            mutualCount: mutualCount,
+            totalCount: places.length,
+            places: places,
+            overlayVisible: _mapOverlayVisible,
+          )
+        else
+          _PlaceBoardFocusSummary(
+            totalCount: places.length,
+            mutualCount: mutualCount,
+            filteredCount: filteredPlaces.length,
+          ),
         PlaceSaveStatus(controller: controller),
         const SizedBox(height: 14),
         if (controller.state.placeDraftVisible)
@@ -142,6 +158,136 @@ class _PlaceBoardScreenState extends State<PlaceBoardScreen> {
             )
             .toList(),
     };
+  }
+}
+
+class _PlaceBoardModeToggle extends StatelessWidget {
+  const _PlaceBoardModeToggle({
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final _PlaceBoardMode selected;
+  final ValueChanged<_PlaceBoardMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFCFCFA),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(17),
+      ),
+      padding: const EdgeInsets.all(5),
+      child: Row(
+        children: [
+          Expanded(
+            child: _PlaceModeButton(
+              label: '지도 중심',
+              icon: Icons.map_outlined,
+              selected: selected == _PlaceBoardMode.map,
+              onTap: () => onChanged(_PlaceBoardMode.map),
+            ),
+          ),
+          const SizedBox(width: 5),
+          Expanded(
+            child: _PlaceModeButton(
+              label: '보드 중심',
+              icon: Icons.view_agenda_outlined,
+              selected: selected == _PlaceBoardMode.board,
+              onTap: () => onChanged(_PlaceBoardMode.board),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlaceModeButton extends StatelessWidget {
+  const _PlaceModeButton({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? AlagagiColors.sageDeep : Colors.transparent,
+      borderRadius: BorderRadius.circular(13),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(13),
+        onTap: onTap,
+        child: SizedBox(
+          height: 36,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 15,
+                color: selected ? Colors.white : AlagagiColors.sageDeep,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: sans(
+                  size: 12,
+                  weight: FontWeight.w800,
+                  color: selected ? Colors.white : AlagagiColors.muted,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlaceBoardFocusSummary extends StatelessWidget {
+  const _PlaceBoardFocusSummary({
+    required this.totalCount,
+    required this.mutualCount,
+    required this.filteredCount,
+  });
+
+  final int totalCount;
+  final int mutualCount;
+  final int filteredCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlagagiPaperCard(
+      radius: 18,
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          Expanded(
+            child: AlagagiQuietMetric(label: '전체 장소', value: '$totalCount'),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: AlagagiQuietMetric(
+              label: '서로 관심',
+              value: '$mutualCount',
+              muted: mutualCount == 0,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: AlagagiQuietMetric(label: '현재 보기', value: '$filteredCount'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

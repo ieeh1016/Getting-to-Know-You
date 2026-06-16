@@ -332,6 +332,10 @@ void main() {
       find.byKey(stockStoryReasonFieldKey),
       '데이터센터 매출 흐름을 같이 보고 싶어요.',
     );
+    await tester.ensureVisible(find.text('자세히 적기'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('자세히 적기'));
+    await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(stockStoryUpsideFieldKey),
       '구독 매출과 생태계 유지력',
@@ -384,6 +388,10 @@ void main() {
         find.byKey(stockHoldingReasonFieldKey),
         '클라우드 매출 흐름을 믿고 조금 들고 있어요.',
       );
+      await tester.ensureVisible(find.text('자세히 적기'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('자세히 적기'));
+      await tester.pumpAndSettle();
       await tester.enterText(
         find.byKey(stockHoldingWatchFieldKey),
         'Azure 성장률',
@@ -1971,7 +1979,7 @@ void main() {
     expect(find.byKey(wishlistBoardKey), findsOneWidget);
     expect(find.text('서로 관심 있어요'), findsOneWidget);
     expect(find.text('조용한 제안'), findsOneWidget);
-    expect(find.text('함께했어요'), findsOneWidget);
+    expect(find.text('함께했어요'), findsWidgets);
     expect(find.byKey(wishAddButtonKey), findsOneWidget);
     expect(tester.getCenter(find.byKey(wishAddButtonKey)).dy, lessThan(620));
     expect(find.textContaining('추천'), findsNothing);
@@ -3675,6 +3683,9 @@ class _FailingSaveRepository implements AlagagiDataRepository {
   Future<void> saveMusicNote(String spaceId, MusicNote note) async {}
 
   @override
+  Future<void> deleteMusicNote(String spaceId, String noteId) async {}
+
+  @override
   Future<void> saveMusicNoteListenState(String spaceId, MusicNote note) async {}
 
   @override
@@ -3696,6 +3707,9 @@ class _FailingSaveRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveStockStory(String spaceId, StockStory story) async {}
+
+  @override
+  Future<void> deleteStockStory(String spaceId, String storyId) async {}
 
   @override
   Future<void> saveStockHolding(String spaceId, StockHolding holding) async {}
@@ -3734,4 +3748,7 @@ class _FailingSaveRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveWish(String spaceId, WishItem wish) async {}
+
+  @override
+  Future<void> deleteWish(String spaceId, String wishId) async {}
 }

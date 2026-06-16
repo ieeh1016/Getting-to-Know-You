@@ -370,6 +370,7 @@ service cloud.firestore {
           'reply',
           'repliedByProfileId',
           'repliedLabel',
+          'updatedByProfileId',
           'updatedAt'
         ])
         && request.resource.data.id == storyId
@@ -400,7 +401,9 @@ service cloud.firestore {
         && (request.resource.data.repliedByProfileId == ''
           || request.resource.data.repliedByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds)
         && request.resource.data.repliedLabel is string
-        && request.resource.data.repliedLabel.size() <= 16;
+        && request.resource.data.repliedLabel.size() <= 16
+        && request.resource.data.updatedByProfileId is string
+        && request.resource.data.updatedByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds;
     }
 
     function validNewStockStory(spaceId, storyId) {
@@ -409,7 +412,8 @@ service cloud.firestore {
         && request.resource.data.replyTone == ''
         && request.resource.data.reply == ''
         && request.resource.data.repliedByProfileId == ''
-        && request.resource.data.repliedLabel == '';
+        && request.resource.data.repliedLabel == ''
+        && request.resource.data.updatedByProfileId == request.auth.uid;
     }
 
     function validStockStoryReply(spaceId, storyId) {
@@ -429,11 +433,13 @@ service cloud.firestore {
           'reply',
           'repliedByProfileId',
           'repliedLabel',
+          'updatedByProfileId',
           'updatedAt'
         ])
         && request.resource.data.replyTone in ['같이 볼래요', '더 찾아볼게요', '조심해요']
         && request.resource.data.reply.size() > 0
         && request.resource.data.repliedByProfileId == request.auth.uid
+        && request.resource.data.updatedByProfileId == request.auth.uid
         && request.resource.data.repliedLabel is string
         && request.resource.data.repliedLabel.size() <= 16;
     }
@@ -454,6 +460,7 @@ service cloud.firestore {
           'reply',
           'repliedByProfileId',
           'repliedLabel',
+          'updatedByProfileId',
           'updatedAt'
         ])
         && request.resource.data.id == holdingId
@@ -486,7 +493,9 @@ service cloud.firestore {
         && (request.resource.data.repliedByProfileId == ''
           || request.resource.data.repliedByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds)
         && request.resource.data.repliedLabel is string
-        && request.resource.data.repliedLabel.size() <= 16;
+        && request.resource.data.repliedLabel.size() <= 16
+        && request.resource.data.updatedByProfileId is string
+        && request.resource.data.updatedByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds;
     }
 
     function validNewStockHolding(spaceId, holdingId) {
@@ -495,7 +504,8 @@ service cloud.firestore {
         && request.resource.data.replyTone == ''
         && request.resource.data.reply == ''
         && request.resource.data.repliedByProfileId == ''
-        && request.resource.data.repliedLabel == '';
+        && request.resource.data.repliedLabel == ''
+        && request.resource.data.updatedByProfileId == request.auth.uid;
     }
 
     function validStockHoldingOwnerEdit(spaceId, holdingId) {
@@ -515,8 +525,10 @@ service cloud.firestore {
           'watchPoint',
           'concern',
           'question',
+          'updatedByProfileId',
           'updatedAt'
-        ]);
+        ])
+        && request.resource.data.updatedByProfileId == request.auth.uid;
     }
 
     function validStockHoldingReply(spaceId, holdingId) {
@@ -538,11 +550,13 @@ service cloud.firestore {
           'reply',
           'repliedByProfileId',
           'repliedLabel',
+          'updatedByProfileId',
           'updatedAt'
         ])
         && request.resource.data.replyTone in ['같이 볼래요', '더 찾아볼게요', '조심해요']
         && request.resource.data.reply.size() > 0
         && request.resource.data.repliedByProfileId == request.auth.uid
+        && request.resource.data.updatedByProfileId == request.auth.uid
         && request.resource.data.repliedLabel is string
         && request.resource.data.repliedLabel.size() <= 16;
     }
@@ -818,7 +832,8 @@ service cloud.firestore {
           && request.resource.data.likedByProfileIds is list
           && request.auth.uid in request.resource.data.likedByProfileIds
           && request.resource.data.done is bool;
-        allow delete: if false;
+        allow delete: if isSpaceMember(spaceId)
+          && resource.data.createdByProfileId == request.auth.uid;
       }
 
       match /musicNotes/{noteId} {
@@ -830,7 +845,8 @@ service cloud.firestore {
             validMusicNoteOwnerWrite(spaceId, noteId)
             || validMusicNoteListenUpdate(spaceId, noteId)
           );
-        allow delete: if false;
+        allow delete: if isSpaceMember(spaceId)
+          && resource.data.createdByProfileId == request.auth.uid;
       }
 
       match /scheduleEntries/{entryId} {
@@ -879,7 +895,8 @@ service cloud.firestore {
           && validNewStockStory(spaceId, storyId);
         allow update: if isSpaceMember(spaceId)
           && validStockStoryReply(spaceId, storyId);
-        allow delete: if false;
+        allow delete: if isSpaceMember(spaceId)
+          && resource.data.createdByProfileId == request.auth.uid;
       }
 
       match /stockHoldings/{holdingId} {

@@ -299,6 +299,16 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
   }
 
   @override
+  Future<void> deleteWish(String spaceId, String wishId) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('wishes')
+        .doc(wishId)
+        .delete();
+  }
+
+  @override
   Future<void> saveMusicNote(String spaceId, MusicNote note) {
     return _firestore
         .collection('spaces')
@@ -327,6 +337,16 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         .collection('musicNotes')
         .doc(note.id)
         .update({'listenedByProfileIds': note.listenedByProfileIds.toList()});
+  }
+
+  @override
+  Future<void> deleteMusicNote(String spaceId, String noteId) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('musicNotes')
+        .doc(noteId)
+        .delete();
   }
 
   @override
@@ -436,6 +456,16 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
               story.createdByProfileId,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> deleteStockStory(String spaceId, String storyId) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('stockStories')
+        .doc(storyId)
+        .delete();
   }
 
   @override
