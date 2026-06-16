@@ -65,6 +65,8 @@ publishing, or Flutter-free domain testing.
   preview and full-list sheet.
 - `lib/src/features/home/first_visit_guide_overlay.dart`: First-visit Home
   onboarding overlay.
+- `lib/src/features/home/first_visit_guide_book_sheet.dart`: Reusable guide
+  book bottom sheet opened from first-visit and My screen help entry points.
 - `lib/src/features/home/curiosity_menu_sheet.dart`: Home curiosity question and
   reply bottom sheet.
 - `lib/src/features/home/home_progress_summary_card.dart`: Home progress summary
