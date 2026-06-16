@@ -63,6 +63,7 @@ const meetingRetryButtonKey = Key('meeting-retry-button');
 const meetingTimeBlockStartFieldKey = Key('meeting-time-block-start-field');
 const meetingTimeBlockEndFieldKey = Key('meeting-time-block-end-field');
 const meetingTimeBlockTitleFieldKey = Key('meeting-time-block-title-field');
+const meetingTimeBlockToggleButtonKey = Key('meeting-time-block-toggle-button');
 const meetingTimeBlockAddButtonKey = Key('meeting-time-block-add-button');
 const meetingDayTimeFieldKey = Key('meeting-day-time-field');
 const meetingDayNoteFieldKey = Key('meeting-day-note-field');

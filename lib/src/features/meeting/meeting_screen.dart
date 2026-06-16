@@ -597,109 +597,12 @@ class _MeetingDetailCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Text('상대에게 보이는 일정', style: sans(size: 11.5, weight: FontWeight.w800)),
-          const SizedBox(height: 4),
-          Text(
-            '24시간 표기로 적거나, 자주 쓰는 시간대를 먼저 골라요.',
-            style: sans(size: 11.2, color: AlagagiColors.muted),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final preset in _meetingTimePresets)
-                AlagagiFilterPill(
-                  key: meetingTimeBlockPresetButtonKey(preset.id),
-                  label: preset.label,
-                  selected: false,
-                  onTap: () => controller.updateMeetingTimeBlockDraft(
-                    start: preset.start,
-                    end: preset.end,
-                    title: preset.title,
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: MeetingTextField(
-                  fieldKey: meetingTimeBlockStartFieldKey,
-                  label: '시작',
-                  hint: '14:00',
-                  initialValue: controller.state.meetingBlockStartDraft,
-                  maxLength: 5,
-                  helperText: '예: 09:30',
-                  minLines: 1,
-                  maxLines: 1,
-                  keyboardType: TextInputType.datetime,
-                  onChanged: (value) =>
-                      controller.updateMeetingTimeBlockDraft(start: value),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: MeetingTextField(
-                  fieldKey: meetingTimeBlockEndFieldKey,
-                  label: '종료',
-                  hint: '16:00',
-                  initialValue: controller.state.meetingBlockEndDraft,
-                  maxLength: 5,
-                  helperText: '예: 18:00',
-                  minLines: 1,
-                  maxLines: 1,
-                  keyboardType: TextInputType.datetime,
-                  onChanged: (value) =>
-                      controller.updateMeetingTimeBlockDraft(end: value),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          MeetingTextField(
-            fieldKey: meetingTimeBlockTitleFieldKey,
-            label: '일정 내용',
-            hint: '예: 병원 예약, 친구 약속',
-            initialValue: controller.state.meetingBlockTitleDraft,
-            maxLength: 40,
-            helperText: '',
-            minLines: 1,
-            maxLines: 1,
-            onChanged: (value) =>
-                controller.updateMeetingTimeBlockDraft(title: value),
-          ),
-          const SizedBox(height: 9),
-          SizedBox(
-            height: 38,
-            child: OutlinedButton.icon(
-              key: meetingTimeBlockAddButtonKey,
-              onPressed: controller.addMeetingTimeBlock,
-              icon: const Icon(Icons.add_rounded, size: 17),
-              label: const Text('상세 일정 추가'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AlagagiColors.sageDeep,
-                side: const BorderSide(color: Color(0x338A9A7E)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                textStyle: sans(size: 12.5, weight: FontWeight.w800),
-              ),
+          _MeetingTimeBlockSection(
+            key: ValueKey(
+              'meeting-time-block-${controller.selectedMeetingDateKey}',
             ),
+            controller: controller,
           ),
-          if (controller.state.meetingDraftTimeBlocks.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Column(
-              children: [
-                for (final block in controller.state.meetingDraftTimeBlocks)
-                  _MeetingTimeBlockRow(
-                    block: block,
-                    onRemove: () => controller.removeMeetingTimeBlock(block.id),
-                  ),
-              ],
-            ),
-          ],
           const SizedBox(height: 14),
           MeetingTextField(
             fieldKey: meetingSharedMemoFieldKey,
@@ -848,6 +751,251 @@ class _MeetingDayPanel extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MeetingTimeBlockSection extends StatefulWidget {
+  const _MeetingTimeBlockSection({super.key, required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  State<_MeetingTimeBlockSection> createState() =>
+      _MeetingTimeBlockSectionState();
+}
+
+class _MeetingTimeBlockSectionState extends State<_MeetingTimeBlockSection> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = widget.controller;
+    final blocks = controller.state.meetingDraftTimeBlocks;
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      padding: const EdgeInsets.all(13),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: AlagagiColors.softSage,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.event_note_outlined,
+                  size: 18,
+                  color: AlagagiColors.sageDeep,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '상대에게 보이는 일정',
+                      style: sans(size: 12.2, weight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      blocks.isEmpty
+                          ? '약속이나 예약이 있는 날만 선택해서 공유해요.'
+                          : '${blocks.length}개의 상세 일정이 공유돼요.',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: sans(size: 11, color: AlagagiColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                height: 34,
+                child: OutlinedButton.icon(
+                  key: meetingTimeBlockToggleButtonKey,
+                  onPressed: () => setState(() => _expanded = !_expanded),
+                  icon: Icon(
+                    _expanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    size: 16,
+                  ),
+                  label: Text(_expanded ? '접기' : '작성'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AlagagiColors.sageDeep,
+                    side: const BorderSide(color: Color(0x338A9A7E)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    textStyle: sans(size: 11.5, weight: FontWeight.w800),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (!_expanded && blocks.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            for (final block in blocks.take(3))
+              _MeetingTimeBlockSummaryRow(block: block),
+            if (blocks.length > 3)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '외 ${blocks.length - 3}개 더 있어요.',
+                  style: sans(size: 11, color: AlagagiColors.muted),
+                ),
+              ),
+          ],
+          if (_expanded) ...[
+            const SizedBox(height: 12),
+            Text(
+              '24시간 표기로 적거나, 자주 쓰는 시간대를 먼저 골라요.',
+              style: sans(size: 11.2, color: AlagagiColors.muted),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final preset in _meetingTimePresets)
+                  AlagagiFilterPill(
+                    key: meetingTimeBlockPresetButtonKey(preset.id),
+                    label: preset.label,
+                    selected: false,
+                    onTap: () => controller.updateMeetingTimeBlockDraft(
+                      start: preset.start,
+                      end: preset.end,
+                      title: preset.title,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: MeetingTextField(
+                    fieldKey: meetingTimeBlockStartFieldKey,
+                    label: '시작',
+                    hint: '14:00',
+                    initialValue: controller.state.meetingBlockStartDraft,
+                    maxLength: 5,
+                    helperText: '예: 09:30',
+                    minLines: 1,
+                    maxLines: 1,
+                    keyboardType: TextInputType.datetime,
+                    onChanged: (value) =>
+                        controller.updateMeetingTimeBlockDraft(start: value),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: MeetingTextField(
+                    fieldKey: meetingTimeBlockEndFieldKey,
+                    label: '종료',
+                    hint: '16:00',
+                    initialValue: controller.state.meetingBlockEndDraft,
+                    maxLength: 5,
+                    helperText: '예: 18:00',
+                    minLines: 1,
+                    maxLines: 1,
+                    keyboardType: TextInputType.datetime,
+                    onChanged: (value) =>
+                        controller.updateMeetingTimeBlockDraft(end: value),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            MeetingTextField(
+              fieldKey: meetingTimeBlockTitleFieldKey,
+              label: '일정 내용',
+              hint: '예: 병원 예약, 친구 약속',
+              initialValue: controller.state.meetingBlockTitleDraft,
+              maxLength: 40,
+              helperText: '',
+              minLines: 1,
+              maxLines: 1,
+              onChanged: (value) =>
+                  controller.updateMeetingTimeBlockDraft(title: value),
+            ),
+            const SizedBox(height: 9),
+            SizedBox(
+              height: 38,
+              child: OutlinedButton.icon(
+                key: meetingTimeBlockAddButtonKey,
+                onPressed: controller.addMeetingTimeBlock,
+                icon: const Icon(Icons.add_rounded, size: 17),
+                label: const Text('상세 일정 추가'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AlagagiColors.sageDeep,
+                  side: const BorderSide(color: Color(0x338A9A7E)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  textStyle: sans(size: 12.5, weight: FontWeight.w800),
+                ),
+              ),
+            ),
+            if (blocks.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Column(
+                children: [
+                  for (final block in blocks)
+                    _MeetingTimeBlockRow(
+                      block: block,
+                      onRemove: () =>
+                          controller.removeMeetingTimeBlock(block.id),
+                    ),
+                ],
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MeetingTimeBlockSummaryRow extends StatelessWidget {
+  const _MeetingTimeBlockSummaryRow({required this.block});
+
+  final ScheduleTimeBlock block;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.schedule_rounded,
+            size: 14,
+            color: AlagagiColors.sageDeep,
+          ),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(
+              meetingTimeBlockLabel(block),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: sans(size: 11.5, color: const Color(0xFF56544D)),
+            ),
+          ),
         ],
       ),
     );

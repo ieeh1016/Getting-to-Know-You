@@ -2246,6 +2246,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(meetingCalendarKey), findsOneWidget);
+    expect(
+      find.byKey(meetingTimeBlockPresetButtonKey('evening')),
+      findsNothing,
+    );
+    await tester.ensureVisible(find.byKey(meetingTimeBlockToggleButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(meetingTimeBlockToggleButtonKey));
+    await tester.pumpAndSettle();
     await tester.ensureVisible(
       find.byKey(meetingTimeBlockPresetButtonKey('evening')),
     );
