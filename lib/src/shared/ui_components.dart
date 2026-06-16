@@ -361,3 +361,43 @@ class AlagagiProgressDots extends StatelessWidget {
     );
   }
 }
+
+class AlagagiFullTextCue extends StatelessWidget {
+  const AlagagiFullTextCue({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: '전체 보기',
+      button: true,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 30),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F4ED),
+          border: Border.all(color: const Color(0x336F7F63)),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '펼쳐 읽기',
+              style: sans(
+                size: 11.5,
+                weight: FontWeight.w800,
+                color: AlagagiColors.sageDeep,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 15,
+              color: AlagagiColors.sageDeep,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

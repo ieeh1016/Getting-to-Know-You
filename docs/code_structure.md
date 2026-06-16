@@ -70,6 +70,8 @@ publishing, or Flutter-free domain testing.
 - `lib/src/features/home/home_insight_grid.dart`: Home answer/record summary
   metric grid.
 - `lib/src/features/home/home_plus_grid.dart`: Home plus-feature launcher grid.
+- `lib/src/features/my/my_screen.dart`: My dashboard, next actions, recent
+  traces, help, and account card.
 
 ## Extraction Order
 
