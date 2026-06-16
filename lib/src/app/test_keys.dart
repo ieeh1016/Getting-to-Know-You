@@ -102,3 +102,16 @@ Key placeInterestButtonKey(String placeId) =>
 Key placeEditButtonKey(String placeId) => Key('place-edit-button-$placeId');
 Key placeDeleteButtonKey(String placeId) => Key('place-delete-button-$placeId');
 const placeRetryButtonKey = Key('place-retry-button');
+
+const improvementAddButtonKey = Key('improvement-add-button');
+const improvementTitleFieldKey = Key('improvement-title-field');
+const improvementBodyFieldKey = Key('improvement-body-field');
+const improvementSubmitButtonKey = Key('improvement-submit-button');
+const improvementRetryButtonKey = Key('improvement-retry-button');
+Key improvementCategoryKey(String category) =>
+    Key('improvement-category-$category');
+Key improvementCardKey(String postId) => Key('improvement-card-$postId');
+Key improvementEditButtonKey(String postId) =>
+    Key('improvement-edit-button-$postId');
+Key improvementDeleteButtonKey(String postId) =>
+    Key('improvement-delete-button-$postId');

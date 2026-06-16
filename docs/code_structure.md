@@ -72,6 +72,8 @@ publishing, or Flutter-free domain testing.
 - `lib/src/features/home/home_insight_grid.dart`: Home answer/record summary
   metric grid.
 - `lib/src/features/home/home_plus_grid.dart`: Home plus-feature launcher grid.
+- `lib/src/features/improvements/improvement_board_screen.dart`: Improvement
+  board, request draft form, owner edit/delete actions, and save status UI.
 - `lib/src/features/my/my_screen.dart`: My dashboard, next actions, recent
   traces, help, and account card.
 - `lib/src/features/music/music_screen.dart`: Music note list, filters, draft
