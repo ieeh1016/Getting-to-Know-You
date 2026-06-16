@@ -46,6 +46,15 @@ publishing, or Flutter-free domain testing.
   touched widget or panel as part of the same change if the behavior risk is
   manageable.
 
+## Current Extracted Modules
+
+- `lib/src/shared/ui_style.dart`: shared colors and typography helpers.
+- `lib/src/app/test_keys.dart`: cross-file widget keys for extracted widgets.
+- `lib/src/features/home/unread_activity_panel.dart`: Home unread activity
+  preview and full-list sheet.
+- `lib/src/features/home/home_progress_summary_card.dart`: Home progress summary
+  card.
+
 ## Extraction Order
 
 1. Shared foundations: colors, typography, common keys, buttons, sheet shells.
