@@ -56,6 +56,8 @@ publishing, or Flutter-free domain testing.
 - `lib/src/app/test_keys.dart`: cross-file widget keys for extracted widgets.
 - `lib/src/features/home/unread_activity_panel.dart`: Home unread activity
   preview and full-list sheet.
+- `lib/src/features/home/first_visit_guide_overlay.dart`: First-visit Home
+  onboarding overlay.
 - `lib/src/features/home/home_progress_summary_card.dart`: Home progress summary
   card.
 - `lib/src/features/home/home_header.dart`: Home brand header, menu sheet, and

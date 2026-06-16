@@ -16,3 +16,6 @@ const homeMenuBalanceButtonKey = Key('home-menu-balance-button');
 const homeMenuProfileCardButtonKey = Key('home-menu-profile-card-button');
 const homeMenuWishlistButtonKey = Key('home-menu-wishlist-button');
 const homeMenuGuideButtonKey = Key('home-menu-guide-button');
+const firstVisitGuideSheetKey = Key('first-visit-guide-sheet');
+const firstVisitGuideStartButtonKey = Key('first-visit-guide-start-button');
+const firstVisitGuideTourButtonKey = Key('first-visit-guide-tour-button');
