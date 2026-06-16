@@ -8520,7 +8520,7 @@ class _ImprovementDraftCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _StockStoryTextField(
+          AlagagiTextField(
             fieldKey: improvementTitleFieldKey,
             label: '제목',
             hint: '예: 장소 검색 결과 정렬',
@@ -8530,7 +8530,7 @@ class _ImprovementDraftCard extends StatelessWidget {
                 controller.updateImprovementDraft(title: value),
           ),
           const SizedBox(height: 10),
-          _StockStoryTextField(
+          AlagagiTextField(
             fieldKey: improvementBodyFieldKey,
             label: '내용',
             hint: '어떤 점이 바뀌면 좋을지 편하게 적어주세요.',
@@ -9146,7 +9146,7 @@ class _StockStoryDraftCard extends StatelessWidget {
             style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
           ),
           const SizedBox(height: 16),
-          _StockStoryTextField(
+          AlagagiTextField(
             fieldKey: stockStoryNameFieldKey,
             label: '종목명',
             hint: '예: 삼성전자, Apple',
@@ -9155,7 +9155,7 @@ class _StockStoryDraftCard extends StatelessWidget {
             onChanged: (value) => controller.updateStockStoryDraft(name: value),
           ),
           const SizedBox(height: 10),
-          _StockStoryTextField(
+          AlagagiTextField(
             fieldKey: stockStoryReasonFieldKey,
             label: '관심 이유',
             hint: '왜 같이 보고 싶은지',
@@ -9166,7 +9166,7 @@ class _StockStoryDraftCard extends StatelessWidget {
                 controller.updateStockStoryDraft(reason: value),
           ),
           const SizedBox(height: 10),
-          _StockStoryTextField(
+          AlagagiTextField(
             fieldKey: stockStoryUpsideFieldKey,
             label: '기대 포인트',
             hint: '좋아 보이는 점',
@@ -9176,7 +9176,7 @@ class _StockStoryDraftCard extends StatelessWidget {
                 controller.updateStockStoryDraft(upside: value),
           ),
           const SizedBox(height: 10),
-          _StockStoryTextField(
+          AlagagiTextField(
             fieldKey: stockStoryRiskFieldKey,
             label: '걱정 포인트',
             hint: '조심해서 볼 점',
@@ -9185,7 +9185,7 @@ class _StockStoryDraftCard extends StatelessWidget {
             onChanged: (value) => controller.updateStockStoryDraft(risk: value),
           ),
           const SizedBox(height: 10),
-          _StockStoryTextField(
+          AlagagiTextField(
             fieldKey: stockStoryQuestionFieldKey,
             label: '궁금한 점',
             hint: '상대에게 묻고 싶은 것',
@@ -9224,53 +9224,6 @@ class _StockStoryDraftCard extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _StockStoryTextField extends StatelessWidget {
-  const _StockStoryTextField({
-    required this.fieldKey,
-    required this.label,
-    required this.hint,
-    required this.initialValue,
-    required this.maxLength,
-    required this.onChanged,
-    this.maxLines = 1,
-  });
-
-  final Key fieldKey;
-  final String label;
-  final String hint;
-  final String initialValue;
-  final int maxLength;
-  final ValueChanged<String> onChanged;
-  final int maxLines;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
-        border: Border.all(color: AlagagiColors.line),
-        borderRadius: BorderRadius.circular(15),
-      ),
-      padding: const EdgeInsets.fromLTRB(14, 7, 14, 7),
-      child: TextFormField(
-        key: fieldKey,
-        initialValue: initialValue,
-        maxLength: maxLength,
-        minLines: maxLines,
-        maxLines: maxLines,
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          counterText: '',
-          border: InputBorder.none,
-        ),
-        style: sans(size: 13.5, height: 1.5),
       ),
     );
   }
@@ -9816,7 +9769,7 @@ class _StockHoldingDraftCard extends StatelessWidget {
             style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
           ),
           const SizedBox(height: 16),
-          _StockStoryTextField(
+          AlagagiTextField(
             fieldKey: stockHoldingNameFieldKey,
             label: '종목명',
             hint: '예: 삼성전자, Apple',
@@ -9844,7 +9797,7 @@ class _StockHoldingDraftCard extends StatelessWidget {
                 controller.updateStockHoldingDraft(weightLabel: value),
           ),
           const SizedBox(height: 10),
-          _StockStoryTextField(
+          AlagagiTextField(
             fieldKey: stockHoldingReasonFieldKey,
             label: '보유 이유',
             hint: '왜 들고 있는지',
@@ -9855,7 +9808,7 @@ class _StockHoldingDraftCard extends StatelessWidget {
                 controller.updateStockHoldingDraft(reason: value),
           ),
           const SizedBox(height: 10),
-          _StockStoryTextField(
+          AlagagiTextField(
             fieldKey: stockHoldingWatchFieldKey,
             label: '보고 싶은 점',
             hint: '앞으로 확인할 지점',
@@ -9865,7 +9818,7 @@ class _StockHoldingDraftCard extends StatelessWidget {
                 controller.updateStockHoldingDraft(watchPoint: value),
           ),
           const SizedBox(height: 10),
-          _StockStoryTextField(
+          AlagagiTextField(
             fieldKey: stockHoldingConcernFieldKey,
             label: '걱정 포인트',
             hint: '조심해서 볼 점',
@@ -9875,7 +9828,7 @@ class _StockHoldingDraftCard extends StatelessWidget {
                 controller.updateStockHoldingDraft(concern: value),
           ),
           const SizedBox(height: 10),
-          _StockStoryTextField(
+          AlagagiTextField(
             fieldKey: stockHoldingQuestionFieldKey,
             label: '물어보고 싶은 점',
             hint: '상대에게 묻고 싶은 것',

@@ -468,3 +468,51 @@ class AlagagiFullTextCue extends StatelessWidget {
     );
   }
 }
+
+class AlagagiTextField extends StatelessWidget {
+  const AlagagiTextField({
+    super.key,
+    required this.fieldKey,
+    required this.label,
+    required this.hint,
+    required this.initialValue,
+    required this.maxLength,
+    required this.onChanged,
+    this.maxLines = 1,
+  });
+
+  final Key fieldKey;
+  final String label;
+  final String hint;
+  final String initialValue;
+  final int maxLength;
+  final ValueChanged<String> onChanged;
+  final int maxLines;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 7, 14, 7),
+      child: TextFormField(
+        key: fieldKey,
+        initialValue: initialValue,
+        maxLength: maxLength,
+        minLines: maxLines,
+        maxLines: maxLines,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          counterText: '',
+          border: InputBorder.none,
+        ),
+        style: sans(size: 13.5, height: 1.5),
+      ),
+    );
+  }
+}

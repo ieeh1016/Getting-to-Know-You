@@ -52,8 +52,8 @@ publishing, or Flutter-free domain testing.
 
 - `lib/src/shared/ui_style.dart`: shared colors and typography helpers.
 - `lib/src/shared/ui_components.dart`: shared buttons, cards, chips, labels,
-  brand marks, avatar stacks, badges, quiet metrics, and progress indicators
-  used across feature screens.
+  brand marks, avatar stacks, badges, quiet metrics, text fields, and progress
+  indicators used across feature screens.
 - `lib/src/shared/readable_detail_sheet.dart`: Reusable full-text bottom sheet
   for long answers, notes, comments, profile cards, music, stocks, and posts.
 - `lib/src/app/test_keys.dart`: cross-file widget keys for extracted widgets.
