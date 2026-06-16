@@ -83,6 +83,8 @@ publishing, or Flutter-free domain testing.
   tab, including date strip, shared plan items, and linked place candidates.
 - `lib/src/features/place/place_common.dart`: Shared place category labels,
   icons, and save status widget used by meeting plans and the place board.
+- `lib/src/features/place/place_board_screen.dart`: Place board tab, Kakao
+  place search, map preview/fallback UI, and shared place card actions.
 
 ## Extraction Order
 
