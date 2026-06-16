@@ -12,13 +12,8 @@ import '../domain/alagagi_controller.dart';
 import '../features/answer/answer_screen.dart';
 import '../features/archive/archive_screen.dart';
 import '../features/balance/balance_screen.dart';
-import '../features/home/curiosity_menu_sheet.dart';
 import '../features/home/first_visit_guide_overlay.dart';
-import '../features/home/home_header.dart';
-import '../features/home/home_insight_grid.dart';
-import '../features/home/home_plus_grid.dart';
-import '../features/home/home_progress_summary_card.dart';
-import '../features/home/unread_activity_panel.dart';
+import '../features/home/home_screen.dart';
 import '../features/improvements/improvement_board_screen.dart';
 import '../features/meeting/meeting_plan_screen.dart';
 import '../features/meeting/meeting_screen.dart';
@@ -26,8 +21,6 @@ import '../features/music/music_screen.dart';
 import '../features/my/my_screen.dart';
 import '../features/place/place_board_screen.dart';
 import '../features/profile/profile_card_screen.dart';
-import '../features/questions/answer_save_status.dart';
-import '../features/questions/answer_blocks.dart';
 import '../features/records/records_screen.dart';
 import '../features/stocks/stock_story_screen.dart';
 import '../features/wishlist/wishlist_screen.dart';
@@ -44,10 +37,6 @@ const inviteNicknameFieldKey = Key('invite-nickname-field');
 const loginIdFieldKey = Key('login-id-field');
 const loginPasswordFieldKey = Key('login-password-field');
 const loginButtonKey = Key('login-button');
-const homeQuestionCardKey = Key('home-question-card');
-const homeQuestionAnswerButtonKey = Key('home-question-answer-button');
-const homeCuriosityEntryKey = Key('home-curiosity-entry');
-const firstVisitGuideBookSheetKey = Key('first-visit-guide-book-sheet');
 const alagagiShellKey = Key('alagagi-shell');
 
 const _brandName = '조금씩';
@@ -183,7 +172,11 @@ class _AlagagiRootState extends State<AlagagiRoot> {
   Widget _buildRoute() {
     return switch (_controller.state.route) {
       AlagagiRoute.invite => InviteScreen(controller: _controller),
-      AlagagiRoute.home => HomeScreen(controller: _controller),
+      AlagagiRoute.home => HomeScreen(
+        controller: _controller,
+        brandKicker: _brandKicker,
+        onOpenGuideBook: () => _showFirstVisitGuideBook(context),
+      ),
       AlagagiRoute.answer => AnswerScreen(controller: _controller),
       AlagagiRoute.archive => ArchiveScreen(controller: _controller),
       AlagagiRoute.records => RecordsScreen(controller: _controller),
@@ -972,261 +965,6 @@ class _NicknameField extends StatelessWidget {
           ),
         ],
       ],
-    );
-  }
-}
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key, required this.controller});
-
-  final AlagagiController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlagagiScreenScroll(
-      bottomNavigation: AlagagiBottomNav(controller: controller),
-      children: [
-        HomeHeader(
-          controller: controller,
-          brandKicker: _brandKicker,
-          onOpenMenu: () => showHomeMenuSheet(
-            context: context,
-            controller: controller,
-            onOpenCuriosity: () => showCuriosityMenuSheet(context, controller),
-            onOpenGuideBook: () => _showFirstVisitGuideBook(context),
-          ),
-        ),
-        const SizedBox(height: 18),
-        HomeProgressStrip(controller: controller),
-        UnreadActivityPanel(
-          controller: controller,
-          onOpenCuriosity: (context) =>
-              showCuriosityMenuSheet(context, controller),
-        ),
-        const SizedBox(height: 22),
-        const AlagagiSectionLabel('오늘의 질문'),
-        const SizedBox(height: 12),
-        _QuestionCard(controller: controller),
-        const SizedBox(height: 16),
-        HomeProgressSummaryCard(controller: controller),
-        const SizedBox(height: 22),
-        const AlagagiSectionLabel('알아간 기록'),
-        const SizedBox(height: 12),
-        HomeInsightGrid(controller: controller),
-        const SizedBox(height: 24),
-        const AlagagiSectionLabel('가볍게 알아가는 것들'),
-        const SizedBox(height: 12),
-        HomePlusGrid(controller: controller),
-      ],
-    );
-  }
-}
-
-class _QuestionCard extends StatelessWidget {
-  const _QuestionCard({required this.controller});
-
-  final AlagagiController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final question = controller.todayQuestion;
-    final myAnswer = controller.todayMyAnswer;
-    final partnerAnswer = controller.todayPartnerAnswer;
-    final receivedComment = myAnswer == null
-        ? null
-        : controller.commentForAnswer(
-            question.id,
-            myAnswer.profileId,
-            controller.state.partner.id,
-          );
-    final isSkipped = myAnswer?.skipped ?? false;
-
-    return AlagagiPaperCard(
-      key: homeQuestionCardKey,
-      radius: 22,
-      padding: const EdgeInsets.fromLTRB(22, 22, 22, 21),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Today\'s Question',
-                  style: sans(
-                    size: 10.5,
-                    color: AlagagiColors.sageDeep,
-                    letterSpacing: 1.2,
-                    weight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              _DayChip(label: 'DAY ${question.day}'),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Text(
-            question.text,
-            style: serif(
-              context,
-              size: 22,
-              weight: FontWeight.w800,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 18),
-          if (isSkipped)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const QuestionSupportBlock(
-                  title: '오늘은 잠시 넘겨뒀어요.',
-                  body: '다시 답하고 싶어지면 여기서 바로 이어갈 수 있어요.',
-                ),
-                const SizedBox(height: 16),
-                AlagagiPrimaryButton(
-                  label: '다시 답하기',
-                  onPressed: controller.answerTodayAfterSkip,
-                  color: AlagagiColors.sageDeep,
-                ),
-                AnswerSaveStatus(
-                  controller: controller,
-                  questionId: question.id,
-                ),
-              ],
-            )
-          else if (myAnswer == null)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                QuestionSupportBlock(
-                  title: '아직 내 답을 남기지 않았어요.',
-                  body:
-                      '답을 남기면 ${controller.state.partner.nickname}님의 답도 함께 열려요.',
-                ),
-                const SizedBox(height: 16),
-                AlagagiPrimaryButton(
-                  buttonKey: homeQuestionAnswerButtonKey,
-                  label: '답 남기기',
-                  onPressed: () => controller.goTo(AlagagiRoute.answer),
-                  color: AlagagiColors.sageDeep,
-                ),
-              ],
-            )
-          else ...[
-            AnswerPreviewBlock(
-              key: answerPreviewBlockKey(
-                myAnswer.questionId,
-                myAnswer.profileId,
-              ),
-              label: '내 답',
-              body: myAnswer.body,
-              onOpenFull: () => showReadableDetailSheet(
-                context,
-                label: '내 답',
-                title: question.text,
-                body: myAnswer.body,
-                actionLabel: '수정하기',
-                onAction: controller.editTodayAnswer,
-              ),
-              action: AlagagiInlineTextAction(
-                key: editAnswerButtonKey,
-                label: '수정하기',
-                onPressed: controller.editTodayAnswer,
-              ),
-              expanded: controller.isAnswerExpanded(
-                myAnswer.questionId,
-                myAnswer.profileId,
-              ),
-              onToggle: () => controller.toggleAnswerExpanded(
-                myAnswer.questionId,
-                myAnswer.profileId,
-              ),
-            ),
-            if (receivedComment != null) ...[
-              const SizedBox(height: 10),
-              ReadOnlyCommentBlock(
-                label: '${controller.state.partner.nickname}님의 댓글',
-                body: receivedComment.body,
-                onOpenFull: () => showReadableDetailSheet(
-                  context,
-                  label: '${controller.state.partner.nickname}님의 댓글',
-                  title: '내 답에 남겨진 댓글',
-                  body: receivedComment.body,
-                ),
-              ),
-            ],
-            const SizedBox(height: 16),
-            if (partnerAnswer == null)
-              QuestionSupportBlock(
-                title: '${controller.state.partner.nickname}님 답은 기다리는 중이에요.',
-                body: '상대 답이 준비되면 이 자리에서 이어서 볼 수 있어요.',
-              )
-            else
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AnswerPreviewBlock(
-                    key: answerPreviewBlockKey(
-                      partnerAnswer.questionId,
-                      partnerAnswer.profileId,
-                    ),
-                    label: '${controller.state.partner.nickname}님 답',
-                    accentColor: AlagagiColors.lavender,
-                    body: partnerAnswer.body,
-                    onOpenFull: () => showReadableDetailSheet(
-                      context,
-                      label: '${controller.state.partner.nickname}님 답',
-                      title: question.text,
-                      body: partnerAnswer.body,
-                    ),
-                    expanded: controller.isAnswerExpanded(
-                      partnerAnswer.questionId,
-                      partnerAnswer.profileId,
-                    ),
-                    onToggle: () => controller.toggleAnswerExpanded(
-                      partnerAnswer.questionId,
-                      partnerAnswer.profileId,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  AnswerCommentBox(
-                    controller: controller,
-                    questionId: partnerAnswer.questionId,
-                    answerOwnerProfileId: partnerAnswer.profileId,
-                  ),
-                ],
-              ),
-            AnswerSaveStatus(controller: controller, questionId: question.id),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _DayChip extends StatelessWidget {
-  const _DayChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minHeight: 28),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0F2EB),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-      child: Text(
-        label,
-        style: sans(
-          size: 11,
-          color: AlagagiColors.sageDeep,
-          weight: FontWeight.w700,
-        ),
-      ),
     );
   }
 }

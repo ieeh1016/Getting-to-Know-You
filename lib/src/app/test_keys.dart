@@ -139,6 +139,11 @@ const lateAnswerButtonKey = Key('late-answer-button');
 Key archiveCalendarDayButtonKey(String dateKey) =>
     Key('archive-calendar-day-$dateKey');
 
+const homeQuestionCardKey = Key('home-question-card');
+const homeQuestionAnswerButtonKey = Key('home-question-answer-button');
+const homeCuriosityEntryKey = Key('home-curiosity-entry');
+const firstVisitGuideBookSheetKey = Key('first-visit-guide-book-sheet');
+
 const balanceDeckKey = Key('balance-deck');
 const balanceReasonFieldKey = Key('balance-reason-field');
 const balanceReasonSaveButtonKey = Key('balance-reason-save-button');
