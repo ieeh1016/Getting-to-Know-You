@@ -123,6 +123,13 @@ const wishlistBoardKey = Key('wishlist-board');
 
 const answerFieldKey = Key('answer-field');
 const answerRetryButtonKey = Key('answer-retry-button');
+const editAnswerButtonKey = Key('edit-answer-button');
+const answerCommentFieldKey = Key('answer-comment-field');
+const answerCommentEditButtonKey = Key('answer-comment-edit-button');
+const answerCommentCancelButtonKey = Key('answer-comment-cancel-button');
+const answerCommentSubmitButtonKey = Key('answer-comment-submit-button');
+Key answerPreviewBlockKey(String questionId, String profileId) =>
+    Key('answer-preview-$questionId-$profileId');
 
 const balanceDeckKey = Key('balance-deck');
 const balanceReasonFieldKey = Key('balance-reason-field');

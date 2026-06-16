@@ -106,6 +106,9 @@ publishing, or Flutter-free domain testing.
   segmented switch for question-related views.
 - `lib/src/features/questions/answer_save_status.dart`: Shared answer save
   feedback and retry status row used by Home and Archive.
+- `lib/src/features/questions/answer_blocks.dart`: Shared answer preview,
+  answer line, comment composer, read-only comment, and question support blocks
+  used across Home and Archive.
 - `lib/src/features/questions/question_formatters.dart`: Shared question date
   display helpers for answer and archive flows.
 - `lib/src/features/records/records_screen.dart`: Relationship insight summary,
