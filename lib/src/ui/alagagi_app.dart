@@ -8,6 +8,7 @@ import '../data/first_visit_guide_store.dart';
 import '../data/firebase_alagagi_repositories.dart';
 import '../data/music_note_seen_store.dart';
 import '../domain/alagagi_controller.dart';
+import '../features/answer/answer_screen.dart';
 import '../features/balance/balance_screen.dart';
 import '../features/home/curiosity_menu_sheet.dart';
 import '../features/home/first_visit_guide_overlay.dart';
@@ -23,6 +24,8 @@ import '../features/music/music_screen.dart';
 import '../features/my/my_screen.dart';
 import '../features/place/place_board_screen.dart';
 import '../features/profile/profile_card_screen.dart';
+import '../features/questions/answer_save_status.dart';
+import '../features/questions/question_formatters.dart';
 import '../features/questions/question_view_switch.dart';
 import '../features/records/records_screen.dart';
 import '../features/stocks/stock_story_screen.dart';
@@ -40,11 +43,9 @@ const inviteNicknameFieldKey = Key('invite-nickname-field');
 const loginIdFieldKey = Key('login-id-field');
 const loginPasswordFieldKey = Key('login-password-field');
 const loginButtonKey = Key('login-button');
-const answerFieldKey = Key('answer-field');
 const editAnswerButtonKey = Key('edit-answer-button');
 const homeQuestionCardKey = Key('home-question-card');
 const homeQuestionAnswerButtonKey = Key('home-question-answer-button');
-const answerRetryButtonKey = Key('answer-retry-button');
 const answerCommentFieldKey = Key('answer-comment-field');
 const answerCommentEditButtonKey = Key('answer-comment-edit-button');
 const answerCommentCancelButtonKey = Key('answer-comment-cancel-button');
@@ -1103,7 +1104,7 @@ class _QuestionCard extends StatelessWidget {
                   onPressed: controller.answerTodayAfterSkip,
                   color: AlagagiColors.sageDeep,
                 ),
-                _AnswerSaveStatus(
+                AnswerSaveStatus(
                   controller: controller,
                   questionId: question.id,
                 ),
@@ -1211,7 +1212,7 @@ class _QuestionCard extends StatelessWidget {
                   ),
                 ],
               ),
-            _AnswerSaveStatus(controller: controller, questionId: question.id),
+            AnswerSaveStatus(controller: controller, questionId: question.id),
           ],
         ],
       ),
@@ -2186,333 +2187,6 @@ class _GuideBookFeatureRow extends StatelessWidget {
   }
 }
 
-class _AnswerSaveStatus extends StatelessWidget {
-  const _AnswerSaveStatus({required this.controller, this.questionId});
-
-  final AlagagiController controller;
-  final String? questionId;
-
-  @override
-  Widget build(BuildContext context) {
-    final state = controller.state;
-    final status = state.answerSaveStatus;
-    if (questionId != null && state.answerSaveQuestionId != questionId) {
-      return const SizedBox.shrink();
-    }
-    final message = switch (status) {
-      SaveStatus.saving => '저장 중이에요...',
-      SaveStatus.saved => state.answerSaveFeedback,
-      SaveStatus.failed => state.answerError,
-      SaveStatus.idle => null,
-    };
-    if (message == null || message.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Text(
-              message,
-              style: sans(
-                size: 12,
-                color: status == SaveStatus.failed
-                    ? AlagagiColors.sageDeep
-                    : AlagagiColors.muted,
-                height: 1.5,
-              ),
-            ),
-          ),
-          if (status == SaveStatus.failed)
-            AlagagiInlineTextAction(
-              key: answerRetryButtonKey,
-              label: '다시 시도',
-              onPressed: controller.retryAnswerSave,
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class AnswerScreen extends StatefulWidget {
-  const AnswerScreen({super.key, required this.controller});
-
-  final AlagagiController controller;
-
-  @override
-  State<AnswerScreen> createState() => _AnswerScreenState();
-}
-
-class _AnswerScreenState extends State<AnswerScreen> {
-  late final TextEditingController _answerController;
-
-  @override
-  void initState() {
-    super.initState();
-    _answerController = TextEditingController(
-      text: widget.controller.state.draftAnswer,
-    );
-  }
-
-  @override
-  void dispose() {
-    _answerController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final question = widget.controller.activeAnswerQuestion;
-    final state = widget.controller.state;
-    final count = state.draftAnswer.length;
-    final isSaving = state.answerSaveStatus == SaveStatus.saving;
-    final isEditing = state.editingAnswer;
-    final isToday = widget.controller.isActiveAnswerToday;
-    final selectedDateContext = isToday
-        ? null
-        : _questionDateContext(state.selectedArchiveDateKey, question);
-
-    return Stack(
-      children: [
-        AlagagiScreenScroll(
-          padding: const EdgeInsets.fromLTRB(28, 34, 28, 166),
-          children: [
-            AlagagiTopBar(
-              title: isToday ? '오늘의 질문' : '늦게 답하기',
-              trailing: 'DAY ${question.day}',
-              onBack: () => widget.controller.goTo(
-                isToday ? AlagagiRoute.home : AlagagiRoute.archive,
-              ),
-            ),
-            if (selectedDateContext != null) ...[
-              const SizedBox(height: 10),
-              Text(
-                selectedDateContext,
-                textAlign: TextAlign.center,
-                style: serif(
-                  context,
-                  size: 14,
-                  weight: FontWeight.w700,
-                  color: AlagagiColors.sageDeep,
-                ),
-              ),
-            ],
-            const SizedBox(height: 16),
-            Text(
-              '${question.number}',
-              style: serif(
-                context,
-                size: 64,
-                weight: FontWeight.w800,
-                color: const Color(0xFFECEAE2),
-              ),
-            ),
-            Text(
-              isToday ? 'TODAY\'S QUESTION' : 'PAST QUESTION',
-              style: sans(
-                size: 11,
-                color: AlagagiColors.sageDeep,
-                letterSpacing: 2,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              question.text,
-              style: serif(
-                context,
-                size: 24,
-                weight: FontWeight.w700,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 24),
-            AlagagiPaperCard(
-              radius: 20,
-              padding: const EdgeInsets.all(20),
-              child: TextField(
-                key: answerFieldKey,
-                controller: _answerController,
-                minLines: 5,
-                maxLines: 7,
-                maxLength: 300,
-                onChanged: widget.controller.updateDraftAnswer,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  counterText: '',
-                  hintText: '떠오르는 대로 적어볼까요...',
-                ),
-                style: sans(size: 15, height: 1.7),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                '$count / 300자',
-                style: sans(size: 11, color: AlagagiColors.muted),
-              ),
-            ),
-            const SizedBox(height: 18),
-            const _HintBox(),
-            const SizedBox(height: 18),
-            const _PartnerLockedBox(),
-            if (state.answerError != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                state.answerError!,
-                style: sans(size: 12, color: AlagagiColors.sageDeep),
-                textAlign: TextAlign.center,
-              ),
-              if (state.answerSaveStatus == SaveStatus.failed) ...[
-                const SizedBox(height: 8),
-                AlagagiInlineTextAction(
-                  key: answerRetryButtonKey,
-                  label: '저장 다시 시도',
-                  onPressed: widget.controller.retryAnswerSave,
-                ),
-              ],
-            ],
-          ],
-        ),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(28, 18, 28, 26),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0x00F4F3EF), AlagagiColors.appBackground],
-                begin: Alignment.topCenter,
-                end: Alignment.center,
-              ),
-            ),
-            child: Column(
-              children: [
-                if (isToday && !isEditing)
-                  TextButton(
-                    onPressed: isSaving ? null : widget.controller.skipToday,
-                    child: Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(
-                            text: '오늘은 답하기 어렵나요? ',
-                            style: sans(size: 12, color: AlagagiColors.muted),
-                          ),
-                          TextSpan(
-                            text: '내일 다시 보기',
-                            style: sans(
-                              size: 12,
-                              color: AlagagiColors.sageDeep,
-                              weight: FontWeight.w500,
-                            ).copyWith(decoration: TextDecoration.underline),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                AlagagiPrimaryButton(
-                  label: isEditing
-                      ? '수정 저장하기'
-                      : isToday
-                      ? '답 남기고 ${state.partner.nickname}님 답 열어보기'
-                      : '저장하기',
-                  onPressed: isSaving
-                      ? null
-                      : widget.controller.submitActiveAnswer,
-                  color: AlagagiColors.sageDeep,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _HintBox extends StatelessWidget {
-  const _HintBox();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0F2EB),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.eco_outlined,
-            size: 17,
-            color: AlagagiColors.sageDeep,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              '정답은 없어요. 떠오르는 대로, 솔직한 한 줄이면 충분해요.',
-              style: sans(
-                size: 12,
-                color: const Color(0xFF5A5A54),
-                height: 1.5,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PartnerLockedBox extends StatelessWidget {
-  const _PartnerLockedBox();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: AlagagiColors.line, width: 1.5),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      padding: const EdgeInsets.all(20),
-      alignment: Alignment.center,
-      child: Column(
-        children: [
-          const Icon(
-            Icons.lock_outline_rounded,
-            size: 22,
-            color: AlagagiColors.muted,
-          ),
-          const SizedBox(height: 8),
-          Text.rich(
-            TextSpan(
-              children: [
-                const TextSpan(text: '상대 답은 내 답을 남기면\n'),
-                TextSpan(
-                  text: '같이 열려요',
-                  style: sans(
-                    size: 12.5,
-                    color: AlagagiColors.lavender,
-                    weight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            textAlign: TextAlign.center,
-            style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.5),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class ArchiveScreen extends StatelessWidget {
   const ArchiveScreen({super.key, required this.controller});
 
@@ -2946,7 +2620,7 @@ class _SelectedQuestionDetail extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  _questionDateContext(day.dateKey, question),
+                  questionDateContext(day.dateKey, question),
                   style: serif(
                     context,
                     size: 13,
@@ -3055,7 +2729,7 @@ class _SelectedQuestionDetail extends StatelessWidget {
               style: sans(size: 12.5, color: AlagagiColors.muted),
             ),
           ],
-          _AnswerSaveStatus(controller: controller, questionId: question.id),
+          AnswerSaveStatus(controller: controller, questionId: question.id),
           const SizedBox(height: 16),
           if (day.canLateAnswer && myAnswer == null)
             AlagagiPrimaryButton(
@@ -3144,14 +2818,6 @@ String _statusLabel(QuestionCalendarStatus status) {
     QuestionCalendarStatus.skippedByMe => '패스',
     QuestionCalendarStatus.catalogEnded => '질문 없음',
   };
-}
-
-String _questionDateContext(String? dateKey, DailyQuestion question) {
-  final date = dateKey == null ? null : DateTime.tryParse(dateKey);
-  if (date == null) {
-    return 'DAY ${question.day}';
-  }
-  return '${date.month}월 ${date.day}일 · DAY ${question.day}';
 }
 
 String _calendarDateLabel(String dateKey) {

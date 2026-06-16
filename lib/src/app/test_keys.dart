@@ -121,6 +121,9 @@ const wishSubmitButtonKey = Key('wish-submit-button');
 const wishAddButtonKey = Key('wish-add-button');
 const wishlistBoardKey = Key('wishlist-board');
 
+const answerFieldKey = Key('answer-field');
+const answerRetryButtonKey = Key('answer-retry-button');
+
 const balanceDeckKey = Key('balance-deck');
 const balanceReasonFieldKey = Key('balance-reason-field');
 const balanceReasonSaveButtonKey = Key('balance-reason-save-button');

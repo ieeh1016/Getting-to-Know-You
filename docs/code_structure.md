@@ -74,6 +74,8 @@ publishing, or Flutter-free domain testing.
 - `lib/src/features/home/home_insight_grid.dart`: Home answer/record summary
   metric grid.
 - `lib/src/features/home/home_plus_grid.dart`: Home plus-feature launcher grid.
+- `lib/src/features/answer/answer_screen.dart`: Today and late-answer editor,
+  answer hints, partner lock copy, and save retry controls.
 - `lib/src/features/improvements/improvement_board_screen.dart`: Improvement
   board, request draft form, owner edit/delete actions, and save status UI.
 - `lib/src/features/my/my_screen.dart`: My dashboard, next actions, recent
@@ -102,6 +104,10 @@ publishing, or Flutter-free domain testing.
   read-only partner card views.
 - `lib/src/features/questions/question_view_switch.dart`: Shared archive/records
   segmented switch for question-related views.
+- `lib/src/features/questions/answer_save_status.dart`: Shared answer save
+  feedback and retry status row used by Home and Archive.
+- `lib/src/features/questions/question_formatters.dart`: Shared question date
+  display helpers for answer and archive flows.
 - `lib/src/features/records/records_screen.dart`: Relationship insight summary,
   matched keywords, stats grid, and timeline view.
 
