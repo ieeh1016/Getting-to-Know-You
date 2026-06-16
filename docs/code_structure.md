@@ -93,6 +93,8 @@ publishing, or Flutter-free domain testing.
   tabs, draft forms, filters, reply composers, and owner edit/delete actions.
 - `lib/src/features/wishlist/wishlist_screen.dart`: Shared wishlist board,
   wish draft form, filters, mutual-interest lanes, and wish cards.
+- `lib/src/features/balance/balance_screen.dart`: Taste match deck, result
+  privacy flow, result box, and personal taste note tabs.
 
 ## Extraction Order
 

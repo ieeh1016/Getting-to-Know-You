@@ -121,6 +121,14 @@ const wishSubmitButtonKey = Key('wish-submit-button');
 const wishAddButtonKey = Key('wish-add-button');
 const wishlistBoardKey = Key('wishlist-board');
 
+const balanceDeckKey = Key('balance-deck');
+const balanceReasonFieldKey = Key('balance-reason-field');
+const balanceReasonSaveButtonKey = Key('balance-reason-save-button');
+const balanceResultToggleButtonKey = Key('balance-result-toggle-button');
+Key balanceRecordFilterButtonKey(String filter) =>
+    Key('balance-record-filter-$filter');
+Key balanceTabButtonKey(String tab) => Key('balance-tab-$tab');
+
 const stockStoryAddButtonKey = Key('stock-story-add-button');
 const stockStoryNameFieldKey = Key('stock-story-name-field');
 const stockStoryReasonFieldKey = Key('stock-story-reason-field');
