@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+const inviteNicknameFieldKey = Key('invite-nickname-field');
+const loginIdFieldKey = Key('login-id-field');
+const loginPasswordFieldKey = Key('login-password-field');
+const loginButtonKey = Key('login-button');
+
 const bottomNavigationKey = Key('bottom-navigation');
 const subScreenBackButtonKey = Key('sub-screen-back-button');
 const musicTitleFieldKey = Key('music-title-field');

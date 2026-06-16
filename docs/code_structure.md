@@ -78,6 +78,8 @@ publishing, or Flutter-free domain testing.
 - `lib/src/features/home/home_plus_grid.dart`: Home plus-feature launcher grid.
 - `lib/src/features/home/home_screen.dart`: Home screen composition, today's
   question card, partner answer preview, and Home feature sections.
+- `lib/src/features/auth/auth_screens.dart`: Login, loading, Firebase setup
+  guidance, invite, and shared auth-note UI screens.
 - `lib/src/features/answer/answer_screen.dart`: Today and late-answer editor,
   answer hints, partner lock copy, and save retry controls.
 - `lib/src/features/archive/archive_screen.dart`: Question archive calendar,
