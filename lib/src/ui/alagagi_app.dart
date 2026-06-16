@@ -11,10 +11,12 @@ import '../features/home/home_insight_grid.dart';
 import '../features/home/home_plus_grid.dart';
 import '../features/home/home_progress_summary_card.dart';
 import '../features/home/unread_activity_panel.dart';
+import '../shared/ui_components.dart';
 import '../shared/ui_style.dart';
 import 'kakao_map_panel.dart';
 
 export '../app/test_keys.dart';
+export '../shared/ui_components.dart';
 export '../shared/ui_style.dart';
 
 const inviteNicknameFieldKey = Key('invite-nickname-field');
@@ -818,7 +820,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ],
               const SizedBox(height: 14),
-              _PrimaryButton(
+              AlagagiPrimaryButton(
                 buttonKey: loginButtonKey,
                 label: _signingIn ? '로그인 중...' : '로그인',
                 onPressed: _signingIn ? null : _submit,
@@ -905,7 +907,7 @@ class FirebaseSetupRequiredScreen extends StatelessWidget {
           style: sans(size: 13, color: AlagagiColors.muted, height: 1.6),
         ),
         const SizedBox(height: 20),
-        _PaperCard(
+        AlagagiPaperCard(
           radius: 18,
           padding: const EdgeInsets.all(18),
           child: Column(
@@ -928,7 +930,7 @@ class FirebaseSetupRequiredScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 18),
-        _PrimaryButton(
+        AlagagiPrimaryButton(
           label: '로그인 화면으로 돌아가기',
           onPressed: onSignOut,
           color: AlagagiColors.sageDeep,
@@ -1023,7 +1025,7 @@ class _InviteScreenState extends State<InviteScreen> {
                 errorText: widget.controller.state.inviteError,
               ),
               const SizedBox(height: 12),
-              _PrimaryButton(
+              AlagagiPrimaryButton(
                 label: '대화 공간으로 들어가기',
                 onPressed: () =>
                     widget.controller.enterSpace(_nicknameController.text),
@@ -1293,17 +1295,17 @@ class HomeScreen extends StatelessWidget {
               _showCuriosityMenuSheet(context, controller),
         ),
         const SizedBox(height: 22),
-        const _SectionLabel('오늘의 질문'),
+        const AlagagiSectionLabel('오늘의 질문'),
         const SizedBox(height: 12),
         _QuestionCard(controller: controller),
         const SizedBox(height: 16),
         HomeProgressSummaryCard(controller: controller),
         const SizedBox(height: 22),
-        const _SectionLabel('알아간 기록'),
+        const AlagagiSectionLabel('알아간 기록'),
         const SizedBox(height: 12),
         HomeInsightGrid(controller: controller),
         const SizedBox(height: 24),
-        const _SectionLabel('가볍게 알아가는 것들'),
+        const AlagagiSectionLabel('가볍게 알아가는 것들'),
         const SizedBox(height: 12),
         HomePlusGrid(controller: controller),
       ],
@@ -1461,7 +1463,7 @@ class _FirstVisitGuideOverlay extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 14),
-                          _PrimaryButton(
+                          AlagagiPrimaryButton(
                             buttonKey: firstVisitGuideTourButtonKey,
                             label: '30초 둘러보기',
                             onPressed: () {
@@ -2024,20 +2026,6 @@ class _SmallAvatar extends StatelessWidget {
   }
 }
 
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.label);
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: sans(size: 11, color: AlagagiColors.muted, letterSpacing: 3),
-    );
-  }
-}
-
 class _QuestionCard extends StatelessWidget {
   const _QuestionCard({required this.controller});
 
@@ -2057,7 +2045,7 @@ class _QuestionCard extends StatelessWidget {
           );
     final isSkipped = myAnswer?.skipped ?? false;
 
-    return _PaperCard(
+    return AlagagiPaperCard(
       key: homeQuestionCardKey,
       radius: 22,
       padding: const EdgeInsets.fromLTRB(22, 22, 22, 21),
@@ -2100,7 +2088,7 @@ class _QuestionCard extends StatelessWidget {
                   body: '다시 답하고 싶어지면 여기서 바로 이어갈 수 있어요.',
                 ),
                 const SizedBox(height: 16),
-                _PrimaryButton(
+                AlagagiPrimaryButton(
                   label: '다시 답하기',
                   onPressed: controller.answerTodayAfterSkip,
                   color: AlagagiColors.sageDeep,
@@ -2121,7 +2109,7 @@ class _QuestionCard extends StatelessWidget {
                       '답을 남기면 ${controller.state.partner.nickname}님의 답도 함께 열려요.',
                 ),
                 const SizedBox(height: 16),
-                _PrimaryButton(
+                AlagagiPrimaryButton(
                   buttonKey: homeQuestionAnswerButtonKey,
                   label: '답 남기기',
                   onPressed: () => controller.goTo(AlagagiRoute.answer),
@@ -2480,7 +2468,7 @@ class _ReceivedCuriosityPanel extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            _PrimaryButton(
+            AlagagiPrimaryButton(
               label: isSaving ? '저장 중...' : '답장 저장하기',
               buttonKey: curiosityReplySubmitButtonKey,
               onPressed: isSaving
@@ -2622,7 +2610,7 @@ class _CuriosityComposePanel extends StatelessWidget {
             onChanged: controller.updateCuriosityQuestionDraft,
           ),
           const SizedBox(height: 10),
-          _PrimaryButton(
+          AlagagiPrimaryButton(
             label: savingQuestion ? '보내는 중...' : '질문 보내기',
             buttonKey: curiosityQuestionSubmitButtonKey,
             onPressed: savingQuestion
@@ -4391,7 +4379,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            _PaperCard(
+            AlagagiPaperCard(
               radius: 20,
               padding: const EdgeInsets.all(20),
               child: TextField(
@@ -4476,7 +4464,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                       ),
                     ),
                   ),
-                _PrimaryButton(
+                AlagagiPrimaryButton(
                   label: isEditing
                       ? '수정 저장하기'
                       : isToday
@@ -4601,7 +4589,7 @@ class ArchiveScreen extends StatelessWidget {
         _ArchiveTabs(controller: controller),
         const SizedBox(height: 16),
         if (items.isEmpty)
-          const _EmptyStateCard(text: '아직 쌓인 질문이 없어요. 오늘의 질문부터 천천히 시작해요.')
+          const AlagagiEmptyStateCard(text: '아직 쌓인 질문이 없어요. 오늘의 질문부터 천천히 시작해요.')
         else
           for (final item in items) ...[
             _ArchiveCard(
@@ -4636,7 +4624,7 @@ class _QuestionCalendar extends StatelessWidget {
         ? '질문 캘린더'
         : '${selectedDate.year}년 ${selectedDate.month}월';
 
-    return _PaperCard(
+    return AlagagiPaperCard(
       key: archiveCalendarKey,
       radius: 20,
       padding: const EdgeInsets.fromLTRB(15, 15, 15, 14),
@@ -4950,7 +4938,7 @@ class _SelectedQuestionDetail extends StatelessWidget {
     }
     final statusLabel = _statusLabel(day.status);
     if (question == null || day.status == QuestionCalendarStatus.future) {
-      return _PaperCard(
+      return AlagagiPaperCard(
         radius: 22,
         padding: const EdgeInsets.all(19),
         child: Column(
@@ -4997,7 +4985,7 @@ class _SelectedQuestionDetail extends StatelessWidget {
             myAnswer.profileId,
             controller.state.partner.id,
           );
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 22,
       padding: const EdgeInsets.all(19),
       child: Column(
@@ -5119,14 +5107,14 @@ class _SelectedQuestionDetail extends StatelessWidget {
           _AnswerSaveStatus(controller: controller, questionId: question.id),
           const SizedBox(height: 16),
           if (day.canLateAnswer && myAnswer == null)
-            _PrimaryButton(
+            AlagagiPrimaryButton(
               buttonKey: lateAnswerButtonKey,
               label: '늦게 답하기',
               onPressed: () => controller.startLateAnswer(question.id),
               color: AlagagiColors.sageDeep,
             )
           else if (day.isToday && myAnswer == null)
-            _PrimaryButton(
+            AlagagiPrimaryButton(
               label: '오늘 답하기',
               onPressed: () => controller.goTo(AlagagiRoute.answer),
               color: AlagagiColors.sageDeep,
@@ -5260,18 +5248,18 @@ class _ArchiveTabs extends StatelessWidget {
     return Wrap(
       spacing: 8,
       children: [
-        _FilterPill(
+        AlagagiFilterPill(
           label: '전체',
           selected: controller.state.archiveFilter == ArchiveFilter.all,
           onTap: () => controller.setArchiveFilter(ArchiveFilter.all),
         ),
-        _FilterPill(
+        AlagagiFilterPill(
           label: '둘 다 답함',
           selected:
               controller.state.archiveFilter == ArchiveFilter.bothAnswered,
           onTap: () => controller.setArchiveFilter(ArchiveFilter.bothAnswered),
         ),
-        _FilterPill(
+        AlagagiFilterPill(
           label: '닮은 답',
           selected: controller.state.archiveFilter == ArchiveFilter.similar,
           onTap: () => controller.setArchiveFilter(ArchiveFilter.similar),
@@ -5297,7 +5285,7 @@ class _ArchiveCard extends StatelessWidget {
     final skipped = item.myAnswer?.skipped ?? false;
     final waiting =
         item.myAnswer != null && item.partnerAnswer == null && !skipped;
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 20,
       dashed: waiting || skipped,
       padding: const EdgeInsets.all(20),
@@ -5444,7 +5432,7 @@ class _ArchiveCard extends StatelessWidget {
           ],
           if (item.matchedKeywords.isNotEmpty) ...[
             const SizedBox(height: 12),
-            _SimilarityBadge(keyword: item.matchedKeywords.first),
+            AlagagiSimilarityBadge(keyword: item.matchedKeywords.first),
           ],
         ],
       ),
@@ -5531,27 +5519,31 @@ class RecordsScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        const _SectionLabel('겹치는 키워드'),
+        const AlagagiSectionLabel('겹치는 키워드'),
         const SizedBox(height: 12),
         if (insight.matchedKeywords.isEmpty)
-          const _EmptyStateCard(text: '아직 닮은 키워드는 없어요. 답이 쌓이면 여기에 보여드릴게요.')
+          const AlagagiEmptyStateCard(
+            text: '아직 닮은 키워드는 없어요. 답이 쌓이면 여기에 보여드릴게요.',
+          )
         else
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: insight.matchedKeywords
-                .map((keyword) => _KeywordChip(label: keyword, leaf: true))
+                .map(
+                  (keyword) => AlagagiKeywordChip(label: keyword, leaf: true),
+                )
                 .toList(),
           ),
         const SizedBox(height: 24),
-        const _SectionLabel('숫자로 보는 대화'),
+        const AlagagiSectionLabel('숫자로 보는 대화'),
         const SizedBox(height: 12),
         _StatsGrid(insight: insight),
         const SizedBox(height: 24),
-        const _SectionLabel('우리의 발자취'),
+        const AlagagiSectionLabel('우리의 발자취'),
         const SizedBox(height: 12),
         if (insight.timeline.isEmpty)
-          const _EmptyStateCard(text: '아직 남겨진 발자취가 없어요.')
+          const AlagagiEmptyStateCard(text: '아직 남겨진 발자취가 없어요.')
         else
           _Timeline(events: insight.timeline),
       ],
@@ -5570,7 +5562,7 @@ class _QuestionViewSwitch extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: _SegmentButton(
+          child: AlagagiSegmentButton(
             label: '달력',
             selected: route == AlagagiRoute.archive,
             onTap: () => controller.goTo(AlagagiRoute.archive),
@@ -5578,7 +5570,7 @@ class _QuestionViewSwitch extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: _SegmentButton(
+          child: AlagagiSegmentButton(
             label: '기록',
             selected: route == AlagagiRoute.records,
             onTap: () => controller.goTo(AlagagiRoute.records),
@@ -5655,7 +5647,7 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 18,
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -5843,12 +5835,12 @@ class _BalanceScreenState extends State<BalanceScreen> {
             ),
           ],
           const SizedBox(height: 18),
-          _ProgressDots(
+          AlagagiProgressDots(
             activeIndex: controller.state.activeBalanceIndex,
             count: controller.balanceQuestions.length,
           ),
           const SizedBox(height: 16),
-          _PrimaryButton(
+          AlagagiPrimaryButton(
             label: selected == null
                 ? '먼저 하나를 골라주세요'
                 : controller.isLastBalanceQuestion
@@ -7654,7 +7646,7 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
         Row(
           children: [
             Expanded(
-              child: _SegmentButton(
+              child: AlagagiSegmentButton(
                 label: '${controller.state.partner.nickname}님 카드',
                 selected:
                     controller.state.profileCardTab == ProfileCardTab.partner,
@@ -7666,7 +7658,7 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: _SegmentButton(
+              child: AlagagiSegmentButton(
                 label: '내 카드',
                 selected: controller.state.profileCardTab == ProfileCardTab.me,
                 onTap: () {
@@ -8646,7 +8638,7 @@ class _ProfileRecommendCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final slot = this.slot;
     if (slot == null) {
-      return const _EmptyStateCard(text: '지금 보이는 카드팩은 모두 채워졌어요.');
+      return const AlagagiEmptyStateCard(text: '지금 보이는 카드팩은 모두 채워졌어요.');
     }
     return Container(
       decoration: BoxDecoration(
@@ -9022,7 +9014,7 @@ class _ProfileSlotGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (slots.isEmpty) {
-      return const _EmptyStateCard(text: '이 카테고리에는 아직 카드가 없어요.');
+      return const AlagagiEmptyStateCard(text: '이 카테고리에는 아직 카드가 없어요.');
     }
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -9552,10 +9544,10 @@ class _TodaySlotCardState extends State<_TodaySlotCard> {
   Widget build(BuildContext context) {
     final slot = widget.controller.todayFillableProfileSlot;
     if (slot == null) {
-      return const _EmptyStateCard(text: '소개 카드가 모두 채워졌어요.');
+      return const AlagagiEmptyStateCard(text: '소개 카드가 모두 채워졌어요.');
     }
 
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 20,
       padding: const EdgeInsets.all(20),
       highlightedBorder: AlagagiColors.softSage,
@@ -9856,7 +9848,7 @@ class _WishlistBoard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (wishes.isEmpty) {
-      return const _EmptyStateCard(text: '같이 해보고 싶은 걸 하나만 담아볼까요?');
+      return const AlagagiEmptyStateCard(text: '같이 해보고 싶은 걸 하나만 담아볼까요?');
     }
     return Column(
       key: wishlistBoardKey,
@@ -9947,7 +9939,7 @@ class _WishDraftCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 18,
       padding: const EdgeInsets.all(16),
       highlightedBorder: AlagagiColors.sage,
@@ -9995,12 +9987,12 @@ class _WishDraftCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _FilterPill(
+              AlagagiFilterPill(
                 label: '가고 싶은 곳',
                 selected: controller.state.wishDraftKind == WishKind.place,
                 onTap: () => controller.setWishDraftKind(WishKind.place),
               ),
-              _FilterPill(
+              AlagagiFilterPill(
                 label: '해보고 싶은 것',
                 selected: controller.state.wishDraftKind == WishKind.activity,
                 onTap: () => controller.setWishDraftKind(WishKind.activity),
@@ -10019,7 +10011,7 @@ class _WishDraftCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _PrimaryButton(
+                child: AlagagiPrimaryButton(
                   label: '담기',
                   onPressed: controller.submitWishDraft,
                   color: AlagagiColors.sageDeep,
@@ -10045,22 +10037,22 @@ class _WishlistFilters extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: [
-        _FilterPill(
+        AlagagiFilterPill(
           label: '전체',
           selected: controller.state.wishlistFilter == WishlistFilter.all,
           onTap: () => controller.setWishlistFilter(WishlistFilter.all),
         ),
-        _FilterPill(
+        AlagagiFilterPill(
           label: '서로 관심',
           selected: controller.state.wishlistFilter == WishlistFilter.mutual,
           onTap: () => controller.setWishlistFilter(WishlistFilter.mutual),
         ),
-        _FilterPill(
+        AlagagiFilterPill(
           label: '가고 싶은 곳',
           selected: controller.state.wishlistFilter == WishlistFilter.places,
           onTap: () => controller.setWishlistFilter(WishlistFilter.places),
         ),
-        _FilterPill(
+        AlagagiFilterPill(
           label: '해보고 싶은 것',
           selected:
               controller.state.wishlistFilter == WishlistFilter.activities,
@@ -10250,10 +10242,10 @@ class MeetingScreen extends StatelessWidget {
           controller: controller,
         ),
         const SizedBox(height: 18),
-        const _SectionLabel('서로 괜찮은 후보'),
+        const AlagagiSectionLabel('서로 괜찮은 후보'),
         const SizedBox(height: 10),
         if (candidates.isEmpty)
-          const _EmptyStateCard(text: '둘 다 가능하다고 남긴 날이 생기면 여기에 모여요.')
+          const AlagagiEmptyStateCard(text: '둘 다 가능하다고 남긴 날이 생기면 여기에 모여요.')
         else
           for (final candidate in candidates.take(3)) ...[
             _MeetingCandidateCard(candidate: candidate),
@@ -10309,7 +10301,7 @@ class _MeetingPlanEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _PaperCard(
+    return AlagagiPaperCard(
       key: meetingPlanScreenKey,
       radius: 24,
       padding: const EdgeInsets.all(20),
@@ -10335,7 +10327,7 @@ class _MeetingPlanEmptyState extends StatelessWidget {
             style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.55),
           ),
           const SizedBox(height: 16),
-          _PrimaryButton(
+          AlagagiPrimaryButton(
             label: '약속에서 날짜 정하기',
             onPressed: () => controller.goTo(AlagagiRoute.meetings),
             color: AlagagiColors.sageDeep,
@@ -10356,7 +10348,7 @@ class _MeetingPlanHeroCard extends StatelessWidget {
     final timeLabel = entry.meetingTimeLabel.trim();
     final note = entry.meetingNote.trim();
     final planCount = entry.meetingPlanItems.length;
-    return _PaperCard(
+    return AlagagiPaperCard(
       key: meetingPlanScreenKey,
       radius: 24,
       padding: const EdgeInsets.all(20),
@@ -10567,7 +10559,7 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _PaperCard(
+        AlagagiPaperCard(
           radius: 24,
           padding: const EdgeInsets.all(18),
           child: Column(
@@ -10629,7 +10621,7 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
                 ),
               ],
               const SizedBox(height: 12),
-              _PrimaryButton(
+              AlagagiPrimaryButton(
                 label: '만남 계획 저장',
                 buttonKey: meetingPlanSaveButtonKey,
                 onPressed: controller.submitMeetingPlanDraft,
@@ -10642,14 +10634,14 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
         const SizedBox(height: 18),
         Row(
           children: [
-            const Expanded(child: _SectionLabel('이 날 장소 후보')),
+            const Expanded(child: AlagagiSectionLabel('이 날 장소 후보')),
             _SmallBadge(label: '${linkedPlaces.length}곳'),
           ],
         ),
         _PlaceSaveStatus(controller: controller),
         const SizedBox(height: 10),
         if (linkedPlaces.isEmpty)
-          const _EmptyStateCard(text: '장소 탭에서 저장한 곳을 이 날 후보로 붙여볼 수 있어요.')
+          const AlagagiEmptyStateCard(text: '장소 탭에서 저장한 곳을 이 날 후보로 붙여볼 수 있어요.')
         else
           for (final place in linkedPlaces) ...[
             _MeetingPlanPlaceRow(
@@ -10662,7 +10654,7 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
           ],
         if (boardPlaces.isNotEmpty) ...[
           const SizedBox(height: 12),
-          const _SectionLabel('장소 보드에서 가져오기'),
+          const AlagagiSectionLabel('장소 보드에서 가져오기'),
           const SizedBox(height: 10),
           for (final place in visibleBoardPlaces) ...[
             _MeetingPlanPlaceRow(
@@ -10925,7 +10917,7 @@ class _MeetingPlanPlaceRow extends StatelessWidget {
     final busy =
         controller.state.placeSaveStatus == SaveStatus.saving &&
         controller.isPlaceSaveTarget(place.id);
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 18,
       padding: const EdgeInsets.all(14),
       child: Row(
@@ -11034,7 +11026,7 @@ class _MeetingHeroCard extends StatelessWidget {
               '만남 탭에 그날 계획이 정리돼 있어요.',
           ].join(' ')
         : '상대에게 보여도 괜찮은 일정과 만날 수 있는 여유만 남겨요.';
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 24,
       padding: const EdgeInsets.all(20),
       highlightedBorder: const Color(0x228A9A7E),
@@ -11093,7 +11085,7 @@ class _MeetingCalendar extends StatelessWidget {
         DateTime(selectedDate.year, selectedDate.month, day),
     ];
 
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 22,
       padding: const EdgeInsets.all(15),
       child: Column(
@@ -11435,7 +11427,7 @@ class _MeetingDetailCard extends StatelessWidget {
         partnerEntry?.canMeet == true &&
         sharedSlots.isNotEmpty;
     final showMeetingDayPanel = mutual || meetingDayEntry != null;
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 24,
       padding: const EdgeInsets.all(18),
       highlightedBorder: AlagagiColors.sage,
@@ -11482,7 +11474,7 @@ class _MeetingDetailCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _FilterPill(
+              AlagagiFilterPill(
                 label: '가능해요',
                 selected:
                     controller.state.meetingDraftAvailability ==
@@ -11491,7 +11483,7 @@ class _MeetingDetailCard extends StatelessWidget {
                   MeetingAvailability.available,
                 ),
               ),
-              _FilterPill(
+              AlagagiFilterPill(
                 label: '조율 필요',
                 selected:
                     controller.state.meetingDraftAvailability ==
@@ -11500,7 +11492,7 @@ class _MeetingDetailCard extends StatelessWidget {
                   MeetingAvailability.maybe,
                 ),
               ),
-              _FilterPill(
+              AlagagiFilterPill(
                 label: '어려워요',
                 selected:
                     controller.state.meetingDraftAvailability ==
@@ -11518,7 +11510,7 @@ class _MeetingDetailCard extends StatelessWidget {
             runSpacing: 8,
             children: [
               for (final slot in MeetingTimeSlot.values)
-                _FilterPill(
+                AlagagiFilterPill(
                   key: meetingTimeSlotButtonKey(slot.name),
                   label: _meetingTimeSlotLabel(slot),
                   selected: controller.state.meetingDraftTimeSlots.contains(
@@ -11541,7 +11533,7 @@ class _MeetingDetailCard extends StatelessWidget {
             runSpacing: 8,
             children: [
               for (final preset in _meetingTimePresets)
-                _FilterPill(
+                AlagagiFilterPill(
                   key: meetingTimeBlockPresetButtonKey(preset.id),
                   label: preset.label,
                   selected: false,
@@ -11652,7 +11644,7 @@ class _MeetingDetailCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 14),
-          _PrimaryButton(
+          AlagagiPrimaryButton(
             label: '일정 저장하기',
             buttonKey: meetingSubmitButtonKey,
             onPressed: controller.submitMeetingDraft,
@@ -11753,7 +11745,7 @@ class _MeetingDayPanel extends StatelessWidget {
             onChanged: (value) => controller.updateMeetingDayDraft(note: value),
           ),
           const SizedBox(height: 11),
-          _PrimaryButton(
+          AlagagiPrimaryButton(
             label: alreadyMeetingDay ? '만나는 날 수정 저장' : '만나는 날로 저장하기',
             buttonKey: meetingDaySaveButtonKey,
             onPressed: controller.submitMeetingDayDraft,
@@ -12000,7 +11992,7 @@ class _MeetingCandidateCard extends StatelessWidget {
     final detailCount =
         (candidate.myEntry?.timeBlocks.length ?? 0) +
         (candidate.partnerEntry?.timeBlocks.length ?? 0);
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 18,
       padding: const EdgeInsets.all(14),
       child: Row(
@@ -12196,13 +12188,13 @@ class _PlaceBoardScreenState extends State<PlaceBoardScreen> {
         const SizedBox(height: 18),
         Row(
           children: [
-            const Expanded(child: _SectionLabel('장소 보드')),
+            const Expanded(child: AlagagiSectionLabel('장소 보드')),
             _SmallBadge(label: '지도 검색'),
           ],
         ),
         const SizedBox(height: 12),
         if (places.isEmpty)
-          const _EmptyStateCard(text: '가보고 싶은 곳을 하나만 담아볼까요?')
+          const AlagagiEmptyStateCard(text: '가보고 싶은 곳을 하나만 담아볼까요?')
         else
           Column(
             key: placeBoardKey,
@@ -12597,7 +12589,7 @@ class _PlaceSearchEntryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 24,
       padding: const EdgeInsets.all(18),
       highlightedBorder: const Color(0x228A9A7E),
@@ -12658,7 +12650,7 @@ class _PlaceDraftCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEditing = controller.state.editingPlaceId != null;
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 22,
       padding: const EdgeInsets.all(18),
       highlightedBorder: AlagagiColors.sage,
@@ -12702,7 +12694,7 @@ class _PlaceDraftCard extends StatelessWidget {
             runSpacing: 8,
             children: [
               for (final category in PlaceCategory.values)
-                _FilterPill(
+                AlagagiFilterPill(
                   label: _placeCategoryLabel(category),
                   selected: controller.state.placeDraftCategory == category,
                   onTap: () => controller.setPlaceDraftCategory(category),
@@ -12725,7 +12717,7 @@ class _PlaceDraftCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _PrimaryButton(
+                child: AlagagiPrimaryButton(
                   label: isEditing ? '수정 저장하기' : '장소 보드에 담기',
                   buttonKey: placeSubmitButtonKey,
                   onPressed: controller.submitPlaceDraft,
@@ -13450,7 +13442,7 @@ class _PlaceCard extends StatelessWidget {
         ? controller.state.me.nickname
         : controller.state.partner.nickname;
     final kakaoPlaceUrl = _kakaoPlaceUrl(place);
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 19,
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -13941,7 +13933,7 @@ class ImprovementBoardScreen extends StatelessWidget {
         const SizedBox(height: 18),
         Row(
           children: [
-            const Expanded(child: _SectionLabel('남긴 글')),
+            const Expanded(child: AlagagiSectionLabel('남긴 글')),
             if (!state.improvementDraftVisible)
               _ImprovementAddButton(controller: controller),
           ],
@@ -13951,7 +13943,7 @@ class ImprovementBoardScreen extends StatelessWidget {
         _ImprovementSaveStatus(controller: controller),
         const SizedBox(height: 12),
         if (posts.isEmpty)
-          const _EmptyStateCard(text: '생각나는 개선점이나 추가 요청을 하나만 남겨볼까요?')
+          const AlagagiEmptyStateCard(text: '생각나는 개선점이나 추가 요청을 하나만 남겨볼까요?')
         else
           for (final post in posts) ...[
             _ImprovementPostCard(controller: controller, post: post),
@@ -13967,7 +13959,7 @@ class _ImprovementHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 22,
       padding: const EdgeInsets.all(18),
       highlightedBorder: AlagagiColors.sage,
@@ -14031,7 +14023,7 @@ class _ImprovementSummaryCard extends StatelessWidget {
         .where((post) => post.createdByProfileId == controller.state.me.id)
         .length;
     final featureCount = posts.where((post) => post.category == '추가 요청').length;
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 18,
       padding: const EdgeInsets.all(14),
       child: Row(
@@ -14094,7 +14086,7 @@ class _ImprovementDraftCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = controller.state;
     final isEditing = state.editingImprovementPostId != null;
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 22,
       padding: const EdgeInsets.all(18),
       highlightedBorder: AlagagiColors.sage,
@@ -14116,7 +14108,7 @@ class _ImprovementDraftCard extends StatelessWidget {
             runSpacing: 7,
             children: [
               for (final category in improvementPostCategoryOptions)
-                _FilterPill(
+                AlagagiFilterPill(
                   key: improvementCategoryKey(category),
                   label: category,
                   selected: state.improvementDraftCategory == category,
@@ -14165,7 +14157,7 @@ class _ImprovementDraftCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _PrimaryButton(
+                child: AlagagiPrimaryButton(
                   label: isEditing ? '수정 저장' : '건의 남기기',
                   onPressed: controller.submitImprovementDraft,
                   color: AlagagiColors.sageDeep,
@@ -14202,7 +14194,7 @@ class _ImprovementPostCard extends StatelessWidget {
         meta: '$creator · ${post.createdLabel}',
         body: post.body,
       ),
-      child: _PaperCard(
+      child: AlagagiPaperCard(
         radius: 19,
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -14536,7 +14528,7 @@ class _StockStoriesPane extends StatelessWidget {
         ],
         Row(
           children: [
-            const Expanded(child: _SectionLabel('같이 볼 이야기')),
+            const Expanded(child: AlagagiSectionLabel('같이 볼 이야기')),
             if (!controller.state.stockStoryDraftVisible)
               _StockStoryAddButton(controller: controller),
           ],
@@ -14549,9 +14541,9 @@ class _StockStoriesPane extends StatelessWidget {
         ],
         const SizedBox(height: 12),
         if (totalCount == 0)
-          const _EmptyStateCard(text: '관심 가는 종목을 하나만 가볍게 남겨볼까요?')
+          const AlagagiEmptyStateCard(text: '관심 가는 종목을 하나만 가볍게 남겨볼까요?')
         else if (stories.isEmpty)
-          const _EmptyStateCard(text: '이 조건에 맞는 이야기는 아직 없어요.')
+          const AlagagiEmptyStateCard(text: '이 조건에 맞는 이야기는 아직 없어요.')
         else
           for (final story in stories) ...[
             _StockStoryCard(controller: controller, story: story),
@@ -14578,7 +14570,7 @@ class _StockStorySummaryCard extends StatelessWidget {
         )
         .length;
     final repliedCount = stories.where((story) => story.hasReply).length;
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 18,
       padding: const EdgeInsets.all(14),
       child: Row(
@@ -14628,7 +14620,7 @@ class _StockStoryFilterBar extends StatelessWidget {
       child: Row(
         children: [
           for (final filter in filters) ...[
-            _FilterPill(
+            AlagagiFilterPill(
               key: stockStoryListFilterButtonKey(filter.$1.name),
               label: filter.$2,
               selected: selected == filter.$1,
@@ -14727,7 +14719,7 @@ class _StockStoryDraftCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 22,
       padding: const EdgeInsets.all(18),
       highlightedBorder: AlagagiColors.sage,
@@ -14817,7 +14809,7 @@ class _StockStoryDraftCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _PrimaryButton(
+                child: AlagagiPrimaryButton(
                   label: '이야기 남기기',
                   onPressed: controller.submitStockStoryDraft,
                   color: AlagagiColors.sageDeep,
@@ -14908,7 +14900,7 @@ class _StockStoryCard extends StatelessWidget {
         meta: '$creator · ${story.createdLabel}',
         body: detailBody,
       ),
-      child: _PaperCard(
+      child: AlagagiPaperCard(
         radius: 19,
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -15171,7 +15163,7 @@ class _StockStoryReplyComposer extends StatelessWidget {
             runSpacing: 7,
             children: [
               for (final tone in stockStoryReplyToneOptions)
-                _FilterPill(
+                AlagagiFilterPill(
                   key: stockStoryReplyToneKey(story.id, tone),
                   label: tone,
                   selected: selectedTone == tone,
@@ -15209,7 +15201,7 @@ class _StockStoryReplyComposer extends StatelessWidget {
             style: sans(size: 13, height: 1.45),
           ),
           const SizedBox(height: 9),
-          _PrimaryButton(
+          AlagagiPrimaryButton(
             label: '관점 남기기',
             buttonKey: stockStoryReplySubmitButtonKey(story.id),
             onPressed: () => controller.submitStockStoryReply(story.id),
@@ -15245,7 +15237,7 @@ class _StockHoldingsPane extends StatelessWidget {
         ],
         Row(
           children: [
-            const Expanded(child: _SectionLabel('공유한 보유 종목')),
+            const Expanded(child: AlagagiSectionLabel('공유한 보유 종목')),
             if (!controller.state.stockHoldingDraftVisible)
               _StockHoldingAddButton(controller: controller),
           ],
@@ -15262,9 +15254,9 @@ class _StockHoldingsPane extends StatelessWidget {
         ],
         const SizedBox(height: 12),
         if (allHoldings.isEmpty)
-          const _EmptyStateCard(text: '들고 있는 종목을 부담 없이 하나만 공유해볼까요?')
+          const AlagagiEmptyStateCard(text: '들고 있는 종목을 부담 없이 하나만 공유해볼까요?')
         else if (holdings.isEmpty)
-          const _EmptyStateCard(text: '이 조건에 맞는 보유 종목은 아직 없어요.')
+          const AlagagiEmptyStateCard(text: '이 조건에 맞는 보유 종목은 아직 없어요.')
         else
           for (final holding in holdings) ...[
             _StockHoldingCard(controller: controller, holding: holding),
@@ -15295,7 +15287,7 @@ class _StockHoldingSummaryCard extends StatelessWidget {
               !holding.hasReply,
         )
         .length;
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 18,
       padding: const EdgeInsets.all(14),
       child: Row(
@@ -15344,7 +15336,7 @@ class _StockHoldingFilterBar extends StatelessWidget {
       child: Row(
         children: [
           for (final filter in filters) ...[
-            _FilterPill(
+            AlagagiFilterPill(
               key: stockHoldingListFilterButtonKey(filter.$1.name),
               label: filter.$2,
               selected: selected == filter.$1,
@@ -15395,7 +15387,7 @@ class _StockHoldingDraftCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = controller.state;
     final isEditing = state.editingStockHoldingId != null;
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 22,
       padding: const EdgeInsets.all(18),
       highlightedBorder: AlagagiColors.sage,
@@ -15507,7 +15499,7 @@ class _StockHoldingDraftCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _PrimaryButton(
+                child: AlagagiPrimaryButton(
                   label: isEditing ? '수정 저장' : '보유 공유하기',
                   onPressed: controller.submitStockHoldingDraft,
                   color: AlagagiColors.sageDeep,
@@ -15556,7 +15548,7 @@ class _StockHoldingChoiceGroup extends StatelessWidget {
           runSpacing: 7,
           children: [
             for (final option in options)
-              _FilterPill(
+              AlagagiFilterPill(
                 key: keyBuilder(option),
                 label: option,
                 selected: selected == option,
@@ -15600,7 +15592,7 @@ class _StockHoldingCard extends StatelessWidget {
         meta: '$creator · ${holding.status} · ${holding.weightLabel}',
         body: detailBody,
       ),
-      child: _PaperCard(
+      child: AlagagiPaperCard(
         radius: 19,
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -15808,7 +15800,7 @@ class _StockHoldingReplyComposer extends StatelessWidget {
             runSpacing: 7,
             children: [
               for (final tone in stockStoryReplyToneOptions)
-                _FilterPill(
+                AlagagiFilterPill(
                   key: stockHoldingReplyToneKey(holding.id, tone),
                   label: tone,
                   selected: selectedTone == tone,
@@ -15846,7 +15838,7 @@ class _StockHoldingReplyComposer extends StatelessWidget {
             style: sans(size: 13, height: 1.45),
           ),
           const SizedBox(height: 9),
-          _PrimaryButton(
+          AlagagiPrimaryButton(
             label: '관점 남기기',
             buttonKey: stockHoldingReplySubmitButtonKey(holding.id),
             onPressed: () => controller.submitStockHoldingReply(holding.id),
@@ -15895,7 +15887,7 @@ class MusicScreen extends StatelessWidget {
         const SizedBox(height: 18),
         Row(
           children: [
-            const Expanded(child: _SectionLabel('들어볼 곡')),
+            const Expanded(child: AlagagiSectionLabel('들어볼 곡')),
             if (!controller.state.musicDraftVisible)
               _MusicAddInlineButton(controller: controller),
           ],
@@ -15908,9 +15900,9 @@ class MusicScreen extends StatelessWidget {
         ],
         const SizedBox(height: 12),
         if (totalCount == 0)
-          const _EmptyStateCard(text: '요즘 듣는 노래를 한 곡만 가볍게 남겨볼까요?')
+          const AlagagiEmptyStateCard(text: '요즘 듣는 노래를 한 곡만 가볍게 남겨볼까요?')
         else if (notes.isEmpty)
-          const _EmptyStateCard(text: '이 조건에 맞는 곡은 아직 없어요.')
+          const AlagagiEmptyStateCard(text: '이 조건에 맞는 곡은 아직 없어요.')
         else
           for (final note in notes) ...[
             _MusicNoteCard(
@@ -15935,7 +15927,7 @@ class _MusicLibrarySummaryCard extends StatelessWidget {
     final totalCount = controller.musicNotes.length;
     final unlistenedCount = controller.unlistenedMusicNoteCount;
     final mutualCount = controller.mutualListenedMusicNoteCount;
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 18,
       padding: const EdgeInsets.all(14),
       child: Row(
@@ -15985,7 +15977,7 @@ class _MusicFilterBar extends StatelessWidget {
       child: Row(
         children: [
           for (final filter in filters) ...[
-            _FilterPill(
+            AlagagiFilterPill(
               key: musicListFilterButtonKey(filter.$1.name),
               label: filter.$2,
               selected: selected == filter.$1,
@@ -16147,7 +16139,7 @@ class _MusicDraftCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEditing = controller.state.editingMusicNoteId != null;
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 22,
       padding: const EdgeInsets.all(18),
       highlightedBorder: AlagagiColors.sage,
@@ -16214,7 +16206,7 @@ class _MusicDraftCard extends StatelessWidget {
             runSpacing: 8,
             children: [
               for (final mood in musicMoodOptions)
-                _FilterPill(
+                AlagagiFilterPill(
                   label: mood,
                   selected: controller.state.musicDraftMood == mood,
                   onTap: () => controller.setMusicDraftMood(mood),
@@ -16240,7 +16232,7 @@ class _MusicDraftCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _PrimaryButton(
+                child: AlagagiPrimaryButton(
                   label: isEditing ? '수정 저장' : '노래 남기기',
                   onPressed: controller.submitMusicDraft,
                   color: AlagagiColors.sageDeep,
@@ -16342,7 +16334,7 @@ class _MusicNoteCard extends StatelessWidget {
         actionLabel: isMine ? '수정하기' : null,
         onAction: isMine ? () => controller.startMusicEdit(note.id) : null,
       ),
-      child: _PaperCard(
+      child: AlagagiPaperCard(
         radius: 19,
         padding: const EdgeInsets.all(14),
         child: Row(
@@ -16754,7 +16746,7 @@ class _MyProfileSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 22,
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -16908,7 +16900,7 @@ class _MyStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 18,
       padding: const EdgeInsets.fromLTRB(11, 13, 11, 13),
       child: SizedBox(
@@ -17107,7 +17099,7 @@ class _MyNextTile extends StatelessWidget {
         key: buttonKey,
         borderRadius: BorderRadius.circular(20),
         onTap: onTap,
-        child: _PaperCard(
+        child: AlagagiPaperCard(
           radius: 20,
           padding: const EdgeInsets.all(13),
           child: SizedBox(
@@ -17199,7 +17191,7 @@ class _MyTraceCard extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: _PaperCard(
+      child: AlagagiPaperCard(
         radius: 20,
         padding: const EdgeInsets.all(14),
         child: SizedBox(
@@ -17259,7 +17251,7 @@ class _MyHelpCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 20,
       padding: const EdgeInsets.all(15),
       child: Column(
@@ -17364,7 +17356,7 @@ class _MyAccountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _PaperCard(
+    return AlagagiPaperCard(
       radius: 20,
       padding: const EdgeInsets.all(15),
       child: Column(
@@ -17681,241 +17673,6 @@ class _BackButton extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _PrimaryButton extends StatelessWidget {
-  const _PrimaryButton({
-    required this.label,
-    required this.onPressed,
-    this.color = AlagagiColors.ink,
-    this.buttonKey,
-  });
-
-  final String label;
-  final VoidCallback? onPressed;
-  final Color color;
-  final Key? buttonKey;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: FilledButton(
-        key: buttonKey,
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: AlagagiColors.appBackground,
-          padding: const EdgeInsets.symmetric(vertical: 17),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          textStyle: serif(context, size: 15, weight: FontWeight.w700),
-        ),
-        child: Text(label, textAlign: TextAlign.center),
-      ),
-    );
-  }
-}
-
-class _PaperCard extends StatelessWidget {
-  const _PaperCard({
-    super.key,
-    required this.child,
-    required this.radius,
-    required this.padding,
-    this.dashed = false,
-    this.highlightedBorder,
-  });
-
-  final Widget child;
-  final double radius;
-  final EdgeInsets padding;
-  final bool dashed;
-  final Color? highlightedBorder;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: dashed ? Colors.transparent : AlagagiColors.paper,
-        border: Border.all(
-          color: highlightedBorder ?? AlagagiColors.line,
-          width: dashed ? 1.5 : 1,
-        ),
-        borderRadius: BorderRadius.circular(radius),
-      ),
-      padding: padding,
-      child: child,
-    );
-  }
-}
-
-class _EmptyStateCard extends StatelessWidget {
-  const _EmptyStateCard({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return _PaperCard(
-      radius: 18,
-      padding: const EdgeInsets.all(18),
-      dashed: true,
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: sans(size: 13, color: AlagagiColors.muted, height: 1.6),
-      ),
-    );
-  }
-}
-
-class _FilterPill extends StatelessWidget {
-  const _FilterPill({
-    super.key,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: selected ? AlagagiColors.ink : Colors.white,
-          border: Border.all(
-            color: selected ? AlagagiColors.ink : AlagagiColors.line,
-          ),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Text(
-          label,
-          style: sans(
-            size: 12.5,
-            color: selected ? AlagagiColors.appBackground : AlagagiColors.muted,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _KeywordChip extends StatelessWidget {
-  const _KeywordChip({required this.label, this.leaf = false});
-
-  final String label;
-  final bool leaf;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AlagagiColors.paper,
-        border: leaf ? Border.all(color: AlagagiColors.line) : null,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      child: Text(
-        label,
-        style: sans(size: 11.5, color: const Color(0xFF5A5A54)),
-      ),
-    );
-  }
-}
-
-class _SimilarityBadge extends StatelessWidget {
-  const _SimilarityBadge({required this.keyword});
-
-  final String keyword;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFEEF1E8),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      child: Text(
-        '둘 다 ‘$keyword’ 취향',
-        style: sans(size: 11, color: AlagagiColors.sageDeep),
-      ),
-    );
-  }
-}
-
-class _SegmentButton extends StatelessWidget {
-  const _SegmentButton({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(14),
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: selected ? AlagagiColors.ink : Colors.white,
-          border: Border.all(
-            color: selected ? AlagagiColors.ink : AlagagiColors.line,
-          ),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 9),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: sans(
-            size: 12.5,
-            color: selected ? AlagagiColors.appBackground : AlagagiColors.muted,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ProgressDots extends StatelessWidget {
-  const _ProgressDots({required this.activeIndex, required this.count});
-
-  final int activeIndex;
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(count, (index) {
-        final active = activeIndex == index;
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          width: active ? 20 : 6,
-          height: 6,
-          margin: const EdgeInsets.symmetric(horizontal: 3),
-          decoration: BoxDecoration(
-            color: active ? AlagagiColors.sageDeep : const Color(0xFFD5D3CA),
-            borderRadius: BorderRadius.circular(6),
-          ),
-        );
-      }),
     );
   }
 }

@@ -12,6 +12,7 @@ lib/src/app/
 
 lib/src/shared/
   ui_style.dart
+  ui_components.dart
   widgets/
   sheets/
 
@@ -49,6 +50,8 @@ publishing, or Flutter-free domain testing.
 ## Current Extracted Modules
 
 - `lib/src/shared/ui_style.dart`: shared colors and typography helpers.
+- `lib/src/shared/ui_components.dart`: shared buttons, cards, chips, labels, and
+  progress indicators used across feature screens.
 - `lib/src/app/test_keys.dart`: cross-file widget keys for extracted widgets.
 - `lib/src/features/home/unread_activity_panel.dart`: Home unread activity
   preview and full-list sheet.
