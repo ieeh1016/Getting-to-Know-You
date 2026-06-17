@@ -106,6 +106,7 @@ class AlagagiRoot extends StatefulWidget {
     this.firstVisitGuideStore,
     this.onOpenExternalLink,
     this.onRefreshSession,
+    this.onRouteEntered,
     this.sessionRefreshInProgress = false,
   });
 
@@ -115,6 +116,7 @@ class AlagagiRoot extends StatefulWidget {
   final FirstVisitGuideStore? firstVisitGuideStore;
   final ValueChanged<String>? onOpenExternalLink;
   final Future<void> Function()? onRefreshSession;
+  final ValueChanged<AlagagiRoute>? onRouteEntered;
   final bool sessionRefreshInProgress;
 
   @override
@@ -124,6 +126,7 @@ class AlagagiRoot extends StatefulWidget {
 class _AlagagiRootState extends State<AlagagiRoot> {
   late final AlagagiController _controller;
   late final bool _ownsController;
+  late AlagagiRoute _observedRoute;
 
   @override
   void initState() {
@@ -136,14 +139,26 @@ class _AlagagiRootState extends State<AlagagiRoot> {
               widget.musicNoteSeenStore ?? createDefaultMusicNoteSeenStore(),
           firstVisitGuideStore: widget.firstVisitGuideStore,
         );
+    _observedRoute = _controller.state.route;
+    _controller.addListener(_handleRouteChange);
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_handleRouteChange);
     if (_ownsController) {
       _controller.dispose();
     }
     super.dispose();
+  }
+
+  void _handleRouteChange() {
+    final route = _controller.state.route;
+    if (route == _observedRoute) {
+      return;
+    }
+    _observedRoute = route;
+    widget.onRouteEntered?.call(route);
   }
 
   @override
@@ -360,6 +375,7 @@ class _SessionGateState extends State<_SessionGate> {
   late Future<AlagagiSession?> _sessionFuture;
   AlagagiController? _controller;
   bool _sessionRefreshInProgress = false;
+  DateTime? _lastRouteRefreshAt;
 
   @override
   void initState() {
@@ -395,7 +411,7 @@ class _SessionGateState extends State<_SessionGate> {
     );
   }
 
-  Future<void> _refreshSession() async {
+  Future<void> _refreshSession({bool showFeedback = true}) async {
     if (_sessionRefreshInProgress) {
       return;
     }
@@ -425,13 +441,13 @@ class _SessionGateState extends State<_SessionGate> {
       } else {
         controller.refreshFromSession(session);
       }
-      if (mounted) {
+      if (mounted && showFeedback) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('최신 내용으로 다시 확인했어요.')));
       }
     } catch (_) {
-      if (mounted) {
+      if (mounted && showFeedback) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('새로 불러오지 못했어요. 다시 시도해 주세요.')),
         );
@@ -443,6 +459,20 @@ class _SessionGateState extends State<_SessionGate> {
         });
       }
     }
+  }
+
+  void _refreshSessionForRoute(AlagagiRoute route) {
+    if (route == AlagagiRoute.invite || route == AlagagiRoute.home) {
+      return;
+    }
+    final now = DateTime.now();
+    final lastRefreshAt = _lastRouteRefreshAt;
+    if (lastRefreshAt != null &&
+        now.difference(lastRefreshAt) < const Duration(seconds: 20)) {
+      return;
+    }
+    _lastRouteRefreshAt = now;
+    unawaited(_refreshSession(showFeedback: false));
   }
 
   @override
@@ -471,6 +501,7 @@ class _SessionGateState extends State<_SessionGate> {
           onSignOut: widget.authRepository.signOut,
           onOpenExternalLink: widget.onOpenExternalLink,
           onRefreshSession: _refreshSession,
+          onRouteEntered: _refreshSessionForRoute,
           sessionRefreshInProgress: _sessionRefreshInProgress,
         );
       },

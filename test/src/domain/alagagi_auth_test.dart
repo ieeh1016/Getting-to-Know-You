@@ -355,6 +355,184 @@ void main() {
     });
 
     test(
+      'session meeting plan saves to the shared meeting plan document',
+      () async {
+        final repository = RecordingAlagagiRepository();
+        final controller = AlagagiController.forSession(
+          const AlagagiSession(
+            spaceId: 'main',
+            me: AppProfile(
+              id: 'youngwooUid',
+              nickname: '영우',
+              avatar: '🌿',
+              isMe: true,
+            ),
+            partner: AppProfile(
+              id: 'minyoungUid',
+              nickname: '민영',
+              avatar: '🪻',
+              isMe: false,
+            ),
+            data: AlagagiSpaceData(
+              scheduleEntries: [
+                ScheduleEntry(
+                  dateKey: '2026-06-21',
+                  profileId: 'youngwooUid',
+                  availability: MeetingAvailability.available,
+                  timeSlots: {MeetingTimeSlot.evening},
+                  isMeetingDay: true,
+                ),
+              ],
+            ),
+          ),
+          repository: repository,
+        );
+
+        controller.goTo(AlagagiRoute.meetingPlans);
+        controller.updateMeetingPlanItemDraft('전시 보기');
+        controller.addMeetingPlanDraftItem();
+        controller.updateMeetingPlanItemDraft('근처 카페');
+        controller.addMeetingPlanDraftItem();
+        controller.submitMeetingPlanDraft();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(repository.savedScheduleEntries, isEmpty);
+        expect(repository.savedMeetingPlans.single.spaceId, 'main');
+        expect(repository.savedMeetingPlans.single.plan.dateKey, '2026-06-21');
+        expect(repository.savedMeetingPlans.single.plan.items, [
+          '전시 보기',
+          '근처 카페',
+        ]);
+        expect(
+          repository.savedMeetingPlans.single.plan.updatedByProfileId,
+          'youngwooUid',
+        );
+        expect(controller.meetingPlanItemsFor('2026-06-21'), [
+          '전시 보기',
+          '근처 카페',
+        ]);
+      },
+    );
+
+    test(
+      'session meeting day save migrates legacy plan items to shared document',
+      () async {
+        final repository = RecordingAlagagiRepository();
+        final controller = AlagagiController.forSession(
+          const AlagagiSession(
+            spaceId: 'main',
+            me: AppProfile(
+              id: 'youngwooUid',
+              nickname: '영우',
+              avatar: '🌿',
+              isMe: true,
+            ),
+            partner: AppProfile(
+              id: 'minyoungUid',
+              nickname: '민영',
+              avatar: '🪻',
+              isMe: false,
+            ),
+            data: AlagagiSpaceData(
+              scheduleEntries: [
+                ScheduleEntry(
+                  dateKey: '2026-06-21',
+                  profileId: 'youngwooUid',
+                  availability: MeetingAvailability.available,
+                  timeSlots: {MeetingTimeSlot.evening},
+                  isMeetingDay: true,
+                  meetingPlanItems: ['전시 보기'],
+                ),
+                ScheduleEntry(
+                  dateKey: '2026-06-21',
+                  profileId: 'minyoungUid',
+                  availability: MeetingAvailability.available,
+                  timeSlots: {MeetingTimeSlot.evening},
+                  isMeetingDay: true,
+                  meetingPlanItems: ['전시 보기', '근처 카페'],
+                ),
+              ],
+            ),
+          ),
+          repository: repository,
+        );
+
+        controller
+          ..goTo(AlagagiRoute.meetings)
+          ..selectMeetingDate('2026-06-21')
+          ..updateMeetingDayDraft(timeLabel: '저녁 7시쯤')
+          ..submitMeetingDayDraft();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(
+          repository.savedScheduleEntries.single.entry.meetingPlanItems,
+          isEmpty,
+        );
+        expect(repository.savedMeetingPlans.single.spaceId, 'main');
+        expect(repository.savedMeetingPlans.single.plan.dateKey, '2026-06-21');
+        expect(repository.savedMeetingPlans.single.plan.items, [
+          '전시 보기',
+          '근처 카페',
+        ]);
+        expect(controller.meetingPlanItemsFor('2026-06-21'), [
+          '전시 보기',
+          '근처 카페',
+        ]);
+      },
+    );
+
+    test('session meeting plan save failure exposes retry state', () async {
+      final repository = RecordingAlagagiRepository()
+        ..failMeetingPlanSaves = true;
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            scheduleEntries: [
+              ScheduleEntry(
+                dateKey: '2026-06-21',
+                profileId: 'youngwooUid',
+                availability: MeetingAvailability.available,
+                timeSlots: {MeetingTimeSlot.evening},
+                isMeetingDay: true,
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+      );
+
+      controller.goTo(AlagagiRoute.meetingPlans);
+      controller.updateMeetingPlanItemDraft('전시 보기');
+      controller.addMeetingPlanDraftItem();
+      controller.submitMeetingPlanDraft();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.state.meetingSaveStatus, SaveStatus.failed);
+      expect(controller.state.meetingDraftError, contains('저장하지 못했어요'));
+      expect(repository.savedMeetingPlans, isEmpty);
+
+      repository.failMeetingPlanSaves = false;
+      controller.retryMeetingSave();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.state.meetingSaveStatus, SaveStatus.saved);
+      expect(repository.savedMeetingPlans.single.plan.items, ['전시 보기']);
+    });
+
+    test(
       'session place meeting link adds my interest and can unlink',
       () async {
         final repository = RecordingAlagagiRepository();
@@ -2517,6 +2695,7 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   bool failAnswerSaves = false;
   bool failAnswerCommentSaves = false;
   bool failScheduleEntrySaves = false;
+  bool failMeetingPlanSaves = false;
   bool failSharedPlaceSaves = false;
   Completer<void>? answerSaveCompleter;
   Completer<void>? sharedPlaceSaveCompleter;
@@ -2535,6 +2714,7 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   final List<({String spaceId, MusicNote note})> savedMusicListenStates = [];
   final List<({String spaceId, String noteId})> deletedMusicNotes = [];
   final List<({String spaceId, ScheduleEntry entry})> savedScheduleEntries = [];
+  final List<({String spaceId, MeetingPlan plan})> savedMeetingPlans = [];
   final List<({String spaceId, SharedPlace place})> savedSharedPlaces = [];
   final List<({String spaceId, String placeId})> deletedSharedPlaces = [];
   final List<({String spaceId, StockStory story})> savedStockStories = [];
@@ -2643,6 +2823,14 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
       throw StateError('schedule save failed');
     }
     savedScheduleEntries.add((spaceId: spaceId, entry: entry));
+  }
+
+  @override
+  Future<void> saveMeetingPlan(String spaceId, MeetingPlan plan) async {
+    if (failMeetingPlanSaves) {
+      throw StateError('meeting plan save failed');
+    }
+    savedMeetingPlans.add((spaceId: spaceId, plan: plan));
   }
 
   @override

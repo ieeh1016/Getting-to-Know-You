@@ -597,6 +597,22 @@ service cloud.firestore {
             && request.resource.data.meetingPlanItems.size() <= 8));
     }
 
+    function validMeetingPlan(planId) {
+      return request.resource.data.keys().hasOnly([
+          'dateKey',
+          'items',
+          'updatedByProfileId',
+          'updatedAt'
+        ])
+        && request.resource.data.dateKey is string
+        && request.resource.data.dateKey.size() <= 16
+        && planId == request.resource.data.dateKey
+        && request.resource.data.items is list
+        && request.resource.data.items.size() <= 8
+        && request.resource.data.updatedByProfileId == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+    }
+
     function validSharedPlace(spaceId, placeId) {
       return request.resource.data.keys().hasOnly([
           'id',
@@ -853,6 +869,13 @@ service cloud.firestore {
         allow read: if isSpaceMember(spaceId);
         allow create, update: if isSpaceMember(spaceId)
           && validScheduleEntry(entryId);
+        allow delete: if false;
+      }
+
+      match /meetingPlans/{planId} {
+        allow read: if isSpaceMember(spaceId);
+        allow create, update: if isSpaceMember(spaceId)
+          && validMeetingPlan(planId);
         allow delete: if false;
       }
 

@@ -76,6 +76,8 @@ const meetingCandidateMoreButtonKey = Key('meeting-candidate-more-button');
 Key meetingCandidateCardKey(String dateKey) =>
     Key('meeting-candidate-card-$dateKey');
 const meetingPlanScreenKey = Key('meeting-plan-screen');
+const meetingPastMeetingsButtonKey = Key('meeting-past-meetings-button');
+const meetingPastMeetingsSheetKey = Key('meeting-past-meetings-sheet');
 const meetingPlanDraftFieldKey = Key('meeting-plan-draft-field');
 const meetingPlanItemAddButtonKey = Key('meeting-plan-item-add-button');
 const meetingPlanSaveButtonKey = Key('meeting-plan-save-button');
@@ -85,6 +87,8 @@ Key meetingTimeBlockPresetButtonKey(String presetId) =>
 Key meetingDateButtonKey(String dateKey) => Key('meeting-date-$dateKey');
 Key meetingPlanDateButtonKey(String dateKey) =>
     Key('meeting-plan-date-$dateKey');
+Key meetingPastMeetingCardKey(String dateKey) =>
+    Key('meeting-past-meeting-card-$dateKey');
 Key meetingPlanPlaceLinkButtonKey(String placeId) =>
     Key('meeting-plan-place-link-$placeId');
 Key meetingPlanItemRemoveButtonKey(int index) =>

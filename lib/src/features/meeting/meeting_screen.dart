@@ -39,6 +39,7 @@ class _MeetingScreenState extends State<MeetingScreen> {
         ),
         const SizedBox(height: 16),
         _MeetingHeroCard(
+          controller: controller,
           candidateCount: candidates.length,
           meetingDayEntry: meetingDayEntry,
         ),
@@ -77,16 +78,21 @@ class _MeetingScreenState extends State<MeetingScreen> {
 
 class _MeetingHeroCard extends StatelessWidget {
   const _MeetingHeroCard({
+    required this.controller,
     required this.candidateCount,
     required this.meetingDayEntry,
   });
 
+  final AlagagiController controller;
   final int candidateCount;
   final ScheduleEntry? meetingDayEntry;
 
   @override
   Widget build(BuildContext context) {
     final meetingTimeLabel = meetingDayEntry?.meetingTimeLabel.trim() ?? '';
+    final meetingPlanCount = meetingDayEntry == null
+        ? 0
+        : controller.meetingPlanItemCountFor(meetingDayEntry!.dateKey);
     final heroTitle = meetingDayEntry != null
         ? '${meetingDateShortLabel(meetingDayEntry!.dateKey)}\n만나는 날이에요'
         : candidateCount == 0
@@ -98,8 +104,7 @@ class _MeetingHeroCard extends StatelessWidget {
               '시간은 편할 때 다시 적어도 괜찮아요.'
             else
               '$meetingTimeLabel에 만나기로 했어요.',
-            if (meetingDayEntry!.meetingPlanItems.isNotEmpty)
-              '만남 탭에 그날 계획이 정리돼 있어요.',
+            if (meetingPlanCount > 0) '만남 탭에 그날 계획이 정리돼 있어요.',
           ].join(' ')
         : '상대에게 보여도 괜찮은 일정과 만날 수 있는 여유만 남겨요.';
     return AlagagiPaperCard(

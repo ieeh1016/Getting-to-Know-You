@@ -397,6 +397,7 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   final List<WishItem> savedWishes = [];
   final List<MusicNote> savedMusicNotes = [];
   final List<ScheduleEntry> savedScheduleEntries = [];
+  final List<MeetingPlan> savedMeetingPlans = [];
   final List<SharedPlace> savedSharedPlaces = [];
   final List<StockStory> savedStockStories = [];
   final List<StockHolding> savedStockHoldings = [];
@@ -483,6 +484,11 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   @override
   Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry) async {
     savedScheduleEntries.add(entry);
+  }
+
+  @override
+  Future<void> saveMeetingPlan(String spaceId, MeetingPlan plan) async {
+    savedMeetingPlans.add(plan);
   }
 
   @override

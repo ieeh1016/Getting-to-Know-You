@@ -372,6 +372,21 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
   }
 
   @override
+  Future<void> saveMeetingPlan(String spaceId, MeetingPlan plan) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('meetingPlans')
+        .doc(plan.id)
+        .set({
+          'dateKey': plan.dateKey,
+          'items': plan.items,
+          'updatedByProfileId': plan.updatedByProfileId,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+  }
+
+  @override
   Future<void> saveSharedPlace(String spaceId, SharedPlace place) {
     return _firestore
         .collection('spaces')
@@ -552,6 +567,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     final scheduleEntriesSnapshot = await space
         .collection('scheduleEntries')
         .get();
+    final meetingPlansSnapshot = await space.collection('meetingPlans').get();
     final sharedPlacesSnapshot = await space.collection('sharedPlaces').get();
     final curiosityCardsSnapshot = await space
         .collection('curiosityCards')
@@ -605,6 +621,10 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           .toList(),
       scheduleEntries: scheduleEntriesSnapshot.docs
           .map((doc) => _scheduleEntryFromData(doc.id, doc.data()))
+          .nonNulls
+          .toList(),
+      meetingPlans: meetingPlansSnapshot.docs
+          .map((doc) => _meetingPlanFromData(doc.id, doc.data()))
           .nonNulls
           .toList(),
       sharedPlaces: sharedPlacesSnapshot.docs
@@ -812,6 +832,24 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       meetingTimeLabel: _readString(data, 'meetingTimeLabel') ?? '',
       meetingNote: _readString(data, 'meetingNote') ?? '',
       meetingPlanItems: _readStringList(data, 'meetingPlanItems'),
+      updatedAt: _readDateTime(data, 'updatedAt'),
+    );
+  }
+
+  MeetingPlan? _meetingPlanFromData(
+    String fallbackId,
+    Map<String, dynamic> data,
+  ) {
+    final dateKey = _readString(data, 'dateKey') ?? fallbackId;
+    final items = _readStringList(data, 'items');
+    final updatedByProfileId = _readString(data, 'updatedByProfileId') ?? '';
+    if (dateKey.isEmpty) {
+      return null;
+    }
+    return MeetingPlan(
+      dateKey: dateKey,
+      items: items,
+      updatedByProfileId: updatedByProfileId,
       updatedAt: _readDateTime(data, 'updatedAt'),
     );
   }

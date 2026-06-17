@@ -149,6 +149,7 @@ class AlagagiSpaceData {
     this.wishes = const [],
     this.musicNotes = const [],
     this.scheduleEntries = const [],
+    this.meetingPlans = const [],
     this.sharedPlaces = const [],
     this.curiosityCards = const [],
     this.stockStories = const [],
@@ -165,6 +166,7 @@ class AlagagiSpaceData {
   final List<WishItem> wishes;
   final List<MusicNote> musicNotes;
   final List<ScheduleEntry> scheduleEntries;
+  final List<MeetingPlan> meetingPlans;
   final List<SharedPlace> sharedPlaces;
   final List<CuriosityCard> curiosityCards;
   final List<StockStory> stockStories;
@@ -245,6 +247,8 @@ abstract class AlagagiDataRepository {
   Future<void> deleteMusicNote(String spaceId, String noteId);
 
   Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry);
+
+  Future<void> saveMeetingPlan(String spaceId, MeetingPlan plan);
 
   Future<void> saveSharedPlace(String spaceId, SharedPlace place);
 
@@ -986,6 +990,35 @@ class ScheduleEntry {
       meetingTimeLabel: meetingTimeLabel ?? this.meetingTimeLabel,
       meetingNote: meetingNote ?? this.meetingNote,
       meetingPlanItems: meetingPlanItems ?? this.meetingPlanItems,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+}
+
+class MeetingPlan {
+  const MeetingPlan({
+    required this.dateKey,
+    required this.items,
+    required this.updatedByProfileId,
+    this.updatedAt,
+  });
+
+  final String dateKey;
+  final List<String> items;
+  final String updatedByProfileId;
+  final DateTime? updatedAt;
+
+  String get id => dateKey;
+
+  MeetingPlan copyWith({
+    List<String>? items,
+    String? updatedByProfileId,
+    DateTime? updatedAt,
+  }) {
+    return MeetingPlan(
+      dateKey: dateKey,
+      items: items ?? this.items,
+      updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -2282,6 +2315,7 @@ class AlagagiController extends ChangeNotifier {
   final List<WishItem> _wishes = [];
   final List<MusicNote> _musicNotes = [];
   final List<ScheduleEntry> _scheduleEntries = [];
+  final List<MeetingPlan> _meetingPlans = [];
   final List<SharedPlace> _sharedPlaces = [];
   final List<CuriosityCard> _curiosityCards = [];
   final List<StockStory> _stockStories = [];
@@ -2291,6 +2325,8 @@ class AlagagiController extends ChangeNotifier {
   AnswerComment? _lastFailedAnswerComment;
   ScheduleEntry? _lastFailedScheduleEntry;
   String _lastFailedScheduleEntrySuccessFeedback = '일정을 저장했어요.';
+  MeetingPlan? _lastFailedMeetingPlan;
+  String _lastFailedMeetingPlanSuccessFeedback = '만남 계획을 저장했어요.';
   SharedPlace? _lastFailedSharedPlace;
   CuriosityCard? _lastFailedCuriosityCard;
   ImprovementPost? _lastFailedImprovementPost;
@@ -2329,6 +2365,22 @@ class AlagagiController extends ChangeNotifier {
       personalizationDraft: personalization,
     );
     _applySessionData(session.data);
+    if (_state.route == AlagagiRoute.meetingPlans) {
+      final dateKey = selectedMeetingPlanDateKey;
+      _state = _state.copyWith(
+        selectedMeetingPlanDateKey: dateKey,
+        meetingPlanDraftText: _meetingPlanTextFromItems(
+          meetingPlanItemsFor(dateKey),
+        ),
+        meetingPlanItemDraft: '',
+      );
+    } else if (_state.route == AlagagiRoute.meetings) {
+      _state = _state.copyWith(
+        meetingDraftMeetingPlanText: _meetingPlanTextFromItems(
+          meetingPlanItemsFor(selectedMeetingDateKey),
+        ),
+      );
+    }
     _persistDailyQuestionProgressIfChanged(session.data.dailyProgress);
     notifyListeners();
   }
@@ -2493,6 +2545,18 @@ class AlagagiController extends ChangeNotifier {
             '$partnerName님이 ${_compactDateLabel(entry.dateKey)} 일정을 남겼어요.',
         updatedAt: entry.updatedAt,
         actorProfileId: entry.profileId,
+      );
+    }
+    for (final plan in _meetingPlans) {
+      _addUnreadActivity(
+        activities,
+        feature: UnreadActivityFeature.meetings,
+        id: 'meeting-plan-${plan.dateKey}',
+        title: '만남 계획이 업데이트됐어요',
+        description:
+            '$partnerName님이 ${_compactDateLabel(plan.dateKey)} 계획을 정리했어요.',
+        updatedAt: plan.updatedAt,
+        actorProfileId: plan.updatedByProfileId,
       );
     }
     for (final place in _sharedPlaces) {
@@ -2725,6 +2789,7 @@ class AlagagiController extends ChangeNotifier {
         }),
       );
     _sortScheduleEntriesByDate();
+    _meetingPlans.clear();
     _sharedPlaces
       ..clear()
       ..addAll(
@@ -2909,6 +2974,10 @@ class AlagagiController extends ChangeNotifier {
       ..clear()
       ..addAll(data.scheduleEntries);
     _sortScheduleEntriesByDate();
+    _meetingPlans
+      ..clear()
+      ..addAll(data.meetingPlans);
+    _sortMeetingPlansByDate();
     _sharedPlaces
       ..clear()
       ..addAll(data.sharedPlaces);
@@ -3457,6 +3526,50 @@ class AlagagiController extends ChangeNotifier {
               meetingDraftError: '일정을 저장하지 못했어요. 다시 시도해 주세요.',
               meetingSaveStatus: SaveStatus.failed,
               meetingSaveTargetId: entry.id,
+              clearMeetingSaveFeedback: true,
+            );
+            notifyListeners();
+          }),
+    );
+  }
+
+  void _persistMeetingPlan(
+    MeetingPlan plan, {
+    String successFeedback = '만남 계획을 저장했어요.',
+  }) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      _lastFailedMeetingPlan = null;
+      _state = _state.copyWith(
+        meetingSaveStatus: SaveStatus.saved,
+        meetingSaveFeedback: successFeedback,
+        meetingSaveTargetId: plan.id,
+        clearMeetingDraftError: true,
+      );
+      notifyListeners();
+      return;
+    }
+    unawaited(
+      repository
+          .saveMeetingPlan(spaceId, plan)
+          .then<void>((_) {
+            _lastFailedMeetingPlan = null;
+            _state = _state.copyWith(
+              meetingSaveStatus: SaveStatus.saved,
+              meetingSaveFeedback: successFeedback,
+              meetingSaveTargetId: plan.id,
+              clearMeetingDraftError: true,
+            );
+            notifyListeners();
+          })
+          .catchError((Object _) {
+            _lastFailedMeetingPlan = plan;
+            _lastFailedMeetingPlanSuccessFeedback = successFeedback;
+            _state = _state.copyWith(
+              meetingDraftError: '만남 계획을 저장하지 못했어요. 다시 시도해 주세요.',
+              meetingSaveStatus: SaveStatus.failed,
+              meetingSaveTargetId: plan.id,
               clearMeetingSaveFeedback: true,
             );
             notifyListeners();
@@ -4318,10 +4431,14 @@ class AlagagiController extends ChangeNotifier {
   List<ScheduleEntry> get scheduleEntries =>
       List<ScheduleEntry>.unmodifiable(_scheduleEntries);
 
+  List<MeetingPlan> get meetingPlans =>
+      List<MeetingPlan>.unmodifiable(_meetingPlans);
+
   List<SharedPlace> get sharedPlaces =>
       List<SharedPlace>.unmodifiable(_sharedPlaces);
 
-  bool get canRetryMeetingSave => _lastFailedScheduleEntry != null;
+  bool get canRetryMeetingSave =>
+      _lastFailedScheduleEntry != null || _lastFailedMeetingPlan != null;
 
   bool get canRetryPlaceSave => _lastFailedSharedPlace != null;
 
@@ -4372,8 +4489,22 @@ class AlagagiController extends ChangeNotifier {
     return List<ScheduleEntry>.unmodifiable(entries);
   }
 
+  List<ScheduleEntry> get upcomingMeetingDayEntries {
+    final today = _todayDateKey();
+    return List<ScheduleEntry>.unmodifiable(
+      meetingDayEntries.where((entry) => entry.dateKey.compareTo(today) >= 0),
+    );
+  }
+
+  List<ScheduleEntry> get pastMeetingDayEntries {
+    final today = _todayDateKey();
+    return List<ScheduleEntry>.unmodifiable(
+      meetingDayEntries.where((entry) => entry.dateKey.compareTo(today) < 0),
+    );
+  }
+
   ScheduleEntry? get nextMeetingDayEntry {
-    final entries = meetingDayEntries;
+    final entries = upcomingMeetingDayEntries;
     if (entries.isEmpty) {
       return null;
     }
@@ -4393,18 +4524,62 @@ class AlagagiController extends ChangeNotifier {
     );
   }
 
-  String get selectedMeetingPlanDateKey =>
-      _state.selectedMeetingPlanDateKey ??
-      nextMeetingDayEntry?.dateKey ??
-      selectedMeetingDateKey;
+  String get selectedMeetingPlanDateKey {
+    final selectedDateKey = _state.selectedMeetingPlanDateKey;
+    final today = _todayDateKey();
+    if (selectedDateKey != null &&
+        selectedDateKey.compareTo(today) >= 0 &&
+        meetingDayEntryFor(selectedDateKey) != null) {
+      return selectedDateKey;
+    }
+    return nextMeetingDayEntry?.dateKey ??
+        selectedDateKey ??
+        selectedMeetingDateKey;
+  }
 
   ScheduleEntry? get selectedMeetingPlanEntry {
-    final entry = meetingDayEntryFor(selectedMeetingPlanDateKey);
-    if (entry == null) {
-      return nextMeetingDayEntry;
+    final entries = upcomingMeetingDayEntries;
+    if (entries.isEmpty) {
+      return null;
     }
-    return entry;
+    return entries.firstWhere(
+      (entry) => entry.dateKey == selectedMeetingPlanDateKey,
+      orElse: () => entries.first,
+    );
   }
+
+  MeetingPlan? meetingPlanFor(String dateKey) {
+    final persistedPlan = _meetingPlans.cast<MeetingPlan?>().firstWhere(
+      (plan) => plan?.dateKey == dateKey,
+      orElse: () => null,
+    );
+    if (persistedPlan != null) {
+      return persistedPlan;
+    }
+    final legacyItems = _legacyMeetingPlanItemsFor(dateKey);
+    if (legacyItems.isEmpty) {
+      return null;
+    }
+    final latestLegacyEntry = _latestScheduleEntryForDate(dateKey);
+    return MeetingPlan(
+      dateKey: dateKey,
+      items: legacyItems,
+      updatedByProfileId:
+          latestLegacyEntry?.profileId ??
+          meetingDayEntryFor(dateKey)?.profileId ??
+          _state.me.id,
+      updatedAt: latestLegacyEntry?.updatedAt,
+    );
+  }
+
+  List<String> meetingPlanItemsFor(String dateKey) {
+    return List<String>.unmodifiable(
+      meetingPlanFor(dateKey)?.items ?? const [],
+    );
+  }
+
+  int meetingPlanItemCountFor(String dateKey) =>
+      meetingPlanItemsFor(dateKey).length;
 
   List<String> get meetingPlanDraftItems =>
       _parseMeetingPlanItems(_state.meetingPlanDraftText);
@@ -4454,6 +4629,58 @@ class AlagagiController extends ChangeNotifier {
       (entry) => entry?.profileId == profileId && entry?.dateKey == dateKey,
       orElse: () => null,
     );
+  }
+
+  List<String> _legacyMeetingPlanItemsFor(String dateKey) {
+    final items = <String>[];
+    final seen = <String>{};
+    final entries = _scheduleEntries
+        .where((entry) => entry.dateKey == dateKey)
+        .toList();
+    entries.sort((a, b) {
+      if (a.profileId == _state.me.id && b.profileId != _state.me.id) {
+        return -1;
+      }
+      if (b.profileId == _state.me.id && a.profileId != _state.me.id) {
+        return 1;
+      }
+      final aUpdatedAt = a.updatedAt;
+      final bUpdatedAt = b.updatedAt;
+      if (aUpdatedAt == null || bUpdatedAt == null) {
+        return a.profileId.compareTo(b.profileId);
+      }
+      return aUpdatedAt.compareTo(bUpdatedAt);
+    });
+    for (final entry in entries) {
+      for (final item in entry.meetingPlanItems) {
+        final trimmed = item.trim();
+        if (trimmed.isEmpty || seen.contains(trimmed)) {
+          continue;
+        }
+        seen.add(trimmed);
+        items.add(trimmed);
+      }
+    }
+    return List<String>.unmodifiable(items);
+  }
+
+  ScheduleEntry? _latestScheduleEntryForDate(String dateKey) {
+    ScheduleEntry? latest;
+    for (final entry in _scheduleEntries.where(
+      (entry) => entry.dateKey == dateKey,
+    )) {
+      final updatedAt = entry.updatedAt;
+      if (latest == null) {
+        latest = entry;
+        continue;
+      }
+      final latestUpdatedAt = latest.updatedAt;
+      if (updatedAt != null &&
+          (latestUpdatedAt == null || updatedAt.isAfter(latestUpdatedAt))) {
+        latest = entry;
+      }
+    }
+    return latest;
   }
 
   List<CuriosityCard> get curiosityCards =>
@@ -4630,7 +4857,9 @@ class AlagagiController extends ChangeNotifier {
       final entry = selectedMeetingPlanEntry ?? nextMeetingDayEntry;
       selectedMeetingPlanDateKey = entry?.dateKey;
       meetingPlanDraftText = _meetingPlanTextFromItems(
-        entry?.meetingPlanItems ?? const [],
+        selectedMeetingPlanDateKey == null
+            ? const []
+            : meetingPlanItemsFor(selectedMeetingPlanDateKey),
       );
     }
     _state = _state.copyWith(
@@ -4730,9 +4959,10 @@ class AlagagiController extends ChangeNotifier {
       UnreadActivityFeature.wishlist => _latestTimestamp(
         _wishes.map((wish) => wish.updatedAt),
       ),
-      UnreadActivityFeature.meetings => _latestTimestamp(
-        _scheduleEntries.map((entry) => entry.updatedAt),
-      ),
+      UnreadActivityFeature.meetings => _latestTimestamp([
+        ..._scheduleEntries.map((entry) => entry.updatedAt),
+        ..._meetingPlans.map((plan) => plan.updatedAt),
+      ]),
       UnreadActivityFeature.places => _latestTimestamp(
         _sharedPlaces.map((place) => place.updatedAt),
       ),
@@ -4846,6 +5076,22 @@ class AlagagiController extends ChangeNotifier {
       }
       return a.profileId.compareTo(b.profileId);
     });
+  }
+
+  void _sortMeetingPlansByDate() {
+    _meetingPlans.sort((a, b) => a.dateKey.compareTo(b.dateKey));
+  }
+
+  void _upsertMeetingPlan(MeetingPlan plan) {
+    final index = _meetingPlans.indexWhere(
+      (candidate) => candidate.dateKey == plan.dateKey,
+    );
+    if (index == -1) {
+      _meetingPlans.add(plan);
+    } else {
+      _meetingPlans[index] = plan;
+    }
+    _sortMeetingPlansByDate();
   }
 
   void _sortSharedPlacesByUpdatedAt() {
@@ -6665,9 +6911,7 @@ class AlagagiController extends ChangeNotifier {
       meetingDraftMeetingNote:
           entry?.meetingNote ?? meetingDayEntry?.meetingNote ?? '',
       meetingDraftMeetingPlanText: _meetingPlanTextFromItems(
-        entry?.meetingPlanItems ??
-            meetingDayEntry?.meetingPlanItems ??
-            const [],
+        meetingPlanItemsFor(dateKey),
       ),
       clearMeetingDraftError: true,
       clearMeetingSaveFeedback: true,
@@ -6808,11 +7052,10 @@ class AlagagiController extends ChangeNotifier {
   }
 
   void selectMeetingPlanDate(String dateKey) {
-    final entry = meetingDayEntryFor(dateKey);
     _state = _state.copyWith(
       selectedMeetingPlanDateKey: dateKey,
       meetingPlanDraftText: _meetingPlanTextFromItems(
-        entry?.meetingPlanItems ?? const [],
+        meetingPlanItemsFor(dateKey),
       ),
       meetingPlanItemDraft: '',
       clearMeetingDraftError: true,
@@ -6907,43 +7150,14 @@ class AlagagiController extends ChangeNotifier {
       return;
     }
 
-    final myEntry = scheduleEntryFor(_state.me.id, dateKey);
-    final fallbackSlots = meetingDayEntry.timeSlots.isEmpty
-        ? const {MeetingTimeSlot.evening}
-        : meetingDayEntry.timeSlots;
-    final entry = ScheduleEntry(
+    final plan = MeetingPlan(
       dateKey: dateKey,
-      profileId: _state.me.id,
-      availability: myEntry?.availability ?? meetingDayEntry.availability,
-      timeSlots: Set<MeetingTimeSlot>.unmodifiable(
-        myEntry?.timeSlots.isNotEmpty == true
-            ? myEntry!.timeSlots
-            : fallbackSlots,
-      ),
-      timeBlocks: List<ScheduleTimeBlock>.unmodifiable(
-        myEntry?.timeBlocks ?? const [],
-      ),
-      sharedMemo: myEntry?.sharedMemo ?? '',
-      isMeetingDay: true,
-      meetingTimeLabel: (myEntry?.meetingTimeLabel.trim().isNotEmpty ?? false)
-          ? myEntry!.meetingTimeLabel
-          : meetingDayEntry.meetingTimeLabel,
-      meetingNote: (myEntry?.meetingNote.trim().isNotEmpty ?? false)
-          ? myEntry!.meetingNote
-          : meetingDayEntry.meetingNote,
-      meetingPlanItems: List<String>.unmodifiable(meetingPlanItems),
+      items: List<String>.unmodifiable(meetingPlanItems),
+      updatedByProfileId: _state.me.id,
       updatedAt: DateTime.now(),
     );
-    final index = _scheduleEntries.indexWhere(
-      (candidate) => candidate.id == entry.id,
-    );
-    if (index == -1) {
-      _scheduleEntries.add(entry);
-    } else {
-      _scheduleEntries[index] = entry;
-    }
-    _sortScheduleEntriesByDate();
-    _lastFailedScheduleEntry = null;
+    _upsertMeetingPlan(plan);
+    _lastFailedMeetingPlan = null;
     _state = _state.copyWith(
       selectedMeetingPlanDateKey: dateKey,
       meetingPlanDraftText: _meetingPlanTextFromItems(meetingPlanItems),
@@ -6952,12 +7166,12 @@ class AlagagiController extends ChangeNotifier {
           ? _meetingPlanTextFromItems(meetingPlanItems)
           : _state.meetingDraftMeetingPlanText,
       meetingSaveStatus: SaveStatus.saving,
-      meetingSaveTargetId: entry.id,
+      meetingSaveTargetId: plan.id,
       clearMeetingDraftError: true,
       clearMeetingSaveFeedback: true,
     );
     notifyListeners();
-    _persistScheduleEntry(entry, successFeedback: '만남 계획을 저장했어요.');
+    _persistMeetingPlan(plan, successFeedback: '만남 계획을 저장했어요.');
   }
 
   void submitMeetingDayDraft() {
@@ -7033,11 +7247,17 @@ class AlagagiController extends ChangeNotifier {
       isMeetingDay: isMeetingDay,
       meetingTimeLabel: isMeetingDay ? meetingTimeLabel : '',
       meetingNote: isMeetingDay ? meetingNote : '',
-      meetingPlanItems: isMeetingDay
-          ? List<String>.unmodifiable(meetingPlanItems)
-          : const [],
+      meetingPlanItems: const [],
       updatedAt: DateTime.now(),
     );
+    final sharedPlan = isMeetingDay && meetingPlanItems.isNotEmpty
+        ? MeetingPlan(
+            dateKey: selectedMeetingDateKey,
+            items: List<String>.unmodifiable(meetingPlanItems),
+            updatedByProfileId: _state.me.id,
+            updatedAt: DateTime.now(),
+          )
+        : null;
     final index = _scheduleEntries.indexWhere(
       (candidate) => candidate.id == entry.id,
     );
@@ -7048,6 +7268,10 @@ class AlagagiController extends ChangeNotifier {
     }
     _sortScheduleEntriesByDate();
     _lastFailedScheduleEntry = null;
+    if (sharedPlan != null) {
+      _upsertMeetingPlan(sharedPlan);
+      _lastFailedMeetingPlan = null;
+    }
     _state = _state.copyWith(
       meetingDraftIsMeetingDay: isMeetingDay,
       meetingDraftMeetingTimeLabel: isMeetingDay ? meetingTimeLabel : '',
@@ -7062,9 +7286,31 @@ class AlagagiController extends ChangeNotifier {
     );
     notifyListeners();
     _persistScheduleEntry(entry, successFeedback: successFeedback);
+    if (sharedPlan != null) {
+      _persistMeetingPlan(sharedPlan, successFeedback: successFeedback);
+    }
   }
 
   void retryMeetingSave() {
+    final plan = _lastFailedMeetingPlan;
+    if (plan != null) {
+      if (_state.meetingSaveStatus == SaveStatus.saving) {
+        return;
+      }
+      _upsertMeetingPlan(plan);
+      _state = _state.copyWith(
+        meetingSaveStatus: SaveStatus.saving,
+        meetingSaveTargetId: plan.id,
+        clearMeetingDraftError: true,
+        clearMeetingSaveFeedback: true,
+      );
+      notifyListeners();
+      _persistMeetingPlan(
+        plan,
+        successFeedback: _lastFailedMeetingPlanSuccessFeedback,
+      );
+      return;
+    }
     final entry = _lastFailedScheduleEntry;
     if (entry == null || _state.meetingSaveStatus == SaveStatus.saving) {
       return;

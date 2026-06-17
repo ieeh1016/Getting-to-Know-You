@@ -15,7 +15,8 @@ class MeetingPlanScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final entries = controller.meetingDayEntries;
+    final entries = controller.upcomingMeetingDayEntries;
+    final pastEntries = controller.pastMeetingDayEntries;
     final selectedEntry = controller.selectedMeetingPlanEntry;
     return AlagagiScreenScroll(
       bottomNavigation: AlagagiBottomNav(controller: controller),
@@ -27,10 +28,23 @@ class MeetingPlanScreen extends StatelessWidget {
           style: sans(size: 12.5, color: AlagagiColors.muted),
         ),
         const SizedBox(height: 16),
+        if (pastEntries.isNotEmpty) ...[
+          _PastMeetingsButton(
+            count: pastEntries.length,
+            onPressed: () => _showPastMeetingsSheet(context, controller),
+          ),
+          const SizedBox(height: 14),
+        ],
         if (entries.isEmpty)
-          _MeetingPlanEmptyState(controller: controller)
+          _MeetingPlanEmptyState(
+            controller: controller,
+            hasPastMeetings: pastEntries.isNotEmpty,
+          )
         else ...[
-          _MeetingPlanHeroCard(entry: selectedEntry ?? entries.first),
+          _MeetingPlanHeroCard(
+            controller: controller,
+            entry: selectedEntry ?? entries.first,
+          ),
           const SizedBox(height: 14),
           _MeetingPlanDateStrip(controller: controller, entries: entries),
           const SizedBox(height: 14),
@@ -46,10 +60,303 @@ class MeetingPlanScreen extends StatelessWidget {
   }
 }
 
-class _MeetingPlanEmptyState extends StatelessWidget {
-  const _MeetingPlanEmptyState({required this.controller});
+void _showPastMeetingsSheet(
+  BuildContext context,
+  AlagagiController controller,
+) {
+  final entries = controller.pastMeetingDayEntries;
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) =>
+        _PastMeetingsSheet(controller: controller, entries: entries),
+  );
+}
+
+class _PastMeetingsButton extends StatelessWidget {
+  const _PastMeetingsButton({required this.count, required this.onPressed});
+
+  final int count;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 46,
+      child: OutlinedButton.icon(
+        key: meetingPastMeetingsButtonKey,
+        onPressed: onPressed,
+        icon: const Icon(Icons.history_rounded, size: 18),
+        label: Text('지난 만남 $count개 보기'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AlagagiColors.sageDeep,
+          side: const BorderSide(color: Color(0x338A9A7E)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: sans(size: 13, weight: FontWeight.w800),
+        ),
+      ),
+    );
+  }
+}
+
+class _PastMeetingsSheet extends StatelessWidget {
+  const _PastMeetingsSheet({required this.controller, required this.entries});
 
   final AlagagiController controller;
+  final List<ScheduleEntry> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: FractionallySizedBox(
+        heightFactor: 0.82,
+        child: Container(
+          key: meetingPastMeetingsSheetKey,
+          decoration: const BoxDecoration(
+            color: AlagagiColors.appBackground,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDAD6CA),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '지난 만남',
+                      style: serif(context, size: 22, weight: FontWeight.w800),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                    tooltip: '닫기',
+                    color: AlagagiColors.muted,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '지나간 날짜는 따로 모아서 시간, 메모, 계획, 장소를 가볍게 확인해요.',
+                style: sans(
+                  size: 12.5,
+                  color: AlagagiColors.muted,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView.separated(
+                  padding: const EdgeInsets.only(bottom: 22),
+                  itemCount: entries.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final entry = entries[index];
+                    return _PastMeetingCard(
+                      controller: controller,
+                      entry: entry,
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PastMeetingCard extends StatelessWidget {
+  const _PastMeetingCard({required this.controller, required this.entry});
+
+  final AlagagiController controller;
+  final ScheduleEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final timeLabel = entry.meetingTimeLabel.trim();
+    final note = entry.meetingNote.trim();
+    final planItems = controller.meetingPlanItemsFor(entry.dateKey);
+    final places = controller.placesForMeetingPlan(entry.dateKey);
+    final visiblePlans = planItems.take(3).toList();
+    final hiddenPlanCount = planItems.length - visiblePlans.length;
+    final visiblePlaces = places.take(2).toList();
+    final hiddenPlaceCount = places.length - visiblePlaces.length;
+    return AlagagiPaperCard(
+      key: meetingPastMeetingCardKey(entry.dateKey),
+      radius: 20,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F2EB),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.event_available_rounded,
+                  size: 20,
+                  color: AlagagiColors.sageDeep,
+                ),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      meetingDateLabel(entry.dateKey),
+                      style: serif(context, size: 18, weight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      timeLabel.isEmpty ? '시간 메모 없음' : timeLabel,
+                      style: sans(size: 12, color: AlagagiColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (note.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              note,
+              style: sans(
+                size: 12.5,
+                color: const Color(0xFF5F5D57),
+                height: 1.45,
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              AlagagiSmallBadge(
+                label: planItems.isEmpty ? '계획 없음' : '계획 ${planItems.length}개',
+              ),
+              AlagagiSmallBadge(
+                label: places.isEmpty ? '장소 없음' : '장소 ${places.length}곳',
+              ),
+            ],
+          ),
+          if (visiblePlans.isNotEmpty) ...[
+            const SizedBox(height: 13),
+            _PastMeetingMiniList(
+              icon: Icons.playlist_add_check_rounded,
+              title: '정했던 계획',
+              items: visiblePlans,
+              hiddenCount: hiddenPlanCount,
+            ),
+          ],
+          if (visiblePlaces.isNotEmpty) ...[
+            const SizedBox(height: 11),
+            _PastMeetingMiniList(
+              icon: Icons.place_outlined,
+              title: '붙여둔 장소',
+              items: visiblePlaces.map((place) => place.name).toList(),
+              hiddenCount: hiddenPlaceCount,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PastMeetingMiniList extends StatelessWidget {
+  const _PastMeetingMiniList({
+    required this.icon,
+    required this.title,
+    required this.items,
+    required this.hiddenCount,
+  });
+
+  final IconData icon;
+  final String title;
+  final List<String> items;
+  final int hiddenCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = [...items, if (hiddenCount > 0) '$hiddenCount개 더 있음'];
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: AlagagiColors.sageDeep),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: sans(
+                    size: 11.5,
+                    color: AlagagiColors.muted,
+                    weight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                for (final line in lines) ...[
+                  Text(
+                    line,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: sans(size: 12.5, height: 1.45),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MeetingPlanEmptyState extends StatelessWidget {
+  const _MeetingPlanEmptyState({
+    required this.controller,
+    required this.hasPastMeetings,
+  });
+
+  final AlagagiController controller;
+  final bool hasPastMeetings;
 
   @override
   Widget build(BuildContext context) {
@@ -68,13 +375,15 @@ class _MeetingPlanEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            '아직 정해진 만나는 날이 없어요',
+            hasPastMeetings ? '다가오는 만남이 없어요' : '아직 정해진 만나는 날이 없어요',
             textAlign: TextAlign.center,
             style: serif(context, size: 20, weight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
           Text(
-            '약속 탭에서 서로 가능한 날짜를 만나는 날로 정하면 여기에 계획 공간이 열려요.',
+            hasPastMeetings
+                ? '지난 만남은 따로 모아두고, 다음 만나는 날이 생기면 여기에 바로 보여줄게요.'
+                : '약속 탭에서 서로 가능한 날짜를 만나는 날로 정하면 여기에 계획 공간이 열려요.',
             textAlign: TextAlign.center,
             style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.55),
           ),
@@ -91,15 +400,16 @@ class _MeetingPlanEmptyState extends StatelessWidget {
 }
 
 class _MeetingPlanHeroCard extends StatelessWidget {
-  const _MeetingPlanHeroCard({required this.entry});
+  const _MeetingPlanHeroCard({required this.controller, required this.entry});
 
+  final AlagagiController controller;
   final ScheduleEntry entry;
 
   @override
   Widget build(BuildContext context) {
     final timeLabel = entry.meetingTimeLabel.trim();
     final note = entry.meetingNote.trim();
-    final planCount = entry.meetingPlanItems.length;
+    final planCount = controller.meetingPlanItemCountFor(entry.dateKey);
     return AlagagiPaperCard(
       key: meetingPlanScreenKey,
       radius: 24,
@@ -193,6 +503,7 @@ class _MeetingPlanDateStrip extends StatelessWidget {
           final selected =
               entry.dateKey == controller.selectedMeetingPlanDateKey;
           return _MeetingPlanDateCard(
+            controller: controller,
             entry: entry,
             selected: selected,
             onTap: () => controller.selectMeetingPlanDate(entry.dateKey),
@@ -205,11 +516,13 @@ class _MeetingPlanDateStrip extends StatelessWidget {
 
 class _MeetingPlanDateCard extends StatelessWidget {
   const _MeetingPlanDateCard({
+    required this.controller,
     required this.entry,
     required this.selected,
     required this.onTap,
   });
 
+  final AlagagiController controller;
   final ScheduleEntry entry;
   final bool selected;
   final VoidCallback onTap;
@@ -219,6 +532,7 @@ class _MeetingPlanDateCard extends StatelessWidget {
     final date = DateTime.tryParse(entry.dateKey);
     final day = date?.day.toString() ?? entry.dateKey;
     final month = date == null ? '' : '${date.month}월';
+    final planCount = controller.meetingPlanItemCountFor(entry.dateKey);
     return SizedBox(
       width: 78,
       child: Material(
@@ -256,9 +570,7 @@ class _MeetingPlanDateCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  entry.meetingPlanItems.isEmpty
-                      ? '비어 있음'
-                      : '${entry.meetingPlanItems.length}개',
+                  planCount == 0 ? '비어 있음' : '$planCount개',
                   style: sans(
                     size: 10.5,
                     color: selected

@@ -2633,7 +2633,7 @@ void main() {
   testWidgets('meeting plan tab saves plan items for a fixed meeting day', (
     tester,
   ) async {
-    const dateKey = '2026-06-11';
+    const dateKey = '2099-06-11';
     final controller = AlagagiController.forSession(
       const AlagagiSession(
         spaceId: 'main',
@@ -2750,9 +2750,10 @@ void main() {
     await tester.tap(find.byKey(meetingPlanSaveButtonKey));
     await tester.pumpAndSettle();
 
-    final entry = controller.scheduleEntryFor(controller.state.me.id, dateKey);
-    expect(entry, isNotNull);
-    expect(entry!.meetingPlanItems, ['전시 보기', '근처 카페', '저녁 먹기']);
+    final plan = controller.meetingPlanFor(dateKey);
+    expect(plan, isNotNull);
+    expect(plan!.items, ['전시 보기', '근처 카페', '저녁 먹기']);
+    expect(find.text('계획 3개'), findsOneWidget);
     expect(find.text('만남 계획을 저장했어요.'), findsOneWidget);
 
     expect(
@@ -2781,6 +2782,93 @@ void main() {
           .linkedDateKey,
       dateKey,
     );
+  });
+
+  testWidgets('meeting plan keeps past meetings behind a separate button', (
+    tester,
+  ) async {
+    const pastDateKey = '2000-06-11';
+    const upcomingDateKey = '2099-06-11';
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          scheduleEntries: [
+            ScheduleEntry(
+              dateKey: pastDateKey,
+              profileId: 'youngwooUid',
+              availability: MeetingAvailability.available,
+              timeSlots: {MeetingTimeSlot.evening},
+              isMeetingDay: true,
+              meetingTimeLabel: '저녁 7시쯤',
+              meetingNote: '성수에서 조용히 보기',
+            ),
+            ScheduleEntry(
+              dateKey: upcomingDateKey,
+              profileId: 'youngwooUid',
+              availability: MeetingAvailability.available,
+              timeSlots: {MeetingTimeSlot.evening},
+              isMeetingDay: true,
+              meetingTimeLabel: '오후 3시',
+            ),
+          ],
+          meetingPlans: [
+            MeetingPlan(
+              dateKey: pastDateKey,
+              items: ['전시 보기', '근처 카페'],
+              updatedByProfileId: 'youngwooUid',
+            ),
+          ],
+          sharedPlaces: [
+            SharedPlace(
+              id: 'past_place',
+              name: '조용한 카페',
+              address: '서울 성동구',
+              category: PlaceCategory.cafe,
+              provider: MapApiProvider.kakao,
+              createdByProfileId: 'youngwooUid',
+              interestedByProfileIds: {'youngwooUid'},
+              linkedDateKey: pastDateKey,
+            ),
+          ],
+        ),
+      ),
+    )..goTo(AlagagiRoute.meetingPlans);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(meetingPlanDateButtonKey(upcomingDateKey)),
+      findsOneWidget,
+    );
+    expect(find.byKey(meetingPlanDateButtonKey(pastDateKey)), findsNothing);
+    expect(find.byKey(meetingPastMeetingsButtonKey), findsOneWidget);
+
+    await tester.tap(find.byKey(meetingPastMeetingsButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(meetingPastMeetingsSheetKey), findsOneWidget);
+    expect(find.byKey(meetingPastMeetingCardKey(pastDateKey)), findsOneWidget);
+    expect(find.text('지난 만남'), findsOneWidget);
+    expect(find.text('저녁 7시쯤'), findsOneWidget);
+    expect(find.text('계획 2개'), findsOneWidget);
+    expect(find.text('장소 1곳'), findsOneWidget);
+    expect(find.text('조용한 카페'), findsWidgets);
   });
 
   testWidgets('meeting save failure shows retry action', (tester) async {
@@ -3696,9 +3784,11 @@ BoxDecoration _meetingDateCellDecoration(WidgetTester tester, String dateKey) {
 class _FailingSaveRepository implements AlagagiDataRepository {
   bool failCommentSaves = true;
   bool failScheduleSaves = false;
+  bool failMeetingPlanSaves = false;
   final List<({String spaceId, AnswerComment comment})> savedAnswerComments =
       [];
   final List<({String spaceId, ScheduleEntry entry})> savedScheduleEntries = [];
+  final List<({String spaceId, MeetingPlan plan})> savedMeetingPlans = [];
 
   @override
   Future<AlagagiSession?> loadSession(AlagagiAuthUser user) async => null;
@@ -3748,6 +3838,14 @@ class _FailingSaveRepository implements AlagagiDataRepository {
       throw StateError('schedule save failed');
     }
     savedScheduleEntries.add((spaceId: spaceId, entry: entry));
+  }
+
+  @override
+  Future<void> saveMeetingPlan(String spaceId, MeetingPlan plan) async {
+    if (failMeetingPlanSaves) {
+      throw StateError('meeting plan save failed');
+    }
+    savedMeetingPlans.add((spaceId: spaceId, plan: plan));
   }
 
   @override

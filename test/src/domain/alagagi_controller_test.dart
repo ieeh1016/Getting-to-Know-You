@@ -225,17 +225,108 @@ void main() {
       controller.addMeetingPlanDraftItem();
       controller.submitMeetingPlanDraft();
 
-      final entry = controller.scheduleEntryFor(
-        controller.state.me.id,
-        '2026-06-11',
-      );
+      final plan = controller.meetingPlanFor('2026-06-11');
 
       expect(controller.state.route, AlagagiRoute.meetingPlans);
       expect(controller.selectedMeetingPlanDateKey, '2026-06-11');
-      expect(entry, isNotNull);
-      expect(entry!.meetingPlanItems, ['전시 보기', '근처 카페', '저녁 먹기']);
+      expect(plan, isNotNull);
+      expect(plan!.items, ['전시 보기', '근처 카페', '저녁 먹기']);
       expect(controller.state.meetingSaveFeedback, '만남 계획을 저장했어요.');
     });
+
+    test('meeting days split upcoming and past dates', () {
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            scheduleEntries: [
+              ScheduleEntry(
+                dateKey: '2000-06-11',
+                profileId: 'youngwooUid',
+                availability: MeetingAvailability.available,
+                timeSlots: {MeetingTimeSlot.evening},
+                isMeetingDay: true,
+              ),
+              ScheduleEntry(
+                dateKey: '2099-06-11',
+                profileId: 'youngwooUid',
+                availability: MeetingAvailability.available,
+                timeSlots: {MeetingTimeSlot.evening},
+                isMeetingDay: true,
+              ),
+            ],
+          ),
+        ),
+      )..goTo(AlagagiRoute.meetingPlans);
+
+      expect(controller.upcomingMeetingDayEntries.single.dateKey, '2099-06-11');
+      expect(controller.pastMeetingDayEntries.single.dateKey, '2000-06-11');
+      expect(controller.nextMeetingDayEntry?.dateKey, '2099-06-11');
+      expect(controller.selectedMeetingPlanDateKey, '2099-06-11');
+    });
+
+    test(
+      'meeting plan reads legacy personal schedule items as one shared list',
+      () {
+        final controller = AlagagiController.forSession(
+          AlagagiSession(
+            spaceId: 'main',
+            me: const AppProfile(
+              id: 'youngwooUid',
+              nickname: '영우',
+              avatar: '🌿',
+              isMe: true,
+            ),
+            partner: const AppProfile(
+              id: 'minyoungUid',
+              nickname: '민영',
+              avatar: '🪻',
+              isMe: false,
+            ),
+            data: AlagagiSpaceData(
+              scheduleEntries: [
+                ScheduleEntry(
+                  dateKey: '2099-06-11',
+                  profileId: 'youngwooUid',
+                  availability: MeetingAvailability.available,
+                  timeSlots: const {MeetingTimeSlot.evening},
+                  isMeetingDay: true,
+                  meetingPlanItems: const ['전시 보기'],
+                  updatedAt: DateTime.parse('2026-06-09T10:00:00.000Z'),
+                ),
+                ScheduleEntry(
+                  dateKey: '2099-06-11',
+                  profileId: 'minyoungUid',
+                  availability: MeetingAvailability.available,
+                  timeSlots: const {MeetingTimeSlot.evening},
+                  isMeetingDay: true,
+                  meetingPlanItems: const ['전시 보기', '근처 카페'],
+                  updatedAt: DateTime.parse('2026-06-09T11:00:00.000Z'),
+                ),
+              ],
+            ),
+          ),
+        )..goTo(AlagagiRoute.meetingPlans);
+
+        expect(controller.meetingPlanItemsFor('2099-06-11'), [
+          '전시 보기',
+          '근처 카페',
+        ]);
+        expect(controller.meetingPlanDraftItems, ['전시 보기', '근처 카페']);
+      },
+    );
 
     test('place board saves a place and toggles interest', () {
       final controller = AlagagiController()..enterSpace('영우');
