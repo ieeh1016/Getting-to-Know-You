@@ -2827,7 +2827,7 @@ void main() {
           meetingPlans: [
             MeetingPlan(
               dateKey: pastDateKey,
-              items: ['전시 보기', '근처 카페'],
+              items: ['전시 보기', '근처 카페', '저녁 먹기', '산책하기'],
               updatedByProfileId: 'youngwooUid',
             ),
           ],
@@ -2837,6 +2837,26 @@ void main() {
               name: '조용한 카페',
               address: '서울 성동구',
               category: PlaceCategory.cafe,
+              provider: MapApiProvider.kakao,
+              createdByProfileId: 'youngwooUid',
+              interestedByProfileIds: {'youngwooUid'},
+              linkedDateKey: pastDateKey,
+            ),
+            SharedPlace(
+              id: 'past_place_2',
+              name: '작은 식당',
+              address: '서울 성동구',
+              category: PlaceCategory.food,
+              provider: MapApiProvider.kakao,
+              createdByProfileId: 'minyoungUid',
+              interestedByProfileIds: {'minyoungUid'},
+              linkedDateKey: pastDateKey,
+            ),
+            SharedPlace(
+              id: 'past_place_3',
+              name: '힐링 산책길',
+              address: '서울 성동구',
+              category: PlaceCategory.walk,
               provider: MapApiProvider.kakao,
               createdByProfileId: 'youngwooUid',
               interestedByProfileIds: {'youngwooUid'},
@@ -2866,9 +2886,40 @@ void main() {
     expect(find.byKey(meetingPastMeetingCardKey(pastDateKey)), findsOneWidget);
     expect(find.text('지난 만남'), findsOneWidget);
     expect(find.text('저녁 7시쯤'), findsOneWidget);
-    expect(find.text('계획 2개'), findsOneWidget);
-    expect(find.text('장소 1곳'), findsOneWidget);
+    expect(find.text('계획 4개'), findsOneWidget);
+    expect(find.text('장소 3곳'), findsOneWidget);
     expect(find.text('조용한 카페'), findsWidgets);
+    final pastMeetingCard = find.byKey(meetingPastMeetingCardKey(pastDateKey));
+    expect(
+      find.descendant(of: pastMeetingCard, matching: find.text('산책하기')),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: pastMeetingCard, matching: find.text('힐링 산책길')),
+      findsNothing,
+    );
+
+    await tester.tap(
+      find.byKey(meetingPastMeetingPlansMoreButtonKey(pastDateKey)),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(of: pastMeetingCard, matching: find.text('산책하기')),
+      findsOneWidget,
+    );
+
+    await tester.ensureVisible(
+      find.byKey(meetingPastMeetingPlacesMoreButtonKey(pastDateKey)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(meetingPastMeetingPlacesMoreButtonKey(pastDateKey)),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(of: pastMeetingCard, matching: find.text('힐링 산책길')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('meeting save failure shows retry action', (tester) async {

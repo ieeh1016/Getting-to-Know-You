@@ -196,10 +196,6 @@ class _PastMeetingCard extends StatelessWidget {
     final note = entry.meetingNote.trim();
     final planItems = controller.meetingPlanItemsFor(entry.dateKey);
     final places = controller.placesForMeetingPlan(entry.dateKey);
-    final visiblePlans = planItems.take(3).toList();
-    final hiddenPlanCount = planItems.length - visiblePlans.length;
-    final visiblePlaces = places.take(2).toList();
-    final hiddenPlaceCount = places.length - visiblePlaces.length;
     return AlagagiPaperCard(
       key: meetingPastMeetingCardKey(entry.dateKey),
       radius: 20,
@@ -267,22 +263,28 @@ class _PastMeetingCard extends StatelessWidget {
               ),
             ],
           ),
-          if (visiblePlans.isNotEmpty) ...[
+          if (planItems.isNotEmpty) ...[
             const SizedBox(height: 13),
             _PastMeetingMiniList(
               icon: Icons.playlist_add_check_rounded,
               title: '정했던 계획',
-              items: visiblePlans,
-              hiddenCount: hiddenPlanCount,
+              items: planItems,
+              collapsedLimit: 3,
+              moreButtonKey: meetingPastMeetingPlansMoreButtonKey(
+                entry.dateKey,
+              ),
             ),
           ],
-          if (visiblePlaces.isNotEmpty) ...[
+          if (places.isNotEmpty) ...[
             const SizedBox(height: 11),
             _PastMeetingMiniList(
               icon: Icons.place_outlined,
               title: '붙여둔 장소',
-              items: visiblePlaces.map((place) => place.name).toList(),
-              hiddenCount: hiddenPlaceCount,
+              items: places.map((place) => place.name).toList(),
+              collapsedLimit: 2,
+              moreButtonKey: meetingPastMeetingPlacesMoreButtonKey(
+                entry.dateKey,
+              ),
             ),
           ],
         ],
@@ -291,22 +293,35 @@ class _PastMeetingCard extends StatelessWidget {
   }
 }
 
-class _PastMeetingMiniList extends StatelessWidget {
+class _PastMeetingMiniList extends StatefulWidget {
   const _PastMeetingMiniList({
     required this.icon,
     required this.title,
     required this.items,
-    required this.hiddenCount,
+    required this.collapsedLimit,
+    required this.moreButtonKey,
   });
 
   final IconData icon;
   final String title;
   final List<String> items;
-  final int hiddenCount;
+  final int collapsedLimit;
+  final Key moreButtonKey;
+
+  @override
+  State<_PastMeetingMiniList> createState() => _PastMeetingMiniListState();
+}
+
+class _PastMeetingMiniListState extends State<_PastMeetingMiniList> {
+  bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
-    final lines = [...items, if (hiddenCount > 0) '$hiddenCount개 더 있음'];
+    final hiddenCount = widget.items.length - widget.collapsedLimit;
+    final canExpand = hiddenCount > 0;
+    final lines = _expanded || !canExpand
+        ? widget.items
+        : widget.items.take(widget.collapsedLimit).toList();
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFF8F8F4),
@@ -317,14 +332,14 @@ class _PastMeetingMiniList extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AlagagiColors.sageDeep),
+          Icon(widget.icon, size: 18, color: AlagagiColors.sageDeep),
           const SizedBox(width: 9),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  widget.title,
                   style: sans(
                     size: 11.5,
                     color: AlagagiColors.muted,
@@ -338,6 +353,32 @@ class _PastMeetingMiniList extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: sans(size: 12.5, height: 1.45),
+                  ),
+                ],
+                if (canExpand) ...[
+                  const SizedBox(height: 7),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      key: widget.moreButtonKey,
+                      onPressed: () {
+                        setState(() => _expanded = !_expanded);
+                      },
+                      icon: Icon(
+                        _expanded
+                            ? Icons.keyboard_arrow_up_rounded
+                            : Icons.keyboard_arrow_down_rounded,
+                        size: 17,
+                      ),
+                      label: Text(_expanded ? '접기' : '$hiddenCount개 더 보기'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AlagagiColors.sageDeep,
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(0, 30),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        textStyle: sans(size: 12, weight: FontWeight.w800),
+                      ),
+                    ),
                   ),
                 ],
               ],

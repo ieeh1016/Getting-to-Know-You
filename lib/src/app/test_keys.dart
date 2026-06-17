@@ -89,6 +89,10 @@ Key meetingPlanDateButtonKey(String dateKey) =>
     Key('meeting-plan-date-$dateKey');
 Key meetingPastMeetingCardKey(String dateKey) =>
     Key('meeting-past-meeting-card-$dateKey');
+Key meetingPastMeetingPlansMoreButtonKey(String dateKey) =>
+    Key('meeting-past-meeting-plans-more-$dateKey');
+Key meetingPastMeetingPlacesMoreButtonKey(String dateKey) =>
+    Key('meeting-past-meeting-places-more-$dateKey');
 Key meetingPlanPlaceLinkButtonKey(String placeId) =>
     Key('meeting-plan-place-link-$placeId');
 Key meetingPlanItemRemoveButtonKey(int index) =>
