@@ -11,6 +11,7 @@ const musicTitleFieldKey = Key('music-title-field');
 const musicArtistFieldKey = Key('music-artist-field');
 const musicLinkFieldKey = Key('music-link-field');
 const musicNoteFieldKey = Key('music-note-field');
+const musicMoodFieldKey = Key('music-mood-field');
 const musicSubmitButtonKey = Key('music-submit-button');
 const musicAddButtonKey = Key('music-add-button');
 const musicRetryButtonKey = Key('music-retry-button');

@@ -7,6 +7,7 @@ Music notes let users share songs, notes, and whether they have listened, withou
 ## Required Behavior
 
 - A user can add a song title, artist, optional link, mood, and note.
+- Mood can be picked from quick labels or typed directly as custom text.
 - A user can edit their own music note.
 - Partner notes are read-only except for listen-state actions.
 - Listen emoji/state can be toggled without opening the detail sheet.

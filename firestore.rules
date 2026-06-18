@@ -473,8 +473,7 @@ service cloud.firestore {
         && request.resource.data.meetingNote is string
         && request.resource.data.meetingNote.size() <= 80
         && (!request.resource.data.keys().hasAny(['meetingPlanItems'])
-          || (request.resource.data.meetingPlanItems is list
-            && request.resource.data.meetingPlanItems.size() <= 8));
+          || request.resource.data.meetingPlanItems is list);
     }
 
     function validMeetingPlan(planId) {
@@ -488,7 +487,6 @@ service cloud.firestore {
         && request.resource.data.dateKey.size() <= 16
         && planId == request.resource.data.dateKey
         && request.resource.data.items is list
-        && request.resource.data.items.size() <= 8
         && request.resource.data.updatedByProfileId == request.auth.uid
         && request.resource.data.updatedAt == request.time;
     }

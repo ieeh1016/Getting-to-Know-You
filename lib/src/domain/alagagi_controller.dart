@@ -64,7 +64,7 @@ enum StockHoldingListFilter {
   closed,
 }
 
-const musicMoodOptions = ['차분한', '산책', '카페', '밤', '가벼운', '집중'];
+const musicMoodOptions = ['차분한', '산책', '카페', '밤', '가벼운', '집중', '신나는', '파이팅'];
 const stockStoryReplyToneOptions = ['같이 볼래요', '더 찾아볼게요', '조심해요'];
 const stockHoldingStatusOptions = ['보유 중', '정리 고민 중', '최근 정리함'];
 const stockHoldingWeightOptions = ['작게', '보통', '크게'];
@@ -6691,10 +6691,12 @@ class AlagagiController extends ChangeNotifier {
   }
 
   void setMusicDraftMood(String mood) {
-    if (!musicMoodOptions.contains(mood)) {
-      return;
-    }
-    _state = _state.copyWith(musicDraftMood: mood, clearMusicDraftError: true);
+    _state = _state.copyWith(
+      musicDraftMood: mood,
+      clearMusicDraftError: true,
+      clearMusicSaveFeedback: true,
+      clearMusicSaveTargetId: true,
+    );
     notifyListeners();
   }
 
@@ -6721,7 +6723,7 @@ class AlagagiController extends ChangeNotifier {
     final artist = _state.musicDraftArtist.trim();
     final link = _state.musicDraftLink.trim();
     final noteBody = _state.musicDraftNote.trim();
-    final mood = _state.musicDraftMood;
+    final mood = _state.musicDraftMood.trim();
     if (title.isEmpty) {
       _state = _state.copyWith(musicDraftError: '곡 제목을 한 줄로 남겨주세요.');
       notifyListeners();
@@ -6752,8 +6754,13 @@ class AlagagiController extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    if (!musicMoodOptions.contains(mood)) {
-      _state = _state.copyWith(musicDraftError: '분위기를 다시 골라주세요.');
+    if (mood.isEmpty) {
+      _state = _state.copyWith(musicDraftError: '분위기를 한 단어로 남겨주세요.');
+      notifyListeners();
+      return;
+    }
+    if (mood.length > 16) {
+      _state = _state.copyWith(musicDraftError: '분위기는 16자 안으로 남겨주세요.');
       notifyListeners();
       return;
     }

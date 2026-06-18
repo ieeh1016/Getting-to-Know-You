@@ -336,6 +336,17 @@ class _MusicDraftCard extends StatelessWidget {
             onChanged: (value) => controller.updateMusicDraft(note: value),
           ),
           const SizedBox(height: 12),
+          Row(
+            children: [
+              Text('분위기', style: sans(size: 12.5, weight: FontWeight.w800)),
+              const SizedBox(width: 8),
+              Text(
+                '고르거나 직접 적을 수 있어요',
+                style: sans(size: 11.5, color: AlagagiColors.muted),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -343,11 +354,13 @@ class _MusicDraftCard extends StatelessWidget {
               for (final mood in musicMoodOptions)
                 AlagagiFilterPill(
                   label: mood,
-                  selected: controller.state.musicDraftMood == mood,
+                  selected: controller.state.musicDraftMood.trim() == mood,
                   onTap: () => controller.setMusicDraftMood(mood),
                 ),
             ],
           ),
+          const SizedBox(height: 10),
+          _MusicMoodInput(controller: controller),
           if (controller.state.musicDraftError != null) ...[
             const SizedBox(height: 10),
             Text(
@@ -449,6 +462,71 @@ class _MusicSaveStatus extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MusicMoodInput extends StatefulWidget {
+  const _MusicMoodInput({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  State<_MusicMoodInput> createState() => _MusicMoodInputState();
+}
+
+class _MusicMoodInputState extends State<_MusicMoodInput> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.controller.state.musicDraftMood,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _MusicMoodInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final mood = widget.controller.state.musicDraftMood;
+    if (_controller.text == mood) {
+      return;
+    }
+    _controller.value = TextEditingValue(
+      text: mood,
+      selection: TextSelection.collapsed(offset: mood.length),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 7, 14, 7),
+      child: TextFormField(
+        key: musicMoodFieldKey,
+        controller: _controller,
+        maxLength: 16,
+        onChanged: widget.controller.setMusicDraftMood,
+        decoration: const InputDecoration(
+          labelText: '직접 입력',
+          hintText: '예: 드라이브, 운동, 위로',
+          counterText: '',
+          border: InputBorder.none,
+        ),
+        style: sans(size: 13.5, height: 1.5),
       ),
     );
   }

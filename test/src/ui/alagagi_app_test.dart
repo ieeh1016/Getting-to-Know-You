@@ -3040,9 +3040,11 @@ void main() {
       'https://music.example/night',
     );
     await tester.enterText(find.byKey(musicNoteFieldKey), '새벽에 들으면 생각이 정리돼요.');
-    await tester.ensureVisible(find.text('집중'));
+    expect(find.text('신나는'), findsOneWidget);
+    expect(find.text('파이팅'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(musicMoodFieldKey));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('집중'));
+    await tester.enterText(find.byKey(musicMoodFieldKey), '드라이브');
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(musicSubmitButtonKey));
     await tester.pumpAndSettle();
@@ -3051,6 +3053,7 @@ void main() {
 
     expect(find.text('새벽 산책'), findsOneWidget);
     expect(find.textContaining('새벽에 들으면'), findsOneWidget);
+    expect(find.text('드라이브'), findsOneWidget);
     expect(find.text('노래 남기기'), findsNothing);
     expect(find.textContaining('커플'), findsNothing);
     expect(find.textContaining('사랑'), findsNothing);

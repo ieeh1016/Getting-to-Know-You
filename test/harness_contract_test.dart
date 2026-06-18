@@ -62,6 +62,15 @@ void main() {
     );
   });
 
+  test('meeting plan rules do not cap plan item count at eight', () {
+    final rules = File('firestore.rules').readAsStringSync();
+
+    expect(rules, isNot(contains('meetingPlanItems.size() <= 8')));
+    expect(rules, isNot(contains('items.size() <= 8')));
+    expect(rules, contains('request.resource.data.meetingPlanItems is list'));
+    expect(rules, contains('request.resource.data.items is list'));
+  });
+
   test('multi-agent harness playbook is linked and role complete', () {
     final agents = File('AGENTS.md').readAsStringSync();
     final playbook = File('docs/agent_harness_playbook.md').readAsStringSync();
