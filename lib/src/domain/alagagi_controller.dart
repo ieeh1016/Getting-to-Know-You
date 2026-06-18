@@ -7096,11 +7096,6 @@ class AlagagiController extends ChangeNotifier {
       return;
     }
     final items = meetingPlanDraftItems;
-    if (items.length >= 8) {
-      _state = _state.copyWith(meetingDraftError: '만남 계획은 8개까지만 남길 수 있어요.');
-      notifyListeners();
-      return;
-    }
     final nextItems = [...items, item];
     _state = _state.copyWith(
       meetingPlanDraftText: _meetingPlanTextFromItems(nextItems),
@@ -7144,12 +7139,6 @@ class AlagagiController extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    if (meetingPlanItems.length > 8) {
-      _state = _state.copyWith(meetingDraftError: '만남 계획은 8개까지만 남길 수 있어요.');
-      notifyListeners();
-      return;
-    }
-
     final plan = MeetingPlan(
       dateKey: dateKey,
       items: List<String>.unmodifiable(meetingPlanItems),
@@ -7231,12 +7220,6 @@ class AlagagiController extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    if (meetingPlanItems.length > 8) {
-      _state = _state.copyWith(meetingDraftError: '만남 계획은 8개까지만 남길 수 있어요.');
-      notifyListeners();
-      return;
-    }
-
     final entry = ScheduleEntry(
       dateKey: selectedMeetingDateKey,
       profileId: _state.me.id,

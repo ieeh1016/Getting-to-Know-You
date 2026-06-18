@@ -234,6 +234,28 @@ void main() {
       expect(controller.state.meetingSaveFeedback, '만남 계획을 저장했어요.');
     });
 
+    test('meeting plan draft can store more than eight items', () {
+      final controller = AlagagiController()..enterSpace('영우');
+
+      controller.selectMeetingDate('2026-06-11');
+      controller.updateMeetingDayDraft(timeLabel: '저녁 7시쯤');
+      controller.submitMeetingDayDraft();
+      controller.goTo(AlagagiRoute.meetingPlans);
+
+      final items = List<String>.generate(10, (index) => '계획 ${index + 1}');
+      for (final item in items) {
+        controller.updateMeetingPlanItemDraft(item);
+        controller.addMeetingPlanDraftItem();
+      }
+      controller.submitMeetingPlanDraft();
+
+      final plan = controller.meetingPlanFor('2026-06-11');
+
+      expect(plan, isNotNull);
+      expect(plan!.items, items);
+      expect(controller.state.meetingDraftError, isNull);
+    });
+
     test('meeting days split upcoming and past dates', () {
       final controller = AlagagiController.forSession(
         const AlagagiSession(
