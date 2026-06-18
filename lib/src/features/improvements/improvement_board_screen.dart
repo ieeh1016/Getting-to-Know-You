@@ -8,7 +8,8 @@ import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
 enum _ImprovementFilter {
-  all,
+  open,
+  resolved,
   mine,
   partner,
   improvement,
@@ -27,7 +28,7 @@ class ImprovementBoardScreen extends StatefulWidget {
 }
 
 class _ImprovementBoardScreenState extends State<ImprovementBoardScreen> {
-  _ImprovementFilter _filter = _ImprovementFilter.all;
+  _ImprovementFilter _filter = _ImprovementFilter.open;
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +97,9 @@ class _ImprovementBoardScreenState extends State<ImprovementBoardScreen> {
     List<ImprovementPost> posts,
   ) {
     return switch (_filter) {
-      _ImprovementFilter.all => posts,
+      _ImprovementFilter.open => posts.where((post) => !post.resolved).toList(),
+      _ImprovementFilter.resolved =>
+        posts.where((post) => post.resolved).toList(),
       _ImprovementFilter.mine =>
         posts
             .where((post) => post.createdByProfileId == controller.state.me.id)
@@ -136,6 +139,7 @@ class _ImprovementFilterBar extends StatelessWidget {
         children: [
           for (final filter in _ImprovementFilter.values) ...[
             AlagagiFilterPill(
+              key: improvementFilterButtonKey(filter.name),
               label: _improvementFilterLabel(filter),
               selected: selected == filter,
               onTap: () => onChanged(filter),
@@ -151,7 +155,8 @@ class _ImprovementFilterBar extends StatelessWidget {
 
 String _improvementFilterLabel(_ImprovementFilter filter) {
   return switch (filter) {
-    _ImprovementFilter.all => '전체',
+    _ImprovementFilter.open => '진행중',
+    _ImprovementFilter.resolved => '개선완료',
     _ImprovementFilter.mine => '내 글',
     _ImprovementFilter.partner => '상대 글',
     _ImprovementFilter.improvement => '개선',
@@ -163,7 +168,8 @@ String _improvementFilterLabel(_ImprovementFilter filter) {
 
 String _improvementFilterEmptyText(_ImprovementFilter filter) {
   return switch (filter) {
-    _ImprovementFilter.all => '생각나는 개선점이나 추가 요청을 하나만 남겨볼까요?',
+    _ImprovementFilter.open => '진행중인 건의는 없어요.',
+    _ImprovementFilter.resolved => '개선완료된 건의는 아직 없어요.',
     _ImprovementFilter.mine => '내가 남긴 글은 아직 없어요.',
     _ImprovementFilter.partner => '상대가 남긴 글은 아직 없어요.',
     _ImprovementFilter.improvement => '개선으로 남긴 글은 아직 없어요.',
@@ -238,10 +244,8 @@ class _ImprovementSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final posts = controller.improvementPosts;
-    final mineCount = posts
-        .where((post) => post.createdByProfileId == controller.state.me.id)
-        .length;
-    final featureCount = posts.where((post) => post.category == '추가 요청').length;
+    final openCount = posts.where((post) => !post.resolved).length;
+    final resolvedCount = posts.where((post) => post.resolved).length;
     return AlagagiPaperCard(
       radius: 18,
       padding: const EdgeInsets.all(14),
@@ -252,14 +256,14 @@ class _ImprovementSummaryCard extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: AlagagiQuietMetric(label: '내 글', value: '$mineCount'),
+            child: AlagagiQuietMetric(label: '진행중', value: '$openCount'),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: AlagagiQuietMetric(
-              label: '추가 요청',
-              value: '$featureCount',
-              muted: featureCount == 0,
+              label: '개선완료',
+              value: '$resolvedCount',
+              muted: resolvedCount == 0,
             ),
           ),
         ],
@@ -408,10 +412,13 @@ class _ImprovementPostCard extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () => showReadableDetailSheet(
         context,
-        label: post.category,
+        label: post.resolved ? '개선완료' : post.category,
         title: post.title,
         meta: '$creator · ${post.createdLabel}',
-        body: post.body,
+        body: [
+          post.body,
+          if (post.hasOwnerNote) '영우 답변\n${post.ownerNote}',
+        ].join('\n\n'),
       ),
       child: AlagagiPaperCard(
         radius: 19,
@@ -459,6 +466,10 @@ class _ImprovementPostCard extends StatelessWidget {
                               ),
                             ),
                           ),
+                          if (post.resolved) ...[
+                            const AlagagiSmallBadge(label: '개선완료'),
+                            const SizedBox(width: 6),
+                          ],
                           AlagagiSmallBadge(label: post.category),
                         ],
                       ),
@@ -485,6 +496,14 @@ class _ImprovementPostCard extends StatelessWidget {
                 height: 1.5,
               ),
             ),
+            if (post.hasOwnerNote) ...[
+              const SizedBox(height: 12),
+              _ImprovementOwnerNote(post: post),
+            ],
+            if (controller.canManageImprovementPosts) ...[
+              const SizedBox(height: 12),
+              _ImprovementOwnerActions(controller: controller, post: post),
+            ],
             if (isMine) ...[
               const SizedBox(height: 12),
               Wrap(
@@ -527,6 +546,197 @@ class _ImprovementPostCard extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ImprovementOwnerNote extends StatelessWidget {
+  const _ImprovementOwnerNote({required this.post});
+
+  final ImprovementPost post;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F8F3),
+        border: Border.all(color: const Color(0x338A9A7E)),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.task_alt_rounded,
+                size: 15,
+                color: AlagagiColors.sageDeep,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '영우 답변',
+                style: sans(
+                  size: 12,
+                  weight: FontWeight.w800,
+                  color: AlagagiColors.sageDeep,
+                ),
+              ),
+              if (post.ownerNoteLabel.isNotEmpty) ...[
+                const SizedBox(width: 6),
+                Text(
+                  post.ownerNoteLabel,
+                  style: sans(size: 11, color: AlagagiColors.muted),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            post.ownerNote,
+            style: sans(
+              size: 12.5,
+              color: const Color(0xFF555149),
+              height: 1.45,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ImprovementOwnerActions extends StatefulWidget {
+  const _ImprovementOwnerActions({
+    required this.controller,
+    required this.post,
+  });
+
+  final AlagagiController controller;
+  final ImprovementPost post;
+
+  @override
+  State<_ImprovementOwnerActions> createState() =>
+      _ImprovementOwnerActionsState();
+}
+
+class _ImprovementOwnerActionsState extends State<_ImprovementOwnerActions> {
+  late final TextEditingController _noteController;
+
+  @override
+  void initState() {
+    super.initState();
+    _noteController = TextEditingController(text: widget.post.ownerNote);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ImprovementOwnerActions oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.post.id != widget.post.id ||
+        oldWidget.post.ownerNote != widget.post.ownerNote) {
+      _noteController.value = TextEditingValue(
+        text: widget.post.ownerNote,
+        selection: TextSelection.collapsed(
+          offset: widget.post.ownerNote.length,
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final post = widget.post;
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFBFBF7),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('관리 메모', style: sans(size: 12, weight: FontWeight.w800)),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F8F4),
+              border: Border.all(color: AlagagiColors.line),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+            child: TextFormField(
+              key: improvementOwnerNoteFieldKey(post.id),
+              controller: _noteController,
+              maxLength: 160,
+              minLines: 1,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: '어떻게 반영했는지 짧게 남기기',
+                counterText: '',
+                border: InputBorder.none,
+              ),
+              style: sans(size: 12.5, height: 1.45),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                key: improvementOwnerNoteSaveButtonKey(post.id),
+                onPressed: () => widget.controller.saveImprovementOwnerNote(
+                  post.id,
+                  _noteController.text,
+                ),
+                icon: const Icon(Icons.chat_bubble_outline_rounded, size: 15),
+                label: const Text('답변 저장'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AlagagiColors.sageDeep,
+                  side: const BorderSide(color: Color(0x338A9A7E)),
+                  visualDensity: VisualDensity.compact,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  textStyle: sans(size: 12, weight: FontWeight.w800),
+                ),
+              ),
+              FilledButton.icon(
+                key: improvementResolveButtonKey(post.id),
+                onPressed: () =>
+                    widget.controller.toggleImprovementResolved(post.id),
+                icon: Icon(
+                  post.resolved
+                      ? Icons.undo_rounded
+                      : Icons.check_circle_outline_rounded,
+                  size: 15,
+                ),
+                label: Text(post.resolved ? '완료 해제' : '개선완료'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: post.resolved
+                      ? const Color(0xFF7D6A8E)
+                      : AlagagiColors.sageDeep,
+                  foregroundColor: Colors.white,
+                  visualDensity: VisualDensity.compact,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  textStyle: sans(size: 12, weight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

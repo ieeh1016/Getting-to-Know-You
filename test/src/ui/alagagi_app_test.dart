@@ -289,6 +289,97 @@ void main() {
     );
   });
 
+  testWidgets('improvement board owner replies and moves completed posts', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      AlagagiSession(
+        spaceId: 'main',
+        me: const AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+          role: 'owner',
+        ),
+        partner: const AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          improvementPosts: [
+            ImprovementPost(
+              id: 'improvement_partner',
+              title: '루틴 공유',
+              body: '서로의 반복 일정을 볼 수 있으면 좋겠어요.',
+              category: '추가 요청',
+              createdByProfileId: 'minyoungUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-10T08:00:00.000Z'),
+            ),
+          ],
+        ),
+      ),
+    )..goTo(AlagagiRoute.improvements);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(improvementCardKey('improvement_partner')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(improvementOwnerNoteFieldKey('improvement_partner')),
+      findsOneWidget,
+    );
+
+    await tester.enterText(
+      find.byKey(improvementOwnerNoteFieldKey('improvement_partner')),
+      '루틴 공유는 다음 개선 후보로 반영했어요.',
+    );
+    await tester.ensureVisible(
+      find.byKey(improvementOwnerNoteSaveButtonKey('improvement_partner')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(improvementOwnerNoteSaveButtonKey('improvement_partner')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('영우 답변'), findsOneWidget);
+    expect(
+      controller.improvementPosts.single.ownerNote,
+      '루틴 공유는 다음 개선 후보로 반영했어요.',
+    );
+
+    await tester.ensureVisible(
+      find.byKey(improvementResolveButtonKey('improvement_partner')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(improvementResolveButtonKey('improvement_partner')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(improvementCardKey('improvement_partner')), findsNothing);
+    expect(find.text('진행중인 건의는 없어요.'), findsOneWidget);
+
+    await tester.tap(find.byKey(improvementFilterButtonKey('resolved')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(improvementCardKey('improvement_partner')),
+      findsOneWidget,
+    );
+    expect(find.text('개선완료'), findsWidgets);
+    expect(controller.improvementPosts.single.resolved, isTrue);
+  });
+
   testWidgets('home menu works as a feature launcher', (tester) async {
     await tester.pumpWidget(const AlagagiApp());
     await enterSpace(tester);

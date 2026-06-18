@@ -138,6 +138,14 @@ Key improvementEditButtonKey(String postId) =>
     Key('improvement-edit-button-$postId');
 Key improvementDeleteButtonKey(String postId) =>
     Key('improvement-delete-button-$postId');
+Key improvementFilterButtonKey(String filter) =>
+    Key('improvement-filter-$filter');
+Key improvementOwnerNoteFieldKey(String postId) =>
+    Key('improvement-owner-note-field-$postId');
+Key improvementOwnerNoteSaveButtonKey(String postId) =>
+    Key('improvement-owner-note-save-$postId');
+Key improvementResolveButtonKey(String postId) =>
+    Key('improvement-resolve-button-$postId');
 
 const wishTitleFieldKey = Key('wish-title-field');
 const wishSubmitButtonKey = Key('wish-submit-button');

@@ -71,6 +71,15 @@ void main() {
     expect(rules, contains('request.resource.data.items is list'));
   });
 
+  test('improvement owner replies and completion stay owner-only', () {
+    final rules = File('firestore.rules').readAsStringSync();
+
+    expect(rules, contains("currentUserProfile().data.role == 'owner'"));
+    expect(rules, contains('validImprovementPostOwnerStatusUpdate'));
+    expect(rules, contains("'ownerNote'"));
+    expect(rules, contains("'resolved'"));
+  });
+
   test('multi-agent harness playbook is linked and role complete', () {
     final agents = File('AGENTS.md').readAsStringSync();
     final playbook = File('docs/agent_harness_playbook.md').readAsStringSync();

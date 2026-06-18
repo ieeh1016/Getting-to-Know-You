@@ -134,6 +134,11 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
+    function isOwnerUser() {
+      return hasUserProfile()
+        && currentUserProfile().data.role == 'owner';
+    }
+
     function isSpaceMember(spaceId) {
       return hasUserProfile()
         && exists(/databases/$(database)/documents/spaces/$(spaceId))
@@ -271,6 +276,12 @@ service cloud.firestore {
           'category',
           'createdByProfileId',
           'createdLabel',
+          'ownerNote',
+          'ownerNoteProfileId',
+          'ownerNoteLabel',
+          'resolved',
+          'resolvedByProfileId',
+          'resolvedLabel',
           'updatedAt'
         ])
         && request.resource.data.id == postId
@@ -284,12 +295,60 @@ service cloud.firestore {
         && request.resource.data.createdByProfileId is string
         && request.resource.data.createdByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
         && request.resource.data.createdLabel is string
-        && request.resource.data.createdLabel.size() <= 16;
+        && request.resource.data.createdLabel.size() <= 16
+        && request.resource.data.ownerNote is string
+        && request.resource.data.ownerNote.size() <= 160
+        && request.resource.data.ownerNoteProfileId is string
+        && request.resource.data.ownerNoteProfileId.size() <= 128
+        && (request.resource.data.ownerNoteProfileId == ''
+          || request.resource.data.ownerNoteProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds)
+        && request.resource.data.ownerNoteLabel is string
+        && request.resource.data.ownerNoteLabel.size() <= 16
+        && request.resource.data.resolved is bool
+        && request.resource.data.resolvedByProfileId is string
+        && request.resource.data.resolvedByProfileId.size() <= 128
+        && (request.resource.data.resolvedByProfileId == ''
+          || request.resource.data.resolvedByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds)
+        && request.resource.data.resolvedLabel is string
+        && request.resource.data.resolvedLabel.size() <= 16;
     }
 
     function validNewImprovementPost(spaceId, postId) {
       return validImprovementPostShape(spaceId, postId)
-        && request.resource.data.createdByProfileId == request.auth.uid;
+        && request.resource.data.createdByProfileId == request.auth.uid
+        && request.resource.data.ownerNote == ''
+        && request.resource.data.ownerNoteProfileId == ''
+        && request.resource.data.ownerNoteLabel == ''
+        && request.resource.data.resolved == false
+        && request.resource.data.resolvedByProfileId == ''
+        && request.resource.data.resolvedLabel == '';
+    }
+
+    function keepsImprovementOwnerFields() {
+      return (
+          (resource.data.keys().hasAny(['ownerNote']) && request.resource.data.ownerNote == resource.data.ownerNote)
+          || (!resource.data.keys().hasAny(['ownerNote']) && request.resource.data.ownerNote == '')
+        )
+        && (
+          (resource.data.keys().hasAny(['ownerNoteProfileId']) && request.resource.data.ownerNoteProfileId == resource.data.ownerNoteProfileId)
+          || (!resource.data.keys().hasAny(['ownerNoteProfileId']) && request.resource.data.ownerNoteProfileId == '')
+        )
+        && (
+          (resource.data.keys().hasAny(['ownerNoteLabel']) && request.resource.data.ownerNoteLabel == resource.data.ownerNoteLabel)
+          || (!resource.data.keys().hasAny(['ownerNoteLabel']) && request.resource.data.ownerNoteLabel == '')
+        )
+        && (
+          (resource.data.keys().hasAny(['resolved']) && request.resource.data.resolved == resource.data.resolved)
+          || (!resource.data.keys().hasAny(['resolved']) && request.resource.data.resolved == false)
+        )
+        && (
+          (resource.data.keys().hasAny(['resolvedByProfileId']) && request.resource.data.resolvedByProfileId == resource.data.resolvedByProfileId)
+          || (!resource.data.keys().hasAny(['resolvedByProfileId']) && request.resource.data.resolvedByProfileId == '')
+        )
+        && (
+          (resource.data.keys().hasAny(['resolvedLabel']) && request.resource.data.resolvedLabel == resource.data.resolvedLabel)
+          || (!resource.data.keys().hasAny(['resolvedLabel']) && request.resource.data.resolvedLabel == '')
+        );
     }
 
     function validImprovementPostOwnerEdit(spaceId, postId) {
@@ -301,8 +360,37 @@ service cloud.firestore {
           'title',
           'body',
           'category',
+          'ownerNote',
+          'ownerNoteProfileId',
+          'ownerNoteLabel',
+          'resolved',
+          'resolvedByProfileId',
+          'resolvedLabel',
           'updatedAt'
-        ]);
+        ])
+        && keepsImprovementOwnerFields();
+    }
+
+    function validImprovementPostOwnerStatusUpdate(spaceId, postId) {
+      return validImprovementPostShape(spaceId, postId)
+        && isOwnerUser()
+        && request.resource.data.createdByProfileId == resource.data.createdByProfileId
+        && request.resource.data.createdLabel == resource.data.createdLabel
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'ownerNote',
+          'ownerNoteProfileId',
+          'ownerNoteLabel',
+          'resolved',
+          'resolvedByProfileId',
+          'resolvedLabel',
+          'updatedAt'
+        ])
+        && (request.resource.data.ownerNote == ''
+          || (request.resource.data.ownerNoteProfileId == request.auth.uid
+            && request.resource.data.ownerNoteLabel.size() > 0))
+        && (request.resource.data.resolved == false
+          || (request.resource.data.resolvedByProfileId == request.auth.uid
+            && request.resource.data.resolvedLabel.size() > 0));
     }
 
     function validCuriosityCardShape(spaceId, cardId) {
@@ -896,7 +984,10 @@ service cloud.firestore {
         allow create: if isSpaceMember(spaceId)
           && validNewImprovementPost(spaceId, postId);
         allow update: if isSpaceMember(spaceId)
-          && validImprovementPostOwnerEdit(spaceId, postId);
+          && (
+            validImprovementPostOwnerEdit(spaceId, postId)
+            || validImprovementPostOwnerStatusUpdate(spaceId, postId)
+          );
         allow delete: if isSpaceMember(spaceId)
           && resource.data.createdByProfileId == request.auth.uid;
       }

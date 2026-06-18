@@ -538,6 +538,12 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           'category': post.category,
           'createdByProfileId': post.createdByProfileId,
           'createdLabel': post.createdLabel,
+          'ownerNote': post.ownerNote,
+          'ownerNoteProfileId': post.ownerNoteProfileId,
+          'ownerNoteLabel': post.ownerNoteLabel,
+          'resolved': post.resolved,
+          'resolvedByProfileId': post.resolvedByProfileId,
+          'resolvedLabel': post.resolvedLabel,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
   }
@@ -1005,6 +1011,12 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       category: category,
       createdByProfileId: createdByProfileId,
       createdLabel: _readString(data, 'createdLabel') ?? '오늘',
+      ownerNote: _readString(data, 'ownerNote') ?? '',
+      ownerNoteProfileId: _readString(data, 'ownerNoteProfileId') ?? '',
+      ownerNoteLabel: _readString(data, 'ownerNoteLabel') ?? '',
+      resolved: _readBool(data, 'resolved') ?? false,
+      resolvedByProfileId: _readString(data, 'resolvedByProfileId') ?? '',
+      resolvedLabel: _readString(data, 'resolvedLabel') ?? '',
       updatedAt: _readDateTime(data, 'updatedAt'),
     );
   }
@@ -1021,6 +1033,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       nickname: _readString(data, 'displayName') ?? fallbackName,
       avatar: _readString(data, 'avatar') ?? fallbackAvatar,
       isMe: isMe,
+      role: _readString(data, 'role') ?? '',
     );
   }
 

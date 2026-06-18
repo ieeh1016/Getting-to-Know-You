@@ -2603,6 +2603,74 @@ void main() {
       );
     });
 
+    test('only owner can reply and resolve improvement posts', () async {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        firebaseSessionWithData(
+          AlagagiSpaceData(
+            improvementPosts: [
+              ImprovementPost(
+                id: 'improvement_partner',
+                title: '루틴 공유',
+                body: '서로의 반복 일정을 볼 수 있으면 좋겠어요.',
+                category: '추가 요청',
+                createdByProfileId: 'minyoungUid',
+                createdLabel: '오늘',
+                updatedAt: DateTime.parse('2026-06-10T08:00:00.000Z'),
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+      );
+
+      controller.saveImprovementOwnerNote(
+        'improvement_partner',
+        '루틴 공유는 다음 개선 후보로 정리했어요.',
+      );
+      await Future<void>.delayed(Duration.zero);
+      controller.toggleImprovementResolved('improvement_partner');
+      await Future<void>.delayed(Duration.zero);
+
+      final post = controller.improvementPosts.single;
+      expect(post.ownerNote, '루틴 공유는 다음 개선 후보로 정리했어요.');
+      expect(post.ownerNoteProfileId, 'youngwooUid');
+      expect(post.resolved, isTrue);
+      expect(post.resolvedByProfileId, 'youngwooUid');
+      expect(repository.savedImprovementPosts, hasLength(2));
+      expect(repository.savedImprovementPosts.last.post.resolved, isTrue);
+
+      final guestRepository = RecordingAlagagiRepository();
+      final guestController = AlagagiController.forSession(
+        AlagagiSession(
+          spaceId: 'main',
+          me: const AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: true,
+          ),
+          partner: const AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(improvementPosts: [post]),
+        ),
+        repository: guestRepository,
+      );
+
+      guestController.saveImprovementOwnerNote(
+        'improvement_partner',
+        '민영이 답변을 남기면 안 돼요.',
+      );
+      guestController.toggleImprovementResolved('improvement_partner');
+
+      expect(guestRepository.savedImprovementPosts, isEmpty);
+      expect(guestController.state.improvementDraftError, contains('영우만'));
+    });
+
     test(
       'home progress summary uses local seen time for new partner music notes',
       () {

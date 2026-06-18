@@ -275,19 +275,25 @@ class AppProfile {
     required this.nickname,
     required this.avatar,
     required this.isMe,
+    this.role = '',
   });
 
   final String id;
   final String nickname;
   final String avatar;
   final bool isMe;
+  final String role;
 
-  AppProfile copyWith({String? nickname, String? avatar}) {
+  bool get isOwner =>
+      role == 'owner' || id == 'youngwooUid' || nickname == '영우';
+
+  AppProfile copyWith({String? nickname, String? avatar, String? role}) {
     return AppProfile(
       id: id,
       nickname: nickname ?? this.nickname,
       avatar: avatar ?? this.avatar,
       isMe: isMe,
+      role: role ?? this.role,
     );
   }
 }
@@ -1169,6 +1175,12 @@ class ImprovementPost {
     required this.category,
     required this.createdByProfileId,
     required this.createdLabel,
+    this.ownerNote = '',
+    this.ownerNoteProfileId = '',
+    this.ownerNoteLabel = '',
+    this.resolved = false,
+    this.resolvedByProfileId = '',
+    this.resolvedLabel = '',
     this.updatedAt,
   });
 
@@ -1178,12 +1190,26 @@ class ImprovementPost {
   final String category;
   final String createdByProfileId;
   final String createdLabel;
+  final String ownerNote;
+  final String ownerNoteProfileId;
+  final String ownerNoteLabel;
+  final bool resolved;
+  final String resolvedByProfileId;
+  final String resolvedLabel;
   final DateTime? updatedAt;
+
+  bool get hasOwnerNote => ownerNote.trim().isNotEmpty;
 
   ImprovementPost copyWith({
     String? title,
     String? body,
     String? category,
+    String? ownerNote,
+    String? ownerNoteProfileId,
+    String? ownerNoteLabel,
+    bool? resolved,
+    String? resolvedByProfileId,
+    String? resolvedLabel,
     DateTime? updatedAt,
   }) {
     return ImprovementPost(
@@ -1193,6 +1219,12 @@ class ImprovementPost {
       category: category ?? this.category,
       createdByProfileId: createdByProfileId,
       createdLabel: createdLabel,
+      ownerNote: ownerNote ?? this.ownerNote,
+      ownerNoteProfileId: ownerNoteProfileId ?? this.ownerNoteProfileId,
+      ownerNoteLabel: ownerNoteLabel ?? this.ownerNoteLabel,
+      resolved: resolved ?? this.resolved,
+      resolvedByProfileId: resolvedByProfileId ?? this.resolvedByProfileId,
+      resolvedLabel: resolvedLabel ?? this.resolvedLabel,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -4689,6 +4721,8 @@ class AlagagiController extends ChangeNotifier {
   List<ImprovementPost> get improvementPosts =>
       List<ImprovementPost>.unmodifiable(_improvementPosts);
 
+  bool get canManageImprovementPosts => _state.me.isOwner;
+
   List<StockStory> get stockStories =>
       List<StockStory>.unmodifiable(_stockStories);
 
@@ -6375,6 +6409,114 @@ class AlagagiController extends ChangeNotifier {
     );
     notifyListeners();
     _persistImprovementPost(post, successFeedback: successFeedback);
+  }
+
+  void saveImprovementOwnerNote(String postId, String value) {
+    if (!canManageImprovementPosts) {
+      _state = _state.copyWith(
+        improvementDraftError: '영우만 개선 답변을 남길 수 있어요.',
+        improvementSaveStatus: SaveStatus.failed,
+        improvementSaveTargetId: postId,
+        clearImprovementSaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    final index = _improvementPosts.indexWhere((post) => post.id == postId);
+    if (index == -1) {
+      _state = _state.copyWith(
+        improvementDraftError: '답변할 건의를 찾지 못했어요.',
+        improvementSaveStatus: SaveStatus.failed,
+        improvementSaveTargetId: postId,
+        clearImprovementSaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    final note = value.trim();
+    if (note.isEmpty) {
+      _state = _state.copyWith(
+        improvementDraftError: '남길 답변을 한 줄만 적어주세요.',
+        improvementSaveStatus: SaveStatus.idle,
+        improvementSaveTargetId: postId,
+        clearImprovementSaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    if (note.length > 160) {
+      _state = _state.copyWith(
+        improvementDraftError: '답변은 160자 안으로 남겨주세요.',
+        improvementSaveStatus: SaveStatus.idle,
+        improvementSaveTargetId: postId,
+        clearImprovementSaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    final updatedPost = _improvementPosts[index].copyWith(
+      ownerNote: note,
+      ownerNoteProfileId: _state.me.id,
+      ownerNoteLabel: '오늘',
+      updatedAt: DateTime.now(),
+    );
+    _improvementPosts[index] = updatedPost;
+    _sortImprovementPostsByUpdatedAt();
+    _lastFailedImprovementPost = null;
+    _state = _state.copyWith(
+      improvementSaveStatus: SaveStatus.saving,
+      improvementSaveTargetId: updatedPost.id,
+      clearImprovementDraftError: true,
+      clearImprovementSaveFeedback: true,
+    );
+    notifyListeners();
+    _persistImprovementPost(updatedPost, successFeedback: '답변을 저장했어요.');
+  }
+
+  void toggleImprovementResolved(String postId) {
+    if (!canManageImprovementPosts) {
+      _state = _state.copyWith(
+        improvementDraftError: '영우만 개선 완료를 처리할 수 있어요.',
+        improvementSaveStatus: SaveStatus.failed,
+        improvementSaveTargetId: postId,
+        clearImprovementSaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    final index = _improvementPosts.indexWhere((post) => post.id == postId);
+    if (index == -1) {
+      _state = _state.copyWith(
+        improvementDraftError: '처리할 건의를 찾지 못했어요.',
+        improvementSaveStatus: SaveStatus.failed,
+        improvementSaveTargetId: postId,
+        clearImprovementSaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    final post = _improvementPosts[index];
+    final nextResolved = !post.resolved;
+    final updatedPost = post.copyWith(
+      resolved: nextResolved,
+      resolvedByProfileId: nextResolved ? _state.me.id : '',
+      resolvedLabel: nextResolved ? '오늘' : '',
+      updatedAt: DateTime.now(),
+    );
+    _improvementPosts[index] = updatedPost;
+    _sortImprovementPostsByUpdatedAt();
+    _lastFailedImprovementPost = null;
+    _state = _state.copyWith(
+      improvementSaveStatus: SaveStatus.saving,
+      improvementSaveTargetId: updatedPost.id,
+      clearImprovementDraftError: true,
+      clearImprovementSaveFeedback: true,
+    );
+    notifyListeners();
+    _persistImprovementPost(
+      updatedPost,
+      successFeedback: nextResolved ? '개선완료로 옮겼어요.' : '진행중으로 돌렸어요.',
+    );
   }
 
   void deleteImprovementPost(String postId) {
