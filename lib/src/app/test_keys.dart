@@ -100,6 +100,8 @@ Key meetingPlanPlaceDragHandleKey(String placeId) =>
     Key('meeting-plan-place-drag-$placeId');
 Key meetingPlanPlaceReservationFieldKey(String placeId) =>
     Key('meeting-plan-place-reservation-$placeId');
+Key meetingPlanPlaceReservationBadgeKey(String placeId) =>
+    Key('meeting-plan-place-reservation-badge-$placeId');
 Key meetingPlanPlaceReservationSaveButtonKey(String placeId) =>
     Key('meeting-plan-place-reservation-save-$placeId');
 Key meetingPlanItemRemoveButtonKey(int index) =>

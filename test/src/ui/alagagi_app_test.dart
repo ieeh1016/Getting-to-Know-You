@@ -2894,7 +2894,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(meetingPlanPlaceReservationFieldKey('place_cafe')),
-      '18:30 예약',
+      '18:30 예약 / 창가 자리 확인',
     );
     await tester.pumpAndSettle();
     await tester.ensureVisible(
@@ -2910,8 +2910,13 @@ void main() {
           .firstWhere((place) => place.id == 'place_cafe')
           .meetingPlanLinkFor(dateKey)
           ?.reservationTimeLabel,
-      '18:30 예약',
+      '18:30 예약 / 창가 자리 확인',
     );
+    expect(
+      find.byKey(meetingPlanPlaceReservationBadgeKey('place_cafe')),
+      findsOneWidget,
+    );
+    expect(find.text('예약 18:30 예약 / 창가 자리 확인'), findsOneWidget);
   });
 
   testWidgets('meeting plan keeps past meetings behind a separate button', (

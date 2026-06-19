@@ -1174,6 +1174,11 @@ class _MeetingPlanPlaceRow extends StatelessWidget {
         controller.isPlaceSaveTarget(place.id);
     final link = place.meetingPlanLinkFor(selectedDateKey);
     final reservationTime = link?.reservationTimeLabel.trim() ?? '';
+    final details = [
+      placeCategoryLabel(place.category),
+      if (place.isMutual) '서로 관심',
+      if (place.address.isNotEmpty) place.address,
+    ].join(' · ');
     return AlagagiPaperCard(
       radius: 18,
       padding: const EdgeInsets.all(14),
@@ -1217,13 +1222,8 @@ class _MeetingPlanPlaceRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      [
-                        placeCategoryLabel(place.category),
-                        if (reservationTime.isNotEmpty) '예약 $reservationTime',
-                        if (place.isMutual) '서로 관심',
-                        if (place.address.isNotEmpty) place.address,
-                      ].join(' · '),
-                      maxLines: 1,
+                      details,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: sans(size: 11.2, color: AlagagiColors.muted),
                     ),
@@ -1265,7 +1265,14 @@ class _MeetingPlanPlaceRow extends StatelessWidget {
             ],
           ),
           if (linked) ...[
-            const SizedBox(height: 12),
+            if (reservationTime.isNotEmpty) ...[
+              const SizedBox(height: 11),
+              _MeetingPlanPlaceReservationBadge(
+                placeId: place.id,
+                reservationTime: reservationTime,
+              ),
+            ],
+            const SizedBox(height: 10),
             _MeetingPlanPlaceReservationEditor(
               controller: controller,
               place: place,
@@ -1273,6 +1280,52 @@ class _MeetingPlanPlaceRow extends StatelessWidget {
               initialValue: reservationTime,
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MeetingPlanPlaceReservationBadge extends StatelessWidget {
+  const _MeetingPlanPlaceReservationBadge({
+    required this.placeId,
+    required this.reservationTime,
+  });
+
+  final String placeId;
+  final String reservationTime;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF8E9),
+        border: Border.all(color: const Color(0x33C8AD6D)),
+        borderRadius: BorderRadius.circular(13),
+      ),
+      padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.schedule_rounded,
+            size: 16,
+            color: Color(0xFF8A6F2D),
+          ),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(
+              '예약 $reservationTime',
+              key: meetingPlanPlaceReservationBadgeKey(placeId),
+              softWrap: true,
+              style: sans(
+                size: 12,
+                height: 1.35,
+                weight: FontWeight.w800,
+                color: const Color(0xFF7A6227),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1366,6 +1419,9 @@ class _MeetingPlanPlaceReservationEditorState
               key: meetingPlanPlaceReservationFieldKey(widget.place.id),
               controller: _controller,
               maxLength: 30,
+              minLines: 1,
+              maxLines: 2,
+              textInputAction: TextInputAction.done,
               onChanged: (_) => setState(() {}),
               onFieldSubmitted: (_) => _save(),
               decoration: const InputDecoration(
