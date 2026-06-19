@@ -447,6 +447,25 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
   }
 
   @override
+  Future<void> saveDiagnosticEvent(String spaceId, DiagnosticEvent event) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('diagnosticEvents')
+        .doc(event.id)
+        .set({
+          'id': event.id,
+          'feature': event.feature,
+          'action': event.action,
+          'targetId': event.targetId,
+          'message': event.message,
+          'detail': event.detail,
+          'createdByProfileId': event.createdByProfileId,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+  }
+
+  @override
   Future<void> saveCuriosityCard(String spaceId, CuriosityCard card) {
     return _firestore
         .collection('spaces')

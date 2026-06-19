@@ -295,10 +295,22 @@ void main() {
       );
       controller.submitPlaceDraft();
       await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
 
       expect(controller.state.placeSaveStatus, SaveStatus.failed);
       expect(controller.state.placeError, contains('저장하지 못했어요'));
       expect(repository.savedSharedPlaces, isEmpty);
+      expect(repository.savedDiagnosticEvents, hasLength(1));
+      expect(repository.savedDiagnosticEvents.single.spaceId, 'main');
+      expect(repository.savedDiagnosticEvents.single.event.feature, 'places');
+      expect(
+        repository.savedDiagnosticEvents.single.event.action,
+        'saveSharedPlace',
+      );
+      expect(
+        repository.savedDiagnosticEvents.single.event.message,
+        contains('place save failed'),
+      );
 
       repository.failSharedPlaceSaves = false;
       controller.retryPlaceSave();
@@ -309,6 +321,62 @@ void main() {
         repository.savedSharedPlaces.single.place.providerPlaceId,
         'kakao-cafe-1',
       );
+    });
+
+    test('session place reservation failure writes diagnostic event', () async {
+      final repository = RecordingAlagagiRepository()
+        ..failSharedPlaceSaves = true;
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            sharedPlaces: [
+              SharedPlace(
+                id: 'place_partner_cafe',
+                name: '느린 커피',
+                address: '서울 성동구',
+                category: PlaceCategory.cafe,
+                provider: MapApiProvider.kakao,
+                providerPlaceId: 'kakao-cafe-1',
+                latitude: 37.5446,
+                longitude: 127.0557,
+                createdByProfileId: 'minyoungUid',
+                interestedByProfileIds: {'minyoungUid'},
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+      );
+
+      final accepted = controller.updateMeetingPlaceReservationTime(
+        dateKey: '2026-06-21',
+        placeId: 'place_partner_cafe',
+        reservationTimeLabel: '18:30 예약',
+      );
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(accepted, isTrue);
+      expect(repository.savedSharedPlaceMeetingLinks, isEmpty);
+      expect(controller.state.placeSaveStatus, SaveStatus.failed);
+      expect(repository.savedDiagnosticEvents, hasLength(1));
+      final event = repository.savedDiagnosticEvents.single.event;
+      expect(event.action, 'saveSharedPlaceMeetingLinks');
+      expect(event.targetId, 'place_partner_cafe');
+      expect(event.detail, contains('meetingLinksOnly=true'));
     });
 
     test('session meeting save failure exposes retry state', () async {
@@ -2912,6 +2980,8 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   final List<({String spaceId, SharedPlace place})> savedSharedPlaces = [];
   final List<({String spaceId, SharedPlace place})>
   savedSharedPlaceMeetingLinks = [];
+  final List<({String spaceId, DiagnosticEvent event})> savedDiagnosticEvents =
+      [];
   final List<({String spaceId, String placeId})> deletedSharedPlaces = [];
   final List<({String spaceId, StockStory story})> savedStockStories = [];
   final List<({String spaceId, String storyId})> deletedStockStories = [];
@@ -3059,6 +3129,14 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   @override
   Future<void> deleteSharedPlace(String spaceId, String placeId) async {
     deletedSharedPlaces.add((spaceId: spaceId, placeId: placeId));
+  }
+
+  @override
+  Future<void> saveDiagnosticEvent(
+    String spaceId,
+    DiagnosticEvent event,
+  ) async {
+    savedDiagnosticEvents.add((spaceId: spaceId, event: event));
   }
 
   @override

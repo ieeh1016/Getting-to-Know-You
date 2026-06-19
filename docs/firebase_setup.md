@@ -161,6 +161,36 @@ service cloud.firestore {
         && personalization.accentEmoji.size() <= 8;
     }
 
+    function validDiagnosticEvent(spaceId, eventId) {
+      return request.resource.data.keys().hasOnly([
+          'id',
+          'feature',
+          'action',
+          'targetId',
+          'message',
+          'detail',
+          'createdByProfileId',
+          'createdAt'
+        ])
+        && request.resource.data.id == eventId
+        && request.resource.data.feature is string
+        && request.resource.data.feature.size() > 0
+        && request.resource.data.feature.size() <= 40
+        && request.resource.data.action is string
+        && request.resource.data.action.size() > 0
+        && request.resource.data.action.size() <= 80
+        && request.resource.data.targetId is string
+        && request.resource.data.targetId.size() <= 120
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 500
+        && request.resource.data.detail is string
+        && request.resource.data.detail.size() <= 1000
+        && request.resource.data.createdByProfileId == request.auth.uid
+        && request.resource.data.createdByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        && request.resource.data.createdAt == request.time;
+    }
+
     function validAnswerComment(spaceId, commentId) {
       return request.resource.data.keys().hasOnly([
           'questionId',
@@ -957,6 +987,14 @@ service cloud.firestore {
         allow create, update: if isSpaceMember(spaceId)
           && validDailyProgress(progressId);
         allow delete: if false;
+      }
+
+      match /diagnosticEvents/{eventId} {
+        allow read: if isSpaceMember(spaceId)
+          && isOwnerUser();
+        allow create: if isSpaceMember(spaceId)
+          && validDiagnosticEvent(spaceId, eventId);
+        allow update, delete: if false;
       }
 
       match /balanceSelections/{selectionId} {

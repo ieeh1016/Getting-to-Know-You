@@ -176,6 +176,28 @@ class AlagagiSpaceData {
   final SpacePersonalization personalization;
 }
 
+class DiagnosticEvent {
+  const DiagnosticEvent({
+    required this.id,
+    required this.feature,
+    required this.action,
+    required this.message,
+    required this.createdByProfileId,
+    this.targetId = '',
+    this.detail = '',
+    this.createdAt,
+  });
+
+  final String id;
+  final String feature;
+  final String action;
+  final String targetId;
+  final String message;
+  final String detail;
+  final String createdByProfileId;
+  final DateTime? createdAt;
+}
+
 class BalanceSelection {
   const BalanceSelection({
     required this.questionId,
@@ -255,6 +277,8 @@ abstract class AlagagiDataRepository {
   Future<void> saveSharedPlaceMeetingLinks(String spaceId, SharedPlace place);
 
   Future<void> deleteSharedPlace(String spaceId, String placeId);
+
+  Future<void> saveDiagnosticEvent(String spaceId, DiagnosticEvent event);
 
   Future<void> saveCuriosityCard(String spaceId, CuriosityCard card);
 
@@ -3789,6 +3813,20 @@ class AlagagiController extends ChangeNotifier {
             }
             debugPrint('Shared place save failed for ${place.id}: $error');
             debugPrintStack(stackTrace: stackTrace);
+            _persistDiagnosticEvent(
+              feature: 'places',
+              action: meetingLinksOnly
+                  ? 'saveSharedPlaceMeetingLinks'
+                  : 'saveSharedPlace',
+              targetId: place.id,
+              error: error,
+              stackTrace: stackTrace,
+              detail:
+                  'meetingLinksOnly=$meetingLinksOnly; '
+                  'linkedDateKey=${place.linkedDateKey ?? ''}; '
+                  'linkCount=${place.normalizedMeetingPlanLinks().length}; '
+                  'interestedBy=${place.interestedByProfileIds.join(',')}',
+            );
             _lastFailedSharedPlace = place;
             _lastFailedSharedPlaceWasMeetingLinks = meetingLinksOnly;
             _state = _state.copyWith(
@@ -3805,6 +3843,54 @@ class AlagagiController extends ChangeNotifier {
             }
           }),
     );
+  }
+
+  void _persistDiagnosticEvent({
+    required String feature,
+    required String action,
+    required String targetId,
+    required Object error,
+    StackTrace? stackTrace,
+    String detail = '',
+  }) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      return;
+    }
+    final now = DateTime.now();
+    final stackPreview = stackTrace?.toString() ?? '';
+    final event = DiagnosticEvent(
+      id: 'diag_${_state.me.id}_${now.microsecondsSinceEpoch}',
+      feature: feature,
+      action: action,
+      targetId: targetId,
+      message: _trimDiagnosticText('${error.runtimeType}: $error', 500),
+      detail: _trimDiagnosticText(
+        [
+          if (detail.trim().isNotEmpty) detail.trim(),
+          if (stackPreview.trim().isNotEmpty) stackPreview.trim(),
+        ].join('\n'),
+        1000,
+      ),
+      createdByProfileId: _state.me.id,
+      createdAt: now,
+    );
+    unawaited(
+      repository.saveDiagnosticEvent(spaceId, event).catchError((
+        Object logError,
+      ) {
+        debugPrint('Diagnostic event save failed: $logError');
+      }),
+    );
+  }
+
+  String _trimDiagnosticText(String value, int maxLength) {
+    final trimmed = value.trim();
+    if (trimmed.length <= maxLength) {
+      return trimmed;
+    }
+    return trimmed.substring(0, maxLength);
   }
 
   void _deleteSharedPlace(SharedPlace place, int previousIndex) {

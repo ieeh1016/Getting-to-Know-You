@@ -4050,6 +4050,12 @@ class _FailingSaveRepository implements AlagagiDataRepository {
   Future<void> deleteSharedPlace(String spaceId, String placeId) async {}
 
   @override
+  Future<void> saveDiagnosticEvent(
+    String spaceId,
+    DiagnosticEvent event,
+  ) async {}
+
+  @override
   Future<void> saveCuriosityCard(String spaceId, CuriosityCard card) async {}
 
   @override
