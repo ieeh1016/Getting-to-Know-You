@@ -107,6 +107,7 @@ void main() {
       rules,
       contains('request.resource.data.interestedByProfileIds.hasOnly'),
     );
+    expect(rules, contains('request.resource.data.updatedByProfileId in get'));
     expect(rules, contains('request.resource.data.updatedAt is timestamp'));
     expect(
       rules,

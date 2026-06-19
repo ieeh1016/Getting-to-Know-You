@@ -404,7 +404,9 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         .collection('sharedPlaces')
         .doc(place.id);
     return reference
-        .update(_sharedPlaceMeetingLinkPatchToData(place))
+        .update(
+          _sharedPlaceMeetingLinkPatchToData(place, useServerTimestamp: false),
+        )
         .catchError((Object error) {
           if (error is FirebaseException &&
               error.code == 'not-found' &&
@@ -1186,7 +1188,10 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     };
   }
 
-  Map<String, Object?> _sharedPlaceMeetingLinkPatchToData(SharedPlace place) {
+  Map<String, Object?> _sharedPlaceMeetingLinkPatchToData(
+    SharedPlace place, {
+    bool useServerTimestamp = true,
+  }) {
     return {
       'interestedByProfileIds': place.interestedByProfileIds.toList(),
       'linkedDateKey': place.linkedDateKey ?? '',
@@ -1196,7 +1201,9 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           .toList(),
       'updatedByProfileId':
           place.updatedByProfileId ?? place.createdByProfileId,
-      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': useServerTimestamp
+          ? FieldValue.serverTimestamp()
+          : Timestamp.now(),
     };
   }
 
