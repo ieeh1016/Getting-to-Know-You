@@ -1600,6 +1600,7 @@ class AlagagiState {
     this.meetingDraftMeetingPlanText = '',
     this.meetingPlanDraftText = '',
     this.meetingPlanItemDraft = '',
+    this.editingMeetingPlanItemIndex,
     this.meetingDraftError,
     this.meetingSaveStatus = SaveStatus.idle,
     this.meetingSaveFeedback,
@@ -1730,6 +1731,7 @@ class AlagagiState {
   final String meetingDraftMeetingPlanText;
   final String meetingPlanDraftText;
   final String meetingPlanItemDraft;
+  final int? editingMeetingPlanItemIndex;
   final String? meetingDraftError;
   final SaveStatus meetingSaveStatus;
   final String? meetingSaveFeedback;
@@ -1867,6 +1869,8 @@ class AlagagiState {
     String? meetingDraftMeetingPlanText,
     String? meetingPlanDraftText,
     String? meetingPlanItemDraft,
+    int? editingMeetingPlanItemIndex,
+    bool clearEditingMeetingPlanItemIndex = false,
     String? meetingDraftError,
     bool clearMeetingDraftError = false,
     SaveStatus? meetingSaveStatus,
@@ -2058,6 +2062,9 @@ class AlagagiState {
           meetingDraftMeetingPlanText ?? this.meetingDraftMeetingPlanText,
       meetingPlanDraftText: meetingPlanDraftText ?? this.meetingPlanDraftText,
       meetingPlanItemDraft: meetingPlanItemDraft ?? this.meetingPlanItemDraft,
+      editingMeetingPlanItemIndex: clearEditingMeetingPlanItemIndex
+          ? null
+          : editingMeetingPlanItemIndex ?? this.editingMeetingPlanItemIndex,
       meetingDraftError: clearMeetingDraftError
           ? null
           : meetingDraftError ?? this.meetingDraftError,
@@ -2405,6 +2412,7 @@ class AlagagiController extends ChangeNotifier {
           meetingPlanItemsFor(dateKey),
         ),
         meetingPlanItemDraft: '',
+        clearEditingMeetingPlanItemIndex: true,
       );
     } else if (_state.route == AlagagiRoute.meetings) {
       _state = _state.copyWith(
@@ -4906,6 +4914,7 @@ class AlagagiController extends ChangeNotifier {
       meetingPlanItemDraft: route == AlagagiRoute.meetingPlans
           ? ''
           : _state.meetingPlanItemDraft,
+      clearEditingMeetingPlanItemIndex: true,
       editingAnswer: false,
       clearActiveAnswerQuestion: route != AlagagiRoute.answer,
       clearAnswerError: true,
@@ -7207,6 +7216,7 @@ class AlagagiController extends ChangeNotifier {
         meetingPlanItemsFor(dateKey),
       ),
       meetingPlanItemDraft: '',
+      clearEditingMeetingPlanItemIndex: true,
       clearMeetingDraftError: true,
       clearMeetingSaveFeedback: true,
       clearMeetingSaveTargetId: true,
@@ -7217,6 +7227,7 @@ class AlagagiController extends ChangeNotifier {
   void updateMeetingPlanDraft(String value) {
     _state = _state.copyWith(
       meetingPlanDraftText: value,
+      clearEditingMeetingPlanItemIndex: true,
       clearMeetingDraftError: true,
       clearMeetingSaveFeedback: true,
     );
@@ -7245,10 +7256,52 @@ class AlagagiController extends ChangeNotifier {
       return;
     }
     final items = meetingPlanDraftItems;
-    final nextItems = [...items, item];
+    final editingIndex = _state.editingMeetingPlanItemIndex;
+    final nextItems = [...items];
+    if (editingIndex == null) {
+      nextItems.add(item);
+    } else if (editingIndex < 0 || editingIndex >= nextItems.length) {
+      _state = _state.copyWith(
+        meetingDraftError: '수정할 계획을 찾지 못했어요.',
+        clearEditingMeetingPlanItemIndex: true,
+      );
+      notifyListeners();
+      return;
+    } else {
+      nextItems[editingIndex] = item;
+    }
     _state = _state.copyWith(
       meetingPlanDraftText: _meetingPlanTextFromItems(nextItems),
       meetingPlanItemDraft: '',
+      clearEditingMeetingPlanItemIndex: true,
+      clearMeetingDraftError: true,
+      clearMeetingSaveFeedback: true,
+    );
+    notifyListeners();
+  }
+
+  void startEditingMeetingPlanDraftItem(int index) {
+    final items = meetingPlanDraftItems;
+    if (index < 0 || index >= items.length) {
+      return;
+    }
+    _state = _state.copyWith(
+      meetingPlanItemDraft: items[index],
+      editingMeetingPlanItemIndex: index,
+      clearMeetingDraftError: true,
+      clearMeetingSaveFeedback: true,
+    );
+    notifyListeners();
+  }
+
+  void cancelEditingMeetingPlanDraftItem() {
+    if (_state.editingMeetingPlanItemIndex == null &&
+        _state.meetingPlanItemDraft.isEmpty) {
+      return;
+    }
+    _state = _state.copyWith(
+      meetingPlanItemDraft: '',
+      clearEditingMeetingPlanItemIndex: true,
       clearMeetingDraftError: true,
       clearMeetingSaveFeedback: true,
     );
@@ -7261,8 +7314,57 @@ class AlagagiController extends ChangeNotifier {
       return;
     }
     final nextItems = [...items]..removeAt(index);
+    final editingIndex = _state.editingMeetingPlanItemIndex;
+    final removedEditingItem = editingIndex == index;
+    final adjustedEditingIndex = editingIndex != null && index < editingIndex
+        ? editingIndex - 1
+        : editingIndex;
     _state = _state.copyWith(
       meetingPlanDraftText: _meetingPlanTextFromItems(nextItems),
+      meetingPlanItemDraft: removedEditingItem
+          ? ''
+          : _state.meetingPlanItemDraft,
+      editingMeetingPlanItemIndex: adjustedEditingIndex,
+      clearEditingMeetingPlanItemIndex: removedEditingItem,
+      clearMeetingDraftError: true,
+      clearMeetingSaveFeedback: true,
+    );
+    notifyListeners();
+  }
+
+  void reorderMeetingPlanDraftItem(int oldIndex, int newIndex) {
+    final items = [...meetingPlanDraftItems];
+    if (oldIndex < 0 || oldIndex >= items.length || items.length < 2) {
+      return;
+    }
+    var targetIndex = newIndex;
+    if (targetIndex > oldIndex) {
+      targetIndex -= 1;
+    }
+    targetIndex = targetIndex.clamp(0, items.length - 1).toInt();
+    if (oldIndex == targetIndex) {
+      return;
+    }
+
+    final movedItem = items.removeAt(oldIndex);
+    items.insert(targetIndex, movedItem);
+
+    final editingIndex = _state.editingMeetingPlanItemIndex;
+    int? nextEditingIndex = editingIndex;
+    if (editingIndex != null) {
+      if (editingIndex == oldIndex) {
+        nextEditingIndex = targetIndex;
+      } else if (oldIndex < editingIndex && editingIndex <= targetIndex) {
+        nextEditingIndex = editingIndex - 1;
+      } else if (targetIndex <= editingIndex && editingIndex < oldIndex) {
+        nextEditingIndex = editingIndex + 1;
+      }
+    }
+
+    _state = _state.copyWith(
+      meetingPlanDraftText: _meetingPlanTextFromItems(items),
+      editingMeetingPlanItemIndex: nextEditingIndex,
+      clearEditingMeetingPlanItemIndex: nextEditingIndex == null,
       clearMeetingDraftError: true,
       clearMeetingSaveFeedback: true,
     );
@@ -7300,6 +7402,7 @@ class AlagagiController extends ChangeNotifier {
       selectedMeetingPlanDateKey: dateKey,
       meetingPlanDraftText: _meetingPlanTextFromItems(meetingPlanItems),
       meetingPlanItemDraft: '',
+      clearEditingMeetingPlanItemIndex: true,
       meetingDraftMeetingPlanText: dateKey == selectedMeetingDateKey
           ? _meetingPlanTextFromItems(meetingPlanItems)
           : _state.meetingDraftMeetingPlanText,

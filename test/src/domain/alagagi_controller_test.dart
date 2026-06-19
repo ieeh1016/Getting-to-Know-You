@@ -223,6 +223,14 @@ void main() {
       controller.addMeetingPlanDraftItem();
       controller.updateMeetingPlanItemDraft('저녁 먹기');
       controller.addMeetingPlanDraftItem();
+      controller.startEditingMeetingPlanDraftItem(1);
+      expect(controller.state.meetingPlanItemDraft, '근처 카페');
+      controller.updateMeetingPlanItemDraft('브런치 카페');
+      controller.addMeetingPlanDraftItem();
+      expect(controller.state.editingMeetingPlanItemIndex, isNull);
+      expect(controller.meetingPlanDraftItems, ['전시 보기', '브런치 카페', '저녁 먹기']);
+      controller.reorderMeetingPlanDraftItem(2, 0);
+      expect(controller.meetingPlanDraftItems, ['저녁 먹기', '전시 보기', '브런치 카페']);
       controller.submitMeetingPlanDraft();
 
       final plan = controller.meetingPlanFor('2026-06-11');
@@ -230,8 +238,28 @@ void main() {
       expect(controller.state.route, AlagagiRoute.meetingPlans);
       expect(controller.selectedMeetingPlanDateKey, '2026-06-11');
       expect(plan, isNotNull);
-      expect(plan!.items, ['전시 보기', '근처 카페', '저녁 먹기']);
+      expect(plan!.items, ['저녁 먹기', '전시 보기', '브런치 카페']);
       expect(controller.state.meetingSaveFeedback, '만남 계획을 저장했어요.');
+    });
+
+    test('meeting plan reorder keeps the edited item selected', () {
+      final controller = AlagagiController()..enterSpace('영우');
+
+      controller.selectMeetingDate('2026-06-11');
+      controller.updateMeetingDayDraft(timeLabel: '저녁 7시쯤');
+      controller.submitMeetingDayDraft();
+      controller.goTo(AlagagiRoute.meetingPlans);
+      for (final item in ['전시 보기', '브런치 카페', '저녁 먹기']) {
+        controller.updateMeetingPlanItemDraft(item);
+        controller.addMeetingPlanDraftItem();
+      }
+
+      controller.startEditingMeetingPlanDraftItem(1);
+      controller.reorderMeetingPlanDraftItem(0, 3);
+
+      expect(controller.meetingPlanDraftItems, ['브런치 카페', '저녁 먹기', '전시 보기']);
+      expect(controller.state.editingMeetingPlanItemIndex, 0);
+      expect(controller.state.meetingPlanItemDraft, '브런치 카페');
     });
 
     test('meeting plan draft can store more than eight items', () {

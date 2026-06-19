@@ -2836,6 +2836,17 @@ void main() {
       await tester.tap(find.byKey(meetingPlanItemAddButtonKey));
       await tester.pumpAndSettle();
     }
+    await tester.ensureVisible(find.byKey(meetingPlanItemEditButtonKey(1)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(meetingPlanItemEditButtonKey(1)));
+    await tester.pumpAndSettle();
+    expect(find.text('2번째 계획 수정'), findsOneWidget);
+    await tester.enterText(find.byKey(meetingPlanDraftFieldKey), '브런치 카페');
+    await tester.tap(find.byKey(meetingPlanItemAddButtonKey));
+    await tester.pumpAndSettle();
+    expect(find.text('브런치 카페'), findsOneWidget);
+    expect(find.text('근처 카페'), findsNothing);
+
     await tester.ensureVisible(find.byKey(meetingPlanSaveButtonKey));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(meetingPlanSaveButtonKey));
@@ -2843,7 +2854,7 @@ void main() {
 
     final plan = controller.meetingPlanFor(dateKey);
     expect(plan, isNotNull);
-    expect(plan!.items, ['전시 보기', '근처 카페', '저녁 먹기']);
+    expect(plan!.items, ['전시 보기', '브런치 카페', '저녁 먹기']);
     expect(find.text('계획 3개'), findsOneWidget);
     expect(find.text('만남 계획을 저장했어요.'), findsOneWidget);
 

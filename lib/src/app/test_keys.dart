@@ -98,6 +98,10 @@ Key meetingPlanPlaceLinkButtonKey(String placeId) =>
     Key('meeting-plan-place-link-$placeId');
 Key meetingPlanItemRemoveButtonKey(int index) =>
     Key('meeting-plan-item-remove-$index');
+Key meetingPlanItemEditButtonKey(int index) =>
+    Key('meeting-plan-item-edit-$index');
+Key meetingPlanItemDragHandleKey(int index) =>
+    Key('meeting-plan-item-drag-$index');
 Key meetingDayIndicatorKey(String dateKey) =>
     Key('meeting-day-indicator-$dateKey');
 Key meetingMutualIndicatorKey(String dateKey) =>

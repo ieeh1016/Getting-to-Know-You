@@ -831,43 +831,89 @@ class _MeetingPlanTaskList extends StatelessWidget {
         ),
       );
     }
-    return Column(
-      children: [
-        for (var index = 0; index < items.length; index++) ...[
-          _MeetingPlanTaskRow(
+    return ReorderableListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      buildDefaultDragHandles: false,
+      itemCount: items.length,
+      onReorder: controller.reorderMeetingPlanDraftItem,
+      itemBuilder: (context, index) {
+        return Padding(
+          key: ValueKey(_meetingPlanTaskKey(items, index)),
+          padding: EdgeInsets.only(bottom: index == items.length - 1 ? 0 : 8),
+          child: _MeetingPlanTaskRow(
             index: index,
             label: items[index],
+            editing: controller.state.editingMeetingPlanItemIndex == index,
+            dragHandle: ReorderableDragStartListener(
+              index: index,
+              child: SizedBox(
+                key: meetingPlanItemDragHandleKey(index),
+                width: 30,
+                height: 34,
+                child: Tooltip(
+                  message: '순서 변경',
+                  child: Icon(
+                    Icons.drag_indicator_rounded,
+                    size: 19,
+                    color: AlagagiColors.muted.withValues(alpha: 0.82),
+                  ),
+                ),
+              ),
+            ),
+            onEdit: () => controller.startEditingMeetingPlanDraftItem(index),
             onRemove: () => controller.removeMeetingPlanDraftItem(index),
           ),
-          if (index != items.length - 1) const SizedBox(height: 8),
-        ],
-      ],
+        );
+      },
     );
   }
+}
+
+String _meetingPlanTaskKey(List<String> items, int index) {
+  final label = items[index];
+  var occurrence = 0;
+  for (var cursor = 0; cursor < index; cursor++) {
+    if (items[cursor] == label) {
+      occurrence += 1;
+    }
+  }
+  return 'meeting-plan-task-$label-$occurrence';
 }
 
 class _MeetingPlanTaskRow extends StatelessWidget {
   const _MeetingPlanTaskRow({
     required this.index,
     required this.label,
+    required this.editing,
+    required this.dragHandle,
+    required this.onEdit,
     required this.onRemove,
   });
 
   final int index;
   final String label;
+  final bool editing;
+  final Widget dragHandle;
+  final VoidCallback onEdit;
   final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
-        border: Border.all(color: AlagagiColors.line),
+        color: editing ? const Color(0xFFF0F2EB) : const Color(0xFFF8F8F4),
+        border: Border.all(
+          color: editing ? const Color(0x668A9A7E) : AlagagiColors.line,
+        ),
         borderRadius: BorderRadius.circular(16),
       ),
       padding: const EdgeInsets.fromLTRB(12, 10, 6, 10),
       child: Row(
         children: [
+          dragHandle,
+          const SizedBox(width: 4),
           Container(
             width: 24,
             height: 24,
@@ -898,6 +944,18 @@ class _MeetingPlanTaskRow extends StatelessWidget {
             width: 34,
             height: 34,
             child: IconButton(
+              key: meetingPlanItemEditButtonKey(index),
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit_rounded, size: 16),
+              color: editing ? AlagagiColors.sageDeep : AlagagiColors.muted,
+              tooltip: '수정',
+              padding: EdgeInsets.zero,
+            ),
+          ),
+          SizedBox(
+            width: 34,
+            height: 34,
+            child: IconButton(
               key: meetingPlanItemRemoveButtonKey(index),
               onPressed: onRemove,
               icon: const Icon(Icons.close_rounded, size: 17),
@@ -919,40 +977,66 @@ class _MeetingPlanTaskComposer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final editingIndex = controller.state.editingMeetingPlanItemIndex;
+    final isEditing = editingIndex != null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: MeetingTextField(
-            fieldKey: meetingPlanDraftFieldKey,
-            label: '추가할 계획',
-            hint: '예: 전시 보기',
-            initialValue: controller.state.meetingPlanItemDraft,
-            maxLength: 40,
-            helperText: '',
-            minLines: 1,
-            maxLines: 1,
-            onChanged: controller.updateMeetingPlanItemDraft,
-          ),
-        ),
-        const SizedBox(width: 8),
-        SizedBox(
-          height: 56,
-          child: OutlinedButton.icon(
-            key: meetingPlanItemAddButtonKey,
-            onPressed: controller.addMeetingPlanDraftItem,
-            icon: const Icon(Icons.add_rounded, size: 17),
-            label: const Text('추가'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AlagagiColors.sageDeep,
-              side: const BorderSide(color: Color(0x338A9A7E)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: MeetingTextField(
+                fieldKey: meetingPlanDraftFieldKey,
+                label: isEditing ? '${editingIndex + 1}번째 계획 수정' : '추가할 계획',
+                hint: isEditing ? '계획을 고쳐 적어주세요' : '예: 전시 보기',
+                initialValue: controller.state.meetingPlanItemDraft,
+                maxLength: 40,
+                helperText: isEditing ? '완료를 누르면 목록에 반영돼요.' : '',
+                minLines: 1,
+                maxLines: 1,
+                onChanged: controller.updateMeetingPlanItemDraft,
               ),
-              textStyle: sans(size: 12.5, weight: FontWeight.w800),
+            ),
+            const SizedBox(width: 8),
+            SizedBox(
+              height: 56,
+              child: OutlinedButton.icon(
+                key: meetingPlanItemAddButtonKey,
+                onPressed: controller.addMeetingPlanDraftItem,
+                icon: Icon(
+                  isEditing ? Icons.check_rounded : Icons.add_rounded,
+                  size: 17,
+                ),
+                label: Text(isEditing ? '완료' : '추가'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AlagagiColors.sageDeep,
+                  side: const BorderSide(color: Color(0x338A9A7E)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  textStyle: sans(size: 12.5, weight: FontWeight.w800),
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (isEditing) ...[
+          const SizedBox(height: 6),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: controller.cancelEditingMeetingPlanDraftItem,
+              icon: const Icon(Icons.close_rounded, size: 15),
+              label: const Text('수정 취소'),
+              style: TextButton.styleFrom(
+                foregroundColor: AlagagiColors.muted,
+                textStyle: sans(size: 12, weight: FontWeight.w800),
+                visualDensity: VisualDensity.compact,
+              ),
             ),
           ),
-        ),
+        ],
       ],
     );
   }
