@@ -252,6 +252,8 @@ abstract class AlagagiDataRepository {
 
   Future<void> saveSharedPlace(String spaceId, SharedPlace place);
 
+  Future<void> saveSharedPlaceMeetingLinks(String spaceId, SharedPlace place);
+
   Future<void> deleteSharedPlace(String spaceId, String placeId);
 
   Future<void> saveCuriosityCard(String spaceId, CuriosityCard card);
@@ -2464,6 +2466,7 @@ class AlagagiController extends ChangeNotifier {
   MeetingPlan? _lastFailedMeetingPlan;
   String _lastFailedMeetingPlanSuccessFeedback = '만남 계획을 저장했어요.';
   SharedPlace? _lastFailedSharedPlace;
+  bool _lastFailedSharedPlaceWasMeetingLinks = false;
   CuriosityCard? _lastFailedCuriosityCard;
   ImprovementPost? _lastFailedImprovementPost;
   WishItem? _lastFailedWish;
@@ -3716,10 +3719,37 @@ class AlagagiController extends ChangeNotifier {
   }
 
   void _persistSharedPlace(SharedPlace place) {
+    _persistSharedPlaceWith(
+      place,
+      meetingLinksOnly: false,
+      write: (repository, spaceId) =>
+          repository.saveSharedPlace(spaceId, place),
+    );
+  }
+
+  void _persistSharedPlaceMeetingLinks(SharedPlace place) {
+    _persistSharedPlaceWith(
+      place,
+      meetingLinksOnly: true,
+      write: (repository, spaceId) =>
+          repository.saveSharedPlaceMeetingLinks(spaceId, place),
+    );
+  }
+
+  void _persistSharedPlaceWith(
+    SharedPlace place, {
+    required bool meetingLinksOnly,
+    required Future<void> Function(
+      AlagagiDataRepository repository,
+      String spaceId,
+    )
+    write,
+  }) {
     final repository = _repository;
     final spaceId = _spaceId;
     if (repository == null || spaceId == null) {
       _lastFailedSharedPlace = null;
+      _lastFailedSharedPlaceWasMeetingLinks = false;
       _state = _state.copyWith(
         placeSaveStatus: SaveStatus.saved,
         placeSaveFeedback: '장소를 저장했어요.',
@@ -3733,17 +3763,18 @@ class AlagagiController extends ChangeNotifier {
     _sharedPlaceSaveVersions[place.id] = version;
     final previousSave =
         _sharedPlaceSaveChains[place.id] ?? Future<void>.value();
-    final save = previousSave
+    final saveOperation = previousSave
         .catchError((Object _) {})
-        .then<void>((_) => repository.saveSharedPlace(spaceId, place));
-    _sharedPlaceSaveChains[place.id] = save;
+        .then<void>((_) => write(repository, spaceId));
+    _sharedPlaceSaveChains[place.id] = saveOperation;
     unawaited(
-      save
+      saveOperation
           .then<void>((_) {
             if (_sharedPlaceSaveVersions[place.id] != version) {
               return;
             }
             _lastFailedSharedPlace = null;
+            _lastFailedSharedPlaceWasMeetingLinks = false;
             _state = _state.copyWith(
               placeSaveStatus: SaveStatus.saved,
               placeSaveFeedback: '장소를 저장했어요.',
@@ -3759,6 +3790,7 @@ class AlagagiController extends ChangeNotifier {
             debugPrint('Shared place save failed for ${place.id}: $error');
             debugPrintStack(stackTrace: stackTrace);
             _lastFailedSharedPlace = place;
+            _lastFailedSharedPlaceWasMeetingLinks = meetingLinksOnly;
             _state = _state.copyWith(
               placeError: '장소를 저장하지 못했어요. 다시 시도해 주세요.',
               placeSaveStatus: SaveStatus.failed,
@@ -3768,7 +3800,7 @@ class AlagagiController extends ChangeNotifier {
             notifyListeners();
           })
           .whenComplete(() {
-            if (_sharedPlaceSaveChains[place.id] == save) {
+            if (_sharedPlaceSaveChains[place.id] == saveOperation) {
               _sharedPlaceSaveChains.remove(place.id);
             }
           }),
@@ -8000,7 +8032,7 @@ class AlagagiController extends ChangeNotifier {
       clearPlaceSaveFeedback: true,
     );
     notifyListeners();
-    _persistSharedPlace(updatedPlace);
+    _persistSharedPlaceMeetingLinks(updatedPlace);
   }
 
   void linkPlaceToSelectedMeeting(String placeId) {
@@ -8047,7 +8079,7 @@ class AlagagiController extends ChangeNotifier {
       clearPlaceSaveFeedback: true,
     );
     notifyListeners();
-    _persistSharedPlace(updatedPlace);
+    _persistSharedPlaceMeetingLinks(updatedPlace);
   }
 
   int _nextMeetingPlaceOrder(String dateKey) {
@@ -8103,7 +8135,7 @@ class AlagagiController extends ChangeNotifier {
       clearPlaceSaveFeedback: true,
     );
     notifyListeners();
-    _persistSharedPlace(updatedPlace);
+    _persistSharedPlaceMeetingLinks(updatedPlace);
     return true;
   }
 
@@ -8170,7 +8202,7 @@ class AlagagiController extends ChangeNotifier {
     );
     notifyListeners();
     for (final place in updatedPlaces) {
-      _persistSharedPlace(place);
+      _persistSharedPlaceMeetingLinks(place);
     }
   }
 
@@ -8221,7 +8253,11 @@ class AlagagiController extends ChangeNotifier {
       clearPlaceSaveFeedback: true,
     );
     notifyListeners();
-    _persistSharedPlace(place);
+    if (_lastFailedSharedPlaceWasMeetingLinks) {
+      _persistSharedPlaceMeetingLinks(place);
+    } else {
+      _persistSharedPlace(place);
+    }
   }
 
   void setStockStoryTab(StockStoryTab tab) {

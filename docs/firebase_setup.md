@@ -888,6 +888,30 @@ service cloud.firestore {
         && request.auth.uid in request.resource.data.interestedByProfileIds;
     }
 
+    function validSharedPlaceMeetingPatchUpdate(spaceId, placeId) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'interestedByProfileIds',
+          'linkedDateKey',
+          'meetingPlanLinks',
+          'updatedByProfileId',
+          'updatedAt'
+        ])
+        && request.resource.data.interestedByProfileIds is list
+        && request.resource.data.interestedByProfileIds.size() <= 2
+        && (
+          request.auth.uid in request.resource.data.interestedByProfileIds
+          || (
+            resource.data.keys().hasAny(['interestedByProfileIds'])
+            && request.auth.uid in resource.data.interestedByProfileIds
+          )
+        )
+        && request.resource.data.linkedDateKey is string
+        && request.resource.data.linkedDateKey.size() <= 16
+        && validRequestSharedPlaceMeetingPlanLinks()
+        && request.resource.data.updatedByProfileId == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+    }
+
     match /users/{userId} {
       allow read: if signedIn()
         && (
@@ -1059,6 +1083,7 @@ service cloud.firestore {
             validSharedPlaceOwnerEdit(spaceId, placeId)
             || validSharedPlaceInterestUpdate(spaceId, placeId)
             || validSharedPlaceMeetingLinkUpdate(spaceId, placeId)
+            || validSharedPlaceMeetingPatchUpdate(spaceId, placeId)
           );
         allow delete: if isSpaceMember(spaceId)
           && resource.data.createdByProfileId == request.auth.uid;

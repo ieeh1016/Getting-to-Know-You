@@ -497,6 +497,14 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   }
 
   @override
+  Future<void> saveSharedPlaceMeetingLinks(
+    String spaceId,
+    SharedPlace place,
+  ) async {
+    savedSharedPlaces.add(place);
+  }
+
+  @override
   Future<void> deleteSharedPlace(String spaceId, String placeId) async {}
 
   @override

@@ -81,6 +81,28 @@ void main() {
     expect(rules, contains("'longitude'"));
   });
 
+  test('shared place meeting link saves use a narrow Firestore patch', () {
+    final repository = File(
+      'lib/src/data/firebase_alagagi_repositories.dart',
+    ).readAsStringSync();
+    final rules = File('firestore.rules').readAsStringSync();
+    final method = RegExp(
+      r'Future<void> saveSharedPlaceMeetingLinks[\s\S]*?\n  @override',
+    ).firstMatch(repository)?.group(0);
+
+    expect(method, isNotNull);
+    expect(method, contains("'meetingPlanLinks'"));
+    expect(method, contains("'linkedDateKey'"));
+    expect(method, contains("'interestedByProfileIds'"));
+    expect(method, isNot(contains("'name'")));
+    expect(method, isNot(contains("'providerPlaceId'")));
+    expect(rules, contains('function validSharedPlaceMeetingPatchUpdate'));
+    expect(
+      rules,
+      contains('validSharedPlaceMeetingPatchUpdate(spaceId, placeId)'),
+    );
+  });
+
   test('meeting plan rules do not cap plan item count at eight', () {
     final rules = File('firestore.rules').readAsStringSync();
 

@@ -417,6 +417,26 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
   }
 
   @override
+  Future<void> saveSharedPlaceMeetingLinks(String spaceId, SharedPlace place) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('sharedPlaces')
+        .doc(place.id)
+        .set({
+          'interestedByProfileIds': place.interestedByProfileIds.toList(),
+          'linkedDateKey': place.linkedDateKey ?? '',
+          'meetingPlanLinks': place
+              .normalizedMeetingPlanLinks()
+              .map(_meetingPlaceLinkToData)
+              .toList(),
+          'updatedByProfileId':
+              place.updatedByProfileId ?? place.createdByProfileId,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+  }
+
+  @override
   Future<void> deleteSharedPlace(String spaceId, String placeId) {
     return _firestore
         .collection('spaces')

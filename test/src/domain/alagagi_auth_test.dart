@@ -581,7 +581,7 @@ void main() {
           contains('youngwooUid'),
         );
         expect(
-          repository.savedSharedPlaces.single.place.linkedDateKey,
+          repository.savedSharedPlaceMeetingLinks.single.place.linkedDateKey,
           '2026-06-21',
         );
 
@@ -589,7 +589,10 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         expect(controller.sharedPlaces.single.linkedDateKey, isNull);
-        expect(repository.savedSharedPlaces.last.place.linkedDateKey, isNull);
+        expect(
+          repository.savedSharedPlaceMeetingLinks.last.place.linkedDateKey,
+          isNull,
+        );
       },
     );
 
@@ -642,14 +645,16 @@ void main() {
 
       expect(accepted, isTrue);
       expect(repository.savedSharedPlaces, isEmpty);
+      expect(repository.savedSharedPlaceMeetingLinks, isEmpty);
 
       saveGate.complete();
       await Future<void>.delayed(Duration.zero);
       await Future<void>.delayed(Duration.zero);
 
-      expect(repository.savedSharedPlaces, hasLength(2));
+      expect(repository.savedSharedPlaces, isEmpty);
+      expect(repository.savedSharedPlaceMeetingLinks, hasLength(2));
       expect(
-        repository.savedSharedPlaces.last.place
+        repository.savedSharedPlaceMeetingLinks.last.place
             .meetingPlanLinkFor('2026-06-21')
             ?.reservationTimeLabel,
         '18:30 예약',
@@ -701,8 +706,9 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         expect(accepted, isTrue);
-        expect(repository.savedSharedPlaces, hasLength(1));
-        final savedPlace = repository.savedSharedPlaces.single.place;
+        expect(repository.savedSharedPlaces, isEmpty);
+        expect(repository.savedSharedPlaceMeetingLinks, hasLength(1));
+        final savedPlace = repository.savedSharedPlaceMeetingLinks.single.place;
         expect(savedPlace.providerPlaceId, isEmpty);
         expect(savedPlace.latitude, isNull);
         expect(savedPlace.longitude, isNull);
@@ -2904,6 +2910,8 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   final List<({String spaceId, ScheduleEntry entry})> savedScheduleEntries = [];
   final List<({String spaceId, MeetingPlan plan})> savedMeetingPlans = [];
   final List<({String spaceId, SharedPlace place})> savedSharedPlaces = [];
+  final List<({String spaceId, SharedPlace place})>
+  savedSharedPlaceMeetingLinks = [];
   final List<({String spaceId, String placeId})> deletedSharedPlaces = [];
   final List<({String spaceId, StockStory story})> savedStockStories = [];
   final List<({String spaceId, String storyId})> deletedStockStories = [];
@@ -3031,6 +3039,21 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
       throw StateError('place save failed');
     }
     savedSharedPlaces.add((spaceId: spaceId, place: place));
+  }
+
+  @override
+  Future<void> saveSharedPlaceMeetingLinks(
+    String spaceId,
+    SharedPlace place,
+  ) async {
+    final completer = sharedPlaceSaveCompleter;
+    if (completer != null) {
+      await completer.future;
+    }
+    if (failSharedPlaceSaves) {
+      throw StateError('place meeting links save failed');
+    }
+    savedSharedPlaceMeetingLinks.add((spaceId: spaceId, place: place));
   }
 
   @override
