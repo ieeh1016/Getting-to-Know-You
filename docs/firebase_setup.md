@@ -848,8 +848,16 @@ service cloud.firestore {
         && request.resource.data.longitude is number
         && request.resource.data.interestedByProfileIds.size() == 1
         && request.auth.uid in request.resource.data.interestedByProfileIds
-        && request.resource.data.linkedDateKey == ''
-        && requestSharedPlaceMeetingPlanLinks().size() == 0;
+        && (
+          (
+            request.resource.data.linkedDateKey == ''
+            && requestSharedPlaceMeetingPlanLinks().size() == 0
+          )
+          || (
+            request.resource.data.linkedDateKey != ''
+            && requestSharedPlaceMeetingPlanLinks().size() > 0
+          )
+        );
     }
 
     function validSharedPlaceOwnerEdit(spaceId, placeId) {

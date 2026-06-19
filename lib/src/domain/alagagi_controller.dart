@@ -3830,7 +3830,7 @@ class AlagagiController extends ChangeNotifier {
             _lastFailedSharedPlace = place;
             _lastFailedSharedPlaceWasMeetingLinks = meetingLinksOnly;
             _state = _state.copyWith(
-              placeError: '장소를 저장하지 못했어요. 다시 시도해 주세요.',
+              placeError: _placeSaveFailureMessage(error),
               placeSaveStatus: SaveStatus.failed,
               placeSaveTargetId: place.id,
               clearPlaceSaveFeedback: true,
@@ -3891,6 +3891,20 @@ class AlagagiController extends ChangeNotifier {
       return trimmed;
     }
     return trimmed.substring(0, maxLength);
+  }
+
+  String _placeSaveFailureMessage(Object error) {
+    final text = error.toString();
+    if (text.contains('permission-denied')) {
+      return '장소를 저장하지 못했어요. Firestore Rules 권한을 확인해 주세요.';
+    }
+    if (text.contains('not-found')) {
+      return '장소를 저장하지 못했어요. 서버의 장소 문서를 찾지 못했어요.';
+    }
+    if (text.contains('unavailable') || text.contains('network')) {
+      return '장소를 저장하지 못했어요. 네트워크 연결을 확인해 주세요.';
+    }
+    return '장소를 저장하지 못했어요. 다시 시도해 주세요.';
   }
 
   void _deleteSharedPlace(SharedPlace place, int previousIndex) {

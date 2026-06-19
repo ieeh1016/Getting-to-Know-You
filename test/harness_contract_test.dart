@@ -89,13 +89,19 @@ void main() {
     final method = RegExp(
       r'Future<void> saveSharedPlaceMeetingLinks[\s\S]*?\n  @override',
     ).firstMatch(repository)?.group(0);
+    final patchPayload = RegExp(
+      r'Map<String, Object\?> _sharedPlaceMeetingLinkPatchToData[\s\S]*?\n  String _mapApiProviderToData',
+    ).firstMatch(repository)?.group(0);
 
     expect(method, isNotNull);
-    expect(method, contains("'meetingPlanLinks'"));
-    expect(method, contains("'linkedDateKey'"));
-    expect(method, contains("'interestedByProfileIds'"));
-    expect(method, isNot(contains("'name'")));
-    expect(method, isNot(contains("'providerPlaceId'")));
+    expect(patchPayload, isNotNull);
+    expect(patchPayload, contains("'meetingPlanLinks'"));
+    expect(patchPayload, contains("'linkedDateKey'"));
+    expect(patchPayload, contains("'interestedByProfileIds'"));
+    expect(method, contains('.update('));
+    expect(method, isNot(contains('SetOptions(merge: true)')));
+    expect(patchPayload, isNot(contains("'name'")));
+    expect(patchPayload, isNot(contains("'providerPlaceId'")));
     expect(rules, contains('function validSharedPlaceMeetingPatchUpdate'));
     expect(
       rules,

@@ -1354,6 +1354,7 @@ class _MeetingPlanPlaceReservationEditorState
     extends State<_MeetingPlanPlaceReservationEditor> {
   late final TextEditingController _controller;
   late String _savedValue;
+  String? _pendingValue;
 
   @override
   void initState() {
@@ -1365,13 +1366,25 @@ class _MeetingPlanPlaceReservationEditorState
   @override
   void didUpdateWidget(covariant _MeetingPlanPlaceReservationEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final status = widget.controller.state.placeSaveStatus;
+    final isTarget = widget.controller.isPlaceSaveTarget(widget.place.id);
+    if (_pendingValue != null && isTarget && status == SaveStatus.saved) {
+      _savedValue = _pendingValue!;
+      _pendingValue = null;
+    } else if (_pendingValue != null &&
+        isTarget &&
+        status == SaveStatus.failed) {
+      _pendingValue = null;
+    }
     if (oldWidget.initialValue != widget.initialValue &&
-        _controller.text != widget.initialValue) {
+        _pendingValue == null) {
       _savedValue = widget.initialValue;
-      _controller.text = widget.initialValue;
-      _controller.selection = TextSelection.collapsed(
-        offset: widget.initialValue.length,
-      );
+      if (_controller.text != widget.initialValue) {
+        _controller.text = widget.initialValue;
+        _controller.selection = TextSelection.collapsed(
+          offset: widget.initialValue.length,
+        );
+      }
     }
   }
 
@@ -1383,13 +1396,17 @@ class _MeetingPlanPlaceReservationEditorState
 
   void _save() {
     final value = _controller.text.trim();
+    if (value == _savedValue && _pendingValue == null) {
+      return;
+    }
+    setState(() => _pendingValue = value);
     final saved = widget.controller.updateMeetingPlaceReservationTime(
       dateKey: widget.selectedDateKey,
       placeId: widget.place.id,
       reservationTimeLabel: value,
     );
-    if (saved) {
-      setState(() => _savedValue = value);
+    if (!saved && mounted) {
+      setState(() => _pendingValue = null);
     }
   }
 
@@ -1421,6 +1438,7 @@ class _MeetingPlanPlaceReservationEditorState
               maxLength: 30,
               minLines: 1,
               maxLines: 2,
+              enabled: !busy,
               textInputAction: TextInputAction.done,
               onChanged: (_) => setState(() {}),
               onFieldSubmitted: (_) => _save(),
@@ -1447,7 +1465,7 @@ class _MeetingPlanPlaceReservationEditorState
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   textStyle: sans(size: 11.5, weight: FontWeight.w800),
                 ),
-                child: const Text('저장'),
+                child: Text(busy ? '저장 중' : '저장'),
               ),
             ),
           ],

@@ -393,47 +393,28 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         .doc(spaceId)
         .collection('sharedPlaces')
         .doc(place.id)
-        .set({
-          'id': place.id,
-          'name': place.name,
-          'address': place.address,
-          'category': _placeCategoryToData(place.category),
-          'provider': _mapApiProviderToData(place.provider),
-          'providerPlaceId': place.providerPlaceId,
-          'latitude': place.latitude,
-          'longitude': place.longitude,
-          'note': place.note,
-          'createdByProfileId': place.createdByProfileId,
-          'interestedByProfileIds': place.interestedByProfileIds.toList(),
-          'linkedDateKey': place.linkedDateKey ?? '',
-          'meetingPlanLinks': place
-              .normalizedMeetingPlanLinks()
-              .map(_meetingPlaceLinkToData)
-              .toList(),
-          'updatedByProfileId':
-              place.updatedByProfileId ?? place.createdByProfileId,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        .set(_sharedPlaceToData(place), SetOptions(merge: true));
   }
 
   @override
   Future<void> saveSharedPlaceMeetingLinks(String spaceId, SharedPlace place) {
-    return _firestore
+    final reference = _firestore
         .collection('spaces')
         .doc(spaceId)
         .collection('sharedPlaces')
-        .doc(place.id)
-        .set({
-          'interestedByProfileIds': place.interestedByProfileIds.toList(),
-          'linkedDateKey': place.linkedDateKey ?? '',
-          'meetingPlanLinks': place
-              .normalizedMeetingPlanLinks()
-              .map(_meetingPlaceLinkToData)
-              .toList(),
-          'updatedByProfileId':
-              place.updatedByProfileId ?? place.createdByProfileId,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        .doc(place.id);
+    return reference
+        .update(_sharedPlaceMeetingLinkPatchToData(place))
+        .catchError((Object error) {
+          if (error is FirebaseException &&
+              error.code == 'not-found' &&
+              place.updatedByProfileId == place.createdByProfileId &&
+              place.interestedByProfileIds.length == 1 &&
+              place.interestedByProfileIds.contains(place.createdByProfileId)) {
+            return reference.set(_sharedPlaceToData(place));
+          }
+          throw error;
+        });
   }
 
   @override
@@ -1187,6 +1168,36 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       order: order,
       reservationTimeLabel: _readString(data, 'reservationTimeLabel') ?? '',
     );
+  }
+
+  Map<String, Object?> _sharedPlaceToData(SharedPlace place) {
+    return {
+      'id': place.id,
+      'name': place.name,
+      'address': place.address,
+      'category': _placeCategoryToData(place.category),
+      'provider': _mapApiProviderToData(place.provider),
+      'providerPlaceId': place.providerPlaceId,
+      'latitude': place.latitude,
+      'longitude': place.longitude,
+      'note': place.note,
+      'createdByProfileId': place.createdByProfileId,
+      ..._sharedPlaceMeetingLinkPatchToData(place),
+    };
+  }
+
+  Map<String, Object?> _sharedPlaceMeetingLinkPatchToData(SharedPlace place) {
+    return {
+      'interestedByProfileIds': place.interestedByProfileIds.toList(),
+      'linkedDateKey': place.linkedDateKey ?? '',
+      'meetingPlanLinks': place
+          .normalizedMeetingPlanLinks()
+          .map(_meetingPlaceLinkToData)
+          .toList(),
+      'updatedByProfileId':
+          place.updatedByProfileId ?? place.createdByProfileId,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
   }
 
   String _mapApiProviderToData(MapApiProvider provider) {
