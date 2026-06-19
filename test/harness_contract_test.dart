@@ -62,6 +62,25 @@ void main() {
     );
   });
 
+  test('shared place rules allow legacy map metadata normalization', () {
+    final rules = File('firestore.rules').readAsStringSync();
+
+    expect(
+      rules,
+      contains('function preservesOrNormalizesSharedPlaceMapFields'),
+    );
+    expect(
+      rules,
+      contains('request.resource.data.providerPlaceId.size() <= 80'),
+    );
+    expect(rules, contains('request.resource.data.providerPlaceId.size() > 0'));
+    expect(rules, contains('request.resource.data.latitude == null'));
+    expect(rules, contains('request.resource.data.longitude == null'));
+    expect(rules, contains("'providerPlaceId'"));
+    expect(rules, contains("'latitude'"));
+    expect(rules, contains("'longitude'"));
+  });
+
   test('meeting plan rules do not cap plan item count at eight', () {
     final rules = File('firestore.rules').readAsStringSync();
 

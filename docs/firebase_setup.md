@@ -726,10 +726,15 @@ service cloud.firestore {
         && request.resource.data.category in ['cafe', 'food', 'exhibition', 'walk', 'activity']
         && request.resource.data.provider == 'kakao'
         && request.resource.data.providerPlaceId is string
-        && request.resource.data.providerPlaceId.size() > 0
         && request.resource.data.providerPlaceId.size() <= 80
-        && request.resource.data.latitude is number
-        && request.resource.data.longitude is number
+        && (
+          request.resource.data.latitude == null
+          || request.resource.data.latitude is number
+        )
+        && (
+          request.resource.data.longitude == null
+          || request.resource.data.longitude is number
+        )
         && request.resource.data.note is string
         && request.resource.data.note.size() <= 120
         && request.resource.data.createdByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
@@ -754,6 +759,49 @@ service cloud.firestore {
         : [];
     }
 
+    function existingSharedPlaceProvider() {
+      return resource.data.keys().hasAny(['provider'])
+        ? resource.data.provider
+        : '';
+    }
+
+    function existingSharedPlaceProviderPlaceId() {
+      return resource.data.keys().hasAny(['providerPlaceId'])
+        ? resource.data.providerPlaceId
+        : '';
+    }
+
+    function existingSharedPlaceLatitude() {
+      return resource.data.keys().hasAny(['latitude'])
+        ? resource.data.latitude
+        : null;
+    }
+
+    function existingSharedPlaceLongitude() {
+      return resource.data.keys().hasAny(['longitude'])
+        ? resource.data.longitude
+        : null;
+    }
+
+    function preservesOrNormalizesSharedPlaceMapFields() {
+      return (
+          request.resource.data.provider == existingSharedPlaceProvider()
+          || !(existingSharedPlaceProvider() in ['kakao'])
+        )
+        && (
+          request.resource.data.providerPlaceId == existingSharedPlaceProviderPlaceId()
+          || existingSharedPlaceProviderPlaceId() == ''
+        )
+        && (
+          request.resource.data.latitude == existingSharedPlaceLatitude()
+          || existingSharedPlaceLatitude() == null
+        )
+        && (
+          request.resource.data.longitude == existingSharedPlaceLongitude()
+          || existingSharedPlaceLongitude() == null
+        );
+    }
+
     function validRequestSharedPlaceMeetingPlanLinks() {
       return !request.resource.data.keys().hasAny(['meetingPlanLinks'])
         || (
@@ -765,6 +813,9 @@ service cloud.firestore {
     function validNewSharedPlace(spaceId, placeId) {
       return validSharedPlace(spaceId, placeId)
         && request.resource.data.createdByProfileId == request.auth.uid
+        && request.resource.data.providerPlaceId.size() > 0
+        && request.resource.data.latitude is number
+        && request.resource.data.longitude is number
         && request.resource.data.interestedByProfileIds.size() == 1
         && request.auth.uid in request.resource.data.interestedByProfileIds
         && request.resource.data.linkedDateKey == ''
@@ -797,8 +848,13 @@ service cloud.firestore {
     function validSharedPlaceInterestUpdate(spaceId, placeId) {
       return validSharedPlace(spaceId, placeId)
         && requestSharedPlaceMeetingPlanLinks() == existingSharedPlaceMeetingPlanLinks()
+        && preservesOrNormalizesSharedPlaceMapFields()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'interestedByProfileIds',
+          'provider',
+          'providerPlaceId',
+          'latitude',
+          'longitude',
           'meetingPlanLinks',
           'updatedByProfileId',
           'updatedAt'
@@ -815,16 +871,17 @@ service cloud.firestore {
         && request.resource.data.name == resource.data.name
         && request.resource.data.address == resource.data.address
         && request.resource.data.category == resource.data.category
-        && request.resource.data.provider == resource.data.provider
-        && request.resource.data.providerPlaceId == resource.data.providerPlaceId
-        && request.resource.data.latitude == resource.data.latitude
-        && request.resource.data.longitude == resource.data.longitude
+        && preservesOrNormalizesSharedPlaceMapFields()
         && request.resource.data.note == resource.data.note
         && request.resource.data.createdByProfileId == resource.data.createdByProfileId
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'interestedByProfileIds',
           'linkedDateKey',
           'meetingPlanLinks',
+          'provider',
+          'providerPlaceId',
+          'latitude',
+          'longitude',
           'updatedByProfileId',
           'updatedAt'
         ])

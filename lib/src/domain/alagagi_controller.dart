@@ -3752,10 +3752,12 @@ class AlagagiController extends ChangeNotifier {
             );
             notifyListeners();
           })
-          .catchError((Object _) {
+          .catchError((Object error, StackTrace stackTrace) {
             if (_sharedPlaceSaveVersions[place.id] != version) {
               return;
             }
+            debugPrint('Shared place save failed for ${place.id}: $error');
+            debugPrintStack(stackTrace: stackTrace);
             _lastFailedSharedPlace = place;
             _state = _state.copyWith(
               placeError: '장소를 저장하지 못했어요. 다시 시도해 주세요.',

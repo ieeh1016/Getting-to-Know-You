@@ -656,6 +656,63 @@ void main() {
       );
     });
 
+    test(
+      'session place reservation saves legacy map metadata places',
+      () async {
+        final repository = RecordingAlagagiRepository();
+        final controller = AlagagiController.forSession(
+          const AlagagiSession(
+            spaceId: 'main',
+            me: AppProfile(
+              id: 'youngwooUid',
+              nickname: '영우',
+              avatar: '🌿',
+              isMe: true,
+            ),
+            partner: AppProfile(
+              id: 'minyoungUid',
+              nickname: '민영',
+              avatar: '🪻',
+              isMe: false,
+            ),
+            data: AlagagiSpaceData(
+              sharedPlaces: [
+                SharedPlace(
+                  id: 'place_legacy_cafe',
+                  name: '예전 카페',
+                  address: '서울 성동구',
+                  category: PlaceCategory.cafe,
+                  provider: MapApiProvider.kakao,
+                  createdByProfileId: 'youngwooUid',
+                  interestedByProfileIds: {'youngwooUid'},
+                ),
+              ],
+            ),
+          ),
+          repository: repository,
+        );
+
+        controller.selectMeetingDate('2026-06-21');
+        final accepted = controller.updateMeetingPlaceReservationTime(
+          dateKey: '2026-06-21',
+          placeId: 'place_legacy_cafe',
+          reservationTimeLabel: '19:00 예약',
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(accepted, isTrue);
+        expect(repository.savedSharedPlaces, hasLength(1));
+        final savedPlace = repository.savedSharedPlaces.single.place;
+        expect(savedPlace.providerPlaceId, isEmpty);
+        expect(savedPlace.latitude, isNull);
+        expect(savedPlace.longitude, isNull);
+        expect(
+          savedPlace.meetingPlanLinkFor('2026-06-21')?.reservationTimeLabel,
+          '19:00 예약',
+        );
+      },
+    );
+
     test('session place delete removes my place from repository', () async {
       final repository = RecordingAlagagiRepository();
       final controller = AlagagiController.forSession(
