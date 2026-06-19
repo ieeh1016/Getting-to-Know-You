@@ -1072,7 +1072,7 @@ void main() {
     expect(find.text('한 줄만 남겨도 괜찮아요.'), findsOneWidget);
   });
 
-  testWidgets('shows partner comment under my answer as read-only', (
+  testWidgets('shows partner comment under my answer and lets me reply', (
     tester,
   ) async {
     final controller = AlagagiController.forSession(
@@ -1126,6 +1126,26 @@ void main() {
     expect(find.text('민영님의 댓글'), findsOneWidget);
     expect(find.text('이 답을 보니까 장면이 그려져요.'), findsOneWidget);
     expect(find.byKey(answerCommentEditButtonKey), findsNothing);
+
+    await tester.ensureVisible(find.text('답장하기'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('답장하기'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(answerCommentReplyFieldKey),
+      '그렇게 봐줘서 좋다.',
+    );
+    await tester.tap(find.byKey(answerCommentReplySubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('내 답장'), findsOneWidget);
+    expect(find.text('그렇게 봐줘서 좋다.'), findsOneWidget);
+    expect(
+      controller
+          .commentForAnswer('q001', 'youngwooUid', 'minyoungUid')
+          ?.replyBody,
+      '그렇게 봐줘서 좋다.',
+    );
   });
 
   testWidgets('cancels an existing comment edit without hiding the comment', (

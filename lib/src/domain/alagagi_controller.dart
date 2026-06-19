@@ -386,6 +386,10 @@ class AnswerComment {
     required this.body,
     required this.createdLabel,
     this.edited = false,
+    this.replyBody = '',
+    this.repliedByProfileId = '',
+    this.replyCreatedLabel = '',
+    this.replyEdited = false,
   });
 
   final String questionId;
@@ -394,6 +398,35 @@ class AnswerComment {
   final String body;
   final String createdLabel;
   final bool edited;
+  final String replyBody;
+  final String repliedByProfileId;
+  final String replyCreatedLabel;
+  final bool replyEdited;
+
+  bool get hasReply => replyBody.trim().isNotEmpty;
+
+  AnswerComment copyWith({
+    String? body,
+    String? createdLabel,
+    bool? edited,
+    String? replyBody,
+    String? repliedByProfileId,
+    String? replyCreatedLabel,
+    bool? replyEdited,
+  }) {
+    return AnswerComment(
+      questionId: questionId,
+      answerOwnerProfileId: answerOwnerProfileId,
+      commenterProfileId: commenterProfileId,
+      body: body ?? this.body,
+      createdLabel: createdLabel ?? this.createdLabel,
+      edited: edited ?? this.edited,
+      replyBody: replyBody ?? this.replyBody,
+      repliedByProfileId: repliedByProfileId ?? this.repliedByProfileId,
+      replyCreatedLabel: replyCreatedLabel ?? this.replyCreatedLabel,
+      replyEdited: replyEdited ?? this.replyEdited,
+    );
+  }
 }
 
 class DailyQuestionProgress {
@@ -1799,6 +1832,7 @@ class AlagagiState {
     this.commentSaveFeedback,
     this.commentSaveTargetKey,
     this.commentDraftsByAnswerKey = const {},
+    this.commentReplyDraftsByCommentKey = const {},
     this.personalization = const SpacePersonalization(),
     this.personalizationDraft = const SpacePersonalization(),
     this.personalizationError,
@@ -1930,6 +1964,7 @@ class AlagagiState {
   final String? commentSaveFeedback;
   final String? commentSaveTargetKey;
   final Map<String, String> commentDraftsByAnswerKey;
+  final Map<String, String> commentReplyDraftsByCommentKey;
   final SpacePersonalization personalization;
   final SpacePersonalization personalizationDraft;
   final String? personalizationError;
@@ -2101,6 +2136,7 @@ class AlagagiState {
     String? commentSaveTargetKey,
     bool clearCommentSaveTargetKey = false,
     Map<String, String>? commentDraftsByAnswerKey,
+    Map<String, String>? commentReplyDraftsByCommentKey,
     SpacePersonalization? personalization,
     SpacePersonalization? personalizationDraft,
     String? personalizationError,
@@ -2351,6 +2387,8 @@ class AlagagiState {
           : commentSaveTargetKey ?? this.commentSaveTargetKey,
       commentDraftsByAnswerKey:
           commentDraftsByAnswerKey ?? this.commentDraftsByAnswerKey,
+      commentReplyDraftsByCommentKey:
+          commentReplyDraftsByCommentKey ?? this.commentReplyDraftsByCommentKey,
       personalization: personalization ?? this.personalization,
       personalizationDraft: personalizationDraft ?? this.personalizationDraft,
       personalizationError: clearPersonalizationError
@@ -5615,14 +5653,19 @@ class AlagagiController extends ChangeNotifier {
       answerOwnerProfileId,
       _state.me.id,
     );
-    final comment = AnswerComment(
-      questionId: questionId,
-      answerOwnerProfileId: answerOwnerProfileId,
-      commenterProfileId: _state.me.id,
-      body: body,
-      createdLabel: existing?.createdLabel ?? '오늘',
-      edited: existing != null,
-    );
+    final comment =
+        existing?.copyWith(
+          body: body,
+          createdLabel: existing.createdLabel,
+          edited: true,
+        ) ??
+        AnswerComment(
+          questionId: questionId,
+          answerOwnerProfileId: answerOwnerProfileId,
+          commenterProfileId: _state.me.id,
+          body: body,
+          createdLabel: '오늘',
+        );
     _answerCommentsByKey[_answerCommentKey(
           questionId,
           answerOwnerProfileId,
@@ -5644,6 +5687,157 @@ class AlagagiController extends ChangeNotifier {
     );
     notifyListeners();
     _persistAnswerComment(comment);
+  }
+
+  String commentReplyDraftForComment(AnswerComment comment) {
+    return _state.commentReplyDraftsByCommentKey[_answerCommentKey(
+          comment.questionId,
+          comment.answerOwnerProfileId,
+          comment.commenterProfileId,
+        )] ??
+        comment.replyBody;
+  }
+
+  String commentReplyInputValueForComment(AnswerComment comment) {
+    return _state.commentReplyDraftsByCommentKey[_answerCommentKey(
+          comment.questionId,
+          comment.answerOwnerProfileId,
+          comment.commenterProfileId,
+        )] ??
+        '';
+  }
+
+  bool hasCommentReplyDraftForComment(AnswerComment comment) {
+    return _state.commentReplyDraftsByCommentKey.containsKey(
+      _answerCommentKey(
+        comment.questionId,
+        comment.answerOwnerProfileId,
+        comment.commenterProfileId,
+      ),
+    );
+  }
+
+  void updateAnswerCommentReplyDraft({
+    required String questionId,
+    required String answerOwnerProfileId,
+    required String commenterProfileId,
+    required String value,
+  }) {
+    final commentKey = _answerCommentKey(
+      questionId,
+      answerOwnerProfileId,
+      commenterProfileId,
+    );
+    final drafts = Map<String, String>.of(_state.commentReplyDraftsByCommentKey)
+      ..[commentKey] = value;
+    _state = _state.copyWith(
+      commentReplyDraftsByCommentKey: Map<String, String>.unmodifiable(drafts),
+      commentSaveStatus: SaveStatus.idle,
+      clearCommentError: true,
+      clearCommentSaveFeedback: true,
+      clearCommentSaveTargetKey: true,
+    );
+    notifyListeners();
+  }
+
+  void cancelAnswerCommentReplyDraft({
+    required String questionId,
+    required String answerOwnerProfileId,
+    required String commenterProfileId,
+  }) {
+    final drafts = Map<String, String>.of(_state.commentReplyDraftsByCommentKey)
+      ..remove(
+        _answerCommentKey(questionId, answerOwnerProfileId, commenterProfileId),
+      );
+    _state = _state.copyWith(
+      commentReplyDraftsByCommentKey: Map<String, String>.unmodifiable(drafts),
+      commentSaveStatus: SaveStatus.idle,
+      clearCommentError: true,
+      clearCommentSaveFeedback: true,
+      clearCommentSaveTargetKey: true,
+    );
+    notifyListeners();
+  }
+
+  void submitAnswerCommentReply({
+    required String questionId,
+    required String answerOwnerProfileId,
+    required String commenterProfileId,
+  }) {
+    if (_state.commentSaveStatus == SaveStatus.saving) {
+      return;
+    }
+    final existing = commentForAnswer(
+      questionId,
+      answerOwnerProfileId,
+      commenterProfileId,
+    );
+    if (existing == null) {
+      _state = _state.copyWith(
+        commentError: '답장할 댓글을 찾지 못했어요.',
+        commentSaveStatus: SaveStatus.idle,
+        clearCommentSaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    if (answerOwnerProfileId != _state.me.id ||
+        commenterProfileId == _state.me.id) {
+      _state = _state.copyWith(
+        commentError: '내 답에 받은 댓글에만 답장할 수 있어요.',
+        commentSaveStatus: SaveStatus.idle,
+        clearCommentSaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    final body = commentReplyDraftForComment(existing).trim();
+    if (body.isEmpty) {
+      _state = _state.copyWith(
+        commentError: '답장도 한 줄만 남겨도 괜찮아요.',
+        commentSaveStatus: SaveStatus.idle,
+        clearCommentSaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+    if (body.length > 120) {
+      _state = _state.copyWith(
+        commentError: '답장은 120자 안으로 남겨주세요.',
+        commentSaveStatus: SaveStatus.idle,
+        clearCommentSaveFeedback: true,
+      );
+      notifyListeners();
+      return;
+    }
+
+    final updated = existing.copyWith(
+      replyBody: body,
+      repliedByProfileId: _state.me.id,
+      replyCreatedLabel: existing.hasReply ? existing.replyCreatedLabel : '오늘',
+      replyEdited: existing.hasReply,
+    );
+    final commentKey = _answerCommentKey(
+      questionId,
+      answerOwnerProfileId,
+      commenterProfileId,
+    );
+    _answerCommentsByKey[commentKey] = updated;
+    _lastFailedAnswerComment = null;
+    final drafts = Map<String, String>.of(_state.commentReplyDraftsByCommentKey)
+      ..remove(commentKey);
+    _state = _state.copyWith(
+      commentReplyDraftsByCommentKey: Map<String, String>.unmodifiable(drafts),
+      commentSaveStatus: SaveStatus.saving,
+      commentSaveTargetKey: _answerCommentDraftKey(
+        questionId,
+        answerOwnerProfileId,
+      ),
+      clearCommentError: true,
+      clearCommentSaveFeedback: true,
+    );
+    notifyListeners();
+    _persistAnswerComment(updated);
   }
 
   bool isCommentSaveTarget({

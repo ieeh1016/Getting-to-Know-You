@@ -503,9 +503,10 @@ class _SelectedQuestionDetail extends StatelessWidget {
             ),
           if (receivedComment != null) ...[
             const SizedBox(height: 10),
-            ReadOnlyCommentBlock(
+            ReceivedAnswerCommentBlock(
+              controller: controller,
+              comment: receivedComment,
               label: '받은 댓글',
-              body: receivedComment.body,
               onOpenFull: () => showReadableDetailSheet(
                 context,
                 label: '받은 댓글',

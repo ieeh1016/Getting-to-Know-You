@@ -156,6 +156,10 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           'body': comment.body,
           'createdLabel': comment.createdLabel,
           'edited': comment.edited,
+          'replyBody': comment.replyBody,
+          'repliedByProfileId': comment.repliedByProfileId,
+          'replyCreatedLabel': comment.replyCreatedLabel,
+          'replyEdited': comment.replyEdited,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
   }
@@ -718,6 +722,10 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       body: body,
       createdLabel: _readString(data, 'createdLabel') ?? '오늘',
       edited: data['edited'] == true,
+      replyBody: _readString(data, 'replyBody') ?? '',
+      repliedByProfileId: _readString(data, 'repliedByProfileId') ?? '',
+      replyCreatedLabel: _readString(data, 'replyCreatedLabel') ?? '',
+      replyEdited: data['replyEdited'] == true,
     );
   }
 

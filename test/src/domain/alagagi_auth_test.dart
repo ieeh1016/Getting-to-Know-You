@@ -2168,6 +2168,101 @@ void main() {
       },
     );
 
+    test('answer comment reply saves on a received partner comment', () async {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            answers: [
+              Answer(
+                questionId: 'q001',
+                profileId: 'youngwooUid',
+                body: '저는 노을 질 때가 좋아요.',
+                createdLabel: '오늘',
+              ),
+              Answer(
+                questionId: 'q001',
+                profileId: 'minyoungUid',
+                body: '저는 아침 공기가 좋아요.',
+                createdLabel: '오늘',
+              ),
+            ],
+            answerComments: [
+              AnswerComment(
+                questionId: 'q001',
+                answerOwnerProfileId: 'youngwooUid',
+                commenterProfileId: 'minyoungUid',
+                body: '왜 노을이 좋아요?',
+                createdLabel: '오늘',
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+      );
+
+      controller.updateAnswerCommentReplyDraft(
+        questionId: 'q001',
+        answerOwnerProfileId: 'youngwooUid',
+        commenterProfileId: 'minyoungUid',
+        value: '하루가 조용히 정리되는 느낌이라서요.',
+      );
+      controller.submitAnswerCommentReply(
+        questionId: 'q001',
+        answerOwnerProfileId: 'youngwooUid',
+        commenterProfileId: 'minyoungUid',
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(repository.savedAnswerComments, hasLength(1));
+      expect(repository.savedAnswerComments.single.comment.body, '왜 노을이 좋아요?');
+      expect(
+        repository.savedAnswerComments.single.comment.replyBody,
+        '하루가 조용히 정리되는 느낌이라서요.',
+      );
+      expect(
+        repository.savedAnswerComments.single.comment.repliedByProfileId,
+        'youngwooUid',
+      );
+      expect(
+        repository.savedAnswerComments.single.comment.replyEdited,
+        isFalse,
+      );
+
+      controller.updateAnswerCommentReplyDraft(
+        questionId: 'q001',
+        answerOwnerProfileId: 'youngwooUid',
+        commenterProfileId: 'minyoungUid',
+        value: '하루가 부드럽게 마무리되는 느낌이라서요.',
+      );
+      controller.submitAnswerCommentReply(
+        questionId: 'q001',
+        answerOwnerProfileId: 'youngwooUid',
+        commenterProfileId: 'minyoungUid',
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(repository.savedAnswerComments, hasLength(2));
+      expect(
+        repository.savedAnswerComments.last.comment.replyBody,
+        '하루가 부드럽게 마무리되는 느낌이라서요.',
+      );
+      expect(repository.savedAnswerComments.last.comment.replyEdited, isTrue);
+    });
+
     test('answer comment is rejected when partner answer is skipped', () {
       final repository = RecordingAlagagiRepository();
       final controller = AlagagiController.forSession(

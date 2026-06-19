@@ -115,6 +115,25 @@ void main() {
     );
   });
 
+  test('answer comment rules separate comment authors from reply authors', () {
+    final repository = File(
+      'lib/src/data/firebase_alagagi_repositories.dart',
+    ).readAsStringSync();
+    final rules = File('firestore.rules').readAsStringSync();
+
+    expect(repository, contains("'replyBody'"));
+    expect(repository, contains("'repliedByProfileId'"));
+    expect(repository, contains("'replyCreatedLabel'"));
+    expect(repository, contains("'replyEdited'"));
+    expect(rules, contains('function validAnswerCommentOwnerWrite'));
+    expect(rules, contains('function validAnswerCommentReplyWrite'));
+    expect(rules, contains('preservesExistingAnswerCommentReply'));
+    expect(
+      rules,
+      contains('request.resource.data.repliedByProfileId == request.auth.uid'),
+    );
+  });
+
   test('meeting plan rules do not cap plan item count at eight', () {
     final rules = File('firestore.rules').readAsStringSync();
 

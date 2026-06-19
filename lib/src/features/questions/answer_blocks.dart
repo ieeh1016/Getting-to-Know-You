@@ -430,7 +430,7 @@ class _CommentIconButton extends StatelessWidget {
 
   final String tooltip;
   final IconData icon;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -697,6 +697,303 @@ class AnswerLine extends StatelessWidget {
                 ],
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ReceivedAnswerCommentBlock extends StatelessWidget {
+  const ReceivedAnswerCommentBlock({
+    super.key,
+    required this.controller,
+    required this.comment,
+    required this.label,
+    this.onOpenFull,
+  });
+
+  final AlagagiController controller;
+  final AnswerComment comment;
+  final String label;
+  final VoidCallback? onOpenFull;
+
+  @override
+  Widget build(BuildContext context) {
+    final showReadableCue = showsReadableCue(comment.body);
+    final canReply =
+        comment.answerOwnerProfileId == controller.state.me.id &&
+        comment.commenterProfileId != controller.state.me.id;
+    final hasReplyDraft = controller.hasCommentReplyDraftForComment(comment);
+    final showReplyEditor = canReply && hasReplyDraft;
+    final replyInputValue = controller.commentReplyInputValueForComment(
+      comment,
+    );
+    final replyLength = showReplyEditor
+        ? replyInputValue.length
+        : comment.replyBody.length;
+    final isSaveTarget = controller.isCommentSaveTarget(
+      questionId: comment.questionId,
+      answerOwnerProfileId: comment.answerOwnerProfileId,
+    );
+    final isSaving =
+        isSaveTarget && controller.state.commentSaveStatus == SaveStatus.saving;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onOpenFull,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: sans(size: 11, color: AlagagiColors.muted)),
+                const SizedBox(height: 4),
+                Text(
+                  comment.body,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: sans(size: 13, height: 1.5),
+                ),
+                if (showReadableCue && onOpenFull != null) ...[
+                  const SizedBox(height: 5),
+                  const AlagagiFullTextCue(),
+                ],
+              ],
+            ),
+          ),
+          if (canReply) ...[
+            const SizedBox(height: 11),
+            if (showReplyEditor)
+              _AnswerCommentReplyEditor(
+                controller: controller,
+                comment: comment,
+                inputValue: replyInputValue,
+                inputLength: replyLength,
+                isSaving: isSaving,
+              )
+            else if (comment.hasReply)
+              _AnswerCommentReplyPreview(
+                controller: controller,
+                comment: comment,
+                isSaving: isSaving,
+              )
+            else
+              AlagagiInlineTextAction(
+                label: '답장하기',
+                onPressed: isSaving
+                    ? null
+                    : () => controller.updateAnswerCommentReplyDraft(
+                        questionId: comment.questionId,
+                        answerOwnerProfileId: comment.answerOwnerProfileId,
+                        commenterProfileId: comment.commenterProfileId,
+                        value: '',
+                      ),
+              ),
+            if (isSaveTarget) ...[
+              const SizedBox(height: 8),
+              _CommentSaveStatus(
+                controller: controller,
+                questionId: comment.questionId,
+                answerOwnerProfileId: comment.answerOwnerProfileId,
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AnswerCommentReplyPreview extends StatelessWidget {
+  const _AnswerCommentReplyPreview({
+    required this.controller,
+    required this.comment,
+    required this.isSaving,
+  });
+
+  final AlagagiController controller;
+  final AnswerComment comment;
+  final bool isSaving;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: const Color(0x336F7F63)),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.fromLTRB(11, 10, 9, 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.subdirectory_arrow_right_rounded,
+            size: 17,
+            color: AlagagiColors.sageDeep,
+          ),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '내 답장',
+                  style: sans(
+                    size: 10.5,
+                    color: AlagagiColors.sageDeep,
+                    weight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  comment.replyBody,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: sans(size: 12.5, height: 1.45),
+                ),
+                if (comment.replyEdited) ...[
+                  const SizedBox(height: 7),
+                  const _EditedBadge(),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          _CommentIconButton(
+            key: answerCommentReplyEditButtonKey,
+            tooltip: '답장 수정',
+            icon: Icons.edit_outlined,
+            onPressed: isSaving
+                ? null
+                : () => controller.updateAnswerCommentReplyDraft(
+                    questionId: comment.questionId,
+                    answerOwnerProfileId: comment.answerOwnerProfileId,
+                    commenterProfileId: comment.commenterProfileId,
+                    value: comment.replyBody,
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AnswerCommentReplyEditor extends StatelessWidget {
+  const _AnswerCommentReplyEditor({
+    required this.controller,
+    required this.comment,
+    required this.inputValue,
+    required this.inputLength,
+    required this.isSaving,
+  });
+
+  final AlagagiController controller;
+  final AnswerComment comment;
+  final String inputValue;
+  final int inputLength;
+  final bool isSaving;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: const Color(0x336F7F63)),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: AlagagiColors.line),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: TextFormField(
+              key: answerCommentReplyFieldKey,
+              initialValue: inputValue,
+              maxLength: 120,
+              minLines: 1,
+              maxLines: 3,
+              enabled: !isSaving,
+              onChanged: (value) => controller.updateAnswerCommentReplyDraft(
+                questionId: comment.questionId,
+                answerOwnerProfileId: comment.answerOwnerProfileId,
+                commenterProfileId: comment.commenterProfileId,
+                value: value,
+              ),
+              decoration: const InputDecoration(
+                counterText: '',
+                border: InputBorder.none,
+                hintText: '이 댓글에 짧게 답장해볼까요?',
+              ),
+              style: sans(size: 13, height: 1.5),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '상대 댓글 아래에 한 번만 이어져요',
+                  style: sans(size: 10.5, color: AlagagiColors.muted),
+                ),
+              ),
+              Text(
+                '$inputLength / 120',
+                style: sans(size: 10.5, color: AlagagiColors.muted),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              SizedBox(
+                width: 88,
+                child: _CommentSecondaryButton(
+                  key: answerCommentReplyCancelButtonKey,
+                  label: '취소',
+                  onPressed: isSaving
+                      ? null
+                      : () => controller.cancelAnswerCommentReplyDraft(
+                          questionId: comment.questionId,
+                          answerOwnerProfileId: comment.answerOwnerProfileId,
+                          commenterProfileId: comment.commenterProfileId,
+                        ),
+                ),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: _CommentPrimaryButton(
+                  key: answerCommentReplySubmitButtonKey,
+                  label: isSaving
+                      ? '저장 중'
+                      : comment.hasReply
+                      ? '답장 수정'
+                      : '답장 저장',
+                  onPressed: isSaving
+                      ? null
+                      : () => controller.submitAnswerCommentReply(
+                          questionId: comment.questionId,
+                          answerOwnerProfileId: comment.answerOwnerProfileId,
+                          commenterProfileId: comment.commenterProfileId,
+                        ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

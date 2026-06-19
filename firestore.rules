@@ -71,7 +71,7 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
     }
 
-    function validAnswerComment(spaceId, commentId) {
+    function validAnswerCommentShape(spaceId, commentId) {
       return request.resource.data.keys().hasOnly([
           'questionId',
           'answerOwnerProfileId',
@@ -79,19 +79,116 @@ service cloud.firestore {
           'body',
           'createdLabel',
           'edited',
+          'replyBody',
+          'repliedByProfileId',
+          'replyCreatedLabel',
+          'replyEdited',
           'updatedAt'
         ])
         && request.resource.data.questionId is string
         && request.resource.data.answerOwnerProfileId is string
-        && request.resource.data.commenterProfileId == request.auth.uid
-        && request.resource.data.answerOwnerProfileId != request.auth.uid
         && request.resource.data.answerOwnerProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        && request.resource.data.commenterProfileId is string
+        && request.resource.data.commenterProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        && request.resource.data.answerOwnerProfileId != request.resource.data.commenterProfileId
         && request.resource.data.body is string
         && request.resource.data.body.size() > 0
         && request.resource.data.body.size() <= 120
         && request.resource.data.createdLabel is string
         && request.resource.data.edited is bool
+        && (
+          !request.resource.data.keys().hasAny(['replyBody'])
+          || (
+            request.resource.data.replyBody is string
+            && request.resource.data.replyBody.size() <= 120
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['repliedByProfileId'])
+          || (
+            request.resource.data.repliedByProfileId is string
+            && request.resource.data.repliedByProfileId.size() <= 128
+            && (
+              request.resource.data.repliedByProfileId == ''
+              || request.resource.data.repliedByProfileId == request.resource.data.answerOwnerProfileId
+            )
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['replyCreatedLabel'])
+          || (
+            request.resource.data.replyCreatedLabel is string
+            && request.resource.data.replyCreatedLabel.size() <= 16
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['replyEdited'])
+          || request.resource.data.replyEdited is bool
+        )
         && commentId == request.resource.data.questionId + '_' + request.resource.data.answerOwnerProfileId + '_' + request.resource.data.commenterProfileId;
+    }
+
+    function blankAnswerCommentReply() {
+      return (
+          !request.resource.data.keys().hasAny(['replyBody'])
+          || request.resource.data.replyBody == ''
+        )
+        && (
+          !request.resource.data.keys().hasAny(['repliedByProfileId'])
+          || request.resource.data.repliedByProfileId == ''
+        )
+        && (
+          !request.resource.data.keys().hasAny(['replyCreatedLabel'])
+          || request.resource.data.replyCreatedLabel == ''
+        )
+        && (
+          !request.resource.data.keys().hasAny(['replyEdited'])
+          || request.resource.data.replyEdited == false
+        );
+    }
+
+    function preservesExistingAnswerCommentReply() {
+      return (
+          !resource.data.keys().hasAny(['replyBody'])
+          && blankAnswerCommentReply()
+        )
+        || (
+          resource.data.keys().hasAny(['replyBody'])
+          && request.resource.data.replyBody == resource.data.replyBody
+          && request.resource.data.repliedByProfileId == resource.data.repliedByProfileId
+          && request.resource.data.replyCreatedLabel == resource.data.replyCreatedLabel
+          && request.resource.data.replyEdited == resource.data.replyEdited
+        );
+    }
+
+    function validAnswerCommentOwnerWrite(spaceId, commentId) {
+      return validAnswerCommentShape(spaceId, commentId)
+        && request.resource.data.commenterProfileId == request.auth.uid
+        && request.resource.data.answerOwnerProfileId != request.auth.uid
+        && (
+          (
+            !exists(/databases/$(database)/documents/spaces/$(spaceId)/answerComments/$(commentId))
+            && blankAnswerCommentReply()
+          )
+          || (
+            exists(/databases/$(database)/documents/spaces/$(spaceId)/answerComments/$(commentId))
+            && preservesExistingAnswerCommentReply()
+          )
+        );
+    }
+
+    function validAnswerCommentReplyWrite(spaceId, commentId) {
+      return validAnswerCommentShape(spaceId, commentId)
+        && exists(/databases/$(database)/documents/spaces/$(spaceId)/answerComments/$(commentId))
+        && resource.data.answerOwnerProfileId == request.auth.uid
+        && request.resource.data.questionId == resource.data.questionId
+        && request.resource.data.answerOwnerProfileId == resource.data.answerOwnerProfileId
+        && request.resource.data.commenterProfileId == resource.data.commenterProfileId
+        && request.resource.data.body == resource.data.body
+        && request.resource.data.createdLabel == resource.data.createdLabel
+        && request.resource.data.edited == resource.data.edited
+        && request.resource.data.replyBody.size() > 0
+        && request.resource.data.repliedByProfileId == request.auth.uid;
     }
 
     function validDailyProgress(progressId) {
@@ -862,7 +959,10 @@ service cloud.firestore {
       match /answerComments/{commentId} {
         allow read: if isSpaceMember(spaceId);
         allow create, update: if isSpaceMember(spaceId)
-          && validAnswerComment(spaceId, commentId);
+          && (
+            validAnswerCommentOwnerWrite(spaceId, commentId)
+            || validAnswerCommentReplyWrite(spaceId, commentId)
+          );
         allow delete: if false;
       }
 

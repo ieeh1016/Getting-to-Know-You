@@ -198,9 +198,10 @@ class _QuestionCard extends StatelessWidget {
             ),
             if (receivedComment != null) ...[
               const SizedBox(height: 10),
-              ReadOnlyCommentBlock(
+              ReceivedAnswerCommentBlock(
+                controller: controller,
+                comment: receivedComment,
                 label: '${controller.state.partner.nickname}님의 댓글',
-                body: receivedComment.body,
                 onOpenFull: () => showReadableDetailSheet(
                   context,
                   label: '${controller.state.partner.nickname}님의 댓글',

@@ -175,6 +175,14 @@ const answerCommentFieldKey = Key('answer-comment-field');
 const answerCommentEditButtonKey = Key('answer-comment-edit-button');
 const answerCommentCancelButtonKey = Key('answer-comment-cancel-button');
 const answerCommentSubmitButtonKey = Key('answer-comment-submit-button');
+const answerCommentReplyFieldKey = Key('answer-comment-reply-field');
+const answerCommentReplyEditButtonKey = Key('answer-comment-reply-edit-button');
+const answerCommentReplyCancelButtonKey = Key(
+  'answer-comment-reply-cancel-button',
+);
+const answerCommentReplySubmitButtonKey = Key(
+  'answer-comment-reply-submit-button',
+);
 Key answerPreviewBlockKey(String questionId, String profileId) =>
     Key('answer-preview-$questionId-$profileId');
 
