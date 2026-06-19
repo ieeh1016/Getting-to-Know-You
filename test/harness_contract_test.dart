@@ -99,6 +99,11 @@ void main() {
     expect(rules, contains('function validSharedPlaceMeetingPatchUpdate'));
     expect(
       rules,
+      contains('request.resource.data.interestedByProfileIds.hasOnly'),
+    );
+    expect(rules, contains('request.resource.data.updatedAt is timestamp'));
+    expect(
+      rules,
       contains('validSharedPlaceMeetingPatchUpdate(spaceId, placeId)'),
     );
   });

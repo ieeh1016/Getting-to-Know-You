@@ -928,6 +928,9 @@ service cloud.firestore {
         ])
         && request.resource.data.interestedByProfileIds is list
         && request.resource.data.interestedByProfileIds.size() <= 2
+        && request.resource.data.interestedByProfileIds.hasOnly(
+          get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        )
         && (
           request.auth.uid in request.resource.data.interestedByProfileIds
           || (
@@ -939,7 +942,7 @@ service cloud.firestore {
         && request.resource.data.linkedDateKey.size() <= 16
         && validRequestSharedPlaceMeetingPlanLinks()
         && request.resource.data.updatedByProfileId == request.auth.uid
-        && request.resource.data.updatedAt == request.time;
+        && request.resource.data.updatedAt is timestamp;
     }
 
     match /users/{userId} {
