@@ -1330,12 +1330,14 @@ class _MeetingPlanPlaceReservationEditorState
 
   void _save() {
     final value = _controller.text.trim();
-    widget.controller.updateMeetingPlaceReservationTime(
+    final saved = widget.controller.updateMeetingPlaceReservationTime(
       dateKey: widget.selectedDateKey,
       placeId: widget.place.id,
       reservationTimeLabel: value,
     );
-    setState(() => _savedValue = value);
+    if (saved) {
+      setState(() => _savedValue = value);
+    }
   }
 
   @override

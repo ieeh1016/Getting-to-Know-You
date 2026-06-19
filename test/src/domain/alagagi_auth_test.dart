@@ -593,6 +593,69 @@ void main() {
       },
     );
 
+    test('session place reservation waits for pending link save', () async {
+      final repository = RecordingAlagagiRepository();
+      final saveGate = Completer<void>();
+      repository.sharedPlaceSaveCompleter = saveGate;
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            sharedPlaces: [
+              SharedPlace(
+                id: 'place_partner_cafe',
+                name: '느린 커피',
+                address: '서울 성동구',
+                category: PlaceCategory.cafe,
+                provider: MapApiProvider.kakao,
+                providerPlaceId: 'kakao-cafe-1',
+                latitude: 37.5446,
+                longitude: 127.0557,
+                createdByProfileId: 'minyoungUid',
+                interestedByProfileIds: {'minyoungUid'},
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+      );
+
+      controller.selectMeetingDate('2026-06-21');
+      controller.linkPlaceToSelectedMeeting('place_partner_cafe');
+      final accepted = controller.updateMeetingPlaceReservationTime(
+        dateKey: '2026-06-21',
+        placeId: 'place_partner_cafe',
+        reservationTimeLabel: '18:30 예약',
+      );
+
+      expect(accepted, isTrue);
+      expect(repository.savedSharedPlaces, isEmpty);
+
+      saveGate.complete();
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(repository.savedSharedPlaces, hasLength(2));
+      expect(
+        repository.savedSharedPlaces.last.place
+            .meetingPlanLinkFor('2026-06-21')
+            ?.reservationTimeLabel,
+        '18:30 예약',
+      );
+    });
+
     test('session place delete removes my place from repository', () async {
       final repository = RecordingAlagagiRepository();
       final controller = AlagagiController.forSession(
