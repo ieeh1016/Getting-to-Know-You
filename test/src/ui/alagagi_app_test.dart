@@ -2884,6 +2884,34 @@ void main() {
           .linkedDateKey,
       dateKey,
     );
+    expect(
+      find.byKey(meetingPlanPlaceDragHandleKey('place_cafe')),
+      findsOneWidget,
+    );
+    await tester.ensureVisible(
+      find.byKey(meetingPlanPlaceReservationFieldKey('place_cafe')),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(meetingPlanPlaceReservationFieldKey('place_cafe')),
+      '18:30 예약',
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(meetingPlanPlaceReservationSaveButtonKey('place_cafe')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(meetingPlanPlaceReservationSaveButtonKey('place_cafe')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      controller.sharedPlaces
+          .firstWhere((place) => place.id == 'place_cafe')
+          .meetingPlanLinkFor(dateKey)
+          ?.reservationTimeLabel,
+      '18:30 예약',
+    );
   });
 
   testWidgets('meeting plan keeps past meetings behind a separate button', (

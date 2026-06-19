@@ -406,6 +406,10 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           'createdByProfileId': place.createdByProfileId,
           'interestedByProfileIds': place.interestedByProfileIds.toList(),
           'linkedDateKey': place.linkedDateKey ?? '',
+          'meetingPlanLinks': place
+              .normalizedMeetingPlanLinks()
+              .map(_meetingPlaceLinkToData)
+              .toList(),
           'updatedByProfileId':
               place.updatedByProfileId ?? place.createdByProfileId,
           'updatedAt': FieldValue.serverTimestamp(),
@@ -884,6 +888,10 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         'interestedByProfileIds',
       ).toSet(),
       linkedDateKey: _readString(data, 'linkedDateKey'),
+      meetingPlanLinks: _readMapList(
+        data,
+        'meetingPlanLinks',
+      ).map(_meetingPlaceLinkFromData).nonNulls.toList(),
       updatedAt: _readDateTime(data, 'updatedAt'),
       updatedByProfileId: _readString(data, 'updatedByProfileId'),
     );
@@ -1118,6 +1126,27 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       startMinute: startMinute,
       endMinute: endMinute,
       title: title,
+    );
+  }
+
+  Map<String, Object?> _meetingPlaceLinkToData(MeetingPlaceLink link) {
+    return {
+      'dateKey': link.dateKey,
+      'order': link.order,
+      'reservationTimeLabel': link.reservationTimeLabel,
+    };
+  }
+
+  MeetingPlaceLink? _meetingPlaceLinkFromData(Map<String, dynamic> data) {
+    final dateKey = _readString(data, 'dateKey');
+    final order = _readInt(data, 'order');
+    if (dateKey == null || order == null) {
+      return null;
+    }
+    return MeetingPlaceLink(
+      dateKey: dateKey,
+      order: order,
+      reservationTimeLabel: _readString(data, 'reservationTimeLabel') ?? '',
     );
   }
 

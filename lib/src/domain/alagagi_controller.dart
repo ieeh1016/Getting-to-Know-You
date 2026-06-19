@@ -1044,6 +1044,26 @@ class MeetingCandidate {
   final ScheduleEntry? partnerEntry;
 }
 
+class MeetingPlaceLink {
+  const MeetingPlaceLink({
+    required this.dateKey,
+    required this.order,
+    this.reservationTimeLabel = '',
+  });
+
+  final String dateKey;
+  final int order;
+  final String reservationTimeLabel;
+
+  MeetingPlaceLink copyWith({int? order, String? reservationTimeLabel}) {
+    return MeetingPlaceLink(
+      dateKey: dateKey,
+      order: order ?? this.order,
+      reservationTimeLabel: reservationTimeLabel ?? this.reservationTimeLabel,
+    );
+  }
+}
+
 class SharedPlace {
   const SharedPlace({
     required this.id,
@@ -1058,6 +1078,7 @@ class SharedPlace {
     this.longitude,
     this.note = '',
     this.linkedDateKey,
+    this.meetingPlanLinks = const [],
     this.updatedAt,
     this.updatedByProfileId,
   });
@@ -1074,12 +1095,84 @@ class SharedPlace {
   final String createdByProfileId;
   final Set<String> interestedByProfileIds;
   final String? linkedDateKey;
+  final List<MeetingPlaceLink> meetingPlanLinks;
   final DateTime? updatedAt;
   final String? updatedByProfileId;
 
   bool get isMutual => interestedByProfileIds.length >= 2;
 
   String get lastChangedByProfileId => updatedByProfileId ?? createdByProfileId;
+
+  bool isLinkedToMeetingDate(String dateKey) {
+    return linkedDateKey == dateKey || meetingPlanLinkFor(dateKey) != null;
+  }
+
+  MeetingPlaceLink? meetingPlanLinkFor(String dateKey) {
+    for (final link in meetingPlanLinks) {
+      if (link.dateKey == dateKey) {
+        return link;
+      }
+    }
+    if (linkedDateKey == dateKey) {
+      return MeetingPlaceLink(dateKey: dateKey, order: 0);
+    }
+    return null;
+  }
+
+  List<MeetingPlaceLink> normalizedMeetingPlanLinks() {
+    final linksByDate = <String, MeetingPlaceLink>{};
+    for (final link in meetingPlanLinks) {
+      if (link.dateKey.trim().isEmpty) {
+        continue;
+      }
+      linksByDate[link.dateKey] = link;
+    }
+    final legacyDateKey = linkedDateKey;
+    if (legacyDateKey != null &&
+        legacyDateKey.trim().isNotEmpty &&
+        !linksByDate.containsKey(legacyDateKey)) {
+      linksByDate[legacyDateKey] = MeetingPlaceLink(
+        dateKey: legacyDateKey,
+        order: 0,
+      );
+    }
+    final links = linksByDate.values.toList()
+      ..sort((a, b) {
+        final orderComparison = a.order.compareTo(b.order);
+        if (orderComparison != 0) {
+          return orderComparison;
+        }
+        return a.dateKey.compareTo(b.dateKey);
+      });
+    return List<MeetingPlaceLink>.unmodifiable(links);
+  }
+
+  SharedPlace upsertMeetingPlanLink(MeetingPlaceLink link) {
+    final links = normalizedMeetingPlanLinks().toList();
+    final index = links.indexWhere(
+      (candidate) => candidate.dateKey == link.dateKey,
+    );
+    if (index == -1) {
+      links.add(link);
+    } else {
+      links[index] = link;
+    }
+    return copyWith(
+      linkedDateKey: link.dateKey,
+      meetingPlanLinks: List<MeetingPlaceLink>.unmodifiable(links),
+    );
+  }
+
+  SharedPlace removeMeetingPlanLink(String dateKey) {
+    final links = normalizedMeetingPlanLinks()
+        .where((link) => link.dateKey != dateKey)
+        .toList();
+    return copyWith(
+      linkedDateKey: links.isEmpty ? null : links.first.dateKey,
+      clearLinkedDateKey: links.isEmpty,
+      meetingPlanLinks: List<MeetingPlaceLink>.unmodifiable(links),
+    );
+  }
 
   SharedPlace copyWith({
     String? name,
@@ -1093,6 +1186,7 @@ class SharedPlace {
     Set<String>? interestedByProfileIds,
     String? linkedDateKey,
     bool clearLinkedDateKey = false,
+    List<MeetingPlaceLink>? meetingPlanLinks,
     DateTime? updatedAt,
     String? updatedByProfileId,
   }) {
@@ -1112,6 +1206,7 @@ class SharedPlace {
       linkedDateKey: clearLinkedDateKey
           ? null
           : linkedDateKey ?? this.linkedDateKey,
+      meetingPlanLinks: meetingPlanLinks ?? this.meetingPlanLinks,
       updatedAt: updatedAt ?? this.updatedAt,
       updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
     );
@@ -2849,6 +2944,7 @@ class AlagagiController extends ChangeNotifier {
               place.interestedByProfileIds,
             ),
             linkedDateKey: place.linkedDateKey,
+            meetingPlanLinks: place.meetingPlanLinks,
             updatedAt: place.updatedAt,
           );
         }),
@@ -4626,9 +4722,19 @@ class AlagagiController extends ChangeNotifier {
 
   List<SharedPlace> placesForMeetingPlan(String dateKey) {
     final places = _sharedPlaces
-        .where((place) => place.linkedDateKey == dateKey)
+        .where((place) => place.isLinkedToMeetingDate(dateKey))
         .toList();
     places.sort((a, b) {
+      final aOrder = a.meetingPlanLinkFor(dateKey)?.order ?? 9999;
+      final bOrder = b.meetingPlanLinkFor(dateKey)?.order ?? 9999;
+      if (aOrder != bOrder) {
+        return aOrder.compareTo(bOrder);
+      }
+      final aTime = a.meetingPlanLinkFor(dateKey)?.reservationTimeLabel ?? '';
+      final bTime = b.meetingPlanLinkFor(dateKey)?.reservationTimeLabel ?? '';
+      if (aTime.isNotEmpty && bTime.isNotEmpty && aTime != bTime) {
+        return aTime.compareTo(bTime);
+      }
       if (a.isMutual != b.isMutual) {
         return a.isMutual ? -1 : 1;
       }
@@ -7892,16 +7998,23 @@ class AlagagiController extends ChangeNotifier {
       return;
     }
     final place = _sharedPlaces[index];
-    final alreadyLinkedToSelectedDate = place.linkedDateKey == dateKey;
-    final updatedPlace = place.copyWith(
-      linkedDateKey: alreadyLinkedToSelectedDate ? null : dateKey,
-      clearLinkedDateKey: alreadyLinkedToSelectedDate,
-      interestedByProfileIds: alreadyLinkedToSelectedDate
-          ? place.interestedByProfileIds
-          : {...place.interestedByProfileIds, _state.me.id},
-      updatedAt: DateTime.now(),
-      updatedByProfileId: _state.me.id,
-    );
+    final alreadyLinkedToSelectedDate = place.isLinkedToMeetingDate(dateKey);
+    final updatedPlace =
+        (alreadyLinkedToSelectedDate
+                ? place.removeMeetingPlanLink(dateKey)
+                : place.upsertMeetingPlanLink(
+                    MeetingPlaceLink(
+                      dateKey: dateKey,
+                      order: _nextMeetingPlaceOrder(dateKey),
+                    ),
+                  ))
+            .copyWith(
+              interestedByProfileIds: alreadyLinkedToSelectedDate
+                  ? place.interestedByProfileIds
+                  : {...place.interestedByProfileIds, _state.me.id},
+              updatedAt: DateTime.now(),
+              updatedByProfileId: _state.me.id,
+            );
     _sharedPlaces[index] = updatedPlace;
     _sortSharedPlacesByUpdatedAt();
     _lastFailedSharedPlace = null;
@@ -7913,6 +8026,132 @@ class AlagagiController extends ChangeNotifier {
     );
     notifyListeners();
     _persistSharedPlace(updatedPlace);
+  }
+
+  int _nextMeetingPlaceOrder(String dateKey) {
+    var nextOrder = 0;
+    for (final place in _sharedPlaces) {
+      final order = place.meetingPlanLinkFor(dateKey)?.order;
+      if (order != null && order >= nextOrder) {
+        nextOrder = order + 1;
+      }
+    }
+    return nextOrder;
+  }
+
+  void updateMeetingPlaceReservationTime({
+    required String dateKey,
+    required String placeId,
+    required String reservationTimeLabel,
+  }) {
+    if (_state.placeSaveStatus == SaveStatus.saving) {
+      return;
+    }
+    final trimmed = reservationTimeLabel.trim();
+    if (trimmed.length > 30) {
+      _state = _state.copyWith(placeError: '예약 시간은 30자 안으로 적어주세요.');
+      notifyListeners();
+      return;
+    }
+    final index = _sharedPlaces.indexWhere((place) => place.id == placeId);
+    if (index == -1) {
+      return;
+    }
+    final place = _sharedPlaces[index];
+    final currentLink = place.meetingPlanLinkFor(dateKey);
+    final updatedLink = MeetingPlaceLink(
+      dateKey: dateKey,
+      order: currentLink?.order ?? _nextMeetingPlaceOrder(dateKey),
+      reservationTimeLabel: trimmed,
+    );
+    final updatedPlace = place
+        .upsertMeetingPlanLink(updatedLink)
+        .copyWith(
+          interestedByProfileIds: {
+            ...place.interestedByProfileIds,
+            _state.me.id,
+          },
+          updatedAt: DateTime.now(),
+          updatedByProfileId: _state.me.id,
+        );
+    _sharedPlaces[index] = updatedPlace;
+    _sortSharedPlacesByUpdatedAt();
+    _lastFailedSharedPlace = null;
+    _state = _state.copyWith(
+      placeSaveStatus: SaveStatus.saving,
+      placeSaveTargetId: updatedPlace.id,
+      clearPlaceError: true,
+      clearPlaceSaveFeedback: true,
+    );
+    notifyListeners();
+    _persistSharedPlace(updatedPlace);
+  }
+
+  void reorderMeetingPlanPlaces(String dateKey, int oldIndex, int newIndex) {
+    if (_state.placeSaveStatus == SaveStatus.saving) {
+      return;
+    }
+    final places = placesForMeetingPlan(dateKey).toList();
+    if (oldIndex < 0 || oldIndex >= places.length || places.length < 2) {
+      return;
+    }
+    var targetIndex = newIndex;
+    if (targetIndex > oldIndex) {
+      targetIndex -= 1;
+    }
+    targetIndex = targetIndex.clamp(0, places.length - 1).toInt();
+    if (oldIndex == targetIndex) {
+      return;
+    }
+
+    final movedPlace = places.removeAt(oldIndex);
+    places.insert(targetIndex, movedPlace);
+
+    final updatedPlaces = <SharedPlace>[];
+    final now = DateTime.now();
+    for (var order = 0; order < places.length; order++) {
+      final place = places[order];
+      final currentLink = place.meetingPlanLinkFor(dateKey);
+      final updatedPlace = place
+          .upsertMeetingPlanLink(
+            MeetingPlaceLink(
+              dateKey: dateKey,
+              order: order,
+              reservationTimeLabel: currentLink?.reservationTimeLabel ?? '',
+            ),
+          )
+          .copyWith(
+            interestedByProfileIds: {
+              ...place.interestedByProfileIds,
+              _state.me.id,
+            },
+            updatedAt: now,
+            updatedByProfileId: _state.me.id,
+          );
+      final sharedIndex = _sharedPlaces.indexWhere(
+        (candidate) => candidate.id == place.id,
+      );
+      if (sharedIndex == -1) {
+        continue;
+      }
+      _sharedPlaces[sharedIndex] = updatedPlace;
+      updatedPlaces.add(updatedPlace);
+    }
+    if (updatedPlaces.isEmpty) {
+      return;
+    }
+    _sortSharedPlacesByUpdatedAt();
+    _lastFailedSharedPlace = null;
+    _state = _state.copyWith(
+      placeSaveStatus: SaveStatus.saving,
+      placeSaveTargetId: updatedPlaces.first.id,
+      clearPlaceError: true,
+      clearPlaceSaveFeedback: true,
+    );
+    notifyListeners();
+    for (final place in updatedPlaces) {
+      _persistSharedPlace(place);
+    }
   }
 
   void deletePlace(String placeId) {

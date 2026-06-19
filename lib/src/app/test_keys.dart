@@ -96,6 +96,12 @@ Key meetingPastMeetingPlacesMoreButtonKey(String dateKey) =>
     Key('meeting-past-meeting-places-more-$dateKey');
 Key meetingPlanPlaceLinkButtonKey(String placeId) =>
     Key('meeting-plan-place-link-$placeId');
+Key meetingPlanPlaceDragHandleKey(String placeId) =>
+    Key('meeting-plan-place-drag-$placeId');
+Key meetingPlanPlaceReservationFieldKey(String placeId) =>
+    Key('meeting-plan-place-reservation-$placeId');
+Key meetingPlanPlaceReservationSaveButtonKey(String placeId) =>
+    Key('meeting-plan-place-reservation-save-$placeId');
 Key meetingPlanItemRemoveButtonKey(int index) =>
     Key('meeting-plan-item-remove-$index');
 Key meetingPlanItemEditButtonKey(int index) =>

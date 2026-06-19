@@ -653,7 +653,7 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
     final linkedPlaces = controller.placesForMeetingPlan(entry.dateKey);
     final boardPlaces =
         controller.sharedPlaces
-            .where((place) => place.linkedDateKey != entry.dateKey)
+            .where((place) => !place.isLinkedToMeetingDate(entry.dateKey))
             .toList()
           ..sort((a, b) {
             if (a.isMutual != b.isMutual) {
@@ -757,15 +757,11 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
         if (linkedPlaces.isEmpty)
           const AlagagiEmptyStateCard(text: '장소 탭에서 저장한 곳을 이 날 후보로 붙여볼 수 있어요.')
         else
-          for (final place in linkedPlaces) ...[
-            _MeetingPlanPlaceRow(
-              controller: controller,
-              place: place,
-              selectedDateKey: entry.dateKey,
-              linked: true,
-            ),
-            const SizedBox(height: 10),
-          ],
+          _MeetingPlanLinkedPlaceList(
+            controller: controller,
+            places: linkedPlaces,
+            selectedDateKey: entry.dateKey,
+          ),
         if (boardPlaces.isNotEmpty) ...[
           const SizedBox(height: 12),
           const AlagagiSectionLabel('장소 보드에서 가져오기'),
@@ -1061,6 +1057,65 @@ String _meetingPlanPairTitle(AlagagiController controller) {
   return '우리의 계획';
 }
 
+class _MeetingPlanLinkedPlaceList extends StatelessWidget {
+  const _MeetingPlanLinkedPlaceList({
+    required this.controller,
+    required this.places,
+    required this.selectedDateKey,
+  });
+
+  final AlagagiController controller;
+  final List<SharedPlace> places;
+  final String selectedDateKey;
+
+  @override
+  Widget build(BuildContext context) {
+    return ReorderableListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      buildDefaultDragHandles: false,
+      itemCount: places.length,
+      onReorder: (oldIndex, newIndex) {
+        controller.reorderMeetingPlanPlaces(
+          selectedDateKey,
+          oldIndex,
+          newIndex,
+        );
+      },
+      itemBuilder: (context, index) {
+        final place = places[index];
+        return Padding(
+          key: ValueKey('meeting-plan-place-$selectedDateKey-${place.id}'),
+          padding: EdgeInsets.only(bottom: index == places.length - 1 ? 0 : 10),
+          child: _MeetingPlanPlaceRow(
+            controller: controller,
+            place: place,
+            selectedDateKey: selectedDateKey,
+            linked: true,
+            dragHandle: ReorderableDragStartListener(
+              index: index,
+              child: SizedBox(
+                key: meetingPlanPlaceDragHandleKey(place.id),
+                width: 28,
+                height: 34,
+                child: Tooltip(
+                  message: '장소 순서 변경',
+                  child: Icon(
+                    Icons.drag_indicator_rounded,
+                    size: 19,
+                    color: AlagagiColors.muted.withValues(alpha: 0.82),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _MeetingPlanMorePlacesButton extends StatelessWidget {
   const _MeetingPlanMorePlacesButton({
     required this.expanded,
@@ -1103,94 +1158,241 @@ class _MeetingPlanPlaceRow extends StatelessWidget {
     required this.place,
     required this.selectedDateKey,
     required this.linked,
+    this.dragHandle,
   });
 
   final AlagagiController controller;
   final SharedPlace place;
   final String selectedDateKey;
   final bool linked;
+  final Widget? dragHandle;
 
   @override
   Widget build(BuildContext context) {
     final busy =
         controller.state.placeSaveStatus == SaveStatus.saving &&
         controller.isPlaceSaveTarget(place.id);
+    final link = place.meetingPlanLinkFor(selectedDateKey);
+    final reservationTime = link?.reservationTimeLabel.trim() ?? '';
     return AlagagiPaperCard(
       radius: 18,
       padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              if (dragHandle != null) ...[
+                dragHandle!,
+                const SizedBox(width: 4),
+              ],
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: linked
+                      ? const Color(0xFFF4EEDC)
+                      : const Color(0xFFF0F2EB),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  placeCategoryIcon(place.category),
+                  size: 21,
+                  color: linked
+                      ? const Color(0xFF8A6F2D)
+                      : AlagagiColors.sageDeep,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      place.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: sans(size: 13.5, weight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      [
+                        placeCategoryLabel(place.category),
+                        if (reservationTime.isNotEmpty) '예약 $reservationTime',
+                        if (place.isMutual) '서로 관심',
+                        if (place.address.isNotEmpty) place.address,
+                      ].join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: sans(size: 11.2, color: AlagagiColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                height: 32,
+                child: OutlinedButton(
+                  key: meetingPlanPlaceLinkButtonKey(place.id),
+                  onPressed: busy
+                      ? null
+                      : () {
+                          if (controller.selectedMeetingPlanDateKey !=
+                              selectedDateKey) {
+                            controller.selectMeetingPlanDate(selectedDateKey);
+                          }
+                          controller.linkPlaceToSelectedMeetingPlan(place.id);
+                        },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: linked
+                        ? const Color(0xFF8A6F2D)
+                        : AlagagiColors.sageDeep,
+                    disabledForegroundColor: AlagagiColors.muted,
+                    side: BorderSide(
+                      color: linked
+                          ? const Color(0x33C8AD6D)
+                          : const Color(0x338A9A7E),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    textStyle: sans(size: 11.5, weight: FontWeight.w800),
+                  ),
+                  child: Text(linked ? '빼기' : '담기'),
+                ),
+              ),
+            ],
+          ),
+          if (linked) ...[
+            const SizedBox(height: 12),
+            _MeetingPlanPlaceReservationEditor(
+              controller: controller,
+              place: place,
+              selectedDateKey: selectedDateKey,
+              initialValue: reservationTime,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MeetingPlanPlaceReservationEditor extends StatefulWidget {
+  const _MeetingPlanPlaceReservationEditor({
+    required this.controller,
+    required this.place,
+    required this.selectedDateKey,
+    required this.initialValue,
+  });
+
+  final AlagagiController controller;
+  final SharedPlace place;
+  final String selectedDateKey;
+  final String initialValue;
+
+  @override
+  State<_MeetingPlanPlaceReservationEditor> createState() =>
+      _MeetingPlanPlaceReservationEditorState();
+}
+
+class _MeetingPlanPlaceReservationEditorState
+    extends State<_MeetingPlanPlaceReservationEditor> {
+  late final TextEditingController _controller;
+  late String _savedValue;
+
+  @override
+  void initState() {
+    super.initState();
+    _savedValue = widget.initialValue;
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void didUpdateWidget(covariant _MeetingPlanPlaceReservationEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialValue != widget.initialValue &&
+        _controller.text != widget.initialValue) {
+      _savedValue = widget.initialValue;
+      _controller.text = widget.initialValue;
+      _controller.selection = TextSelection.collapsed(
+        offset: widget.initialValue.length,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final value = _controller.text.trim();
+    widget.controller.updateMeetingPlaceReservationTime(
+      dateKey: widget.selectedDateKey,
+      placeId: widget.place.id,
+      reservationTimeLabel: value,
+    );
+    setState(() => _savedValue = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final changed = _controller.text.trim() != _savedValue;
+    final busy =
+        widget.controller.state.placeSaveStatus == SaveStatus.saving &&
+        widget.controller.isPlaceSaveTarget(widget.place.id);
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F4),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 7, 8, 7),
       child: Row(
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: linked ? const Color(0xFFF4EEDC) : const Color(0xFFF0F2EB),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            alignment: Alignment.center,
-            child: Icon(
-              placeCategoryIcon(place.category),
-              size: 21,
-              color: linked ? const Color(0xFF8A6F2D) : AlagagiColors.sageDeep,
-            ),
+          const Icon(
+            Icons.schedule_rounded,
+            size: 17,
+            color: AlagagiColors.sageDeep,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  place.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: sans(size: 13.5, weight: FontWeight.w800),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  [
-                    placeCategoryLabel(place.category),
-                    if (place.isMutual) '서로 관심',
-                    if (place.address.isNotEmpty) place.address,
-                  ].join(' · '),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: sans(size: 11.2, color: AlagagiColors.muted),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          SizedBox(
-            height: 32,
-            child: OutlinedButton(
-              key: meetingPlanPlaceLinkButtonKey(place.id),
-              onPressed: busy
-                  ? null
-                  : () {
-                      if (controller.selectedMeetingPlanDateKey !=
-                          selectedDateKey) {
-                        controller.selectMeetingPlanDate(selectedDateKey);
-                      }
-                      controller.linkPlaceToSelectedMeetingPlan(place.id);
-                    },
-              style: OutlinedButton.styleFrom(
-                foregroundColor: linked
-                    ? const Color(0xFF8A6F2D)
-                    : AlagagiColors.sageDeep,
-                disabledForegroundColor: AlagagiColors.muted,
-                side: BorderSide(
-                  color: linked
-                      ? const Color(0x33C8AD6D)
-                      : const Color(0x338A9A7E),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                textStyle: sans(size: 11.5, weight: FontWeight.w800),
+            child: TextFormField(
+              key: meetingPlanPlaceReservationFieldKey(widget.place.id),
+              controller: _controller,
+              maxLength: 30,
+              onChanged: (_) => setState(() {}),
+              onFieldSubmitted: (_) => _save(),
+              decoration: const InputDecoration(
+                hintText: '예약 시간 입력',
+                counterText: '',
+                isDense: true,
+                border: InputBorder.none,
               ),
-              child: Text(linked ? '빼기' : '담기'),
+              style: sans(size: 12.5, height: 1.35),
             ),
           ),
+          if (changed) ...[
+            const SizedBox(width: 8),
+            SizedBox(
+              height: 30,
+              child: TextButton(
+                key: meetingPlanPlaceReservationSaveButtonKey(widget.place.id),
+                onPressed: busy ? null : _save,
+                style: TextButton.styleFrom(
+                  foregroundColor: AlagagiColors.sageDeep,
+                  padding: const EdgeInsets.symmetric(horizontal: 9),
+                  minimumSize: const Size(0, 30),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  textStyle: sans(size: 11.5, weight: FontWeight.w800),
+                ),
+                child: const Text('저장'),
+              ),
+            ),
+          ],
         ],
       ),
     );

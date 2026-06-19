@@ -713,6 +713,7 @@ service cloud.firestore {
           'createdByProfileId',
           'interestedByProfileIds',
           'linkedDateKey',
+          'meetingPlanLinks',
           'updatedByProfileId',
           'updatedAt'
         ])
@@ -736,8 +737,16 @@ service cloud.firestore {
         && request.resource.data.interestedByProfileIds.size() <= 2
         && request.resource.data.linkedDateKey is string
         && request.resource.data.linkedDateKey.size() <= 16
+        && request.resource.data.meetingPlanLinks is list
+        && request.resource.data.meetingPlanLinks.size() <= 20
         && request.resource.data.updatedByProfileId == request.auth.uid
         && request.resource.data.updatedAt == request.time;
+    }
+
+    function existingSharedPlaceMeetingPlanLinks() {
+      return resource.data.keys().hasAny(['meetingPlanLinks'])
+        ? resource.data.meetingPlanLinks
+        : [];
     }
 
     function validNewSharedPlace(spaceId, placeId) {
@@ -745,7 +754,8 @@ service cloud.firestore {
         && request.resource.data.createdByProfileId == request.auth.uid
         && request.resource.data.interestedByProfileIds.size() == 1
         && request.auth.uid in request.resource.data.interestedByProfileIds
-        && request.resource.data.linkedDateKey == '';
+        && request.resource.data.linkedDateKey == ''
+        && request.resource.data.meetingPlanLinks.size() == 0;
     }
 
     function validSharedPlaceOwnerEdit(spaceId, placeId) {
@@ -755,6 +765,7 @@ service cloud.firestore {
         && request.resource.data.createdByProfileId == resource.data.createdByProfileId
         && request.resource.data.interestedByProfileIds == resource.data.interestedByProfileIds
         && request.resource.data.linkedDateKey == resource.data.linkedDateKey
+        && request.resource.data.meetingPlanLinks == existingSharedPlaceMeetingPlanLinks()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'name',
           'address',
@@ -764,6 +775,7 @@ service cloud.firestore {
           'latitude',
           'longitude',
           'note',
+          'meetingPlanLinks',
           'updatedByProfileId',
           'updatedAt'
         ]);
@@ -771,8 +783,10 @@ service cloud.firestore {
 
     function validSharedPlaceInterestUpdate(spaceId, placeId) {
       return validSharedPlace(spaceId, placeId)
+        && request.resource.data.meetingPlanLinks == existingSharedPlaceMeetingPlanLinks()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'interestedByProfileIds',
+          'meetingPlanLinks',
           'updatedByProfileId',
           'updatedAt'
         ])
@@ -797,6 +811,7 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'interestedByProfileIds',
           'linkedDateKey',
+          'meetingPlanLinks',
           'updatedByProfileId',
           'updatedAt'
         ])

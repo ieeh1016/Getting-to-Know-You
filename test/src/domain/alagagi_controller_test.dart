@@ -477,6 +477,13 @@ void main() {
             .linkedDateKey,
         '2026-06-21',
       );
+      expect(
+        controller.sharedPlaces
+            .firstWhere((place) => place.id == placeId)
+            .meetingPlanLinkFor('2026-06-21')
+            ?.order,
+        0,
+      );
 
       controller.linkPlaceToSelectedMeeting(placeId);
       expect(
@@ -485,6 +492,97 @@ void main() {
             .linkedDateKey,
         isNull,
       );
+      expect(
+        controller.sharedPlaces
+            .firstWhere((place) => place.id == placeId)
+            .meetingPlanLinkFor('2026-06-21'),
+        isNull,
+      );
+    });
+
+    test('meeting plan places store reservation time and custom order', () {
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+        ),
+      );
+
+      final placeSeeds = [
+        (
+          providerPlaceId: 'kakao-cafe-1',
+          name: '조용한 카페',
+          category: PlaceCategory.cafe,
+        ),
+        (
+          providerPlaceId: 'kakao-food-1',
+          name: '작은 식당',
+          category: PlaceCategory.food,
+        ),
+        (
+          providerPlaceId: 'kakao-gallery-1',
+          name: '작은 전시 공간',
+          category: PlaceCategory.exhibition,
+        ),
+      ];
+      for (final seed in placeSeeds) {
+        controller.startPlaceDraft();
+        controller.applyKakaoPlaceResult(
+          providerPlaceId: seed.providerPlaceId,
+          name: seed.name,
+          address: '서울 성동구',
+          latitude: 37.5446,
+          longitude: 127.0557,
+          category: seed.category,
+        );
+        controller.submitPlaceDraft();
+      }
+
+      const dateKey = '2026-06-21';
+      controller.selectMeetingDate(dateKey);
+      for (final place in controller.sharedPlaces.reversed) {
+        controller.linkPlaceToSelectedMeeting(place.id);
+      }
+      final cafeId = controller.sharedPlaces
+          .firstWhere((place) => place.providerPlaceId == 'kakao-cafe-1')
+          .id;
+
+      controller.updateMeetingPlaceReservationTime(
+        dateKey: dateKey,
+        placeId: cafeId,
+        reservationTimeLabel: '18:30 예약',
+      );
+      controller.reorderMeetingPlanPlaces(dateKey, 2, 0);
+
+      final places = controller.placesForMeetingPlan(dateKey);
+      expect(places.map((place) => place.name), [
+        '작은 전시 공간',
+        '조용한 카페',
+        '작은 식당',
+      ]);
+      expect(
+        places
+            .firstWhere((place) => place.id == cafeId)
+            .meetingPlanLinkFor(dateKey)
+            ?.reservationTimeLabel,
+        '18:30 예약',
+      );
+      expect(places.map((place) => place.meetingPlanLinkFor(dateKey)?.order), [
+        0,
+        1,
+        2,
+      ]);
     });
 
     test('place board edits and deletes my place', () {
