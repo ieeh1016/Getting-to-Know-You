@@ -18,7 +18,7 @@ class HomeInsightGrid extends StatelessWidget {
           children: [
             Expanded(
               child: _InsightBox(
-                title: '같이 연 질문',
+                title: '함께 답한 질문',
                 value: '${insight.matchCount}',
                 suffix: '개',
                 highlighted: true,
@@ -27,7 +27,7 @@ class HomeInsightGrid extends StatelessWidget {
             const SizedBox(width: 14),
             Expanded(
               child: _InsightBox(
-                title: '쌓인 이야기',
+                title: '주고받은 질문',
                 value: '${insight.questionCount}',
                 suffix: '개',
               ),

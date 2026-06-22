@@ -21,10 +21,10 @@ class MeetingPlanScreen extends StatelessWidget {
     return AlagagiScreenScroll(
       bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
-        AlagagiTopBar(title: '데이트', trailing: ''),
+        AlagagiTopBar(title: '만남', trailing: ''),
         const SizedBox(height: 4),
         Text(
-          '정해진 날마다 뭐하고 어디 갈지 함께 정리해요',
+          '정해진 날만 모아서 뭐하고 어디 갈지 정리해요',
           style: sans(size: 12.5, color: AlagagiColors.muted),
         ),
         const SizedBox(height: 16),
@@ -89,7 +89,7 @@ class _PastMeetingsButton extends StatelessWidget {
         key: meetingPastMeetingsButtonKey,
         onPressed: onPressed,
         icon: const Icon(Icons.history_rounded, size: 18),
-        label: Text('지난 데이트 $count개 보기'),
+        label: Text('지난 만남 $count개 보기'),
         style: OutlinedButton.styleFrom(
           foregroundColor: AlagagiColors.sageDeep,
           side: const BorderSide(color: Color(0x338A9A7E)),
@@ -140,7 +140,7 @@ class _PastMeetingsSheet extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      '지난 데이트',
+                      '지난 만남',
                       style: serif(context, size: 22, weight: FontWeight.w800),
                     ),
                   ),
@@ -423,14 +423,14 @@ class _MeetingPlanEmptyState extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             hasPastMeetings
-                ? '지난 데이트는 따로 모아두고, 다음 만나는 날이 생기면 여기에 바로 보여줄게요.'
-                : '일정 탭에서 서로 가능한 날짜를 만나는 날로 정하면 여기에 계획 공간이 열려요.',
+                ? '지난 만남은 따로 모아두고, 다음 만나는 날이 생기면 여기에 바로 보여줄게요.'
+                : '약속 탭에서 서로 가능한 날짜를 만나는 날로 정하면 여기에 계획 공간이 열려요.',
             textAlign: TextAlign.center,
             style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.55),
           ),
           const SizedBox(height: 16),
           AlagagiPrimaryButton(
-            label: '일정에서 날짜 정하기',
+            label: '약속에서 날짜 정하기',
             onPressed: () => controller.goTo(AlagagiRoute.meetings),
             color: AlagagiColors.sageDeep,
           ),
@@ -736,7 +736,7 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
               ],
               const SizedBox(height: 12),
               AlagagiPrimaryButton(
-                label: '데이트 계획 저장',
+                label: '만남 계획 저장',
                 buttonKey: meetingPlanSaveButtonKey,
                 onPressed: controller.submitMeetingPlanDraft,
                 color: AlagagiColors.ink,

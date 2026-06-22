@@ -52,7 +52,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
           padding: const EdgeInsets.fromLTRB(28, 34, 28, 166),
           children: [
             AlagagiTopBar(
-              title: isToday ? '오늘의 우리 질문' : '늦게 답하기',
+              title: isToday ? '오늘의 질문' : '늦게 답하기',
               trailing: 'DAY ${question.day}',
               onBack: () => widget.controller.goTo(
                 isToday ? AlagagiRoute.home : AlagagiRoute.archive,

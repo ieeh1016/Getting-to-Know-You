@@ -37,13 +37,10 @@ class MusicScreen extends StatelessWidget {
     return AlagagiScreenScroll(
       bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
-        Text(
-          '우리 플레이리스트',
-          style: serif(context, size: 23, weight: FontWeight.w800),
-        ),
+        Text('음악 노트', style: serif(context, size: 23, weight: FontWeight.w800)),
         const SizedBox(height: 4),
         Text(
-          '요즘 들려주고 싶은 노래를 둘이 모아요',
+          '각자의 요즘을 한 곡씩 조용히 남겨요',
           style: sans(size: 12.5, color: AlagagiColors.muted),
         ),
         if (totalCount == 0) ...[
@@ -222,7 +219,7 @@ class _MusicHeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '둘의 요즘을\n노래로 남겨요.',
+            '각자의 요즘을\n노래로 조금씩 남겨요.',
             style: serif(
               context,
               size: 22,
@@ -285,7 +282,7 @@ class _MusicDraftCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            isEditing ? '노래 다듬기' : '요즘의 한 곡을\n가볍게 건네요.',
+            isEditing ? '음악 노트 다듬기' : '요즘의 한 곡을\n가볍게 건네요.',
             style: serif(
               context,
               size: 20,
@@ -415,9 +412,9 @@ class _MusicSaveStatus extends StatelessWidget {
     final failed = status == SaveStatus.failed;
     final saving = status == SaveStatus.saving;
     final message = saving
-        ? '노래를 저장하는 중이에요.'
+        ? '음악 노트를 저장하는 중이에요.'
         : failed
-        ? state.musicDraftError ?? '노래를 저장하지 못했어요.'
+        ? state.musicDraftError ?? '음악 노트를 저장하지 못했어요.'
         : state.musicSaveFeedback ?? '저장됐어요.';
     return Padding(
       padding: const EdgeInsets.only(top: 10),
@@ -615,7 +612,7 @@ class _MusicNoteCard extends StatelessWidget {
       key: musicNoteCardKey(note.id),
       behavior: HitTestBehavior.opaque,
       onTap: () => onOpenReadableDetail(
-        label: '우리 플레이리스트',
+        label: '음악 노트',
         title: note.title,
         meta: '$creator · ${note.artist} · ${note.mood}',
         body: detailBody.isEmpty ? '남겨둔 메모는 아직 없어요.' : detailBody,
@@ -655,7 +652,7 @@ class _MusicNoteCard extends StatelessWidget {
                       if (isMine) ...[
                         const SizedBox(width: 4),
                         Tooltip(
-                          message: '노래 수정',
+                          message: '음악 노트 수정',
                           child: IconButton(
                             key: musicEditButtonKey(note.id),
                             onPressed: () => controller.startMusicEdit(note.id),
@@ -670,7 +667,7 @@ class _MusicNoteCard extends StatelessWidget {
                           ),
                         ),
                         Tooltip(
-                          message: '노래 삭제',
+                          message: '음악 노트 삭제',
                           child: IconButton(
                             key: musicDeleteButtonKey(note.id),
                             onPressed: () =>

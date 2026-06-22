@@ -34,8 +34,8 @@ export '../shared/ui_style.dart';
 
 const alagagiShellKey = Key('alagagi-shell');
 
-const _brandName = '우리 둘';
-const _brandKicker = '둘이 쌓는 연애 기록';
+const _brandName = '조금씩';
+const _brandKicker = '천천히 알아가는 기록';
 
 class AlagagiApp extends StatelessWidget {
   const AlagagiApp({

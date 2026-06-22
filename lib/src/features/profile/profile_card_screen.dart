@@ -114,7 +114,7 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
       bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
         AlagagiTopBar(
-          title: '우리 프로필',
+          title: '소개 카드',
           trailing: '',
           onBack: () => controller.goTo(AlagagiRoute.home),
         ),
@@ -1681,7 +1681,7 @@ class _ProfileSlotCard extends StatelessWidget {
         : const Color(0xFF8B6E31);
     void openFull() => showReadableDetailSheet(
       context,
-      label: '우리 프로필',
+      label: '소개 카드',
       title: slot.label,
       body: slot.value!,
       actionLabel: '수정하기',
@@ -1888,7 +1888,7 @@ class _ProfileReadCard extends StatelessWidget {
   Widget build(BuildContext context) {
     void openFull() => showReadableDetailSheet(
       context,
-      label: '우리 프로필',
+      label: '소개 카드',
       title: slot.label,
       body: slot.value!,
     );
@@ -2044,7 +2044,7 @@ class _TodaySlotCardState extends State<_TodaySlotCard> {
   Widget build(BuildContext context) {
     final slot = widget.controller.todayFillableProfileSlot;
     if (slot == null) {
-      return const AlagagiEmptyStateCard(text: '우리 프로필이 모두 채워졌어요.');
+      return const AlagagiEmptyStateCard(text: '소개 카드가 모두 채워졌어요.');
     }
 
     return AlagagiPaperCard(

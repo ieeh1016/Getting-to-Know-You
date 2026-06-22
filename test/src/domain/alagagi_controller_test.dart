@@ -160,7 +160,7 @@ void main() {
     test('meeting draft stores detailed schedule and shared note', () {
       final controller = AlagagiController()..enterSpace('영우');
 
-      controller.selectMeetingDate('2026-06-24');
+      controller.selectMeetingDate('2026-06-21');
       controller.setMeetingAvailability(MeetingAvailability.available);
       controller.toggleMeetingTimeSlot(MeetingTimeSlot.morning);
       controller.updateMeetingDraft(sharedMemo: '오후나 저녁은 괜찮아요.');
@@ -174,7 +174,7 @@ void main() {
 
       final entry = controller.scheduleEntryFor(
         controller.state.me.id,
-        '2026-06-24',
+        '2026-06-21',
       );
 
       expect(entry, isNotNull);
@@ -239,7 +239,7 @@ void main() {
       expect(controller.selectedMeetingPlanDateKey, '2026-06-11');
       expect(plan, isNotNull);
       expect(plan!.items, ['저녁 먹기', '전시 보기', '브런치 카페']);
-      expect(controller.state.meetingSaveFeedback, '데이트 계획을 저장했어요.');
+      expect(controller.state.meetingSaveFeedback, '만남 계획을 저장했어요.');
     });
 
     test('meeting plan reorder keeps the edited item selected', () {
@@ -469,18 +469,18 @@ void main() {
       final placeId = controller.sharedPlaces
           .firstWhere((place) => place.providerPlaceId == 'kakao-cafe-1')
           .id;
-      controller.selectMeetingDate('2026-06-24');
+      controller.selectMeetingDate('2026-06-21');
       controller.linkPlaceToSelectedMeeting(placeId);
       expect(
         controller.sharedPlaces
             .firstWhere((place) => place.id == placeId)
             .linkedDateKey,
-        '2026-06-24',
+        '2026-06-21',
       );
       expect(
         controller.sharedPlaces
             .firstWhere((place) => place.id == placeId)
-            .meetingPlanLinkFor('2026-06-24')
+            .meetingPlanLinkFor('2026-06-21')
             ?.order,
         0,
       );
@@ -495,7 +495,7 @@ void main() {
       expect(
         controller.sharedPlaces
             .firstWhere((place) => place.id == placeId)
-            .meetingPlanLinkFor('2026-06-24'),
+            .meetingPlanLinkFor('2026-06-21'),
         isNull,
       );
     });
@@ -549,7 +549,7 @@ void main() {
         controller.submitPlaceDraft();
       }
 
-      const dateKey = '2026-06-24';
+      const dateKey = '2026-06-21';
       controller.selectMeetingDate(dateKey);
       for (final place in controller.sharedPlaces.reversed) {
         controller.linkPlaceToSelectedMeeting(place.id);
@@ -621,25 +621,28 @@ void main() {
       );
     });
 
-    test('question and balance catalogs avoid heavy commitment language', () {
-      const blockedWords = ['결혼', '영원', '평생', '운명'];
-      final questionTexts = questionCatalogV1.expand(
-        (question) => [question.text, question.highlightedText],
-      );
-      final balanceTexts = balanceQuestionCatalogV1.expand(
-        (question) => [
-          question.prompt,
-          question.left.label,
-          question.right.label,
-        ],
-      );
+    test(
+      'question and balance catalogs avoid romantic commitment language',
+      () {
+        const blockedWords = ['하트', '애정 표현', '데이트 계획', '기념일', '커플'];
+        final questionTexts = questionCatalogV1.expand(
+          (question) => [question.text, question.highlightedText],
+        );
+        final balanceTexts = balanceQuestionCatalogV1.expand(
+          (question) => [
+            question.prompt,
+            question.left.label,
+            question.right.label,
+          ],
+        );
 
-      for (final text in [...questionTexts, ...balanceTexts]) {
-        for (final blockedWord in blockedWords) {
-          expect(text, isNot(contains(blockedWord)));
+        for (final text in [...questionTexts, ...balanceTexts]) {
+          for (final blockedWord in blockedWords) {
+            expect(text, isNot(contains(blockedWord)));
+          }
         }
-      }
-    });
+      },
+    );
 
     test('daily question catalog provides 58 stable sequential questions', () {
       expect(questionCatalogV1, hasLength(58));

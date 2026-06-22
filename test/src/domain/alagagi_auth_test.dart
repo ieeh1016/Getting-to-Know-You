@@ -109,8 +109,8 @@ void main() {
         ),
       );
 
-      expect(controller.state.personalization.appTitle, '우리 둘');
-      expect(controller.state.personalizationDraft.appTitle, '우리 둘');
+      expect(controller.state.personalization.appTitle, '조금씩');
+      expect(controller.state.personalizationDraft.appTitle, '조금씩');
     });
 
     test('session controller uses real Firestore-style session data', () {
@@ -362,7 +362,7 @@ void main() {
       );
 
       final accepted = controller.updateMeetingPlaceReservationTime(
-        dateKey: '2026-06-24',
+        dateKey: '2026-06-21',
         placeId: 'place_partner_cafe',
         reservationTimeLabel: '18:30 예약',
       );
@@ -401,7 +401,7 @@ void main() {
         repository: repository,
       );
 
-      controller.selectMeetingDate('2026-06-24');
+      controller.selectMeetingDate('2026-06-21');
       controller.updateMeetingDraft(sharedMemo: '19:30 이후면 편해요.');
       controller.submitMeetingDraft();
       await Future<void>.delayed(Duration.zero);
@@ -444,7 +444,7 @@ void main() {
             data: AlagagiSpaceData(
               scheduleEntries: [
                 ScheduleEntry(
-                  dateKey: '2026-06-24',
+                  dateKey: '2026-06-21',
                   profileId: 'youngwooUid',
                   availability: MeetingAvailability.available,
                   timeSlots: {MeetingTimeSlot.evening},
@@ -466,7 +466,7 @@ void main() {
 
         expect(repository.savedScheduleEntries, isEmpty);
         expect(repository.savedMeetingPlans.single.spaceId, 'main');
-        expect(repository.savedMeetingPlans.single.plan.dateKey, '2026-06-24');
+        expect(repository.savedMeetingPlans.single.plan.dateKey, '2026-06-21');
         expect(repository.savedMeetingPlans.single.plan.items, [
           '전시 보기',
           '근처 카페',
@@ -475,7 +475,7 @@ void main() {
           repository.savedMeetingPlans.single.plan.updatedByProfileId,
           'youngwooUid',
         );
-        expect(controller.meetingPlanItemsFor('2026-06-24'), [
+        expect(controller.meetingPlanItemsFor('2026-06-21'), [
           '전시 보기',
           '근처 카페',
         ]);
@@ -504,7 +504,7 @@ void main() {
             data: AlagagiSpaceData(
               scheduleEntries: [
                 ScheduleEntry(
-                  dateKey: '2026-06-24',
+                  dateKey: '2026-06-21',
                   profileId: 'youngwooUid',
                   availability: MeetingAvailability.available,
                   timeSlots: {MeetingTimeSlot.evening},
@@ -512,7 +512,7 @@ void main() {
                   meetingPlanItems: ['전시 보기'],
                 ),
                 ScheduleEntry(
-                  dateKey: '2026-06-24',
+                  dateKey: '2026-06-21',
                   profileId: 'minyoungUid',
                   availability: MeetingAvailability.available,
                   timeSlots: {MeetingTimeSlot.evening},
@@ -527,7 +527,7 @@ void main() {
 
         controller
           ..goTo(AlagagiRoute.meetings)
-          ..selectMeetingDate('2026-06-24')
+          ..selectMeetingDate('2026-06-21')
           ..updateMeetingDayDraft(timeLabel: '저녁 7시쯤')
           ..submitMeetingDayDraft();
         await Future<void>.delayed(Duration.zero);
@@ -537,12 +537,12 @@ void main() {
           isEmpty,
         );
         expect(repository.savedMeetingPlans.single.spaceId, 'main');
-        expect(repository.savedMeetingPlans.single.plan.dateKey, '2026-06-24');
+        expect(repository.savedMeetingPlans.single.plan.dateKey, '2026-06-21');
         expect(repository.savedMeetingPlans.single.plan.items, [
           '전시 보기',
           '근처 카페',
         ]);
-        expect(controller.meetingPlanItemsFor('2026-06-24'), [
+        expect(controller.meetingPlanItemsFor('2026-06-21'), [
           '전시 보기',
           '근처 카페',
         ]);
@@ -570,7 +570,7 @@ void main() {
           data: AlagagiSpaceData(
             scheduleEntries: [
               ScheduleEntry(
-                dateKey: '2026-06-24',
+                dateKey: '2026-06-21',
                 profileId: 'youngwooUid',
                 availability: MeetingAvailability.available,
                 timeSlots: {MeetingTimeSlot.evening},
@@ -639,18 +639,18 @@ void main() {
           repository: repository,
         );
 
-        controller.selectMeetingDate('2026-06-24');
+        controller.selectMeetingDate('2026-06-21');
         controller.linkPlaceToSelectedMeeting('place_partner_cafe');
         await Future<void>.delayed(Duration.zero);
 
-        expect(controller.sharedPlaces.single.linkedDateKey, '2026-06-24');
+        expect(controller.sharedPlaces.single.linkedDateKey, '2026-06-21');
         expect(
           controller.sharedPlaces.single.interestedByProfileIds,
           contains('youngwooUid'),
         );
         expect(
           repository.savedSharedPlaceMeetingLinks.single.place.linkedDateKey,
-          '2026-06-24',
+          '2026-06-21',
         );
 
         controller.linkPlaceToSelectedMeeting('place_partner_cafe');
@@ -703,10 +703,10 @@ void main() {
         repository: repository,
       );
 
-      controller.selectMeetingDate('2026-06-24');
+      controller.selectMeetingDate('2026-06-21');
       controller.linkPlaceToSelectedMeeting('place_partner_cafe');
       final accepted = controller.updateMeetingPlaceReservationTime(
-        dateKey: '2026-06-24',
+        dateKey: '2026-06-21',
         placeId: 'place_partner_cafe',
         reservationTimeLabel: '18:30 예약',
       );
@@ -723,7 +723,7 @@ void main() {
       expect(repository.savedSharedPlaceMeetingLinks, hasLength(2));
       expect(
         repository.savedSharedPlaceMeetingLinks.last.place
-            .meetingPlanLinkFor('2026-06-24')
+            .meetingPlanLinkFor('2026-06-21')
             ?.reservationTimeLabel,
         '18:30 예약',
       );
@@ -765,9 +765,9 @@ void main() {
           repository: repository,
         );
 
-        controller.selectMeetingDate('2026-06-24');
+        controller.selectMeetingDate('2026-06-21');
         final accepted = controller.updateMeetingPlaceReservationTime(
-          dateKey: '2026-06-24',
+          dateKey: '2026-06-21',
           placeId: 'place_legacy_cafe',
           reservationTimeLabel: '19:00 예약',
         );
@@ -781,7 +781,7 @@ void main() {
         expect(savedPlace.latitude, isNull);
         expect(savedPlace.longitude, isNull);
         expect(
-          savedPlace.meetingPlanLinkFor('2026-06-24')?.reservationTimeLabel,
+          savedPlace.meetingPlanLinkFor('2026-06-21')?.reservationTimeLabel,
           '19:00 예약',
         );
       },
@@ -1560,7 +1560,7 @@ void main() {
                   label: '내가 만든 질문',
                   icon: 'custom',
                   category: '직접',
-                  inputHint: '직접 추가한 우리 프로필',
+                  inputHint: '직접 추가한 소개 카드',
                   value: '이 질문이 더 편해서 직접 남겼어요.',
                   custom: true,
                   updatedAt: DateTime.parse('2026-06-09T10:00:00.000Z'),
@@ -3005,7 +3005,7 @@ void main() {
           (item) => item.id == 'music',
         );
 
-        expect(musicItem.stateText, '새 노래가 도착했어요');
+        expect(musicItem.stateText, '새 음악 노트가 있어요');
         expect(
           controller.homeProgressSummary.primaryAction?.route,
           isNot(AlagagiRoute.music),
@@ -3021,7 +3021,7 @@ void main() {
           controller.homeProgressSummary.items
               .singleWhere((item) => item.id == 'music')
               .stateText,
-          '최근 노래 2곡',
+          '최근 음악 노트 2곡',
         );
       },
     );

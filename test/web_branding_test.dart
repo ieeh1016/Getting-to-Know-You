@@ -4,16 +4,16 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('web metadata uses the couple app brand', () {
+  test('web metadata uses the Jogeumssik brand', () {
     final indexHtml = File('web/index.html').readAsStringSync();
     final manifest =
         jsonDecode(File('web/manifest.json').readAsStringSync())
             as Map<String, Object?>;
 
-    expect(indexHtml, contains('<title>우리 둘</title>'));
+    expect(indexHtml, contains('<title>조금씩</title>'));
     expect(
       indexHtml,
-      contains('<meta name="apple-mobile-web-app-title" content="우리 둘">'),
+      contains('<meta name="apple-mobile-web-app-title" content="조금씩">'),
     );
     expect(
       indexHtml,
@@ -25,14 +25,14 @@ void main() {
         '<link rel="apple-touch-icon" sizes="180x180" href="icons/Icon-180.png">',
       ),
     );
-    expect(indexHtml, contains('비공개 커플 웹앱'));
+    expect(indexHtml, contains('천천히 서로를 알아가는 비공개 웹앱'));
     expect(indexHtml, isNot(contains('<title>알아가기</title>')));
 
-    expect(manifest['name'], '우리 둘');
-    expect(manifest['short_name'], '우리 둘');
+    expect(manifest['name'], '조금씩');
+    expect(manifest['short_name'], '조금씩');
     expect(manifest['theme_color'], '#6F7F63');
     expect(manifest['background_color'], '#F4F3EF');
-    expect(manifest['description'], contains('비공개 커플 웹앱'));
+    expect(manifest['description'], contains('천천히 서로를 알아가는'));
   });
 
   test('web icon assets keep required png sizes', () {

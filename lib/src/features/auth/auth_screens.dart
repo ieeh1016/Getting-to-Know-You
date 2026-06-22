@@ -6,8 +6,8 @@ import '../../domain/alagagi_controller.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
-const _brandName = '우리 둘';
-const _brandKicker = '둘이 쌓는 연애 기록';
+const _brandName = '조금씩';
+const _brandKicker = '천천히 알아가는 기록';
 
 class LoadingScreen extends StatelessWidget {
   const LoadingScreen({super.key});
@@ -114,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 18),
               Text(
-                '아이디가 있으면 둘만의 공간으로 바로 이어져요.',
+                '아이디가 있으면 조용히 이어서 들어갈 수 있어요.',
                 textAlign: TextAlign.center,
                 style: sans(
                   size: 14,
@@ -310,7 +310,7 @@ class _InviteScreenState extends State<InviteScreen> {
               ),
               const SizedBox(height: 14),
               Text(
-                '우리, 이제\n같이 기록해볼래요?',
+                '우리, 천천히\n알아가 볼래요?',
                 textAlign: TextAlign.center,
                 style: serif(
                   context,
@@ -332,9 +332,9 @@ class _InviteScreenState extends State<InviteScreen> {
                         color: AlagagiColors.sageDeep,
                       ),
                     ),
-                    const TextSpan(text: '님이 둘만의 공간을 열어두었어요.\n'),
+                    const TextSpan(text: '님이 대화 공간을 열어두었어요.\n'),
                     const TextSpan(
-                      text: '데이트, 질문, 음악, 장소를\n둘이 편하게 쌓아가는 공간이에요.',
+                      text: '하루에 질문 하나, 서로의 이야기를 나누는\n작고 조용한 공간이에요.',
                     ),
                   ],
                 ),
@@ -354,13 +354,13 @@ class _InviteScreenState extends State<InviteScreen> {
               ),
               const SizedBox(height: 12),
               AlagagiPrimaryButton(
-                label: '우리 공간으로 들어가기',
+                label: '대화 공간으로 들어가기',
                 onPressed: () =>
                     widget.controller.enterSpace(_nicknameController.text),
               ),
               const SizedBox(height: 14),
               Text(
-                '가입 절차 없이 바로 시작해요 · 둘만 조용히 써요',
+                '가입 절차 없이 바로 시작해요 · 언제든 그만둘 수 있어요',
                 textAlign: TextAlign.center,
                 style: sans(size: 11, color: AlagagiColors.muted, height: 1.6),
               ),

@@ -21,7 +21,7 @@ class HomePlusGrid extends StatelessWidget {
         const SizedBox(height: 10),
         _PlusTile(
           icon: Icons.person_outline_rounded,
-          title: '우리 프로필',
+          title: '소개 카드',
           body: '편한 만큼 내 취향 남기기',
           onTap: () => controller.goTo(AlagagiRoute.profileCard),
         ),
@@ -29,7 +29,7 @@ class HomePlusGrid extends StatelessWidget {
         _PlusTile(
           icon: Icons.bookmark_border_rounded,
           title: '언젠가, 같이',
-          body: '데이트 아이디어 담기',
+          body: '같이 해보고 싶은 것 담기',
           onTap: () => controller.goTo(AlagagiRoute.wishlist),
         ),
       ],

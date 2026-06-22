@@ -459,10 +459,10 @@ class DailyQuestionProgress {
 
 class SpacePersonalization {
   const SpacePersonalization({
-    this.appTitle = '우리 둘',
-    this.homeLine = '오늘도 둘의 하루를 쌓아요',
-    this.inviteLine = '데이트와 기록을 둘이 조용히 모아요',
-    this.accentEmoji = '♡',
+    this.appTitle = '조금씩',
+    this.homeLine = '오늘도 한 가지를 알아가요',
+    this.inviteLine = '하루에 하나씩, 조용히 알아가요',
+    this.accentEmoji = '🌿',
   });
 
   final String appTitle;
@@ -490,7 +490,7 @@ SpacePersonalization _normalizeBrandPersonalization(
 ) {
   const defaults = SpacePersonalization();
   final appTitle = personalization.appTitle.trim();
-  if (appTitle.isEmpty || appTitle == '알아가기' || appTitle == '조금씩') {
+  if (appTitle.isEmpty || appTitle == '알아가기') {
     return personalization.copyWith(appTitle: defaults.appTitle);
   }
   return personalization;
@@ -1594,13 +1594,13 @@ extension UnreadActivityFeatureMeta on UnreadActivityFeature {
 
   String get label {
     return switch (this) {
-      UnreadActivityFeature.profileCard => '우리 프로필',
+      UnreadActivityFeature.profileCard => '소개 카드',
       UnreadActivityFeature.wishlist => '언젠가, 같이',
-      UnreadActivityFeature.meetings => '데이트',
-      UnreadActivityFeature.places => '가보고 싶은 곳',
+      UnreadActivityFeature.meetings => '약속',
+      UnreadActivityFeature.places => '장소',
       UnreadActivityFeature.curiosity => '궁금함',
       UnreadActivityFeature.stocks => '주식 이야기',
-      UnreadActivityFeature.music => '우리 플레이리스트',
+      UnreadActivityFeature.music => '음악 노트',
       UnreadActivityFeature.improvements => '건의함',
     };
   }
@@ -2526,7 +2526,7 @@ class AlagagiController extends ChangeNotifier {
   ScheduleEntry? _lastFailedScheduleEntry;
   String _lastFailedScheduleEntrySuccessFeedback = '일정을 저장했어요.';
   MeetingPlan? _lastFailedMeetingPlan;
-  String _lastFailedMeetingPlanSuccessFeedback = '데이트 계획을 저장했어요.';
+  String _lastFailedMeetingPlanSuccessFeedback = '만남 계획을 저장했어요.';
   SharedPlace? _lastFailedSharedPlace;
   bool _lastFailedSharedPlaceWasMeetingLinks = false;
   CuriosityCard? _lastFailedCuriosityCard;
@@ -2617,38 +2617,38 @@ class AlagagiController extends ChangeNotifier {
     final todayItem = myAnswer == null
         ? const HomeProgressSummaryItem(
             id: 'todayQuestion',
-            label: '오늘의 우리 질문',
+            label: '오늘 질문',
             stateText: '아직 내 답을 남기지 않았어요',
             tone: HomeProgressSummaryTone.waiting,
           )
         : myAnswer.skipped
         ? const HomeProgressSummaryItem(
             id: 'todayQuestion',
-            label: '오늘의 우리 질문',
+            label: '오늘 질문',
             stateText: '오늘은 잠시 넘겨뒀어요',
             tone: HomeProgressSummaryTone.waiting,
           )
         : partnerAnswer == null
         ? HomeProgressSummaryItem(
             id: 'todayQuestion',
-            label: '오늘의 우리 질문',
+            label: '오늘 질문',
             stateText: '${_state.partner.nickname}님 답을 기다리는 중이에요',
             tone: HomeProgressSummaryTone.waiting,
           )
         : const HomeProgressSummaryItem(
             id: 'todayQuestion',
-            label: '오늘의 우리 질문',
-            stateText: '오늘 질문이 둘에게 열렸어요',
+            label: '오늘 질문',
+            stateText: '오늘 질문이 함께 열렸어요',
             tone: HomeProgressSummaryTone.ready,
           );
 
     final bothAnsweredCount = insight.matchCount;
     final bothAnsweredItem = HomeProgressSummaryItem(
       id: 'bothAnswered',
-      label: '같이 연 질문',
+      label: '둘 다 답한 질문',
       stateText: bothAnsweredCount == 0
           ? '아직 같이 열린 질문은 없어요'
-          : '$bothAnsweredCount개 질문을 둘이 같이 열었어요',
+          : '$bothAnsweredCount개 질문을 같이 열었어요',
       tone: bothAnsweredCount == 0
           ? HomeProgressSummaryTone.calm
           : HomeProgressSummaryTone.ready,
@@ -2657,12 +2657,12 @@ class AlagagiController extends ChangeNotifier {
     final hasNewMusic = unreadCountForFeature(UnreadActivityFeature.music) > 0;
     final musicItem = HomeProgressSummaryItem(
       id: 'music',
-      label: '우리 플레이리스트',
+      label: '음악 노트',
       stateText: hasNewMusic
-          ? '새 노래가 도착했어요'
+          ? '새 음악 노트가 있어요'
           : _musicNotes.isEmpty
-          ? '아직 담긴 노래가 없어요'
-          : '최근 노래 ${_musicNotes.length}곡',
+          ? '아직 음악 노트가 없어요'
+          : '최근 음악 노트 ${_musicNotes.length}곡',
       tone: hasNewMusic
           ? HomeProgressSummaryTone.ready
           : HomeProgressSummaryTone.calm,
@@ -2675,11 +2675,11 @@ class AlagagiController extends ChangeNotifier {
           )
         : hasNewMusic
         ? const HomeProgressSummaryAction(
-            label: '노래 보기',
+            label: '음악 보기',
             route: AlagagiRoute.music,
           )
         : const HomeProgressSummaryAction(
-            label: '기록 보기',
+            label: '질문함 보기',
             route: AlagagiRoute.archive,
           );
 
@@ -2708,7 +2708,7 @@ class AlagagiController extends ChangeNotifier {
         activities,
         feature: UnreadActivityFeature.profileCard,
         id: 'profile-${slot.id}',
-        title: '우리 프로필에 새 답이 있어요',
+        title: '소개 카드에 새 답이 있어요',
         description: '$partnerName님이 "${slot.label}"에 답했어요.',
         updatedAt: slot.updatedAt,
         actorProfileId: slot.updatedByProfileId ?? _state.partner.id,
@@ -2742,7 +2742,7 @@ class AlagagiController extends ChangeNotifier {
         activities,
         feature: UnreadActivityFeature.meetings,
         id: 'meeting-${entry.id}',
-        title: '데이트 일정이 업데이트됐어요',
+        title: '약속 일정이 업데이트됐어요',
         description:
             '$partnerName님이 ${_compactDateLabel(entry.dateKey)} 일정을 남겼어요.',
         updatedAt: entry.updatedAt,
@@ -2754,7 +2754,7 @@ class AlagagiController extends ChangeNotifier {
         activities,
         feature: UnreadActivityFeature.meetings,
         id: 'meeting-plan-${plan.dateKey}',
-        title: '데이트 계획이 업데이트됐어요',
+        title: '만남 계획이 업데이트됐어요',
         description:
             '$partnerName님이 ${_compactDateLabel(plan.dateKey)} 계획을 정리했어요.',
         updatedAt: plan.updatedAt,
@@ -2821,7 +2821,7 @@ class AlagagiController extends ChangeNotifier {
         activities,
         feature: UnreadActivityFeature.music,
         id: 'music-${note.id}',
-        title: '새 노래가 도착했어요',
+        title: '새 음악 노트가 있어요',
         description: '$partnerName님이 "${note.title}"를 남겼어요.',
         updatedAt: note.updatedAt,
         actorProfileId: note.createdByProfileId,
@@ -3299,7 +3299,7 @@ class AlagagiController extends ChangeNotifier {
       ),
       ProfileCardData(
         profile: _state.me,
-        subtitle: '편한 만큼 채워두는 우리 프로필',
+        subtitle: '편한 만큼 채워두는 내 소개 카드',
         slots: _profileSlotCatalog(),
       ),
     ];
@@ -3596,7 +3596,7 @@ class AlagagiController extends ChangeNotifier {
       _lastFailedMusicNoteAction = null;
       _state = _state.copyWith(
         musicSaveStatus: SaveStatus.saved,
-        musicSaveFeedback: '노래를 저장했어요.',
+        musicSaveFeedback: '음악 노트를 저장했어요.',
         musicSaveTargetId: note.id,
         clearMusicDraftError: true,
       );
@@ -3611,7 +3611,7 @@ class AlagagiController extends ChangeNotifier {
             _lastFailedMusicNoteAction = null;
             _state = _state.copyWith(
               musicSaveStatus: SaveStatus.saved,
-              musicSaveFeedback: '노래를 저장했어요.',
+              musicSaveFeedback: '음악 노트를 저장했어요.',
               musicSaveTargetId: note.id,
               clearMusicDraftError: true,
             );
@@ -3621,7 +3621,7 @@ class AlagagiController extends ChangeNotifier {
             _lastFailedMusicNote = note;
             _lastFailedMusicNoteAction = _FailedPersistenceAction.save;
             _state = _state.copyWith(
-              musicDraftError: '노래를 저장하지 못했어요. 다시 시도해 주세요.',
+              musicDraftError: '음악 노트를 저장하지 못했어요. 다시 시도해 주세요.',
               musicSaveStatus: SaveStatus.failed,
               musicSaveTargetId: note.id,
               clearMusicSaveFeedback: true,
@@ -3639,7 +3639,7 @@ class AlagagiController extends ChangeNotifier {
       _lastFailedMusicNoteAction = null;
       _state = _state.copyWith(
         musicSaveStatus: SaveStatus.saved,
-        musicSaveFeedback: '노래를 삭제했어요.',
+        musicSaveFeedback: '음악 노트를 삭제했어요.',
         musicSaveTargetId: note.id,
         clearMusicDraftError: true,
       );
@@ -3654,7 +3654,7 @@ class AlagagiController extends ChangeNotifier {
             _lastFailedMusicNoteAction = null;
             _state = _state.copyWith(
               musicSaveStatus: SaveStatus.saved,
-              musicSaveFeedback: '노래를 삭제했어요.',
+              musicSaveFeedback: '음악 노트를 삭제했어요.',
               musicSaveTargetId: note.id,
               clearMusicDraftError: true,
             );
@@ -3671,7 +3671,7 @@ class AlagagiController extends ChangeNotifier {
             _lastFailedMusicNote = note;
             _lastFailedMusicNoteAction = _FailedPersistenceAction.delete;
             _state = _state.copyWith(
-              musicDraftError: '노래를 삭제하지 못했어요. 다시 시도해 주세요.',
+              musicDraftError: '음악 노트를 삭제하지 못했어요. 다시 시도해 주세요.',
               musicSaveStatus: SaveStatus.failed,
               musicSaveTargetId: note.id,
               clearMusicSaveFeedback: true,
@@ -3738,7 +3738,7 @@ class AlagagiController extends ChangeNotifier {
 
   void _persistMeetingPlan(
     MeetingPlan plan, {
-    String successFeedback = '데이트 계획을 저장했어요.',
+    String successFeedback = '만남 계획을 저장했어요.',
   }) {
     final repository = _repository;
     final spaceId = _spaceId;
@@ -3770,7 +3770,7 @@ class AlagagiController extends ChangeNotifier {
             _lastFailedMeetingPlan = plan;
             _lastFailedMeetingPlanSuccessFeedback = successFeedback;
             _state = _state.copyWith(
-              meetingDraftError: '데이트 계획을 저장하지 못했어요. 다시 시도해 주세요.',
+              meetingDraftError: '만남 계획을 저장하지 못했어요. 다시 시도해 주세요.',
               meetingSaveStatus: SaveStatus.failed,
               meetingSaveTargetId: plan.id,
               clearMeetingSaveFeedback: true,
@@ -6345,7 +6345,7 @@ class AlagagiController extends ChangeNotifier {
       label: trimmedTitle,
       icon: 'custom',
       category: normalizedCategory,
-      inputHint: '직접 추가한 우리 프로필',
+      inputHint: '직접 추가한 소개 카드',
       value: trimmedValue,
       custom: true,
       updatedAt: now,
@@ -7378,7 +7378,7 @@ class AlagagiController extends ChangeNotifier {
             note.id == editingId && note.createdByProfileId == _state.me.id,
       );
       if (editIndex == -1) {
-        _state = _state.copyWith(musicDraftError: '수정할 노래를 찾지 못했어요.');
+        _state = _state.copyWith(musicDraftError: '수정할 음악 노트를 찾지 못했어요.');
         notifyListeners();
         return;
       }
@@ -7444,13 +7444,13 @@ class AlagagiController extends ChangeNotifier {
   void deleteMusicNote(String noteId) {
     final index = _musicNotes.indexWhere((note) => note.id == noteId);
     if (index == -1) {
-      _state = _state.copyWith(musicDraftError: '삭제할 노래를 찾지 못했어요.');
+      _state = _state.copyWith(musicDraftError: '삭제할 음악 노트를 찾지 못했어요.');
       notifyListeners();
       return;
     }
     final note = _musicNotes[index];
     if (note.createdByProfileId != _state.me.id) {
-      _state = _state.copyWith(musicDraftError: '내가 남긴 노래만 삭제할 수 있어요.');
+      _state = _state.copyWith(musicDraftError: '내가 남긴 음악 노트만 삭제할 수 있어요.');
       notifyListeners();
       return;
     }
@@ -7866,7 +7866,7 @@ class AlagagiController extends ChangeNotifier {
       clearMeetingSaveFeedback: true,
     );
     notifyListeners();
-    _persistMeetingPlan(plan, successFeedback: '데이트 계획을 저장했어요.');
+    _persistMeetingPlan(plan, successFeedback: '만남 계획을 저장했어요.');
   }
 
   void submitMeetingDayDraft() {
@@ -9861,7 +9861,7 @@ const seedInsight = RelationshipInsight(
       highlight: '느슨한 계획파',
     ),
     TimelineEvent(dateLabel: '5월 30일', description: '민영님이 처음 답을 남긴 날'),
-    TimelineEvent(dateLabel: '5월 28일', description: '우리 둘의 기록을 시작했어요'),
+    TimelineEvent(dateLabel: '5월 28일', description: '우리, 조금씩 기록을 시작했어요'),
   ],
 );
 

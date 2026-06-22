@@ -48,13 +48,13 @@ class MyScreen extends StatelessWidget {
     final recentMusic = myMusicNotes.isEmpty ? null : myMusicNotes.first;
     final todayAnswer = controller.todayMyAnswer;
     final needsTodayAnswer = todayAnswer == null || todayAnswer.skipped;
-    final musicActionLabel = myMusicNotes.isEmpty ? '노래 남기기' : '내 노래 다듬기';
+    final musicActionLabel = myMusicNotes.isEmpty ? '음악 노트 남기기' : '내 음악 노트 다듬기';
     final musicActionState = myMusicNotes.isEmpty ? '아직 없음' : '최근 1곡';
 
     return AlagagiScreenScroll(
       bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
-        const AlagagiTopBar(title: '내 기록', trailing: ''),
+        const AlagagiTopBar(title: '마이', trailing: ''),
         const SizedBox(height: 18),
         Column(
           key: myDashboardKey,
@@ -75,14 +75,14 @@ class MyScreen extends StatelessWidget {
                 Expanded(
                   child: _MyStatCard(
                     value: '${myProfileCard.filledCount}',
-                    label: '채운\n프로필',
+                    label: '채운\n소개 카드',
                   ),
                 ),
                 const SizedBox(width: 9),
                 Expanded(
                   child: _MyStatCard(
                     value: '${myMusicNotes.length}',
-                    label: '남긴\n노래',
+                    label: '남긴\n음악 노트',
                   ),
                 ),
               ],
@@ -91,13 +91,13 @@ class MyScreen extends StatelessWidget {
             const _MySectionHeader(title: '다음에 해볼 것', trailing: '가볍게 하나씩'),
             _MyPrimaryNextCard(
               buttonKey: myNextPrimaryButtonKey,
-              label: needsTodayAnswer ? '오늘 질문 답하기' : '우리 기록 이어보기',
+              label: needsTodayAnswer ? '오늘 질문 답하기' : '질문함 이어보기',
               description: needsTodayAnswer
                   ? '아직 내 답이 비어 있어요. 짧게 남겨도 충분해요.'
                   : '지나온 질문들을 조용히 다시 볼 수 있어요.',
               meta: needsTodayAnswer
                   ? 'DAY ${controller.todayQuestion.day}'
-                  : '우리 기록',
+                  : '질문함',
               progress: needsTodayAnswer ? 0.64 : 1,
               onTap: needsTodayAnswer
                   ? controller.activateHomeProgressSummaryAction
@@ -110,7 +110,7 @@ class MyScreen extends StatelessWidget {
                   child: _MyNextTile(
                     buttonKey: myProfileCardActionButtonKey,
                     icon: Icons.badge_outlined,
-                    label: '우리 프로필 한 칸 채우기',
+                    label: '소개 카드 한 칸 채우기',
                     state:
                         '${myProfileCard.filledCount} / ${myProfileCard.totalCount}',
                     description: '대화할 때 편한 방식을 적어볼 수 있어요.',
@@ -168,13 +168,13 @@ class MyScreen extends StatelessWidget {
                   child: _MyTraceCard(
                     key: myTraceCardKey('music'),
                     label: 'MUSIC',
-                    title: recentMusic?.title ?? '아직 담긴 노래가 없어요',
+                    title: recentMusic?.title ?? '아직 음악 노트가 없어요',
                     body: recentMusic?.note.isNotEmpty == true
                         ? recentMusic!.note
                         : '요즘의 한 곡을 가볍게 남겨볼 수 있어요.',
                     onTap: () => onOpenReadableDetail(
-                      label: '최근 노래',
-                      title: recentMusic?.title ?? '아직 담긴 노래가 없어요',
+                      label: '최근 음악 노트',
+                      title: recentMusic?.title ?? '아직 음악 노트가 없어요',
                       body: recentMusic?.note.isNotEmpty == true
                           ? recentMusic!.note
                           : '요즘의 한 곡을 가볍게 남겨볼 수 있어요.',
@@ -248,7 +248,7 @@ class _MyProfileSummaryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${controller.state.partner.nickname}과 함께 쓰는 둘만의 공간에 들어와 있어요.',
+                      '${controller.state.partner.nickname}과 알아가는 비공개 공간에 들어와 있어요.',
                       style: sans(
                         size: 12.5,
                         color: AlagagiColors.muted,
