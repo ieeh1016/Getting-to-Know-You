@@ -100,6 +100,41 @@ void main() {
     );
   });
 
+  test(
+    'curiosity rules cover repository write metadata for questions and replies',
+    () {
+      final repository = File(
+        'lib/src/data/firebase_alagagi_repositories.dart',
+      ).readAsStringSync();
+      final rules = File('firestore.rules').readAsStringSync();
+      final method = RegExp(
+        r'Future<void> saveCuriosityCard[\s\S]*?\n  @override',
+      ).firstMatch(repository)?.group(0);
+      final curiosityRules = RegExp(
+        r'function validCuriosityCardShape[\s\S]*?function validStockStoryShape',
+      ).firstMatch(rules)?.group(0);
+
+      expect(method, isNotNull);
+      expect(curiosityRules, isNotNull);
+      expect(method, contains("'updatedByProfileId'"));
+      expect(curiosityRules, contains("'updatedByProfileId'"));
+      expect(
+        curiosityRules,
+        contains('request.resource.data.updatedByProfileId is string'),
+      );
+      expect(
+        curiosityRules,
+        contains('request.resource.data.updatedByProfileId in get'),
+      );
+      expect(
+        curiosityRules,
+        contains(
+          'request.resource.data.updatedByProfileId == request.auth.uid',
+        ),
+      );
+    },
+  );
+
   test('shared place meeting link saves use a narrow Firestore patch', () {
     final repository = File(
       'lib/src/data/firebase_alagagi_repositories.dart',

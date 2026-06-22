@@ -411,6 +411,7 @@ service cloud.firestore {
           'reply',
           'createdLabel',
           'repliedLabel',
+          'updatedByProfileId',
           'updatedAt'
         ])
         && request.resource.data.id == cardId
@@ -427,7 +428,9 @@ service cloud.firestore {
         && request.resource.data.createdLabel is string
         && request.resource.data.createdLabel.size() <= 16
         && request.resource.data.repliedLabel is string
-        && request.resource.data.repliedLabel.size() <= 16;
+        && request.resource.data.repliedLabel.size() <= 16
+        && request.resource.data.updatedByProfileId is string
+        && request.resource.data.updatedByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds;
     }
 
     function validNewCuriosityCard(spaceId, cardId) {
@@ -435,7 +438,8 @@ service cloud.firestore {
         && request.resource.data.fromProfileId == request.auth.uid
         && request.resource.data.toProfileId != request.auth.uid
         && request.resource.data.reply == ''
-        && request.resource.data.repliedLabel == '';
+        && request.resource.data.repliedLabel == ''
+        && request.resource.data.updatedByProfileId == request.auth.uid;
     }
 
     function validCuriosityReply(spaceId, cardId) {
@@ -448,9 +452,11 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'reply',
           'repliedLabel',
+          'updatedByProfileId',
           'updatedAt'
         ])
-        && request.resource.data.reply.size() > 0;
+        && request.resource.data.reply.size() > 0
+        && request.resource.data.updatedByProfileId == request.auth.uid;
     }
 
     function validStockStoryShape(spaceId, storyId) {
