@@ -556,7 +556,7 @@ This batch follows `docs/design/music_tab_navigation_concept.html` and `docs/des
   - MVP does not integrate Spotify, Apple Music, YouTube Music, search APIs, playback SDKs, album image uploads, realtime presence, or push notifications.
   - Link values are stored as text and may be opened/copied later; missing links are allowed only if title and artist are present.
   - Note body is limited to 80 characters.
-  - Mood is selected from a small fixed set: `차분한`, `산책`, `카페`, `밤`, `가벼운`, `집중`.
+  - Mood can be selected from quick labels or typed directly as a custom label up to 16 characters.
 - Music note UX:
   - Empty state says that a song can be left lightly, without pressure to listen immediately.
   - `한 곡 남기기` CTA is placed inside the content flow near the `들어볼 곡` section header, not fixed above or visually attached to the bottom navigation.
@@ -1984,7 +1984,7 @@ Rules:
 - `listenedByProfileIds` stores only explicit emoji listen-state checks by space members.
 - Listen-state updates do not change `updatedAt`; the home new-note badge remains based on note creation/edit content changes.
 - No playback history, realtime presence, route/device data, or search API cache is written in MVP v0.13.
-- `note` is limited to 80 characters and `mood` is one of the fixed mood labels.
+- `note` is limited to 80 characters and `mood` is required custom text up to 16 characters.
 
 `spaces/{spaceId}/scheduleEntries/{dateKey_uid}`
 

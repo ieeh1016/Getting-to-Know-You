@@ -356,7 +356,9 @@ service cloud.firestore {
         && request.resource.data.link.size() <= 180
         && request.resource.data.note is string
         && request.resource.data.note.size() <= 80
-        && request.resource.data.mood in ['차분한', '산책', '카페', '밤', '가벼운', '집중']
+        && request.resource.data.mood is string
+        && request.resource.data.mood.size() > 0
+        && request.resource.data.mood.size() <= 16
         && request.resource.data.createdByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
         && request.resource.data.createdLabel is string
         && request.resource.data.createdLabel.size() <= 16

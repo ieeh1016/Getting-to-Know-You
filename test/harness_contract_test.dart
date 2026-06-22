@@ -81,6 +81,25 @@ void main() {
     expect(rules, contains("'longitude'"));
   });
 
+  test('music note rules allow custom mood labels used by the app', () {
+    final controller = File(
+      'lib/src/domain/alagagi_controller.dart',
+    ).readAsStringSync();
+    final rules = File('firestore.rules').readAsStringSync();
+
+    expect(controller, contains('if (mood.length > 16)'));
+    expect(rules, contains('request.resource.data.mood is string'));
+    expect(rules, contains('request.resource.data.mood.size() > 0'));
+    expect(rules, contains('request.resource.data.mood.size() <= 16'));
+    expect(
+      rules,
+      isNot(contains('request.resource.data.mood in [')),
+      reason:
+          'The music UI supports typed custom moods, so Firestore rules must '
+          'not restrict music notes to the quick mood chips only.',
+    );
+  });
+
   test('shared place meeting link saves use a narrow Firestore patch', () {
     final repository = File(
       'lib/src/data/firebase_alagagi_repositories.dart',
