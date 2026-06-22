@@ -1,11 +1,11 @@
 {
-    "name": "조금씩",
-    "short_name": "조금씩",
+    "name": "우리 둘",
+    "short_name": "우리 둘",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#F4F3EF",
     "theme_color": "#6F7F63",
-    "description": "하루 한 질문과 작은 기록으로 천천히 서로를 알아가는 비공개 웹앱.",
+    "description": "데이트, 질문, 장소, 음악을 둘이 쌓아가는 비공개 커플 웹앱.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

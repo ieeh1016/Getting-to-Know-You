@@ -6,32 +6,32 @@ import 'package:minyoung_pick/src/ui/alagagi_app.dart';
 void main() {
   Future<void> enterSpace(WidgetTester tester) async {
     await tester.enterText(find.byKey(inviteNicknameFieldKey), '영우');
-    await tester.ensureVisible(find.text('대화 공간으로 들어가기'));
+    await tester.ensureVisible(find.text('우리 공간으로 들어가기'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('대화 공간으로 들어가기'));
+    await tester.tap(find.text('우리 공간으로 들어가기'));
     await tester.pumpAndSettle();
   }
 
   testWidgets('shows invite and enters home with nickname', (tester) async {
     await tester.pumpWidget(const AlagagiApp());
 
-    expect(find.text('천천히 알아가는 기록'), findsOneWidget);
+    expect(find.text('둘이 쌓는 연애 기록'), findsOneWidget);
     expect(find.text('J O G E U M S S I K'), findsNothing);
-    expect(find.text('우리, 천천히\n알아가 볼래요?'), findsOneWidget);
+    expect(find.text('우리, 이제\n같이 기록해볼래요?'), findsOneWidget);
     expect(find.text('알아가기'), findsNothing);
     expect(find.text('9:41'), findsNothing);
     expect(find.textContaining('🔋'), findsNothing);
 
     await enterSpace(tester);
 
-    expect(find.text('조금씩'), findsOneWidget);
+    expect(find.text('우리 둘'), findsOneWidget);
     expect(find.byKey(homeBrandLogoKey), findsOneWidget);
-    expect(find.text('천천히 알아가는 기록'), findsOneWidget);
+    expect(find.text('둘이 쌓는 연애 기록'), findsOneWidget);
     expect(find.text('J O G E U M S S I K'), findsNothing);
     expect(find.text('알아가기'), findsNothing);
-    expect(find.text('오늘의 질문'), findsOneWidget);
+    expect(find.text('오늘의 우리 질문'), findsWidgets);
     expect(find.byKey(homeQuestionCardKey), findsOneWidget);
-    expect(find.text("Today's Question"), findsOneWidget);
+    expect(find.text('OUR QUESTION'), findsOneWidget);
     expect(find.text('DAY 12'), findsWidgets);
     expect(find.text('아직 내 답을 남기지 않았어요.'), findsOneWidget);
     expect(find.textContaining('답을 남기면'), findsOneWidget);
@@ -39,7 +39,7 @@ void main() {
     expect(find.byKey(homeMenuButtonKey), findsOneWidget);
     expect(find.byKey(homeCuriosityEntryKey), findsNothing);
     expect(find.text('닮은 취향 키워드'), findsNothing);
-    expect(find.textContaining('궁금함 한 장'), findsNothing);
+    expect(find.textContaining('짧은 질문'), findsNothing);
     expect(find.text('지금의 마음을 한 줄로...'), findsNothing);
     expect(find.text('9:41'), findsNothing);
     expect(find.textContaining('🔋'), findsNothing);
@@ -138,7 +138,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(homeMenuSheetKey), findsOneWidget);
-    expect(find.text('궁금함 한 장'), findsOneWidget);
+    expect(find.text('짧은 질문'), findsOneWidget);
     expect(find.text('주식 이야기'), findsOneWidget);
     expect(find.byKey(homeMenuImprovementButtonKey), findsOneWidget);
     expect(find.byKey(homeMenuBalanceButtonKey), findsOneWidget);
@@ -152,9 +152,10 @@ void main() {
     expect(find.byKey(stockStoryAddButtonKey), findsOneWidget);
     expect(find.text('주식'), findsNothing);
     expect(find.text('홈'), findsOneWidget);
-    expect(find.text('질문'), findsOneWidget);
-    expect(find.text('음악'), findsOneWidget);
-    expect(find.text('약속'), findsOneWidget);
+    expect(find.text('이야기'), findsWidgets);
+    expect(find.text('노래'), findsOneWidget);
+    expect(find.text('일정'), findsOneWidget);
+    expect(find.text('데이트'), findsOneWidget);
     expect(find.text('장소'), findsOneWidget);
     expect(find.text('마이'), findsOneWidget);
   });
@@ -396,7 +397,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(homeMenuProfileCardButtonKey));
     await tester.pumpAndSettle();
-    expect(find.text('소개 카드'), findsOneWidget);
+    expect(find.text('우리 프로필'), findsOneWidget);
 
     await tester.tap(find.byKey(subScreenBackButtonKey));
     await tester.pumpAndSettle();
@@ -1662,7 +1663,7 @@ void main() {
     await tester.tap(find.text('저장하기'));
     await tester.pumpAndSettle();
 
-    expect(find.text('질문'), findsWidgets);
+    expect(find.text('우리 기록'), findsWidgets);
     expect(find.text('늦게 남기는 답이에요.'), findsOneWidget);
   });
 
@@ -1727,7 +1728,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(myDashboardKey), findsOneWidget);
-    expect(find.text('내 기록'), findsOneWidget);
+    expect(find.text('내 기록'), findsWidgets);
     expect(find.text('다음에 해볼 것'), findsOneWidget);
     expect(find.text('최근 내 흔적'), findsOneWidget);
     expect(find.text('계정'), findsOneWidget);
@@ -2064,11 +2065,11 @@ void main() {
     expect(find.textContaining('Firebase'), findsNothing);
   });
 
-  testWidgets('uses a low-pressure invite and wishlist tone', (tester) async {
+  testWidgets('uses a warm couple invite and wishlist tone', (tester) async {
     await tester.pumpWidget(const AlagagiApp());
 
-    expect(find.text('대화 공간으로 들어가기'), findsOneWidget);
-    expect(find.text('둘만의 공간'), findsNothing);
+    expect(find.text('우리 공간으로 들어가기'), findsOneWidget);
+    expect(find.textContaining('둘만의 공간'), findsWidgets);
     expect(find.text('천천히 가까워지기'), findsNothing);
     expect(find.text('☀️'), findsNothing);
     expect(find.text('🔒'), findsNothing);
@@ -2110,13 +2111,13 @@ void main() {
     await tester.pumpWidget(const AlagagiApp());
     await enterSpace(tester);
 
-    await tester.tap(find.text('질문'));
+    await tester.tap(find.text('이야기'));
     await tester.pumpAndSettle();
-    expect(find.text('그동안 주고받은 12개의 이야기'), findsOneWidget);
+    expect(find.text('둘이 주고받은 12개의 이야기'), findsOneWidget);
 
     await tester.tap(find.text('기록'));
     await tester.pumpAndSettle();
-    expect(find.text('답변 속 공통점이 조금씩 보여요'), findsOneWidget);
+    expect(find.text('답변 속 공통점이 보여요'), findsOneWidget);
 
     await tester.tap(find.text('홈'));
     await tester.pumpAndSettle();
@@ -2139,9 +2140,9 @@ void main() {
 
     await tester.tap(find.byKey(subScreenBackButtonKey));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('소개 카드'));
+    await tester.ensureVisible(find.text('우리 프로필'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('소개 카드'));
+    await tester.tap(find.text('우리 프로필'));
     await tester.pumpAndSettle();
     expect(find.textContaining('🎂'), findsNothing);
     expect(find.textContaining('🧭'), findsNothing);
@@ -2158,7 +2159,7 @@ void main() {
     expect(find.textContaining('점수'), findsNothing);
     expect(find.textContaining('지수'), findsNothing);
 
-    await tester.tap(find.text('질문'));
+    await tester.tap(find.text('이야기'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('기록'));
     await tester.pumpAndSettle();
@@ -2166,7 +2167,7 @@ void main() {
     expect(find.textContaining('%'), findsNothing);
     expect(find.textContaining('점수'), findsNothing);
     expect(find.textContaining('지수'), findsNothing);
-    expect(find.text('함께 답한 질문'), findsWidgets);
+    expect(find.text('같이 연 질문'), findsWidgets);
   });
 
   testWidgets('balance next action waits until an option is selected', (
@@ -2309,9 +2310,9 @@ void main() {
     await tester.pumpWidget(const AlagagiApp());
     await enterSpace(tester);
 
-    await tester.tap(find.text('약속'));
+    await tester.tap(find.text('일정'));
     await tester.pumpAndSettle();
-    expect(find.text('만날 수 있는 날'), findsOneWidget);
+    expect(find.text('데이트 일정'), findsOneWidget);
     expect(find.byKey(subScreenBackButtonKey), findsNothing);
 
     await tester.tap(find.text('장소'));
@@ -2321,7 +2322,7 @@ void main() {
 
     await tester.tap(find.text('마이'));
     await tester.pumpAndSettle();
-    expect(find.text('마이'), findsWidgets);
+    expect(find.text('내 기록'), findsWidgets);
     expect(find.byKey(subScreenBackButtonKey), findsNothing);
   });
 
@@ -2332,22 +2333,21 @@ void main() {
     await enterSpace(tester);
 
     expect(find.text('홈'), findsOneWidget);
-    expect(find.text('질문'), findsOneWidget);
-    expect(find.text('음악'), findsOneWidget);
+    expect(find.text('이야기'), findsOneWidget);
+    expect(find.text('노래'), findsOneWidget);
     expect(find.text('마이'), findsOneWidget);
     expect(find.text('질문함'), findsNothing);
-    expect(find.text('기록'), findsNothing);
 
-    await tester.tap(find.text('질문'));
+    await tester.tap(find.text('이야기'));
     await tester.pumpAndSettle();
-    expect(find.text('질문'), findsWidgets);
+    expect(find.text('우리 기록'), findsWidgets);
     expect(find.text('달력'), findsOneWidget);
     expect(find.text('기록'), findsOneWidget);
     expect(find.byKey(archiveCalendarKey), findsOneWidget);
 
     await tester.tap(find.text('기록'));
     await tester.pumpAndSettle();
-    expect(find.text('답변 속 공통점이 조금씩 보여요'), findsOneWidget);
+    expect(find.text('답변 속 공통점이 보여요'), findsOneWidget);
   });
 
   testWidgets('meeting tab saves detailed schedule and shared note', (
@@ -2359,7 +2359,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('약속'));
+    await tester.tap(find.text('일정'));
     await tester.pumpAndSettle();
 
     expect(find.byKey(meetingCalendarKey), findsOneWidget);
@@ -2876,7 +2876,7 @@ void main() {
     expect(plan, isNotNull);
     expect(plan!.items, ['전시 보기', '브런치 카페', '저녁 먹기']);
     expect(find.text('계획 3개'), findsOneWidget);
-    expect(find.text('만남 계획을 저장했어요.'), findsOneWidget);
+    expect(find.text('데이트 계획을 저장했어요.'), findsOneWidget);
 
     expect(
       find.byKey(meetingPlanPlaceLinkButtonKey('place_cafe')),
@@ -3039,7 +3039,7 @@ void main() {
 
     expect(find.byKey(meetingPastMeetingsSheetKey), findsOneWidget);
     expect(find.byKey(meetingPastMeetingCardKey(pastDateKey)), findsOneWidget);
-    expect(find.text('지난 만남'), findsOneWidget);
+    expect(find.text('지난 데이트'), findsOneWidget);
     expect(find.text('저녁 7시쯤'), findsOneWidget);
     expect(find.text('계획 4개'), findsOneWidget);
     expect(find.text('장소 3곳'), findsOneWidget);
@@ -3102,7 +3102,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('약속'));
+    await tester.tap(find.text('일정'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(meetingSubmitButtonKey));
     await tester.pumpAndSettle();
@@ -3175,10 +3175,10 @@ void main() {
     await tester.pumpWidget(const AlagagiApp());
     await enterSpace(tester);
 
-    await tester.tap(find.text('음악'));
+    await tester.tap(find.text('노래'));
     await tester.pumpAndSettle();
 
-    expect(find.text('음악 노트'), findsOneWidget);
+    expect(find.text('우리 플레이리스트'), findsOneWidget);
     expect(find.byKey(musicAddButtonKey), findsOneWidget);
     expect(find.text('한 곡 남기기'), findsOneWidget);
     expect(
@@ -3458,7 +3458,7 @@ void main() {
     await tester.tap(find.byKey(musicEditButtonKey('music_mine')));
     await tester.pumpAndSettle();
 
-    expect(find.text('음악 노트 다듬기'), findsOneWidget);
+    expect(find.text('노래 다듬기'), findsOneWidget);
     final titleEditable = tester.widget<EditableText>(
       find.descendant(
         of: find.byKey(musicTitleFieldKey),
@@ -3660,16 +3660,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(homeProgressSummaryKey), findsOneWidget);
-    expect(find.text('둘 다 답한 질문'), findsOneWidget);
-    expect(find.text('새 음악 노트가 있어요'), findsOneWidget);
+    expect(find.text('같이 연 질문'), findsWidgets);
+    expect(find.text('새 노래가 도착했어요'), findsOneWidget);
 
-    await tester.tap(find.text('음악'));
+    await tester.tap(find.text('노래'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('홈'));
     await tester.pumpAndSettle();
 
-    expect(find.text('새 음악 노트가 있어요'), findsNothing);
-    expect(find.text('최근 음악 노트 1곡'), findsOneWidget);
+    expect(find.text('새 노래가 도착했어요'), findsNothing);
+    expect(find.text('최근 노래 1곡'), findsOneWidget);
   });
 
   testWidgets('home unread panel opens a scrollable full activity sheet', (
@@ -3895,7 +3895,7 @@ void main() {
 
     expect(find.byKey(firstVisitGuideSheetKey), findsNothing);
     expect(find.byKey(firstVisitGuideBookSheetKey), findsOneWidget);
-    expect(find.text('헷갈릴 때만 다시 보는 안내서'), findsOneWidget);
+    expect(find.text('둘이 편하게 쓰는 안내서'), findsOneWidget);
     expect(guideStore.hasSeenFirstVisitGuide('main', 'youngwooUid'), isTrue);
 
     await tester.tap(find.byIcon(Icons.close_rounded).last);

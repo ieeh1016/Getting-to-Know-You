@@ -1147,7 +1147,7 @@ class _BalanceResultCard extends StatelessWidget {
               children: [
                 _BalanceRouteChip(
                   icon: Icons.event_note_outlined,
-                  label: '만남 계획',
+                  label: '데이트 계획',
                   onTap: onOpenMeetings,
                 ),
                 _BalanceRouteChip(
@@ -1157,7 +1157,7 @@ class _BalanceResultCard extends StatelessWidget {
                 ),
                 _BalanceRouteChip(
                   icon: Icons.music_note_outlined,
-                  label: '음악 노트',
+                  label: '노래 보기',
                   onTap: onOpenMusic,
                 ),
               ],
@@ -1575,7 +1575,7 @@ class _BalanceInlineResultSummary extends StatelessWidget {
             children: [
               _BalanceRouteChip(
                 icon: Icons.event_note_outlined,
-                label: '만남 계획',
+                label: '데이트 계획',
                 onTap: onOpenMeetings,
               ),
               _BalanceRouteChip(
@@ -1585,7 +1585,7 @@ class _BalanceInlineResultSummary extends StatelessWidget {
               ),
               _BalanceRouteChip(
                 icon: Icons.music_note_outlined,
-                label: '음악 노트',
+                label: '노래 보기',
                 onTap: onOpenMusic,
               ),
             ],

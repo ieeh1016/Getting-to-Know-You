@@ -18,7 +18,7 @@ class RecordsScreen extends StatelessWidget {
     return AlagagiScreenScroll(
       bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
-        Text('질문', style: serif(context, size: 23, weight: FontWeight.w800)),
+        Text('우리 기록', style: serif(context, size: 23, weight: FontWeight.w800)),
         const SizedBox(height: 4),
         Text(
           '답변에서 보이는 작은 공통점',
@@ -45,7 +45,7 @@ class RecordsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                '함께 답한 질문',
+                '같이 연 질문',
                 style: sans(
                   size: 11,
                   weight: FontWeight.w800,
@@ -78,7 +78,7 @@ class RecordsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                isEmpty ? '기록은 답이 쌓이면 자연스럽게 만들어져요.' : '답변 속 공통점이 조금씩 보여요',
+                isEmpty ? '기록은 답이 쌓이면 자연스럽게 만들어져요.' : '답변 속 공통점이 보여요',
                 style: sans(size: 12, color: const Color(0xFF5A6650)),
               ),
             ],

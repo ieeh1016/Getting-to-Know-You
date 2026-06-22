@@ -31,10 +31,10 @@ class _MeetingScreenState extends State<MeetingScreen> {
     return AlagagiScreenScroll(
       bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
-        AlagagiTopBar(title: '만날 수 있는 날', trailing: ''),
+        AlagagiTopBar(title: '데이트 일정', trailing: ''),
         const SizedBox(height: 4),
         Text(
-          '각자의 일정 내용은 지키면서 겹치는 여유만 맞춰요',
+          '각자의 일정은 지키면서 둘이 만날 여유를 맞춰요',
           style: sans(size: 12.5, color: AlagagiColors.muted),
         ),
         const SizedBox(height: 16),
@@ -51,7 +51,7 @@ class _MeetingScreenState extends State<MeetingScreen> {
           controller: controller,
         ),
         const SizedBox(height: 18),
-        const AlagagiSectionLabel('서로 괜찮은 후보'),
+        const AlagagiSectionLabel('같이 괜찮은 후보'),
         const SizedBox(height: 10),
         if (candidates.isEmpty)
           const AlagagiEmptyStateCard(text: '둘 다 가능하다고 남긴 날이 생기면 여기에 모여요.')
@@ -104,7 +104,7 @@ class _MeetingHeroCard extends StatelessWidget {
               '시간은 편할 때 다시 적어도 괜찮아요.'
             else
               '$meetingTimeLabel에 만나기로 했어요.',
-            if (meetingPlanCount > 0) '만남 탭에 그날 계획이 정리돼 있어요.',
+            if (meetingPlanCount > 0) '데이트 탭에 그날 계획이 정리돼 있어요.',
           ].join(' ')
         : '상대에게 보여도 괜찮은 일정과 만날 수 있는 여유만 남겨요.';
     return AlagagiPaperCard(
@@ -115,7 +115,7 @@ class _MeetingHeroCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'NEXT MEETING',
+            'DATE DAY',
             style: sans(
               size: 10.5,
               weight: FontWeight.w800,
@@ -201,7 +201,7 @@ class _MeetingCalendar extends StatelessWidget {
           ),
           const SizedBox(height: 7),
           Text(
-            '앞뒤 한 달씩 넘겨 가까운 약속을 추가하거나 수정할 수 있어요.',
+            '앞뒤 한 달씩 넘겨 가까운 데이트 일정을 추가하거나 수정할 수 있어요.',
             textAlign: TextAlign.center,
             style: sans(size: 11.2, color: AlagagiColors.muted),
           ),

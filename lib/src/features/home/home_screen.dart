@@ -57,17 +57,17 @@ class HomeScreen extends StatelessWidget {
               showCuriosityMenuSheet(context, controller),
         ),
         const SizedBox(height: 22),
-        const AlagagiSectionLabel('오늘의 질문'),
+        const AlagagiSectionLabel('오늘의 우리 질문'),
         const SizedBox(height: 12),
         _QuestionCard(controller: controller),
         const SizedBox(height: 16),
         HomeProgressSummaryCard(controller: controller),
         const SizedBox(height: 22),
-        const AlagagiSectionLabel('알아간 기록'),
+        const AlagagiSectionLabel('우리 기록'),
         const SizedBox(height: 12),
         HomeInsightGrid(controller: controller),
         const SizedBox(height: 24),
-        const AlagagiSectionLabel('가볍게 알아가는 것들'),
+        const AlagagiSectionLabel('둘이 더 채우는 것들'),
         const SizedBox(height: 12),
         HomePlusGrid(controller: controller),
       ],
@@ -105,7 +105,7 @@ class _QuestionCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Today\'s Question',
+                  'OUR QUESTION',
                   style: sans(
                     size: 10.5,
                     color: AlagagiColors.sageDeep,
@@ -214,7 +214,7 @@ class _QuestionCard extends StatelessWidget {
             if (partnerAnswer == null)
               QuestionSupportBlock(
                 title: '${controller.state.partner.nickname}님 답은 기다리는 중이에요.',
-                body: '상대 답이 준비되면 이 자리에서 이어서 볼 수 있어요.',
+                body: '둘의 답이 모이면 이 자리에서 같이 볼 수 있어요.',
               )
             else
               Column(

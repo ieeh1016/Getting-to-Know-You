@@ -21,12 +21,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('천천히 알아가는 기록'), findsOneWidget);
+      expect(find.text('둘이 쌓는 연애 기록'), findsOneWidget);
       expect(find.text('J O G E U M S S I K'), findsNothing);
-      expect(find.text('조금씩'), findsOneWidget);
+      expect(find.text('우리 둘'), findsOneWidget);
       expect(find.text('알아가기'), findsNothing);
-      expect(find.text('아이디가 있으면 조용히 이어서 들어갈 수 있어요.'), findsOneWidget);
-      expect(find.text('우리, 천천히\n알아가 볼래요?'), findsNothing);
+      expect(find.text('아이디가 있으면 둘만의 공간으로 바로 이어져요.'), findsOneWidget);
+      expect(find.text('우리, 이제\n같이 기록해볼래요?'), findsNothing);
       expect(find.text('두 사람만 로그인할 수 있어요.'), findsNothing);
       expect(find.byKey(loginIdFieldKey), findsOneWidget);
       expect(find.byKey(loginPasswordFieldKey), findsOneWidget);
@@ -67,8 +67,8 @@ void main() {
       await tester.tap(find.byKey(loginButtonKey));
       await tester.pumpAndSettle();
 
-      expect(find.text('조금씩'), findsOneWidget);
-      expect(find.text('오늘의 질문'), findsOneWidget);
+      expect(find.text('우리 둘'), findsOneWidget);
+      expect(find.text('오늘의 우리 질문'), findsWidgets);
       expect(find.byKey(homeQuestionCardKey), findsOneWidget);
       expect(find.text('아직 내 답을 남기지 않았어요.'), findsOneWidget);
       expect(find.textContaining('답을 남기면'), findsOneWidget);
@@ -99,8 +99,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(loginIdFieldKey), findsNothing);
-      expect(find.text('조금씩'), findsOneWidget);
-      expect(find.text('오늘의 질문'), findsOneWidget);
+      expect(find.text('우리 둘'), findsOneWidget);
+      expect(find.text('오늘의 우리 질문'), findsWidgets);
     });
 
     testWidgets('home refresh reloads the Firebase session', (tester) async {
@@ -125,7 +125,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(RefreshIndicator), findsOneWidget);
-      expect(find.text('다시 불러온 조금씩'), findsNothing);
+      expect(find.text('다시 불러온 우리 둘'), findsNothing);
       expect(data.loadedUsers.length, 1);
 
       sessions['youngwooUid'] = const AlagagiSession(
@@ -144,7 +144,7 @@ void main() {
         ),
         data: AlagagiSpaceData(
           personalization: SpacePersonalization(
-            appTitle: '다시 불러온 조금씩',
+            appTitle: '다시 불러온 우리 둘',
             homeLine: '서버에서 새로 온 문구',
           ),
         ),
@@ -157,7 +157,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(data.loadedUsers.length, 2);
-      expect(find.text('다시 불러온 조금씩'), findsOneWidget);
+      expect(find.text('다시 불러온 우리 둘'), findsOneWidget);
       expect(find.text('서버에서 새로 온 문구'), findsOneWidget);
     });
 
@@ -221,7 +221,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(loginIdFieldKey), findsOneWidget);
-      expect(find.text('아이디가 있으면 조용히 이어서 들어갈 수 있어요.'), findsOneWidget);
+      expect(find.text('아이디가 있으면 둘만의 공간으로 바로 이어져요.'), findsOneWidget);
     });
 
     testWidgets('Firebase session shows empty states instead of sample data', (
@@ -248,9 +248,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('질문'));
+      await tester.tap(find.text('이야기'));
       await tester.pumpAndSettle();
-      expect(find.text('아직 쌓인 질문이 없어요. 오늘의 질문부터 천천히 시작해요.'), findsOneWidget);
+      expect(find.text('아직 쌓인 질문이 없어요. 오늘의 우리 질문부터 천천히 시작해요.'), findsOneWidget);
       expect(find.textContaining('비 오는 날엔'), findsNothing);
 
       await tester.tap(find.text('기록'));

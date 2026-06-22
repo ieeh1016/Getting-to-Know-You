@@ -98,7 +98,7 @@ class _PlaceBoardScreenState extends State<PlaceBoardScreen> {
         const SizedBox(height: 18),
         Row(
           children: [
-            const Expanded(child: AlagagiSectionLabel('장소 보드')),
+            const Expanded(child: AlagagiSectionLabel('우리 장소 보드')),
             AlagagiSmallBadge(label: '지도 검색'),
           ],
         ),

@@ -65,7 +65,7 @@ class HomeHeader extends StatelessWidget {
         ),
         const SizedBox(width: 10),
         Tooltip(
-          message: '조금씩 메뉴',
+          message: '우리 둘 메뉴',
           child: Stack(
             clipBehavior: Clip.none,
             children: [
@@ -117,7 +117,7 @@ class HomeProgressStrip extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'DAY ${controller.todayQuestion.day} · 서로의 ${controller.todayQuestion.number}번째 질문',
+                  'DAY ${controller.todayQuestion.day} · 둘의 ${controller.todayQuestion.number}번째 질문',
                   style: sans(
                     size: 11,
                     color: const Color(0xFFB8B6AD),
@@ -196,12 +196,12 @@ void showHomeMenuSheet({
                 ),
                 const SizedBox(height: 17),
                 Text(
-                  '기능 모아보기',
+                  '둘만의 메뉴',
                   style: serif(context, size: 21, weight: FontWeight.w800),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '오늘 질문을 방해하지 않는 선에서, 가끔 꺼내볼 기능을 한곳에 모았어요.',
+                  '데이트, 노래, 장소, 기록처럼 둘이 가끔 꺼내볼 기능을 모았어요.',
                   style: sans(
                     size: 12.3,
                     color: AlagagiColors.muted,
@@ -215,7 +215,7 @@ void showHomeMenuSheet({
                     icon: isRefreshing
                         ? Icons.hourglass_top_rounded
                         : Icons.refresh_rounded,
-                    title: isRefreshing ? '최신 내용 확인 중' : '최신 내용 확인',
+                    title: isRefreshing ? '새 기록 확인 중' : '새 기록 확인',
                     subtitle: '상대가 새로 남긴 내용을 다시 불러오기',
                     onTap: isRefreshing
                         ? null
@@ -231,8 +231,8 @@ void showHomeMenuSheet({
                 _HomeMenuRow(
                   rowKey: homeMenuCuriosityButtonKey,
                   icon: Icons.question_answer_outlined,
-                  title: '궁금함 한 장',
-                  subtitle: '상대에게 짧게 물어보기',
+                  title: '짧은 질문',
+                  subtitle: '문득 궁금한 걸 따로 남기기',
                   badgeCount: controller.unreadCountForFeature(
                     UnreadActivityFeature.curiosity,
                   ),
@@ -287,7 +287,7 @@ void showHomeMenuSheet({
                 _HomeMenuRow(
                   rowKey: homeMenuProfileCardButtonKey,
                   icon: Icons.badge_outlined,
-                  title: '소개 카드',
+                  title: '우리 프로필',
                   subtitle: '취향과 대화 방식을 편한 만큼 채우기',
                   badgeCount: controller.unreadCountForFeature(
                     UnreadActivityFeature.profileCard,
@@ -310,7 +310,7 @@ void showHomeMenuSheet({
                   rowKey: homeMenuWishlistButtonKey,
                   icon: Icons.bookmark_add_outlined,
                   title: '언젠가, 같이',
-                  subtitle: '같이 해보고 싶은 일을 조용히 담기',
+                  subtitle: '같이 해보고 싶은 일을 담아두기',
                   badgeCount: controller.unreadCountForFeature(
                     UnreadActivityFeature.wishlist,
                   ),
@@ -324,7 +324,7 @@ void showHomeMenuSheet({
                   rowKey: homeMenuGuideButtonKey,
                   icon: Icons.info_outline_rounded,
                   title: '처음 안내',
-                  subtitle: '조금씩 사용하는 방법 다시 보기',
+                  subtitle: '우리 둘을 사용하는 방법 다시 보기',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
                     WidgetsBinding.instance.addPostFrameCallback((_) {

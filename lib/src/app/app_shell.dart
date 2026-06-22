@@ -89,7 +89,7 @@ class AlagagiBottomNav extends StatelessWidget {
           Expanded(
             child: _NavItem(
               icon: Icons.menu_book_outlined,
-              label: '질문',
+              label: '이야기',
               selected:
                   controller.state.route == AlagagiRoute.archive ||
                   controller.state.route == AlagagiRoute.records,
@@ -99,7 +99,7 @@ class AlagagiBottomNav extends StatelessWidget {
           Expanded(
             child: _NavItem(
               icon: Icons.music_note_outlined,
-              label: '음악',
+              label: '노래',
               selected: controller.state.route == AlagagiRoute.music,
               showBadge:
                   controller.unreadCountForFeature(
@@ -112,7 +112,7 @@ class AlagagiBottomNav extends StatelessWidget {
           Expanded(
             child: _NavItem(
               icon: Icons.event_available_outlined,
-              label: '약속',
+              label: '일정',
               selected: controller.state.route == AlagagiRoute.meetings,
               showBadge:
                   controller.unreadCountForFeature(
@@ -125,7 +125,7 @@ class AlagagiBottomNav extends StatelessWidget {
           Expanded(
             child: _NavItem(
               icon: Icons.favorite_border_rounded,
-              label: '만남',
+              label: '데이트',
               selected: controller.state.route == AlagagiRoute.meetingPlans,
               showBadge:
                   controller.unreadCountForFeature(

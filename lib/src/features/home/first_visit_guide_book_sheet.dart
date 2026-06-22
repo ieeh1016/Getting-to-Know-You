@@ -62,7 +62,7 @@ void showFirstVisitGuideBook(BuildContext context) {
                               ),
                               const SizedBox(height: 7),
                               Text(
-                                '헷갈릴 때만 다시 보는 안내서',
+                                '둘이 편하게 쓰는 안내서',
                                 style: serif(
                                   sheetContext,
                                   size: 21,
@@ -72,7 +72,7 @@ void showFirstVisitGuideBook(BuildContext context) {
                               ),
                               const SizedBox(height: 7),
                               Text(
-                                '읽어도 상대에게 알림이 가지 않습니다. 필요한 기능만 눌러서 확인하면 돼요.',
+                                '읽어도 상대에게 알림이 가지 않습니다. 필요한 기능만 편하게 확인하면 돼요.',
                                 style: sans(
                                   size: 12.3,
                                   color: AlagagiColors.muted,
@@ -99,28 +99,28 @@ void showFirstVisitGuideBook(BuildContext context) {
                       children: const [
                         _GuideBookFeatureRow(
                           icon: Icons.question_answer_outlined,
-                          title: '오늘의 질문',
+                          title: '오늘의 우리 질문',
                           body: '답을 남기면 상대 답도 함께 열려요.',
                           where: '홈',
                         ),
                         SizedBox(height: 8),
                         _GuideBookFeatureRow(
                           icon: Icons.calendar_month_outlined,
-                          title: '질문함과 기록',
+                          title: '우리 기록',
                           body: '지난 질문을 보고 늦게 답할 질문을 확인해요.',
-                          where: '질문',
+                          where: '이야기',
                         ),
                         SizedBox(height: 8),
                         _GuideBookFeatureRow(
                           icon: Icons.music_note_outlined,
-                          title: '음악 노트',
+                          title: '우리 플레이리스트',
                           body: '요즘 듣는 곡과 짧은 메모를 남겨요.',
-                          where: '음악',
+                          where: '노래',
                         ),
                         SizedBox(height: 8),
                         _GuideBookFeatureRow(
                           icon: Icons.badge_outlined,
-                          title: '소개 카드',
+                          title: '우리 프로필',
                           body: '취향과 대화 방식을 편한 질문부터 채워요.',
                           where: '메뉴',
                         ),

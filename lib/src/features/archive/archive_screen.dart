@@ -22,10 +22,10 @@ class ArchiveScreen extends StatelessWidget {
     return AlagagiScreenScroll(
       bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
-        Text('질문', style: serif(context, size: 23, weight: FontWeight.w800)),
+        Text('우리 기록', style: serif(context, size: 23, weight: FontWeight.w800)),
         const SizedBox(height: 4),
         Text(
-          '그동안 주고받은 ${controller.insight.questionCount}개의 이야기',
+          '둘이 주고받은 ${controller.insight.questionCount}개의 이야기',
           style: sans(size: 12.5, color: AlagagiColors.muted),
         ),
         const SizedBox(height: 16),
@@ -38,7 +38,9 @@ class ArchiveScreen extends StatelessWidget {
         _ArchiveTabs(controller: controller),
         const SizedBox(height: 16),
         if (items.isEmpty)
-          const AlagagiEmptyStateCard(text: '아직 쌓인 질문이 없어요. 오늘의 질문부터 천천히 시작해요.')
+          const AlagagiEmptyStateCard(
+            text: '아직 쌓인 질문이 없어요. 오늘의 우리 질문부터 천천히 시작해요.',
+          )
         else
           for (final item in items) ...[
             _ArchiveCard(

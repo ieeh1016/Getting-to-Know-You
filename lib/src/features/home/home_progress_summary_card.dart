@@ -21,14 +21,11 @@ class HomeProgressSummaryCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  '오늘의 작은 흐름',
+                  '오늘 우리 흐름',
                   style: serif(context, size: 16, weight: FontWeight.w800),
                 ),
               ),
-              Text(
-                '가볍게 확인만',
-                style: sans(size: 11, color: AlagagiColors.muted),
-              ),
+              Text('가볍게 확인', style: sans(size: 11, color: AlagagiColors.muted)),
             ],
           ),
           const SizedBox(height: 8),
