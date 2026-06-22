@@ -362,7 +362,7 @@ void main() {
       );
 
       final accepted = controller.updateMeetingPlaceReservationTime(
-        dateKey: '2026-06-21',
+        dateKey: '2026-06-24',
         placeId: 'place_partner_cafe',
         reservationTimeLabel: '18:30 예약',
       );
@@ -401,7 +401,7 @@ void main() {
         repository: repository,
       );
 
-      controller.selectMeetingDate('2026-06-21');
+      controller.selectMeetingDate('2026-06-24');
       controller.updateMeetingDraft(sharedMemo: '19:30 이후면 편해요.');
       controller.submitMeetingDraft();
       await Future<void>.delayed(Duration.zero);
@@ -444,7 +444,7 @@ void main() {
             data: AlagagiSpaceData(
               scheduleEntries: [
                 ScheduleEntry(
-                  dateKey: '2026-06-21',
+                  dateKey: '2026-06-24',
                   profileId: 'youngwooUid',
                   availability: MeetingAvailability.available,
                   timeSlots: {MeetingTimeSlot.evening},
@@ -466,7 +466,7 @@ void main() {
 
         expect(repository.savedScheduleEntries, isEmpty);
         expect(repository.savedMeetingPlans.single.spaceId, 'main');
-        expect(repository.savedMeetingPlans.single.plan.dateKey, '2026-06-21');
+        expect(repository.savedMeetingPlans.single.plan.dateKey, '2026-06-24');
         expect(repository.savedMeetingPlans.single.plan.items, [
           '전시 보기',
           '근처 카페',
@@ -475,7 +475,7 @@ void main() {
           repository.savedMeetingPlans.single.plan.updatedByProfileId,
           'youngwooUid',
         );
-        expect(controller.meetingPlanItemsFor('2026-06-21'), [
+        expect(controller.meetingPlanItemsFor('2026-06-24'), [
           '전시 보기',
           '근처 카페',
         ]);
@@ -504,7 +504,7 @@ void main() {
             data: AlagagiSpaceData(
               scheduleEntries: [
                 ScheduleEntry(
-                  dateKey: '2026-06-21',
+                  dateKey: '2026-06-24',
                   profileId: 'youngwooUid',
                   availability: MeetingAvailability.available,
                   timeSlots: {MeetingTimeSlot.evening},
@@ -512,7 +512,7 @@ void main() {
                   meetingPlanItems: ['전시 보기'],
                 ),
                 ScheduleEntry(
-                  dateKey: '2026-06-21',
+                  dateKey: '2026-06-24',
                   profileId: 'minyoungUid',
                   availability: MeetingAvailability.available,
                   timeSlots: {MeetingTimeSlot.evening},
@@ -527,7 +527,7 @@ void main() {
 
         controller
           ..goTo(AlagagiRoute.meetings)
-          ..selectMeetingDate('2026-06-21')
+          ..selectMeetingDate('2026-06-24')
           ..updateMeetingDayDraft(timeLabel: '저녁 7시쯤')
           ..submitMeetingDayDraft();
         await Future<void>.delayed(Duration.zero);
@@ -537,12 +537,12 @@ void main() {
           isEmpty,
         );
         expect(repository.savedMeetingPlans.single.spaceId, 'main');
-        expect(repository.savedMeetingPlans.single.plan.dateKey, '2026-06-21');
+        expect(repository.savedMeetingPlans.single.plan.dateKey, '2026-06-24');
         expect(repository.savedMeetingPlans.single.plan.items, [
           '전시 보기',
           '근처 카페',
         ]);
-        expect(controller.meetingPlanItemsFor('2026-06-21'), [
+        expect(controller.meetingPlanItemsFor('2026-06-24'), [
           '전시 보기',
           '근처 카페',
         ]);
@@ -570,7 +570,7 @@ void main() {
           data: AlagagiSpaceData(
             scheduleEntries: [
               ScheduleEntry(
-                dateKey: '2026-06-21',
+                dateKey: '2026-06-24',
                 profileId: 'youngwooUid',
                 availability: MeetingAvailability.available,
                 timeSlots: {MeetingTimeSlot.evening},
@@ -639,18 +639,18 @@ void main() {
           repository: repository,
         );
 
-        controller.selectMeetingDate('2026-06-21');
+        controller.selectMeetingDate('2026-06-24');
         controller.linkPlaceToSelectedMeeting('place_partner_cafe');
         await Future<void>.delayed(Duration.zero);
 
-        expect(controller.sharedPlaces.single.linkedDateKey, '2026-06-21');
+        expect(controller.sharedPlaces.single.linkedDateKey, '2026-06-24');
         expect(
           controller.sharedPlaces.single.interestedByProfileIds,
           contains('youngwooUid'),
         );
         expect(
           repository.savedSharedPlaceMeetingLinks.single.place.linkedDateKey,
-          '2026-06-21',
+          '2026-06-24',
         );
 
         controller.linkPlaceToSelectedMeeting('place_partner_cafe');
@@ -703,10 +703,10 @@ void main() {
         repository: repository,
       );
 
-      controller.selectMeetingDate('2026-06-21');
+      controller.selectMeetingDate('2026-06-24');
       controller.linkPlaceToSelectedMeeting('place_partner_cafe');
       final accepted = controller.updateMeetingPlaceReservationTime(
-        dateKey: '2026-06-21',
+        dateKey: '2026-06-24',
         placeId: 'place_partner_cafe',
         reservationTimeLabel: '18:30 예약',
       );
@@ -723,7 +723,7 @@ void main() {
       expect(repository.savedSharedPlaceMeetingLinks, hasLength(2));
       expect(
         repository.savedSharedPlaceMeetingLinks.last.place
-            .meetingPlanLinkFor('2026-06-21')
+            .meetingPlanLinkFor('2026-06-24')
             ?.reservationTimeLabel,
         '18:30 예약',
       );
@@ -765,9 +765,9 @@ void main() {
           repository: repository,
         );
 
-        controller.selectMeetingDate('2026-06-21');
+        controller.selectMeetingDate('2026-06-24');
         final accepted = controller.updateMeetingPlaceReservationTime(
-          dateKey: '2026-06-21',
+          dateKey: '2026-06-24',
           placeId: 'place_legacy_cafe',
           reservationTimeLabel: '19:00 예약',
         );
@@ -781,7 +781,7 @@ void main() {
         expect(savedPlace.latitude, isNull);
         expect(savedPlace.longitude, isNull);
         expect(
-          savedPlace.meetingPlanLinkFor('2026-06-21')?.reservationTimeLabel,
+          savedPlace.meetingPlanLinkFor('2026-06-24')?.reservationTimeLabel,
           '19:00 예약',
         );
       },

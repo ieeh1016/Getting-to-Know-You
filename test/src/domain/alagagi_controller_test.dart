@@ -160,7 +160,7 @@ void main() {
     test('meeting draft stores detailed schedule and shared note', () {
       final controller = AlagagiController()..enterSpace('영우');
 
-      controller.selectMeetingDate('2026-06-21');
+      controller.selectMeetingDate('2026-06-24');
       controller.setMeetingAvailability(MeetingAvailability.available);
       controller.toggleMeetingTimeSlot(MeetingTimeSlot.morning);
       controller.updateMeetingDraft(sharedMemo: '오후나 저녁은 괜찮아요.');
@@ -174,7 +174,7 @@ void main() {
 
       final entry = controller.scheduleEntryFor(
         controller.state.me.id,
-        '2026-06-21',
+        '2026-06-24',
       );
 
       expect(entry, isNotNull);
@@ -469,18 +469,18 @@ void main() {
       final placeId = controller.sharedPlaces
           .firstWhere((place) => place.providerPlaceId == 'kakao-cafe-1')
           .id;
-      controller.selectMeetingDate('2026-06-21');
+      controller.selectMeetingDate('2026-06-24');
       controller.linkPlaceToSelectedMeeting(placeId);
       expect(
         controller.sharedPlaces
             .firstWhere((place) => place.id == placeId)
             .linkedDateKey,
-        '2026-06-21',
+        '2026-06-24',
       );
       expect(
         controller.sharedPlaces
             .firstWhere((place) => place.id == placeId)
-            .meetingPlanLinkFor('2026-06-21')
+            .meetingPlanLinkFor('2026-06-24')
             ?.order,
         0,
       );
@@ -495,7 +495,7 @@ void main() {
       expect(
         controller.sharedPlaces
             .firstWhere((place) => place.id == placeId)
-            .meetingPlanLinkFor('2026-06-21'),
+            .meetingPlanLinkFor('2026-06-24'),
         isNull,
       );
     });
@@ -549,7 +549,7 @@ void main() {
         controller.submitPlaceDraft();
       }
 
-      const dateKey = '2026-06-21';
+      const dateKey = '2026-06-24';
       controller.selectMeetingDate(dateKey);
       for (final place in controller.sharedPlaces.reversed) {
         controller.linkPlaceToSelectedMeeting(place.id);
