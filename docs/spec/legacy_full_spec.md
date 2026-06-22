@@ -235,6 +235,7 @@ If the app grows, bottom navigation may become:
 - 홈 header menu는 `기능 모아보기` 역할을 하며 `궁금함 한 장`, `주식 이야기`, `건의함`, `취향 매치`, `소개 카드`, `언젠가, 같이`, `처음 안내`로 바로 이동할 수 있다.
 - `궁금함` 상태 카드는 받은 질문, 보낸 질문, 답장 완료 상태를 낮은 압력의 문구로 요약한다.
 - `궁금함` 상태 카드를 누르면 bottom sheet가 열리고, 받은 질문 답장 입력, 내가 보낸 질문 상태, 새 질문 작성 흐름을 보여준다.
+- bottom sheet는 누적된 질문을 한눈에 볼 수 있도록 전체/받은/보낸/완료/대기 개수와 최근 궁금함 기록을 compact list로 보여준다.
 - 질문 작성과 답장 저장은 사용자가 명시적으로 `질문 보내기` 또는 `답장 저장하기`를 눌렀을 때만 `spaces/{spaceId}/curiosityCards/{cardId}`에 기록한다.
 - `curiosityCards` 문서는 `id`, `fromProfileId`, `toProfileId`, `question`, `reply`, `createdLabel`, `repliedLabel`, `updatedByProfileId`, `updatedAt` 필드를 가진다.
 - 질문은 작성자 본인의 profile id를 `fromProfileId`로, 상대 profile id를 `toProfileId`로 저장한다. 답장은 받은 사람만 자신의 받은 질문 문서에 남기는 흐름으로 다룬다.

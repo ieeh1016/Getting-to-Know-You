@@ -149,6 +149,8 @@ class _CuriositySheetContent extends StatelessWidget {
                 isSaving: isSaving,
               ),
               _CuriositySaveStatus(controller: controller),
+              const SizedBox(height: 10),
+              _CuriosityHistoryPanel(controller: controller),
               const SizedBox(height: 8),
               _SheetOutlineAction(
                 label: '나중에 보기',
@@ -416,6 +418,240 @@ class _CuriosityComposePanel extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CuriosityHistoryPanel extends StatelessWidget {
+  const _CuriosityHistoryPanel({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final cards = controller.curiosityCards;
+    final visibleCards = cards.take(6).toList();
+    final totalCount = cards.length;
+    final repliedCount = cards.where((card) => card.hasReply).length;
+    final waitingCount = totalCount - repliedCount;
+    final receivedCount = cards
+        .where((card) => card.toProfileId == controller.state.me.id)
+        .length;
+    final sentCount = cards
+        .where((card) => card.fromProfileId == controller.state.me.id)
+        .length;
+
+    return _CuriosityPanel(
+      backgroundColor: const Color(0xFFF8F8F4),
+      child: Column(
+        key: curiosityHistoryPanelKey,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEF2EA),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.history_rounded,
+                  size: 17,
+                  color: AlagagiColors.sageDeep,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '궁금함 기록',
+                      style: serif(context, size: 16, weight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      totalCount == 0
+                          ? '질문을 주고받으면 여기에 차곡차곡 모여요.'
+                          : '지금까지 $totalCount장을 주고받았어요.',
+                      style: sans(
+                        size: 11.5,
+                        color: AlagagiColors.muted,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              _CuriosityMetricChip(label: '전체 $totalCount장'),
+              _CuriosityMetricChip(label: '받은 $receivedCount장'),
+              _CuriosityMetricChip(label: '보낸 $sentCount장'),
+              _CuriosityMetricChip(label: '완료 $repliedCount장'),
+              _CuriosityMetricChip(label: '대기 $waitingCount장'),
+            ],
+          ),
+          if (visibleCards.isEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              '아직 쌓인 궁금함은 없어요.',
+              style: sans(size: 12, color: AlagagiColors.muted, height: 1.45),
+            ),
+          ] else ...[
+            const SizedBox(height: 12),
+            for (var index = 0; index < visibleCards.length; index++) ...[
+              _CuriosityHistoryRow(
+                controller: controller,
+                card: visibleCards[index],
+              ),
+              if (index != visibleCards.length - 1)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 9),
+                  child: Divider(height: 1, color: AlagagiColors.line),
+                ),
+            ],
+            if (cards.length > visibleCards.length) ...[
+              const SizedBox(height: 10),
+              Text(
+                '외 ${cards.length - visibleCards.length}장이 더 쌓여 있어요.',
+                style: sans(
+                  size: 11.5,
+                  color: AlagagiColors.muted,
+                  weight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CuriosityMetricChip extends StatelessWidget {
+  const _CuriosityMetricChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE4E2D9)),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      child: Text(
+        label,
+        style: sans(
+          size: 10.5,
+          weight: FontWeight.w800,
+          color: AlagagiColors.sageDeep,
+        ),
+      ),
+    );
+  }
+}
+
+class _CuriosityHistoryRow extends StatelessWidget {
+  const _CuriosityHistoryRow({required this.controller, required this.card});
+
+  final AlagagiController controller;
+  final CuriosityCard card;
+
+  @override
+  Widget build(BuildContext context) {
+    final partnerName = controller.state.partner.nickname;
+    final isMine = card.fromProfileId == controller.state.me.id;
+    final relation = isMine ? '$partnerName님에게 물었어요' : '$partnerName님이 물었어요';
+    final statusLabel = card.hasReply ? '답장 완료' : '답장 대기';
+    final statusColor = card.hasReply
+        ? AlagagiColors.sageDeep
+        : const Color(0xFFB18472);
+    final replyText = card.hasReply
+        ? card.reply!.trim()
+        : isMine
+        ? '$partnerName님 답장을 기다리는 중이에요.'
+        : '내가 답장할 차례예요.';
+
+    return Row(
+      key: curiosityHistoryItemKey(card.id),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: statusColor,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      relation,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: sans(
+                        size: 10.5,
+                        color: AlagagiColors.muted,
+                        weight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    statusLabel,
+                    style: sans(
+                      size: 10.5,
+                      color: statusColor,
+                      weight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                card.question,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: sans(size: 13, weight: FontWeight.w800, height: 1.35),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                replyText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: sans(
+                  size: 11.5,
+                  color: AlagagiColors.muted,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

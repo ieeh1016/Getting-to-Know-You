@@ -40,12 +40,14 @@ const homeMenuProfileCardButtonKey = Key('home-menu-profile-card-button');
 const homeMenuWishlistButtonKey = Key('home-menu-wishlist-button');
 const homeMenuGuideButtonKey = Key('home-menu-guide-button');
 const homeCuriositySheetKey = Key('home-curiosity-sheet');
+const curiosityHistoryPanelKey = Key('curiosity-history-panel');
 const curiosityQuestionFieldKey = Key('curiosity-question-field');
 const curiosityQuestionSubmitButtonKey = Key(
   'curiosity-question-submit-button',
 );
 const curiosityReplyFieldKey = Key('curiosity-reply-field');
 const curiosityReplySubmitButtonKey = Key('curiosity-reply-submit-button');
+Key curiosityHistoryItemKey(String cardId) => Key('curiosity-history-$cardId');
 const firstVisitGuideSheetKey = Key('first-visit-guide-sheet');
 const firstVisitGuideStartButtonKey = Key('first-visit-guide-start-button');
 const firstVisitGuideTourButtonKey = Key('first-visit-guide-tour-button');

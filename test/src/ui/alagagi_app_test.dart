@@ -64,19 +64,26 @@ void main() {
 
     expect(find.byKey(homeCuriositySheetKey), findsOneWidget);
     expect(find.text('궁금함 한 장'), findsOneWidget);
-    expect(find.textContaining('님이 물었어요'), findsOneWidget);
+    expect(find.textContaining('님이 물었어요'), findsWidgets);
     expect(
       find.descendant(
         of: find.byKey(homeCuriositySheetKey),
         matching: find.text('요즘 제일 자주 생각나는 건 뭐예요?'),
       ),
-      findsOneWidget,
+      findsWidgets,
     );
     expect(find.byKey(curiosityReplyFieldKey), findsOneWidget);
     expect(find.text('답장 저장하기'), findsOneWidget);
     expect(find.text('나중에 보기'), findsOneWidget);
     expect(find.byKey(curiosityQuestionFieldKey), findsOneWidget);
     expect(find.text('질문 보내기'), findsOneWidget);
+    expect(find.byKey(curiosityHistoryPanelKey), findsOneWidget);
+    expect(
+      find.byKey(curiosityHistoryItemKey('curiosity_seed_1')),
+      findsOneWidget,
+    );
+    expect(find.text('전체 1장'), findsOneWidget);
+    expect(find.text('대기 1장'), findsOneWidget);
   });
 
   testWidgets('saves a curiosity reply and a new question in the sheet', (
@@ -100,7 +107,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('내 답장'), findsOneWidget);
-    expect(find.text('산책하면서 생각을 정리하는 시간이요.'), findsOneWidget);
+    expect(find.text('산책하면서 생각을 정리하는 시간이요.'), findsWidgets);
 
     await tester.enterText(
       find.byKey(curiosityQuestionFieldKey),
@@ -112,17 +119,21 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('내가 남긴 질문'), findsOneWidget);
-    expect(find.text('이번 주에 기대되는 일이 있어요?'), findsOneWidget);
+    expect(find.text('이번 주에 기대되는 일이 있어요?'), findsWidgets);
     expect(
       find.descendant(
         of: find.byKey(homeCuriositySheetKey),
         matching: find.textContaining('답장을 기다리는 중'),
       ),
-      findsOneWidget,
+      findsWidgets,
     );
     expect(find.text('답장을 기다리는 질문이 있어요'), findsOneWidget);
     expect(find.byKey(curiosityQuestionFieldKey), findsNothing);
     expect(find.text('답장 기다리는 중'), findsWidgets);
+    expect(find.byKey(curiosityHistoryPanelKey), findsOneWidget);
+    expect(find.text('전체 2장'), findsOneWidget);
+    expect(find.text('완료 1장'), findsOneWidget);
+    expect(find.text('대기 1장'), findsOneWidget);
   });
 
   testWidgets('opens stock story from the home menu without a home card', (
