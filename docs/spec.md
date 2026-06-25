@@ -14,6 +14,7 @@
 ## 보조 문서
 
 - [`docs/code_structure.md`](code_structure.md): implementation structure와 extraction guide.
+- [`docs/design/README.md`](design/README.md): HTML 디자인 제안서 구조와 작성 규칙.
 - [`docs/spec/domain_model.md`](spec/domain_model.md): shared domain model, ownership, Firestore mapping guide.
 - [`docs/firebase_setup.md`](firebase_setup.md): Firebase setup과 canonical Firestore Rules 문서.
 - [`docs/map_open_api_guide.md`](map_open_api_guide.md): Places feature의 Kakao Map API setup과 운영 가이드.

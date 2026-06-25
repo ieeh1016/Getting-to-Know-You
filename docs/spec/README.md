@@ -9,6 +9,7 @@
 - [`domain_model.md`](domain_model.md): feature 간 shared model name, ownership field, Firestore mapping.
 - [`legacy_full_spec.md`](legacy_full_spec.md): archived monolithic spec. 주 기준 문서가 아니라 역사적 맥락 확인용이다.
 - [`../test_plan.md`](../test_plan.md): 이 spec들에서 파생된 verification plan.
+- [`../design/README.md`](../design/README.md): 구현 전 HTML 디자인 제안서의 구조와 작성 규칙.
 - [`../firebase_setup.md`](../firebase_setup.md): [`firestore.md`](firestore.md)에서 파생된 Firebase setup과 rules guide.
 - [`../map_open_api_guide.md`](../map_open_api_guide.md): Places feature의 Kakao Map API setup guide.
 - [`../sdd.md`](../sdd.md): archived SDD redirect. active spec으로 사용하지 않는다.

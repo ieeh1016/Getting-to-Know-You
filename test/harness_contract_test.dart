@@ -243,6 +243,22 @@ void main() {
     );
   });
 
+  test('design proposal HTML guide is linked and structure complete', () {
+    final agents = File('AGENTS.md').readAsStringSync();
+    final guide = File('docs/design/README.md').readAsStringSync();
+
+    expect(agents, contains('docs/design/README.md'));
+    expect(guide, contains('Design Proposal HTML Guide'));
+    expect(guide, contains('source of truth가 아니다'));
+    expect(guide, contains('390px-class mobile'));
+    expect(guide, contains('page-title'));
+    expect(guide, contains('principles'));
+    expect(guide, contains('stage'));
+    expect(guide, contains('proposal-note'));
+    expect(guide, contains('Firestore write'));
+    expect(guide, contains('status bar mock'));
+  });
+
   test('CI deploys canonical Firestore rules from repository source', () {
     final firebaseConfig =
         jsonDecode(File('firebase.json').readAsStringSync())

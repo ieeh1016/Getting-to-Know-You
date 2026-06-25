@@ -47,6 +47,13 @@ local one-command gate는 다음과 같다.
 - copy는 조용하고 따뜻하며 부담이 낮아야 한다.
 - Mobile UI를 우선한다. 390px-class layout에서 text clipping, overlapping, 어색한 bottom navigation spacing을 확인한다.
 
+## Design Proposal Guardrail
+
+- 새 UI/UX 방향을 구현 전에 HTML 제안서로 만들 때는 `docs/design/README.md`를 따른다.
+- `docs/design/*.html`은 시각 합의용 보조 문서이며 source of truth가 아니다. 선택된 behavior는 관련 `docs/spec/` 문서와 `docs/test_plan.md`에 반영한다.
+- 디자인 제안서는 기본적으로 `page-title` -> `principles`/`diagnosis` -> `stage`/`showcase`의 390px-class mobile mock -> `proposal-note` 구조를 유지한다.
+- fake status bar mock, 관계 압박 copy, Firestore write boundary가 불분명한 제안은 만들지 않는다.
+
 ## Code Organization Guardrail
 
 - 새 code와 refactor는 `docs/code_structure.md`를 따른다.
