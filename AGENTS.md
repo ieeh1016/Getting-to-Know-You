@@ -5,11 +5,12 @@ This repository is built with an SDD + TDD workflow. Treat `docs/spec.md` and th
 ## Required Order
 
 1. Read `docs/spec.md` and the relevant feature spec under `docs/spec/`.
-2. Update the top-level spec index or feature spec before changing production behavior.
-3. Update `docs/test_plan.md` and add or adjust domain/widget tests for the new behavior.
-4. Prefer observing the new or changed test fail before production edits when practical.
-5. Implement the smallest production change that satisfies the spec and tests.
-6. Run verification before finishing.
+2. Read `docs/spec/domain_model.md` when a change touches domain models, Firestore mapping, ownership fields, or cross-feature data flow.
+3. Update the top-level spec index or feature spec before changing production behavior.
+4. Update `docs/test_plan.md` and add or adjust domain/widget tests for the new behavior.
+5. Prefer observing the new or changed test fail before production edits when practical.
+6. Implement the smallest production change that satisfies the spec and tests.
+7. Run verification before finishing.
 
 For purely mechanical, documentation-only, or emergency fixes, explain why a production behavior test is not needed.
 

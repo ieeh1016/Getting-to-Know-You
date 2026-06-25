@@ -29,6 +29,7 @@ This spec defines Firebase, Firestore, security, and Spark/free-plan boundaries 
 - `spaces/{spaceId}/musicNotes/{noteId}`
 - `spaces/{spaceId}/scheduleEntries/{dateKey_uid}`
 - `spaces/{spaceId}/sharedPlaces/{placeId}`
+- `spaces/{spaceId}/diagnosticEvents/{eventId}`
 - `spaces/{spaceId}/curiosityCards/{cardId}`
 - `spaces/{spaceId}/stockStories/{storyId}`
 - `spaces/{spaceId}/stockHoldings/{holdingId}`
@@ -39,3 +40,4 @@ This spec defines Firebase, Firestore, security, and Spark/free-plan boundaries 
 - Update [`../firebase_setup.md`](../firebase_setup.md) when `firestore.rules` changes.
 - Rules must validate ownership, string bounds, list bounds, and allowed enum values where practical.
 - A feature is not complete until rules allow the intended valid writes and reject obvious cross-user writes.
+- Update [`domain_model.md`](domain_model.md) when adding a collection, owner field, or cross-feature reference.
