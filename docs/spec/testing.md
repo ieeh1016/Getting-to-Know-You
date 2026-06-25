@@ -18,6 +18,7 @@ Testing은 SDD change를 추적 가능하게 유지하고 mobile-first Flutter W
 - Firestore-related change는 rules/doc update를 포함하고, practical하면 repository/controller test를 하나 이상 포함한다.
 - UI change는 긴 한국어 text, 390px-class layout, bottom navigation spacing, overlapping content 부재를 확인해야 한다.
 - `alagagi_app.dart`에서 UI를 추출하는 refactor는 existing widget key를 보존하고 이동한 feature의 focused test를 실행해야 한다.
+- Verification 역할은 test를 임의로 수정하지 않는다. 실패한 test가 spec과 맞지 않는다고 판단되면 실패 내용을 보고하고, spec/test plan/Test Agent 범위에서 별도 수정한다.
 
 ## Code Structure Verification
 

@@ -219,6 +219,7 @@ void main() {
     expect(playbook, contains('Firebase Rules/Budget Agent'));
     expect(playbook, contains('Verification Agent'));
     expect(playbook, contains('앱 runtime에는 AI agent가 포함되지 않는다.'));
+    expect(playbook, contains('test code, snapshot, golden, fixture를 임의로 수정하지 않는다.'));
   });
 
   test('CI deploys canonical Firestore rules from repository source', () {

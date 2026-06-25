@@ -66,6 +66,8 @@ archived `docs/spec/legacy_full_spec.md`는 migration context로만 사용한다
 
 - 필요할 때 `dart analyze`, `flutter test`, `flutter build web`를 실행하거나 검토한다.
 - local full gate로 `./scripts/verify.sh`를 실행할 수 있다.
+- 기본적으로 read-only 역할이다. 검증 실패를 통과시키기 위해 test code, snapshot, golden, fixture를 임의로 수정하지 않는다.
+- test 자체가 잘못되었다고 보이면 직접 고치지 말고 실패 내용, 관련 spec, 수정 필요 판단을 Orchestrator/Test Agent에게 보고한다.
 - 남은 risk와 skipped verification을 보고한다.
 
 ## Handoff Packet
