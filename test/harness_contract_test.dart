@@ -254,7 +254,17 @@ void main() {
     expect(firestoreConfig['rules'], 'firestore.rules');
     expect(workflow, contains('firebase deploy --only firestore:rules'));
     expect(workflow, contains('FIREBASE_SERVICE_ACCOUNT'));
-    expect(workflow, contains('GOOGLE_APPLICATION_CREDENTIALS'));
+    expect(workflow, contains('google-github-actions/auth@v2'));
+    expect(workflow, contains('credentials_json:'));
+    expect(workflow, contains('create_credentials_file: true'));
+    expect(workflow, contains('export_environment_variables: true'));
+    expect(
+      workflow,
+      isNot(contains(r'''printf '%s' "$FIREBASE_SERVICE_ACCOUNT"''')),
+      reason:
+          'CI should let the Google auth action create the ADC file instead '
+          'of writing service account JSON by hand.',
+    );
     expect(workflow, contains("if: github.event_name != 'pull_request'"));
     expect(firebaseSetup, contains('roles/firebaserules.admin'));
     expect(firebaseSetup, contains('roles/serviceusage.serviceUsageViewer'));

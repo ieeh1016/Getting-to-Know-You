@@ -204,7 +204,7 @@
   - `scripts/verify.sh`는 dependency install, Dart analysis, Flutter tests, web build를 한 번에 실행한다.
   - CI는 PR에서 non-deploy 검증을 실행하고, main push에서 Firestore Rules와 GitHub Pages deploy를 실행한다.
   - CI는 GitHub Pages build 전에 rules sync check, `dart analyze`, `flutter test`를 모두 실행한다.
-  - `firebase.json`은 기준 `firestore.rules` 파일을 가리키고, workflow는 `FIREBASE_SERVICE_ACCOUNT`를 사용해 `firebase deploy --only firestore:rules`를 실행한다.
+  - `firebase.json`은 기준 `firestore.rules` 파일을 가리키고, workflow는 `FIREBASE_SERVICE_ACCOUNT` raw JSON을 `google-github-actions/auth@v2`에 전달해 ADC를 만든 뒤 `firebase deploy --only firestore:rules`를 실행한다.
   - `FIREBASE_SERVICE_ACCOUNT`용 service account는 `roles/firebaserules.admin`과 `roles/serviceusage.serviceUsageViewer`를 함께 가진다.
   - PR checklist는 spec/test/Firebase budget/UX tone/verification 항목을 노출한다.
 - 모바일 폭 390px 기준에서 텍스트가 잘리지 않는다.
