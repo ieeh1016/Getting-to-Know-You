@@ -73,6 +73,10 @@
 - 홈 새 소식 패널은 최신 3개만 요약하고, 4개 이상이면 `더 보기`로 전체 새 소식 bottom sheet를 연다.
 - 내 music note 수정은 기존 값을 draft panel에 채우고 같은 note id/document를 덮어쓴다.
 - 상대 music note는 수정 action을 보여주지 않고 저장 호출도 허용하지 않는다.
+- music note comment draft 변경은 repository write를 호출하지 않는다.
+- music note comment 저장은 `musicNoteComments/{commentId}` 한 문서만 저장하고 parent music note `updatedAt` 기반 정렬을 바꾸지 않는다.
+- music note comment 삭제는 자신이 남긴 comment 한 문서만 삭제한다.
+- partner music note comment는 홈 새 소식 음악 항목에 포함될 수 있다.
 - 저장 operation state는 idle/saving/saved/failed/offline을 구분하고 failed/offline 상태에서 draft를 유지한다.
 - failed/offline retry는 사용자가 누를 때만 동일 repository write를 다시 호출한다.
 - 새 Firestore-backed 기능은 명시적 user action당 1 write 이하를 유지한다.
@@ -174,6 +178,9 @@
 - 음악 노트 카드는 긴 제목/아티스트/메모를 preview로 유지하고 tap 시 전체 곡 정보와 메모를 bottom sheet에서 보여준다.
 - 음악 노트 카드의 `링크 열기` action은 bare domain을 `https://`로 보정해 즉시 외부 링크로 열고, 카드의 전체보기 tap 동작과 충돌하지 않는다.
 - 음악 노트가 늘어나도 `아직`, `들었어요`, `내가 남김`, `상대가 남김` 필터로 목록을 좁힐 수 있고, 기본 목록은 내가 아직 듣지 않은 곡을 먼저 보여준다.
+- 음악 노트 카드는 댓글 수와 최신 댓글 preview를 보여주고, 댓글이 없으면 `댓글 남기기` affordance만 작게 보여준다.
+- 음악 노트 전체보기 detail은 댓글 목록과 composer를 보여주며, 입력 중에는 Firestore write를 만들지 않는다.
+- 내 음악 댓글은 detail 안에서 수정/삭제할 수 있고, 상대 댓글에는 수정/삭제 action이 보이지 않는다.
 - 홈은 `주식 이야기` 추가 후에도 별도 feature card를 늘리지 않고, 상단 메뉴 sheet에서 `궁금함 한 장`, `주식 이야기`, `처음 안내`로 진입한다.
 - `주식 이야기`는 별도 bottom navigation tab을 추가하지 않고 menu sheet에서 dedicated screen으로 이동한다.
 - 주식 이야기 draft 입력은 local state only이며 submit 시 `spaces/{spaceId}/stockStories/{storyId}` 1 document 이하로 저장한다.
@@ -223,7 +230,7 @@
 - 캘린더 월 이동, 날짜 선택, 오늘 shortcut은 Firestore write를 만들지 않는다.
 - 월간 캘린더 grid 계산은 별도 calendar collection을 읽거나 쓰지 않는다.
 - 늦게 답하기 submit은 기존 answer document 1 write 이하로 저장한다.
-- 답변 submit/edit, answer comment save/edit, balance select, profile slot fill/edit, wish add/interest/done, music note add/edit, stock story add/reply는 각각 1 document write 이하.
+- 답변 submit/edit, answer comment save/edit, balance select, profile slot fill/edit, wish add/interest/done, music note add/edit, music note comment save/edit/delete, stock story add/reply는 각각 1 document write 이하.
 - 질문 캘린더는 별도 calendar collection 없이 progress 문서와 bounded answer reads로 렌더링한다.
 - Summary/current 갱신이 필요한 action만 2 writes까지 허용한다.
 - Meeting schedule submit은 공유 schedule entry 1개만 저장한다.

@@ -188,6 +188,24 @@ void main() {
     );
   });
 
+  test('music note comments are separate owner-scoped documents', () {
+    final repository = File(
+      'lib/src/data/firebase_alagagi_repositories.dart',
+    ).readAsStringSync();
+    final rules = File('firestore.rules').readAsStringSync();
+
+    expect(repository, contains("collection('musicNoteComments')"));
+    expect(repository, contains('Future<void> saveMusicNoteComment'));
+    expect(repository, contains('Future<void> deleteMusicNoteComment'));
+    expect(rules, contains('match /musicNoteComments/{commentId}'));
+    expect(rules, contains('function validMusicNoteCommentShape'));
+    expect(rules, contains('function validMusicNoteCommentOwnerEdit'));
+    expect(
+      rules,
+      contains('resource.data.createdByProfileId == request.auth.uid'),
+    );
+  });
+
   test('meeting plan rules do not cap plan item count at eight', () {
     final rules = File('firestore.rules').readAsStringSync();
 
@@ -219,7 +237,10 @@ void main() {
     expect(playbook, contains('Firebase Rules/Budget Agent'));
     expect(playbook, contains('Verification Agent'));
     expect(playbook, contains('앱 runtime에는 AI agent가 포함되지 않는다.'));
-    expect(playbook, contains('test code, snapshot, golden, fixture를 임의로 수정하지 않는다.'));
+    expect(
+      playbook,
+      contains('test code, snapshot, golden, fixture를 임의로 수정하지 않는다.'),
+    );
   });
 
   test('CI deploys canonical Firestore rules from repository source', () {

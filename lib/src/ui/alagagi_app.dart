@@ -199,23 +199,6 @@ class _AlagagiRootState extends State<AlagagiRoot> {
       AlagagiRoute.music => MusicScreen(
         controller: _controller,
         onOpenExternalLink: widget.onOpenExternalLink ?? openExternalLink,
-        onOpenReadableDetail:
-            ({
-              required label,
-              required title,
-              required body,
-              meta,
-              actionLabel,
-              onAction,
-            }) => showReadableDetailSheet(
-              context,
-              label: label,
-              title: title,
-              body: body,
-              meta: meta,
-              actionLabel: actionLabel,
-              onAction: onAction,
-            ),
       ),
       AlagagiRoute.meetings => MeetingScreen(controller: _controller),
       AlagagiRoute.meetingPlans => MeetingPlanScreen(controller: _controller),

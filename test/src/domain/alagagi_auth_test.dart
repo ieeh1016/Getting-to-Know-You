@@ -362,7 +362,7 @@ void main() {
       );
 
       final accepted = controller.updateMeetingPlaceReservationTime(
-        dateKey: '2026-06-24',
+        dateKey: '2026-06-26',
         placeId: 'place_partner_cafe',
         reservationTimeLabel: '18:30 예약',
       );
@@ -401,7 +401,7 @@ void main() {
         repository: repository,
       );
 
-      controller.selectMeetingDate('2026-06-24');
+      controller.selectMeetingDate('2026-06-26');
       controller.updateMeetingDraft(sharedMemo: '19:30 이후면 편해요.');
       controller.submitMeetingDraft();
       await Future<void>.delayed(Duration.zero);
@@ -444,7 +444,7 @@ void main() {
             data: AlagagiSpaceData(
               scheduleEntries: [
                 ScheduleEntry(
-                  dateKey: '2026-06-24',
+                  dateKey: '2026-06-26',
                   profileId: 'youngwooUid',
                   availability: MeetingAvailability.available,
                   timeSlots: {MeetingTimeSlot.evening},
@@ -466,7 +466,7 @@ void main() {
 
         expect(repository.savedScheduleEntries, isEmpty);
         expect(repository.savedMeetingPlans.single.spaceId, 'main');
-        expect(repository.savedMeetingPlans.single.plan.dateKey, '2026-06-24');
+        expect(repository.savedMeetingPlans.single.plan.dateKey, '2026-06-26');
         expect(repository.savedMeetingPlans.single.plan.items, [
           '전시 보기',
           '근처 카페',
@@ -475,7 +475,7 @@ void main() {
           repository.savedMeetingPlans.single.plan.updatedByProfileId,
           'youngwooUid',
         );
-        expect(controller.meetingPlanItemsFor('2026-06-24'), [
+        expect(controller.meetingPlanItemsFor('2026-06-26'), [
           '전시 보기',
           '근처 카페',
         ]);
@@ -504,7 +504,7 @@ void main() {
             data: AlagagiSpaceData(
               scheduleEntries: [
                 ScheduleEntry(
-                  dateKey: '2026-06-24',
+                  dateKey: '2026-06-26',
                   profileId: 'youngwooUid',
                   availability: MeetingAvailability.available,
                   timeSlots: {MeetingTimeSlot.evening},
@@ -512,7 +512,7 @@ void main() {
                   meetingPlanItems: ['전시 보기'],
                 ),
                 ScheduleEntry(
-                  dateKey: '2026-06-24',
+                  dateKey: '2026-06-26',
                   profileId: 'minyoungUid',
                   availability: MeetingAvailability.available,
                   timeSlots: {MeetingTimeSlot.evening},
@@ -527,7 +527,7 @@ void main() {
 
         controller
           ..goTo(AlagagiRoute.meetings)
-          ..selectMeetingDate('2026-06-24')
+          ..selectMeetingDate('2026-06-26')
           ..updateMeetingDayDraft(timeLabel: '저녁 7시쯤')
           ..submitMeetingDayDraft();
         await Future<void>.delayed(Duration.zero);
@@ -537,12 +537,12 @@ void main() {
           isEmpty,
         );
         expect(repository.savedMeetingPlans.single.spaceId, 'main');
-        expect(repository.savedMeetingPlans.single.plan.dateKey, '2026-06-24');
+        expect(repository.savedMeetingPlans.single.plan.dateKey, '2026-06-26');
         expect(repository.savedMeetingPlans.single.plan.items, [
           '전시 보기',
           '근처 카페',
         ]);
-        expect(controller.meetingPlanItemsFor('2026-06-24'), [
+        expect(controller.meetingPlanItemsFor('2026-06-26'), [
           '전시 보기',
           '근처 카페',
         ]);
@@ -570,7 +570,7 @@ void main() {
           data: AlagagiSpaceData(
             scheduleEntries: [
               ScheduleEntry(
-                dateKey: '2026-06-24',
+                dateKey: '2026-06-26',
                 profileId: 'youngwooUid',
                 availability: MeetingAvailability.available,
                 timeSlots: {MeetingTimeSlot.evening},
@@ -639,18 +639,18 @@ void main() {
           repository: repository,
         );
 
-        controller.selectMeetingDate('2026-06-24');
+        controller.selectMeetingDate('2026-06-26');
         controller.linkPlaceToSelectedMeeting('place_partner_cafe');
         await Future<void>.delayed(Duration.zero);
 
-        expect(controller.sharedPlaces.single.linkedDateKey, '2026-06-24');
+        expect(controller.sharedPlaces.single.linkedDateKey, '2026-06-26');
         expect(
           controller.sharedPlaces.single.interestedByProfileIds,
           contains('youngwooUid'),
         );
         expect(
           repository.savedSharedPlaceMeetingLinks.single.place.linkedDateKey,
-          '2026-06-24',
+          '2026-06-26',
         );
 
         controller.linkPlaceToSelectedMeeting('place_partner_cafe');
@@ -703,10 +703,10 @@ void main() {
         repository: repository,
       );
 
-      controller.selectMeetingDate('2026-06-24');
+      controller.selectMeetingDate('2026-06-26');
       controller.linkPlaceToSelectedMeeting('place_partner_cafe');
       final accepted = controller.updateMeetingPlaceReservationTime(
-        dateKey: '2026-06-24',
+        dateKey: '2026-06-26',
         placeId: 'place_partner_cafe',
         reservationTimeLabel: '18:30 예약',
       );
@@ -723,7 +723,7 @@ void main() {
       expect(repository.savedSharedPlaceMeetingLinks, hasLength(2));
       expect(
         repository.savedSharedPlaceMeetingLinks.last.place
-            .meetingPlanLinkFor('2026-06-24')
+            .meetingPlanLinkFor('2026-06-26')
             ?.reservationTimeLabel,
         '18:30 예약',
       );
@@ -765,9 +765,9 @@ void main() {
           repository: repository,
         );
 
-        controller.selectMeetingDate('2026-06-24');
+        controller.selectMeetingDate('2026-06-26');
         final accepted = controller.updateMeetingPlaceReservationTime(
-          dateKey: '2026-06-24',
+          dateKey: '2026-06-26',
           placeId: 'place_legacy_cafe',
           reservationTimeLabel: '19:00 예약',
         );
@@ -781,7 +781,7 @@ void main() {
         expect(savedPlace.latitude, isNull);
         expect(savedPlace.longitude, isNull);
         expect(
-          savedPlace.meetingPlanLinkFor('2026-06-24')?.reservationTimeLabel,
+          savedPlace.meetingPlanLinkFor('2026-06-26')?.reservationTimeLabel,
           '19:00 예약',
         );
       },
@@ -2499,6 +2499,204 @@ void main() {
     });
 
     test(
+      'music note comment draft saves only on submit and keeps note ordering',
+      () async {
+        final repository = RecordingAlagagiRepository();
+        final older = DateTime.parse('2026-06-09T09:00:00.000Z');
+        final newer = DateTime.parse('2026-06-10T09:00:00.000Z');
+        final controller = AlagagiController.forSession(
+          firebaseSessionWithData(
+            AlagagiSpaceData(
+              musicNotes: [
+                MusicNote(
+                  id: 'music_newer',
+                  title: '새로운 곡',
+                  artist: '민영의 추천',
+                  link: 'https://music.example/newer',
+                  note: '최근에 남긴 곡이에요.',
+                  mood: '밤',
+                  createdByProfileId: 'minyoungUid',
+                  createdLabel: '오늘',
+                  updatedAt: newer,
+                ),
+                MusicNote(
+                  id: 'music_older',
+                  title: '오래된 곡',
+                  artist: '영우의 추천',
+                  link: 'https://music.example/older',
+                  note: '먼저 남겨둔 곡이에요.',
+                  mood: '차분한',
+                  createdByProfileId: 'youngwooUid',
+                  createdLabel: '어제',
+                  updatedAt: older,
+                ),
+              ],
+            ),
+          ),
+          repository: repository,
+        );
+
+        expect(controller.musicNotes.map((note) => note.id), [
+          'music_newer',
+          'music_older',
+        ]);
+
+        controller.updateMusicCommentDraft('music_older', '다시 들으니 더 좋네요.');
+
+        expect(repository.savedMusicNoteComments, isEmpty);
+        expect(
+          controller.musicCommentDraftForNote('music_older'),
+          '다시 들으니 더 좋네요.',
+        );
+
+        controller.submitMusicComment('music_older');
+        await Future<void>.delayed(Duration.zero);
+
+        expect(repository.savedMusicNoteComments.single.spaceId, 'main');
+        expect(
+          repository.savedMusicNoteComments.single.comment.musicNoteId,
+          'music_older',
+        );
+        expect(
+          repository.savedMusicNoteComments.single.comment.createdByProfileId,
+          'youngwooUid',
+        );
+        expect(controller.musicCommentCountForNote('music_older'), 1);
+        expect(
+          controller.latestMusicCommentForNote('music_older')?.body,
+          '다시 들으니 더 좋네요.',
+        );
+        expect(controller.musicNotes.map((note) => note.id), [
+          'music_newer',
+          'music_older',
+        ]);
+      },
+    );
+
+    test('music note comment edit and delete are owner-only', () async {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        firebaseSessionWithData(
+          AlagagiSpaceData(
+            musicNotes: [
+              MusicNote(
+                id: 'music_mine',
+                title: '밤 산책',
+                artist: '영우의 추천',
+                link: 'https://music.example/night',
+                note: '퇴근길에 들으면 차분해져요.',
+                mood: '밤',
+                createdByProfileId: 'youngwooUid',
+                createdLabel: '오늘',
+                updatedAt: DateTime.parse('2026-06-09T09:00:00.000Z'),
+              ),
+            ],
+            musicNoteComments: [
+              MusicNoteComment(
+                id: 'comment_mine',
+                musicNoteId: 'music_mine',
+                body: '처음 감상',
+                createdByProfileId: 'youngwooUid',
+                createdLabel: '오늘',
+                createdAt: DateTime.parse('2026-06-09T10:00:00.000Z'),
+                updatedAt: DateTime.parse('2026-06-09T10:00:00.000Z'),
+              ),
+              MusicNoteComment(
+                id: 'comment_partner',
+                musicNoteId: 'music_mine',
+                body: '상대 감상',
+                createdByProfileId: 'minyoungUid',
+                createdLabel: '오늘',
+                createdAt: DateTime.parse('2026-06-09T11:00:00.000Z'),
+                updatedAt: DateTime.parse('2026-06-09T11:00:00.000Z'),
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+      );
+
+      controller.startMusicCommentEdit('comment_partner');
+      expect(controller.state.musicCommentError, '내가 남긴 댓글만 수정할 수 있어요.');
+
+      controller.startMusicCommentEdit('comment_mine');
+      controller.updateMusicCommentEditDraft('comment_mine', '다시 들은 감상');
+      controller.submitMusicCommentEdit('comment_mine');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        repository.savedMusicNoteComments.single.comment.id,
+        'comment_mine',
+      );
+      expect(repository.savedMusicNoteComments.single.comment.body, '다시 들은 감상');
+      expect(repository.savedMusicNoteComments.single.comment.edited, isTrue);
+
+      controller.deleteMusicComment('comment_partner');
+      expect(controller.state.musicCommentError, '내가 남긴 댓글만 삭제할 수 있어요.');
+      expect(repository.deletedMusicNoteComments, isEmpty);
+
+      controller.deleteMusicComment('comment_mine');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        repository.deletedMusicNoteComments.single.commentId,
+        'comment_mine',
+      );
+      expect(controller.musicCommentsForNote('music_mine'), hasLength(1));
+      expect(
+        controller.musicCommentsForNote('music_mine').single.id,
+        'comment_partner',
+      );
+    });
+
+    test('partner music note comments contribute to music unread activity', () {
+      final seenStore = MemoryMusicNoteSeenStore()
+        ..writeLastSeenAt(
+          'main',
+          'youngwooUid',
+          UnreadActivityFeature.music,
+          DateTime.parse('2026-06-09T09:30:00.000Z'),
+        );
+      final controller = AlagagiController.forSession(
+        firebaseSessionWithData(
+          AlagagiSpaceData(
+            musicNotes: [
+              MusicNote(
+                id: 'music_mine',
+                title: '밤 산책',
+                artist: '영우의 추천',
+                link: 'https://music.example/night',
+                note: '퇴근길에 들으면 차분해져요.',
+                mood: '밤',
+                createdByProfileId: 'youngwooUid',
+                createdLabel: '오늘',
+                updatedAt: DateTime.parse('2026-06-09T09:00:00.000Z'),
+              ),
+            ],
+            musicNoteComments: [
+              MusicNoteComment(
+                id: 'comment_partner',
+                musicNoteId: 'music_mine',
+                body: '나도 들어볼게요.',
+                createdByProfileId: 'minyoungUid',
+                createdLabel: '오늘',
+                createdAt: DateTime.parse('2026-06-09T10:00:00.000Z'),
+                updatedAt: DateTime.parse('2026-06-09T10:00:00.000Z'),
+              ),
+            ],
+          ),
+        ),
+        musicNoteSeenStore: seenStore,
+      );
+
+      expect(controller.hasNewPartnerMusicNotes, isTrue);
+      expect(
+        controller.unreadActivities.map((activity) => activity.description),
+        contains('민영님이 "밤 산책"에 댓글을 남겼어요.'),
+      );
+    });
+
+    test(
       'stock stories load from session data and save only on submit',
       () async {
         final repository = RecordingAlagagiRepository();
@@ -3070,6 +3268,10 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   final List<({String spaceId, MusicNote note})> savedMusicNotes = [];
   final List<({String spaceId, MusicNote note})> savedMusicListenStates = [];
   final List<({String spaceId, String noteId})> deletedMusicNotes = [];
+  final List<({String spaceId, MusicNoteComment comment})>
+  savedMusicNoteComments = [];
+  final List<({String spaceId, String commentId})> deletedMusicNoteComments =
+      [];
   final List<({String spaceId, ScheduleEntry entry})> savedScheduleEntries = [];
   final List<({String spaceId, MeetingPlan plan})> savedMeetingPlans = [];
   final List<({String spaceId, SharedPlace place})> savedSharedPlaces = [];
@@ -3176,6 +3378,19 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   @override
   Future<void> deleteMusicNote(String spaceId, String noteId) async {
     deletedMusicNotes.add((spaceId: spaceId, noteId: noteId));
+  }
+
+  @override
+  Future<void> saveMusicNoteComment(
+    String spaceId,
+    MusicNoteComment comment,
+  ) async {
+    savedMusicNoteComments.add((spaceId: spaceId, comment: comment));
+  }
+
+  @override
+  Future<void> deleteMusicNoteComment(String spaceId, String commentId) async {
+    deletedMusicNoteComments.add((spaceId: spaceId, commentId: commentId));
   }
 
   @override

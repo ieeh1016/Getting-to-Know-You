@@ -8,27 +8,15 @@ import '../../shared/ui_style.dart';
 
 const _compactReadablePreviewLength = 64;
 
-typedef MusicReadableDetailOpener =
-    void Function({
-      required String label,
-      required String title,
-      required String body,
-      String? meta,
-      String? actionLabel,
-      VoidCallback? onAction,
-    });
-
 class MusicScreen extends StatelessWidget {
   const MusicScreen({
     super.key,
     required this.controller,
     required this.onOpenExternalLink,
-    required this.onOpenReadableDetail,
   });
 
   final AlagagiController controller;
   final ValueChanged<String> onOpenExternalLink;
-  final MusicReadableDetailOpener onOpenReadableDetail;
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +70,6 @@ class MusicScreen extends StatelessWidget {
               controller: controller,
               note: note,
               onOpenExternalLink: onOpenExternalLink,
-              onOpenReadableDetail: onOpenReadableDetail,
             ),
             const SizedBox(height: 12),
           ],
@@ -586,13 +573,11 @@ class _MusicNoteCard extends StatelessWidget {
     required this.controller,
     required this.note,
     required this.onOpenExternalLink,
-    required this.onOpenReadableDetail,
   });
 
   final AlagagiController controller;
   final MusicNote note;
   final ValueChanged<String> onOpenExternalLink;
-  final MusicReadableDetailOpener onOpenReadableDetail;
 
   @override
   Widget build(BuildContext context) {
@@ -608,16 +593,16 @@ class _MusicNoteCard extends StatelessWidget {
         note.link.trim().isNotEmpty || _showsCompactReadableCue(detailBody);
     final openableLink = _normalizedOpenableLink(note.link);
     final listened = note.isListenedBy(controller.state.me.id);
+    final commentCount = controller.musicCommentCountForNote(note.id);
+    final latestComment = controller.latestMusicCommentForNote(note.id);
     return GestureDetector(
       key: musicNoteCardKey(note.id),
       behavior: HitTestBehavior.opaque,
-      onTap: () => onOpenReadableDetail(
-        label: '음악 노트',
-        title: note.title,
-        meta: '$creator · ${note.artist} · ${note.mood}',
-        body: detailBody.isEmpty ? '남겨둔 메모는 아직 없어요.' : detailBody,
-        actionLabel: isMine ? '수정하기' : null,
-        onAction: isMine ? () => controller.startMusicEdit(note.id) : null,
+      onTap: () => _showMusicNoteDetailSheet(
+        context,
+        controller: controller,
+        noteId: note.id,
+        onOpenExternalLink: onOpenExternalLink,
       ),
       child: AlagagiPaperCard(
         radius: 19,
@@ -735,13 +720,150 @@ class _MusicNoteCard extends StatelessWidget {
                             onPressed: () => onOpenExternalLink(openableLink),
                           ),
                       if (showReadableCue) const AlagagiFullTextCue(),
+                      _MusicCommentCountChip(
+                        count: commentCount,
+                        onPressed: () => _showMusicNoteDetailSheet(
+                          context,
+                          controller: controller,
+                          noteId: note.id,
+                          onOpenExternalLink: onOpenExternalLink,
+                        ),
+                      ),
                     ],
                   ),
+                  if (latestComment != null) ...[
+                    const SizedBox(height: 9),
+                    _MusicCommentPreview(
+                      controller: controller,
+                      comment: latestComment,
+                      count: commentCount,
+                    ),
+                  ],
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MusicCommentCountChip extends StatelessWidget {
+  const _MusicCommentCountChip({required this.count, required this.onPressed});
+
+  final int count;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 30,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: const Icon(Icons.chat_bubble_outline_rounded, size: 13),
+        label: Text(count == 0 ? '댓글 남기기' : '댓글 $count', softWrap: false),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFF756684),
+          backgroundColor: const Color(0xFFF6F2F8),
+          minimumSize: const Size(0, 30),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          side: const BorderSide(color: Color(0x33B9A8C9)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 9),
+          textStyle: sans(size: 11.5, weight: FontWeight.w800),
+        ),
+      ),
+    );
+  }
+}
+
+class _MusicCommentPreview extends StatelessWidget {
+  const _MusicCommentPreview({
+    required this.controller,
+    required this.comment,
+    required this.count,
+  });
+
+  final AlagagiController controller;
+  final MusicNoteComment comment;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final author = comment.createdByProfileId == controller.state.me.id
+        ? '내 댓글'
+        : '${controller.state.partner.nickname}님의 댓글';
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAF8FB),
+        border: Border.all(color: const Color(0x1FB9A8C9)),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: const BoxDecoration(
+              color: Color(0xFFF0EDF5),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.chat_bubble_outline_rounded,
+              size: 13,
+              color: Color(0xFF756684),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  author,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: sans(
+                    size: 11.3,
+                    weight: FontWeight.w800,
+                    color: const Color(0xFF5F5667),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  comment.body,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: sans(size: 11.4, color: AlagagiColors.muted),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            constraints: const BoxConstraints(minWidth: 26),
+            height: 24,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 7),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF6F2E8),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              '$count',
+              style: sans(
+                size: 10.8,
+                weight: FontWeight.w900,
+                color: const Color(0xFF8E7437),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -831,6 +953,800 @@ class _MusicLinkButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 9),
           textStyle: sans(size: 11.5, weight: FontWeight.w800),
         ),
+      ),
+    );
+  }
+}
+
+void _showMusicNoteDetailSheet(
+  BuildContext context, {
+  required AlagagiController controller,
+  required String noteId,
+  required ValueChanged<String> onOpenExternalLink,
+}) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return AnimatedBuilder(
+        animation: controller,
+        builder: (context, _) {
+          final note = controller.musicNotes.cast<MusicNote?>().firstWhere(
+            (candidate) => candidate?.id == noteId,
+            orElse: () => null,
+          );
+          if (note == null) {
+            return const SizedBox.shrink();
+          }
+          return _MusicNoteDetailSheet(
+            controller: controller,
+            note: note,
+            onOpenExternalLink: onOpenExternalLink,
+          );
+        },
+      );
+    },
+  );
+}
+
+class _MusicNoteDetailSheet extends StatelessWidget {
+  const _MusicNoteDetailSheet({
+    required this.controller,
+    required this.note,
+    required this.onOpenExternalLink,
+  });
+
+  final AlagagiController controller;
+  final MusicNote note;
+  final ValueChanged<String> onOpenExternalLink;
+
+  @override
+  Widget build(BuildContext context) {
+    final isMine = note.createdByProfileId == controller.state.me.id;
+    final creator = isMine
+        ? controller.state.me.nickname
+        : controller.state.partner.nickname;
+    final openableLink = _normalizedOpenableLink(note.link);
+    final comments = controller.musicCommentsForNote(note.id);
+    return DraggableScrollableSheet(
+      initialChildSize: 0.72,
+      minChildSize: 0.42,
+      maxChildSize: 0.92,
+      expand: false,
+      builder: (_, scrollController) {
+        return SafeArea(
+          child: Container(
+            key: readableDetailSheetKey,
+            margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+            decoration: BoxDecoration(
+              color: AlagagiColors.paper,
+              border: Border.all(color: AlagagiColors.line),
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x2E2C2B25),
+                  blurRadius: 44,
+                  offset: Offset(0, 18),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD7D5CC),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                _MusicDetailHeader(
+                  note: note,
+                  creator: creator,
+                  isMine: isMine,
+                  onClose: () => Navigator.of(context).pop(),
+                  onEdit: isMine
+                      ? () {
+                          Navigator.of(context).pop();
+                          controller.startMusicEdit(note.id);
+                        }
+                      : null,
+                ),
+                Expanded(
+                  child: ListView(
+                    controller: scrollController,
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                    children: [
+                      _MusicDetailBodyCard(note: note),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 7,
+                        children: [
+                          _MusicListenedButton(
+                            note: note,
+                            listened: note.isListenedBy(controller.state.me.id),
+                            onPressed: () =>
+                                controller.toggleMusicNoteListened(note.id),
+                          ),
+                          if (note.link.isNotEmpty)
+                            if (openableLink == null)
+                              Text(
+                                '링크가 저장되어 있어요',
+                                style: sans(
+                                  size: 11.5,
+                                  color: AlagagiColors.sageDeep,
+                                ),
+                              )
+                            else
+                              _MusicLinkButton(
+                                onPressed: () =>
+                                    onOpenExternalLink(openableLink),
+                              ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      _MusicCommentSectionTitle(count: comments.length),
+                      const SizedBox(height: 10),
+                      if (comments.isEmpty)
+                        const _MusicCommentEmptyState()
+                      else
+                        for (final comment in comments) ...[
+                          _MusicCommentTile(
+                            controller: controller,
+                            comment: comment,
+                          ),
+                          const SizedBox(height: 11),
+                        ],
+                      _MusicCommentComposer(
+                        controller: controller,
+                        noteId: note.id,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MusicDetailHeader extends StatelessWidget {
+  const _MusicDetailHeader({
+    required this.note,
+    required this.creator,
+    required this.isMine,
+    required this.onClose,
+    required this.onEdit,
+  });
+
+  final MusicNote note;
+  final String creator;
+  final bool isMine;
+  final VoidCallback onClose;
+  final VoidCallback? onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFFF7FAF2), AlagagiColors.paper],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _MusicCover(
+            color: isMine ? AlagagiColors.sage : AlagagiColors.lavender,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '음악 노트',
+                  style: sans(
+                    size: 10.5,
+                    weight: FontWeight.w800,
+                    color: AlagagiColors.sageDeep,
+                    letterSpacing: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  note.title,
+                  style: serif(
+                    context,
+                    size: 19.5,
+                    weight: FontWeight.w800,
+                    height: 1.38,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 7,
+                  runSpacing: 7,
+                  children: [
+                    AlagagiSmallBadge(label: '$creator · ${note.artist}'),
+                    AlagagiSmallBadge(label: note.mood),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (onEdit != null)
+            Tooltip(
+              message: '음악 노트 수정',
+              child: IconButton(
+                onPressed: onEdit,
+                icon: const Icon(Icons.edit_rounded, size: 18),
+                color: AlagagiColors.sageDeep,
+              ),
+            ),
+          Tooltip(
+            message: '닫기',
+            child: IconButton(
+              onPressed: onClose,
+              icon: const Icon(Icons.close_rounded, size: 20),
+              color: AlagagiColors.muted,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MusicDetailBodyCard extends StatelessWidget {
+  const _MusicDetailBodyCard({required this.note});
+
+  final MusicNote note;
+
+  @override
+  Widget build(BuildContext context) {
+    final body = note.note.trim().isEmpty
+        ? '남겨둔 메모는 아직 없어요.'
+        : note.note.trim();
+    final link = note.link.trim();
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFDFCF8),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      padding: const EdgeInsets.all(15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            body,
+            style: sans(
+              size: 13.1,
+              color: const Color(0xFF5F5D56),
+              height: 1.62,
+            ),
+          ),
+          if (link.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF6F7F2),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              padding: const EdgeInsets.all(11),
+              child: Text(
+                link,
+                style: sans(
+                  size: 11.8,
+                  color: AlagagiColors.sageDeep,
+                  height: 1.45,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MusicCommentSectionTitle extends StatelessWidget {
+  const _MusicCommentSectionTitle({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            count == 0 ? '댓글 없음' : '댓글 $count',
+            style: sans(
+              size: 13.3,
+              weight: FontWeight.w900,
+              color: const Color(0xFF3E3D39),
+            ),
+          ),
+        ),
+        Text(
+          '최근 댓글이 위로 올라와요',
+          style: sans(size: 10.8, color: AlagagiColors.muted),
+        ),
+      ],
+    );
+  }
+}
+
+class _MusicCommentEmptyState extends StatelessWidget {
+  const _MusicCommentEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAFAF6),
+        border: Border.all(color: const Color(0x338A9A7E)),
+        borderRadius: BorderRadius.circular(17),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.chat_bubble_outline_rounded,
+            size: 19,
+            color: AlagagiColors.sageDeep,
+          ),
+          const SizedBox(height: 7),
+          Text(
+            '아직 남긴 말이 없어요',
+            style: sans(size: 12.8, weight: FontWeight.w800),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '들어본 뒤 짧은 감상을 하나만 붙여도 이 곡의 기억이 더 선명해져요.',
+            textAlign: TextAlign.center,
+            style: sans(size: 11.6, color: AlagagiColors.muted, height: 1.5),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MusicCommentTile extends StatelessWidget {
+  const _MusicCommentTile({required this.controller, required this.comment});
+
+  final AlagagiController controller;
+  final MusicNoteComment comment;
+
+  @override
+  Widget build(BuildContext context) {
+    final isMine = comment.createdByProfileId == controller.state.me.id;
+    final author = isMine
+        ? controller.state.me.nickname
+        : controller.state.partner.nickname;
+    final editing = controller.hasMusicCommentEditDraft(comment.id);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: isMine ? const Color(0xFFF0EDF5) : const Color(0xFFEFF2EA),
+            shape: BoxShape.circle,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            author.isEmpty ? '?' : author.substring(0, 1),
+            style: sans(
+              size: 12,
+              weight: FontWeight.w900,
+              color: isMine ? const Color(0xFF756684) : AlagagiColors.sageDeep,
+            ),
+          ),
+        ),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      author,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: sans(size: 12.3, weight: FontWeight.w900),
+                    ),
+                  ),
+                  Text(
+                    comment.edited
+                        ? '${comment.createdLabel} · 수정됨'
+                        : comment.createdLabel,
+                    style: sans(size: 10.6, color: AlagagiColors.muted),
+                  ),
+                  if (isMine && !editing) ...[
+                    const SizedBox(width: 4),
+                    Tooltip(
+                      message: '댓글 수정',
+                      child: IconButton(
+                        key: musicCommentEditButtonKey(comment.id),
+                        onPressed: () =>
+                            controller.startMusicCommentEdit(comment.id),
+                        icon: const Icon(Icons.edit_rounded, size: 15),
+                        color: AlagagiColors.sageDeep,
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints.tightFor(
+                          width: 30,
+                          height: 30,
+                        ),
+                      ),
+                    ),
+                    Tooltip(
+                      message: '댓글 삭제',
+                      child: IconButton(
+                        key: musicCommentDeleteButtonKey(comment.id),
+                        onPressed: () =>
+                            controller.deleteMusicComment(comment.id),
+                        icon: const Icon(
+                          Icons.delete_outline_rounded,
+                          size: 15,
+                        ),
+                        color: const Color(0xFFB35A49),
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints.tightFor(
+                          width: 30,
+                          height: 30,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              if (editing)
+                _MusicCommentEditPanel(controller: controller, comment: comment)
+              else
+                Text(
+                  comment.body,
+                  style: sans(
+                    size: 12.6,
+                    color: const Color(0xFF67635D),
+                    height: 1.55,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MusicCommentComposer extends StatefulWidget {
+  const _MusicCommentComposer({required this.controller, required this.noteId});
+
+  final AlagagiController controller;
+  final String noteId;
+
+  @override
+  State<_MusicCommentComposer> createState() => _MusicCommentComposerState();
+}
+
+class _MusicCommentComposerState extends State<_MusicCommentComposer> {
+  late final TextEditingController _textController;
+
+  @override
+  void initState() {
+    super.initState();
+    _textController = TextEditingController(
+      text: widget.controller.musicCommentDraftForNote(widget.noteId),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _MusicCommentComposer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final draft = widget.controller.musicCommentDraftForNote(widget.noteId);
+    if (_textController.text == draft) {
+      return;
+    }
+    _textController.value = TextEditingValue(
+      text: draft,
+      selection: TextSelection.collapsed(offset: draft.length),
+    );
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = widget.controller.state;
+    final saving = state.musicCommentSaveStatus == SaveStatus.saving;
+    final failed = state.musicCommentSaveStatus == SaveStatus.failed;
+    return Container(
+      margin: const EdgeInsets.only(top: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAFAF7),
+        border: Border.all(color: const Color(0x338A9A7E)),
+        borderRadius: BorderRadius.circular(17),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '감상 남기기',
+                  style: sans(
+                    size: 11.7,
+                    weight: FontWeight.w900,
+                    color: AlagagiColors.sageDeep,
+                  ),
+                ),
+              ),
+              Text(
+                '${_textController.text.length} / 180',
+                style: sans(size: 10.6, color: AlagagiColors.muted),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            key: musicCommentFieldKey(widget.noteId),
+            controller: _textController,
+            minLines: 2,
+            maxLines: 4,
+            maxLength: 180,
+            onChanged: (value) {
+              widget.controller.updateMusicCommentDraft(widget.noteId, value);
+              setState(() {});
+            },
+            decoration: InputDecoration(
+              hintText: '이 곡을 듣고 떠오른 말을 짧게 남겨요.',
+              counterText: '',
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: AlagagiColors.line),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: AlagagiColors.line),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: AlagagiColors.sage),
+              ),
+            ),
+            style: sans(size: 12.5, height: 1.5),
+          ),
+          if (state.musicCommentError != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              state.musicCommentError!,
+              style: sans(size: 11.6, color: const Color(0xFFB35A49)),
+            ),
+          ] else if (state.musicCommentSaveFeedback != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              state.musicCommentSaveFeedback!,
+              style: sans(size: 11.6, color: AlagagiColors.sageDeep),
+            ),
+          ],
+          const SizedBox(height: 9),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '저장은 버튼을 눌렀을 때만',
+                  style: sans(size: 10.8, color: AlagagiColors.muted),
+                ),
+              ),
+              if (failed && widget.controller.canRetryMusicCommentSave)
+                TextButton(
+                  key: state.musicCommentSaveTargetId == null
+                      ? null
+                      : musicCommentRetryButtonKey(
+                          state.musicCommentSaveTargetId!,
+                        ),
+                  onPressed: widget.controller.retryMusicCommentSave,
+                  child: const Text('다시 시도'),
+                ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 38,
+                height: 38,
+                child: ElevatedButton(
+                  key: musicCommentSubmitButtonKey(widget.noteId),
+                  onPressed: saving
+                      ? null
+                      : () =>
+                            widget.controller.submitMusicComment(widget.noteId),
+                  style: ElevatedButton.styleFrom(
+                    elevation: 0,
+                    backgroundColor: AlagagiColors.sageDeep,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.zero,
+                    shape: const CircleBorder(),
+                  ),
+                  child: Icon(
+                    saving ? Icons.sync_rounded : Icons.send_rounded,
+                    size: 16,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MusicCommentEditPanel extends StatefulWidget {
+  const _MusicCommentEditPanel({
+    required this.controller,
+    required this.comment,
+  });
+
+  final AlagagiController controller;
+  final MusicNoteComment comment;
+
+  @override
+  State<_MusicCommentEditPanel> createState() => _MusicCommentEditPanelState();
+}
+
+class _MusicCommentEditPanelState extends State<_MusicCommentEditPanel> {
+  late final TextEditingController _textController;
+
+  @override
+  void initState() {
+    super.initState();
+    _textController = TextEditingController(
+      text: widget.controller.musicCommentEditDraftForComment(
+        widget.comment.id,
+      ),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _MusicCommentEditPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final draft = widget.controller.musicCommentEditDraftForComment(
+      widget.comment.id,
+    );
+    if (_textController.text == draft) {
+      return;
+    }
+    _textController.value = TextEditingValue(
+      text: draft,
+      selection: TextSelection.collapsed(offset: draft.length),
+    );
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final saving =
+        widget.controller.state.musicCommentSaveStatus == SaveStatus.saving &&
+        widget.controller.isMusicCommentSaveTarget(widget.comment.id);
+    return Container(
+      margin: const EdgeInsets.only(top: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F6FA),
+        border: Border.all(color: const Color(0x33B9A8C9)),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            key: musicCommentEditFieldKey(widget.comment.id),
+            controller: _textController,
+            minLines: 2,
+            maxLines: 4,
+            maxLength: 180,
+            onChanged: (value) {
+              widget.controller.updateMusicCommentEditDraft(
+                widget.comment.id,
+                value,
+              );
+              setState(() {});
+            },
+            decoration: InputDecoration(
+              counterText: '',
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(13),
+                borderSide: const BorderSide(color: AlagagiColors.line),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(13),
+                borderSide: const BorderSide(color: AlagagiColors.line),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(13),
+                borderSide: const BorderSide(color: Color(0xFFB9A8C9)),
+              ),
+            ),
+            style: sans(size: 12.5, height: 1.5),
+          ),
+          if (widget.controller.state.musicCommentError != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              widget.controller.state.musicCommentError!,
+              style: sans(size: 11.5, color: const Color(0xFFB35A49)),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                key: musicCommentCancelButtonKey(widget.comment.id),
+                onPressed: saving
+                    ? null
+                    : () => widget.controller.cancelMusicCommentEdit(
+                        widget.comment.id,
+                      ),
+                child: const Text('취소'),
+              ),
+              const SizedBox(width: 6),
+              ElevatedButton(
+                key: musicCommentSaveButtonKey(widget.comment.id),
+                onPressed: saving
+                    ? null
+                    : () => widget.controller.submitMusicCommentEdit(
+                        widget.comment.id,
+                      ),
+                style: ElevatedButton.styleFrom(
+                  elevation: 0,
+                  backgroundColor: const Color(0xFF756684),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  textStyle: sans(size: 12, weight: FontWeight.w800),
+                ),
+                child: Text(saving ? '저장 중' : '저장'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

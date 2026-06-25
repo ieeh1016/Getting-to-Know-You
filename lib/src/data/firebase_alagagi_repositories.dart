@@ -354,6 +354,39 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
   }
 
   @override
+  Future<void> saveMusicNoteComment(String spaceId, MusicNoteComment comment) {
+    final data = <String, Object?>{
+      'id': comment.id,
+      'musicNoteId': comment.musicNoteId,
+      'body': comment.body,
+      'createdByProfileId': comment.createdByProfileId,
+      'createdLabel': comment.createdLabel,
+      'edited': comment.edited,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+    final createdAt = comment.createdAt;
+    data['createdAt'] = createdAt == null
+        ? FieldValue.serverTimestamp()
+        : Timestamp.fromDate(createdAt);
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('musicNoteComments')
+        .doc(comment.id)
+        .set(data, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> deleteMusicNoteComment(String spaceId, String commentId) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('musicNoteComments')
+        .doc(commentId)
+        .delete();
+  }
+
+  @override
   Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry) {
     return _firestore
         .collection('spaces')
@@ -600,6 +633,9 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     final balanceSnapshot = await space.collection('balanceSelections').get();
     final wishesSnapshot = await space.collection('wishes').get();
     final musicNotesSnapshot = await space.collection('musicNotes').get();
+    final musicNoteCommentsSnapshot = await space
+        .collection('musicNoteComments')
+        .get();
     final scheduleEntriesSnapshot = await space
         .collection('scheduleEntries')
         .get();
@@ -653,6 +689,10 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           .toList(),
       musicNotes: musicNotesSnapshot.docs
           .map((doc) => _musicNoteFromData(doc.id, doc.data()))
+          .nonNulls
+          .toList(),
+      musicNoteComments: musicNoteCommentsSnapshot.docs
+          .map((doc) => _musicNoteCommentFromData(doc.id, doc.data()))
           .nonNulls
           .toList(),
       scheduleEntries: scheduleEntriesSnapshot.docs
@@ -841,6 +881,28 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       createdByProfileId: createdByProfileId,
       createdLabel: _readString(data, 'createdLabel') ?? '오늘',
       listenedByProfileIds: listenedByProfileIds,
+      updatedAt: _readDateTime(data, 'updatedAt'),
+    );
+  }
+
+  MusicNoteComment? _musicNoteCommentFromData(
+    String fallbackId,
+    Map<String, dynamic> data,
+  ) {
+    final musicNoteId = _readString(data, 'musicNoteId');
+    final body = _readString(data, 'body');
+    final createdByProfileId = _readString(data, 'createdByProfileId');
+    if (musicNoteId == null || body == null || createdByProfileId == null) {
+      return null;
+    }
+    return MusicNoteComment(
+      id: _readString(data, 'id') ?? fallbackId,
+      musicNoteId: musicNoteId,
+      body: body,
+      createdByProfileId: createdByProfileId,
+      createdLabel: _readString(data, 'createdLabel') ?? '오늘',
+      edited: data['edited'] == true,
+      createdAt: _readDateTime(data, 'createdAt'),
       updatedAt: _readDateTime(data, 'updatedAt'),
     );
   }

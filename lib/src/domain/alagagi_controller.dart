@@ -148,6 +148,7 @@ class AlagagiSpaceData {
     this.profileSlots = const [],
     this.wishes = const [],
     this.musicNotes = const [],
+    this.musicNoteComments = const [],
     this.scheduleEntries = const [],
     this.meetingPlans = const [],
     this.sharedPlaces = const [],
@@ -165,6 +166,7 @@ class AlagagiSpaceData {
   final List<ProfileSlotValue> profileSlots;
   final List<WishItem> wishes;
   final List<MusicNote> musicNotes;
+  final List<MusicNoteComment> musicNoteComments;
   final List<ScheduleEntry> scheduleEntries;
   final List<MeetingPlan> meetingPlans;
   final List<SharedPlace> sharedPlaces;
@@ -267,6 +269,10 @@ abstract class AlagagiDataRepository {
   Future<void> saveMusicNoteListenState(String spaceId, MusicNote note);
 
   Future<void> deleteMusicNote(String spaceId, String noteId);
+
+  Future<void> saveMusicNoteComment(String spaceId, MusicNoteComment comment);
+
+  Future<void> deleteMusicNoteComment(String spaceId, String commentId);
 
   Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry);
 
@@ -973,6 +979,46 @@ class MusicNote {
       createdByProfileId: createdByProfileId ?? this.createdByProfileId,
       createdLabel: createdLabel ?? this.createdLabel,
       listenedByProfileIds: listenedByProfileIds ?? this.listenedByProfileIds,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+}
+
+class MusicNoteComment {
+  const MusicNoteComment({
+    required this.id,
+    required this.musicNoteId,
+    required this.body,
+    required this.createdByProfileId,
+    required this.createdLabel,
+    this.edited = false,
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  final String id;
+  final String musicNoteId;
+  final String body;
+  final String createdByProfileId;
+  final String createdLabel;
+  final bool edited;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  MusicNoteComment copyWith({
+    String? body,
+    bool? edited,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return MusicNoteComment(
+      id: id,
+      musicNoteId: musicNoteId,
+      body: body ?? this.body,
+      createdByProfileId: createdByProfileId,
+      createdLabel: createdLabel,
+      edited: edited ?? this.edited,
+      createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -1739,6 +1785,12 @@ class AlagagiState {
     this.musicSaveStatus = SaveStatus.idle,
     this.musicSaveFeedback,
     this.musicSaveTargetId,
+    this.musicCommentDraftsByNoteId = const {},
+    this.musicCommentEditDraftsByCommentId = const {},
+    this.musicCommentError,
+    this.musicCommentSaveStatus = SaveStatus.idle,
+    this.musicCommentSaveFeedback,
+    this.musicCommentSaveTargetId,
     this.selectedMeetingDateKey,
     this.selectedMeetingPlanDateKey,
     this.meetingDraftAvailability = MeetingAvailability.available,
@@ -1871,6 +1923,12 @@ class AlagagiState {
   final SaveStatus musicSaveStatus;
   final String? musicSaveFeedback;
   final String? musicSaveTargetId;
+  final Map<String, String> musicCommentDraftsByNoteId;
+  final Map<String, String> musicCommentEditDraftsByCommentId;
+  final String? musicCommentError;
+  final SaveStatus musicCommentSaveStatus;
+  final String? musicCommentSaveFeedback;
+  final String? musicCommentSaveTargetId;
   final String? selectedMeetingDateKey;
   final String? selectedMeetingPlanDateKey;
   final MeetingAvailability meetingDraftAvailability;
@@ -2009,6 +2067,15 @@ class AlagagiState {
     bool clearMusicSaveFeedback = false,
     String? musicSaveTargetId,
     bool clearMusicSaveTargetId = false,
+    Map<String, String>? musicCommentDraftsByNoteId,
+    Map<String, String>? musicCommentEditDraftsByCommentId,
+    String? musicCommentError,
+    bool clearMusicCommentError = false,
+    SaveStatus? musicCommentSaveStatus,
+    String? musicCommentSaveFeedback,
+    bool clearMusicCommentSaveFeedback = false,
+    String? musicCommentSaveTargetId,
+    bool clearMusicCommentSaveTargetId = false,
     String? selectedMeetingDateKey,
     String? selectedMeetingPlanDateKey,
     bool clearSelectedMeetingPlanDateKey = false,
@@ -2191,6 +2258,22 @@ class AlagagiState {
       musicSaveTargetId: clearMusicSaveTargetId
           ? null
           : musicSaveTargetId ?? this.musicSaveTargetId,
+      musicCommentDraftsByNoteId:
+          musicCommentDraftsByNoteId ?? this.musicCommentDraftsByNoteId,
+      musicCommentEditDraftsByCommentId:
+          musicCommentEditDraftsByCommentId ??
+          this.musicCommentEditDraftsByCommentId,
+      musicCommentError: clearMusicCommentError
+          ? null
+          : musicCommentError ?? this.musicCommentError,
+      musicCommentSaveStatus:
+          musicCommentSaveStatus ?? this.musicCommentSaveStatus,
+      musicCommentSaveFeedback: clearMusicCommentSaveFeedback
+          ? null
+          : musicCommentSaveFeedback ?? this.musicCommentSaveFeedback,
+      musicCommentSaveTargetId: clearMusicCommentSaveTargetId
+          ? null
+          : musicCommentSaveTargetId ?? this.musicCommentSaveTargetId,
       selectedMeetingDateKey:
           selectedMeetingDateKey ?? this.selectedMeetingDateKey,
       selectedMeetingPlanDateKey: clearSelectedMeetingPlanDateKey
@@ -2512,6 +2595,7 @@ class AlagagiController extends ChangeNotifier {
   final List<ProfileCardData> _profileCards = [];
   final List<WishItem> _wishes = [];
   final List<MusicNote> _musicNotes = [];
+  final List<MusicNoteComment> _musicNoteComments = [];
   final List<ScheduleEntry> _scheduleEntries = [];
   final List<MeetingPlan> _meetingPlans = [];
   final List<SharedPlace> _sharedPlaces = [];
@@ -2535,6 +2619,8 @@ class AlagagiController extends ChangeNotifier {
   _FailedPersistenceAction? _lastFailedWishAction;
   MusicNote? _lastFailedMusicNote;
   _FailedPersistenceAction? _lastFailedMusicNoteAction;
+  MusicNoteComment? _lastFailedMusicNoteComment;
+  _FailedPersistenceAction? _lastFailedMusicNoteCommentAction;
   StockStory? _lastFailedStockStory;
   _FailedPersistenceAction? _lastFailedStockStoryAction;
   StockHolding? _lastFailedStockHolding;
@@ -2827,6 +2913,23 @@ class AlagagiController extends ChangeNotifier {
         actorProfileId: note.createdByProfileId,
       );
     }
+    for (final comment in _musicNoteComments) {
+      final note = _musicNotes.cast<MusicNote?>().firstWhere(
+        (candidate) => candidate?.id == comment.musicNoteId,
+        orElse: () => null,
+      );
+      _addUnreadActivity(
+        activities,
+        feature: UnreadActivityFeature.music,
+        id: 'music-comment-${comment.id}',
+        title: '음악 노트에 새 댓글이 있어요',
+        description: note == null
+            ? '$partnerName님이 음악 노트에 댓글을 남겼어요.'
+            : '$partnerName님이 "${note.title}"에 댓글을 남겼어요.',
+        updatedAt: comment.updatedAt ?? comment.createdAt,
+        actorProfileId: comment.createdByProfileId,
+      );
+    }
     for (final post in _improvementPosts) {
       _addUnreadActivity(
         activities,
@@ -2972,6 +3075,23 @@ class AlagagiController extends ChangeNotifier {
         }),
       );
     _sortMusicNotesByUpdatedAt();
+    _musicNoteComments
+      ..clear()
+      ..addAll(
+        seedMusicNoteComments.map((comment) {
+          return MusicNoteComment(
+            id: comment.id,
+            musicNoteId: comment.musicNoteId,
+            body: comment.body,
+            createdByProfileId: _mapSeedProfileId(comment.createdByProfileId),
+            createdLabel: comment.createdLabel,
+            edited: comment.edited,
+            createdAt: comment.createdAt,
+            updatedAt: comment.updatedAt,
+          );
+        }),
+      );
+    _sortMusicNoteCommentsByUpdatedAt();
     _scheduleEntries
       ..clear()
       ..addAll(
@@ -3173,6 +3293,10 @@ class AlagagiController extends ChangeNotifier {
       ..clear()
       ..addAll(data.musicNotes);
     _sortMusicNotesByUpdatedAt();
+    _musicNoteComments
+      ..clear()
+      ..addAll(data.musicNoteComments);
+    _sortMusicNoteCommentsByUpdatedAt();
     _scheduleEntries
       ..clear()
       ..addAll(data.scheduleEntries);
@@ -3689,6 +3813,104 @@ class AlagagiController extends ChangeNotifier {
     }
     unawaited(
       repository.saveMusicNoteListenState(spaceId, note).catchError((_) {}),
+    );
+  }
+
+  void _persistMusicNoteComment(MusicNoteComment comment) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      _lastFailedMusicNoteComment = null;
+      _lastFailedMusicNoteCommentAction = null;
+      _state = _state.copyWith(
+        musicCommentSaveStatus: SaveStatus.saved,
+        musicCommentSaveFeedback: '댓글을 저장했어요.',
+        musicCommentSaveTargetId: comment.id,
+        clearMusicCommentError: true,
+      );
+      notifyListeners();
+      return;
+    }
+    unawaited(
+      repository
+          .saveMusicNoteComment(spaceId, comment)
+          .then<void>((_) {
+            _lastFailedMusicNoteComment = null;
+            _lastFailedMusicNoteCommentAction = null;
+            _state = _state.copyWith(
+              musicCommentSaveStatus: SaveStatus.saved,
+              musicCommentSaveFeedback: '댓글을 저장했어요.',
+              musicCommentSaveTargetId: comment.id,
+              clearMusicCommentError: true,
+            );
+            notifyListeners();
+          })
+          .catchError((Object _) {
+            _lastFailedMusicNoteComment = comment;
+            _lastFailedMusicNoteCommentAction = _FailedPersistenceAction.save;
+            _state = _state.copyWith(
+              musicCommentError: '댓글을 저장하지 못했어요. 다시 시도해 주세요.',
+              musicCommentSaveStatus: SaveStatus.failed,
+              musicCommentSaveTargetId: comment.id,
+              clearMusicCommentSaveFeedback: true,
+            );
+            notifyListeners();
+          }),
+    );
+  }
+
+  void _deletePersistedMusicNoteComment(
+    MusicNoteComment comment,
+    int previousIndex,
+  ) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      _lastFailedMusicNoteComment = null;
+      _lastFailedMusicNoteCommentAction = null;
+      _state = _state.copyWith(
+        musicCommentSaveStatus: SaveStatus.saved,
+        musicCommentSaveFeedback: '댓글을 삭제했어요.',
+        musicCommentSaveTargetId: comment.id,
+        clearMusicCommentError: true,
+      );
+      notifyListeners();
+      return;
+    }
+    unawaited(
+      repository
+          .deleteMusicNoteComment(spaceId, comment.id)
+          .then<void>((_) {
+            _lastFailedMusicNoteComment = null;
+            _lastFailedMusicNoteCommentAction = null;
+            _state = _state.copyWith(
+              musicCommentSaveStatus: SaveStatus.saved,
+              musicCommentSaveFeedback: '댓글을 삭제했어요.',
+              musicCommentSaveTargetId: comment.id,
+              clearMusicCommentError: true,
+            );
+            notifyListeners();
+          })
+          .catchError((Object _) {
+            final boundedIndex = previousIndex
+                .clamp(0, _musicNoteComments.length)
+                .toInt();
+            if (!_musicNoteComments.any(
+              (candidate) => candidate.id == comment.id,
+            )) {
+              _musicNoteComments.insert(boundedIndex, comment);
+              _sortMusicNoteCommentsByUpdatedAt();
+            }
+            _lastFailedMusicNoteComment = comment;
+            _lastFailedMusicNoteCommentAction = _FailedPersistenceAction.delete;
+            _state = _state.copyWith(
+              musicCommentError: '댓글을 삭제하지 못했어요. 다시 시도해 주세요.',
+              musicCommentSaveStatus: SaveStatus.failed,
+              musicCommentSaveTargetId: comment.id,
+              clearMusicCommentSaveFeedback: true,
+            );
+            notifyListeners();
+          }),
     );
   }
 
@@ -4718,6 +4940,27 @@ class AlagagiController extends ChangeNotifier {
 
   List<MusicNote> get musicNotes => List<MusicNote>.unmodifiable(_musicNotes);
 
+  List<MusicNoteComment> get musicNoteComments =>
+      List<MusicNoteComment>.unmodifiable(_musicNoteComments);
+
+  List<MusicNoteComment> musicCommentsForNote(String noteId) {
+    return List<MusicNoteComment>.unmodifiable(
+      _musicNoteComments.where((comment) => comment.musicNoteId == noteId),
+    );
+  }
+
+  MusicNoteComment? latestMusicCommentForNote(String noteId) {
+    final comments = musicCommentsForNote(noteId);
+    if (comments.isEmpty) {
+      return null;
+    }
+    return comments.first;
+  }
+
+  int musicCommentCountForNote(String noteId) => _musicNoteComments
+      .where((comment) => comment.musicNoteId == noteId)
+      .length;
+
   List<MusicNote> get visibleMusicNotes {
     final notes = switch (_state.musicListFilter) {
       MusicListFilter.all => _musicNotes.toList(),
@@ -4773,6 +5016,8 @@ class AlagagiController extends ChangeNotifier {
   bool get canRetryWishSave => _lastFailedWish != null;
 
   bool get canRetryMusicSave => _lastFailedMusicNote != null;
+
+  bool get canRetryMusicCommentSave => _lastFailedMusicNoteComment != null;
 
   bool get canRetryStockStorySave => _lastFailedStockStory != null;
 
@@ -5347,7 +5592,12 @@ class AlagagiController extends ChangeNotifier {
   }
 
   DateTime? _latestMusicNoteTimestamp() {
-    return _latestTimestamp(_musicNotes.map((note) => note.updatedAt));
+    return _latestTimestamp([
+      ..._musicNotes.map((note) => note.updatedAt),
+      ..._musicNoteComments.map(
+        (comment) => comment.updatedAt ?? comment.createdAt,
+      ),
+    ]);
   }
 
   UnreadActivityFeature? _unreadFeatureForRoute(AlagagiRoute route) {
@@ -5396,6 +5646,23 @@ class AlagagiController extends ChangeNotifier {
     _musicNotes.sort((a, b) {
       final aUpdatedAt = a.updatedAt;
       final bUpdatedAt = b.updatedAt;
+      if (aUpdatedAt == null && bUpdatedAt == null) {
+        return 0;
+      }
+      if (aUpdatedAt == null) {
+        return 1;
+      }
+      if (bUpdatedAt == null) {
+        return -1;
+      }
+      return bUpdatedAt.compareTo(aUpdatedAt);
+    });
+  }
+
+  void _sortMusicNoteCommentsByUpdatedAt() {
+    _musicNoteComments.sort((a, b) {
+      final aUpdatedAt = a.updatedAt ?? a.createdAt;
+      final bUpdatedAt = b.updatedAt ?? b.createdAt;
       if (aUpdatedAt == null && bUpdatedAt == null) {
         return 0;
       }
@@ -7499,6 +7766,286 @@ class AlagagiController extends ChangeNotifier {
       _deletePersistedMusicNote(note, previousIndex == -1 ? 0 : previousIndex);
     } else {
       _persistMusicNote(note);
+    }
+  }
+
+  String musicCommentDraftForNote(String noteId) {
+    return _state.musicCommentDraftsByNoteId[noteId] ?? '';
+  }
+
+  String musicCommentEditDraftForComment(String commentId) {
+    return _state.musicCommentEditDraftsByCommentId[commentId] ??
+        _musicNoteComments
+            .cast<MusicNoteComment?>()
+            .firstWhere(
+              (comment) => comment?.id == commentId,
+              orElse: () => null,
+            )
+            ?.body ??
+        '';
+  }
+
+  bool hasMusicCommentEditDraft(String commentId) {
+    return _state.musicCommentEditDraftsByCommentId.containsKey(commentId);
+  }
+
+  bool isMusicCommentSaveTarget(String commentId) {
+    return _state.musicCommentSaveTargetId == commentId;
+  }
+
+  void updateMusicCommentDraft(String noteId, String value) {
+    final drafts = Map<String, String>.of(_state.musicCommentDraftsByNoteId)
+      ..[noteId] = value;
+    _state = _state.copyWith(
+      musicCommentDraftsByNoteId: Map<String, String>.unmodifiable(drafts),
+      musicCommentSaveStatus: SaveStatus.idle,
+      clearMusicCommentError: true,
+      clearMusicCommentSaveFeedback: true,
+    );
+    notifyListeners();
+  }
+
+  void submitMusicComment(String noteId) {
+    if (_state.musicCommentSaveStatus == SaveStatus.saving) {
+      return;
+    }
+    final noteExists = _musicNotes.any((note) => note.id == noteId);
+    if (!noteExists) {
+      _state = _state.copyWith(
+        musicCommentError: '댓글을 남길 음악 노트를 찾지 못했어요.',
+        musicCommentSaveStatus: SaveStatus.idle,
+      );
+      notifyListeners();
+      return;
+    }
+    final body = musicCommentDraftForNote(noteId).trim();
+    if (body.isEmpty) {
+      _state = _state.copyWith(
+        musicCommentError: '한 줄만 남겨도 괜찮아요.',
+        musicCommentSaveStatus: SaveStatus.idle,
+      );
+      notifyListeners();
+      return;
+    }
+    if (body.length > 180) {
+      _state = _state.copyWith(
+        musicCommentError: '댓글은 180자 안으로 남겨주세요.',
+        musicCommentSaveStatus: SaveStatus.idle,
+      );
+      notifyListeners();
+      return;
+    }
+
+    final now = DateTime.now();
+    final comment = MusicNoteComment(
+      id: 'music_comment_${_state.me.id}_${now.microsecondsSinceEpoch}',
+      musicNoteId: noteId,
+      body: body,
+      createdByProfileId: _state.me.id,
+      createdLabel: '오늘',
+      createdAt: now,
+      updatedAt: now,
+    );
+    _musicNoteComments.insert(0, comment);
+    _sortMusicNoteCommentsByUpdatedAt();
+    final drafts = Map<String, String>.of(_state.musicCommentDraftsByNoteId)
+      ..remove(noteId);
+    _lastFailedMusicNoteComment = null;
+    _lastFailedMusicNoteCommentAction = null;
+    _state = _state.copyWith(
+      musicCommentDraftsByNoteId: Map<String, String>.unmodifiable(drafts),
+      musicCommentSaveStatus: SaveStatus.saving,
+      musicCommentSaveTargetId: comment.id,
+      clearMusicCommentError: true,
+      clearMusicCommentSaveFeedback: true,
+    );
+    notifyListeners();
+    _persistMusicNoteComment(comment);
+  }
+
+  void startMusicCommentEdit(String commentId) {
+    final comment = _musicNoteComments.cast<MusicNoteComment?>().firstWhere(
+      (candidate) => candidate?.id == commentId,
+      orElse: () => null,
+    );
+    if (comment == null) {
+      _state = _state.copyWith(musicCommentError: '수정할 댓글을 찾지 못했어요.');
+      notifyListeners();
+      return;
+    }
+    if (comment.createdByProfileId != _state.me.id) {
+      _state = _state.copyWith(musicCommentError: '내가 남긴 댓글만 수정할 수 있어요.');
+      notifyListeners();
+      return;
+    }
+    final drafts = Map<String, String>.of(
+      _state.musicCommentEditDraftsByCommentId,
+    )..[comment.id] = comment.body;
+    _state = _state.copyWith(
+      musicCommentEditDraftsByCommentId: Map<String, String>.unmodifiable(
+        drafts,
+      ),
+      musicCommentSaveStatus: SaveStatus.idle,
+      clearMusicCommentError: true,
+      clearMusicCommentSaveFeedback: true,
+    );
+    notifyListeners();
+  }
+
+  void updateMusicCommentEditDraft(String commentId, String value) {
+    final drafts = Map<String, String>.of(
+      _state.musicCommentEditDraftsByCommentId,
+    )..[commentId] = value;
+    _state = _state.copyWith(
+      musicCommentEditDraftsByCommentId: Map<String, String>.unmodifiable(
+        drafts,
+      ),
+      musicCommentSaveStatus: SaveStatus.idle,
+      clearMusicCommentError: true,
+      clearMusicCommentSaveFeedback: true,
+    );
+    notifyListeners();
+  }
+
+  void cancelMusicCommentEdit(String commentId) {
+    final drafts = Map<String, String>.of(
+      _state.musicCommentEditDraftsByCommentId,
+    )..remove(commentId);
+    _state = _state.copyWith(
+      musicCommentEditDraftsByCommentId: Map<String, String>.unmodifiable(
+        drafts,
+      ),
+      musicCommentSaveStatus: SaveStatus.idle,
+      clearMusicCommentError: true,
+      clearMusicCommentSaveFeedback: true,
+    );
+    notifyListeners();
+  }
+
+  void submitMusicCommentEdit(String commentId) {
+    if (_state.musicCommentSaveStatus == SaveStatus.saving) {
+      return;
+    }
+    final index = _musicNoteComments.indexWhere(
+      (comment) => comment.id == commentId,
+    );
+    if (index == -1) {
+      _state = _state.copyWith(musicCommentError: '수정할 댓글을 찾지 못했어요.');
+      notifyListeners();
+      return;
+    }
+    final current = _musicNoteComments[index];
+    if (current.createdByProfileId != _state.me.id) {
+      _state = _state.copyWith(musicCommentError: '내가 남긴 댓글만 수정할 수 있어요.');
+      notifyListeners();
+      return;
+    }
+    final body = musicCommentEditDraftForComment(commentId).trim();
+    if (body.isEmpty) {
+      _state = _state.copyWith(
+        musicCommentError: '한 줄만 남겨도 괜찮아요.',
+        musicCommentSaveStatus: SaveStatus.idle,
+      );
+      notifyListeners();
+      return;
+    }
+    if (body.length > 180) {
+      _state = _state.copyWith(
+        musicCommentError: '댓글은 180자 안으로 남겨주세요.',
+        musicCommentSaveStatus: SaveStatus.idle,
+      );
+      notifyListeners();
+      return;
+    }
+    final updated = current.copyWith(
+      body: body,
+      edited: true,
+      updatedAt: DateTime.now(),
+    );
+    _musicNoteComments[index] = updated;
+    _sortMusicNoteCommentsByUpdatedAt();
+    final drafts = Map<String, String>.of(
+      _state.musicCommentEditDraftsByCommentId,
+    )..remove(commentId);
+    _lastFailedMusicNoteComment = null;
+    _lastFailedMusicNoteCommentAction = null;
+    _state = _state.copyWith(
+      musicCommentEditDraftsByCommentId: Map<String, String>.unmodifiable(
+        drafts,
+      ),
+      musicCommentSaveStatus: SaveStatus.saving,
+      musicCommentSaveTargetId: updated.id,
+      clearMusicCommentError: true,
+      clearMusicCommentSaveFeedback: true,
+    );
+    notifyListeners();
+    _persistMusicNoteComment(updated);
+  }
+
+  void deleteMusicComment(String commentId) {
+    if (_state.musicCommentSaveStatus == SaveStatus.saving) {
+      return;
+    }
+    final index = _musicNoteComments.indexWhere(
+      (comment) => comment.id == commentId,
+    );
+    if (index == -1) {
+      _state = _state.copyWith(musicCommentError: '삭제할 댓글을 찾지 못했어요.');
+      notifyListeners();
+      return;
+    }
+    final comment = _musicNoteComments[index];
+    if (comment.createdByProfileId != _state.me.id) {
+      _state = _state.copyWith(musicCommentError: '내가 남긴 댓글만 삭제할 수 있어요.');
+      notifyListeners();
+      return;
+    }
+    _musicNoteComments.removeAt(index);
+    final editDrafts = Map<String, String>.of(
+      _state.musicCommentEditDraftsByCommentId,
+    )..remove(commentId);
+    _lastFailedMusicNoteComment = null;
+    _lastFailedMusicNoteCommentAction = null;
+    _state = _state.copyWith(
+      musicCommentEditDraftsByCommentId: Map<String, String>.unmodifiable(
+        editDrafts,
+      ),
+      musicCommentSaveStatus: SaveStatus.saving,
+      musicCommentSaveTargetId: comment.id,
+      clearMusicCommentError: true,
+      clearMusicCommentSaveFeedback: true,
+    );
+    notifyListeners();
+    _deletePersistedMusicNoteComment(comment, index);
+  }
+
+  void retryMusicCommentSave() {
+    final comment = _lastFailedMusicNoteComment;
+    if (comment == null || _state.musicCommentSaveStatus == SaveStatus.saving) {
+      return;
+    }
+    final previousIndex = _musicNoteComments.indexWhere(
+      (candidate) => candidate.id == comment.id,
+    );
+    if (_lastFailedMusicNoteCommentAction == _FailedPersistenceAction.delete &&
+        previousIndex != -1) {
+      _musicNoteComments.removeAt(previousIndex);
+      _sortMusicNoteCommentsByUpdatedAt();
+    }
+    _state = _state.copyWith(
+      musicCommentSaveStatus: SaveStatus.saving,
+      musicCommentSaveTargetId: comment.id,
+      clearMusicCommentError: true,
+      clearMusicCommentSaveFeedback: true,
+    );
+    notifyListeners();
+    if (_lastFailedMusicNoteCommentAction == _FailedPersistenceAction.delete) {
+      _deletePersistedMusicNoteComment(
+        comment,
+        previousIndex == -1 ? 0 : previousIndex,
+      );
+    } else {
+      _persistMusicNoteComment(comment);
     }
   }
 
@@ -10003,6 +10550,16 @@ const seedMusicNotes = [
     createdByProfileId: 'me',
     createdLabel: '오늘',
     listenedByProfileIds: {'me'},
+  ),
+];
+
+const seedMusicNoteComments = [
+  MusicNoteComment(
+    id: 'music_comment_1',
+    musicNoteId: 'music_1',
+    body: '퇴근길에 듣기 좋겠다. 나도 저장해둘게요.',
+    createdByProfileId: 'me',
+    createdLabel: '오늘',
   ),
 ];
 

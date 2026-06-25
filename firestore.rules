@@ -277,6 +277,58 @@ service cloud.firestore {
         );
     }
 
+    function musicNoteExists(spaceId, noteId) {
+      return exists(/databases/$(database)/documents/spaces/$(spaceId)/musicNotes/$(noteId));
+    }
+
+    function validMusicNoteCommentShape(spaceId, commentId) {
+      return request.resource.data.keys().hasOnly([
+          'id',
+          'musicNoteId',
+          'body',
+          'createdByProfileId',
+          'createdLabel',
+          'edited',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.id == commentId
+        && request.resource.data.musicNoteId is string
+        && musicNoteExists(spaceId, request.resource.data.musicNoteId)
+        && request.resource.data.body is string
+        && request.resource.data.body.size() > 0
+        && request.resource.data.body.size() <= 180
+        && request.resource.data.createdByProfileId is string
+        && request.resource.data.createdByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        && request.resource.data.createdLabel is string
+        && request.resource.data.createdLabel.size() <= 16
+        && request.resource.data.edited is bool
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+    }
+
+    function validNewMusicNoteComment(spaceId, commentId) {
+      return validMusicNoteCommentShape(spaceId, commentId)
+        && request.resource.data.createdByProfileId == request.auth.uid
+        && request.resource.data.edited == false;
+    }
+
+    function validMusicNoteCommentOwnerEdit(spaceId, commentId) {
+      return validMusicNoteCommentShape(spaceId, commentId)
+        && exists(/databases/$(database)/documents/spaces/$(spaceId)/musicNoteComments/$(commentId))
+        && resource.data.createdByProfileId == request.auth.uid
+        && request.resource.data.musicNoteId == resource.data.musicNoteId
+        && request.resource.data.createdByProfileId == resource.data.createdByProfileId
+        && request.resource.data.createdLabel == resource.data.createdLabel
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'body',
+          'edited',
+          'updatedAt'
+        ])
+        && request.resource.data.edited == true;
+    }
+
     function validImprovementPostShape(spaceId, postId) {
       return request.resource.data.keys().hasOnly([
           'id',
@@ -1086,6 +1138,16 @@ service cloud.firestore {
             validMusicNoteOwnerWrite(spaceId, noteId)
             || validMusicNoteListenUpdate(spaceId, noteId)
           );
+        allow delete: if isSpaceMember(spaceId)
+          && resource.data.createdByProfileId == request.auth.uid;
+      }
+
+      match /musicNoteComments/{commentId} {
+        allow read: if isSpaceMember(spaceId);
+        allow create: if isSpaceMember(spaceId)
+          && validNewMusicNoteComment(spaceId, commentId);
+        allow update: if isSpaceMember(spaceId)
+          && validMusicNoteCommentOwnerEdit(spaceId, commentId);
         allow delete: if isSpaceMember(spaceId)
           && resource.data.createdByProfileId == request.auth.uid;
       }

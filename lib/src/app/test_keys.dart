@@ -22,6 +22,21 @@ Key musicListenedButtonKey(String noteId) =>
     Key('music-listened-button-$noteId');
 Key musicListFilterButtonKey(String filter) => Key('music-list-filter-$filter');
 Key musicNoteCardKey(String noteId) => Key('music-note-card-$noteId');
+Key musicCommentFieldKey(String noteId) => Key('music-comment-field-$noteId');
+Key musicCommentSubmitButtonKey(String noteId) =>
+    Key('music-comment-submit-$noteId');
+Key musicCommentEditFieldKey(String commentId) =>
+    Key('music-comment-edit-field-$commentId');
+Key musicCommentEditButtonKey(String commentId) =>
+    Key('music-comment-edit-button-$commentId');
+Key musicCommentDeleteButtonKey(String commentId) =>
+    Key('music-comment-delete-button-$commentId');
+Key musicCommentSaveButtonKey(String commentId) =>
+    Key('music-comment-save-button-$commentId');
+Key musicCommentCancelButtonKey(String commentId) =>
+    Key('music-comment-cancel-button-$commentId');
+Key musicCommentRetryButtonKey(String commentId) =>
+    Key('music-comment-retry-button-$commentId');
 const unreadActivityPanelKey = Key('unread-activity-panel');
 const unreadActivityClearButtonKey = Key('unread-activity-clear-button');
 const unreadActivityMoreButtonKey = Key('unread-activity-more-button');

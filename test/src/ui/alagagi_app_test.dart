@@ -3561,6 +3561,205 @@ void main() {
     );
   });
 
+  testWidgets('music note card previews comments and detail composer saves', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      AlagagiSession(
+        spaceId: 'main',
+        me: const AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: const AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          musicNotes: [
+            MusicNote(
+              id: 'music_partner',
+              title: '밤 산책',
+              artist: '민영의 추천',
+              link: 'https://music.example/night',
+              note: '퇴근길에 들으면 차분해져요.',
+              mood: '밤',
+              createdByProfileId: 'minyoungUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-09T09:00:00.000Z'),
+            ),
+          ],
+          musicNoteComments: [
+            MusicNoteComment(
+              id: 'comment_partner',
+              musicNoteId: 'music_partner',
+              body: '퇴근길에 듣기 좋겠다.',
+              createdByProfileId: 'minyoungUid',
+              createdLabel: '오늘',
+              createdAt: DateTime.parse('2026-06-09T10:00:00.000Z'),
+              updatedAt: DateTime.parse('2026-06-09T10:00:00.000Z'),
+            ),
+          ],
+        ),
+      ),
+    )..goTo(AlagagiRoute.music);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('댓글 1'), findsOneWidget);
+    expect(find.text('퇴근길에 듣기 좋겠다.'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('댓글 1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('댓글 1'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(readableDetailSheetKey), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(readableDetailSheetKey),
+        matching: find.text('감상 남기기'),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.enterText(
+      find.byKey(musicCommentFieldKey('music_partner')),
+      '나도 오늘 들어볼게요.',
+    );
+    await tester.ensureVisible(
+      find.byKey(musicCommentSubmitButtonKey('music_partner')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(musicCommentSubmitButtonKey('music_partner')));
+    await tester.pumpAndSettle();
+
+    expect(controller.musicCommentCountForNote('music_partner'), 2);
+    expect(find.text('나도 오늘 들어볼게요.'), findsWidgets);
+  });
+
+  testWidgets('music detail lets me edit and delete only my comments', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      AlagagiSession(
+        spaceId: 'main',
+        me: const AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: const AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          musicNotes: [
+            MusicNote(
+              id: 'music_mine',
+              title: '밤 산책',
+              artist: '영우의 추천',
+              link: 'https://music.example/night',
+              note: '퇴근길에 들으면 차분해져요.',
+              mood: '밤',
+              createdByProfileId: 'youngwooUid',
+              createdLabel: '오늘',
+              updatedAt: DateTime.parse('2026-06-09T09:00:00.000Z'),
+            ),
+          ],
+          musicNoteComments: [
+            MusicNoteComment(
+              id: 'comment_mine',
+              musicNoteId: 'music_mine',
+              body: '처음 감상',
+              createdByProfileId: 'youngwooUid',
+              createdLabel: '오늘',
+              createdAt: DateTime.parse('2026-06-09T10:00:00.000Z'),
+              updatedAt: DateTime.parse('2026-06-09T10:00:00.000Z'),
+            ),
+            MusicNoteComment(
+              id: 'comment_partner',
+              musicNoteId: 'music_mine',
+              body: '상대 감상',
+              createdByProfileId: 'minyoungUid',
+              createdLabel: '오늘',
+              createdAt: DateTime.parse('2026-06-09T11:00:00.000Z'),
+              updatedAt: DateTime.parse('2026-06-09T11:00:00.000Z'),
+            ),
+          ],
+        ),
+      ),
+    )..goTo(AlagagiRoute.music);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('댓글 2'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('댓글 2'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(musicCommentEditButtonKey('comment_mine')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(musicCommentDeleteButtonKey('comment_mine')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(musicCommentEditButtonKey('comment_partner')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(musicCommentDeleteButtonKey('comment_partner')),
+      findsNothing,
+    );
+
+    await tester.tap(find.byKey(musicCommentEditButtonKey('comment_mine')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(musicCommentEditFieldKey('comment_mine')),
+      '다시 들은 감상',
+    );
+    await tester.ensureVisible(
+      find.byKey(musicCommentSaveButtonKey('comment_mine')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(musicCommentSaveButtonKey('comment_mine')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('다시 들은 감상'), findsWidgets);
+    expect(
+      controller
+          .musicCommentsForNote('music_mine')
+          .map((comment) => comment.body),
+      contains('다시 들은 감상'),
+    );
+
+    await tester.ensureVisible(
+      find.byKey(musicCommentDeleteButtonKey('comment_mine')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(musicCommentDeleteButtonKey('comment_mine')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('다시 들은 감상'), findsNothing);
+    expect(controller.musicCommentsForNote('music_mine'), hasLength(1));
+  });
+
   testWidgets('music note link action opens a normalized external link', (
     tester,
   ) async {
@@ -4051,6 +4250,15 @@ class _FailingSaveRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveMusicNoteListenState(String spaceId, MusicNote note) async {}
+
+  @override
+  Future<void> saveMusicNoteComment(
+    String spaceId,
+    MusicNoteComment comment,
+  ) async {}
+
+  @override
+  Future<void> deleteMusicNoteComment(String spaceId, String commentId) async {}
 
   @override
   Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry) async {

@@ -27,6 +27,7 @@
 - `spaces/{spaceId}/profileCards/{profileId}/slots/{slotId}`
 - `spaces/{spaceId}/wishes/{wishId}`
 - `spaces/{spaceId}/musicNotes/{noteId}`
+- `spaces/{spaceId}/musicNoteComments/{commentId}`
 - `spaces/{spaceId}/scheduleEntries/{dateKey_uid}`
 - `spaces/{spaceId}/sharedPlaces/{placeId}`
 - `spaces/{spaceId}/diagnosticEvents/{eventId}`
