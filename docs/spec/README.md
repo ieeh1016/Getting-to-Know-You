@@ -9,6 +9,8 @@
 - [`legacy_full_spec.md`](legacy_full_spec.md): archived monolithic spec. Use for historical context, not as the primary source.
 - [`../test_plan.md`](../test_plan.md): verification plan derived from these specs.
 - [`../firebase_setup.md`](../firebase_setup.md): Firebase setup and rules guide derived from [`firestore.md`](firestore.md).
+- [`../map_open_api_guide.md`](../map_open_api_guide.md): Kakao Map API setup guide for the Places feature.
+- [`../sdd.md`](../sdd.md): archived SDD redirect. Do not use as an active spec.
 
 ## Change Workflow
 

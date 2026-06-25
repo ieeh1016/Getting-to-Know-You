@@ -20,6 +20,10 @@ Places let users search Kakao Map, save places they want to visit, and connect p
 - Interest/link operations update only the relevant place or meeting entry.
 - Location tracking is out of scope; saved coordinates come from selected place results only.
 
+## Operational Guide
+
+- Kakao Developers domain setup, JavaScript key injection, SDK loading, and map troubleshooting live in [`../map_open_api_guide.md`](../map_open_api_guide.md).
+
 ## Acceptance Criteria
 
 - If Kakao map fails to render, the app retries refresh/init once.

@@ -1,5 +1,9 @@
 # 조금씩 Product Spec
 
+> Status: archived monolithic spec.
+> Current source of truth: [`../spec.md`](../spec.md) and the feature specs in this directory.
+> Use this file only for historical context or migration notes.
+
 ## 0. Source
 
 - Reference board: `/Users/admin/AndroidStudioProjects/skylife-ux3.0/webapp-design/index.html`

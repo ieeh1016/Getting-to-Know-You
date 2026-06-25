@@ -10,6 +10,14 @@
 3. Update the feature spec first, then [`docs/test_plan.md`](test_plan.md), then tests and implementation.
 4. If specs conflict, the more specific feature spec wins over the legacy archive.
 
+## Supporting Documents
+
+- [`docs/code_structure.md`](code_structure.md): implementation structure and extraction guide.
+- [`docs/firebase_setup.md`](firebase_setup.md): Firebase setup and canonical Firestore Rules documentation.
+- [`docs/map_open_api_guide.md`](map_open_api_guide.md): Kakao Map API setup and operation guide for the Places feature.
+- [`docs/agent_harness_playbook.md`](agent_harness_playbook.md): development-only multi-agent workflow guide.
+- [`docs/sdd.md`](sdd.md): archived SDD redirect. Do not use it as a behavior source of truth.
+
 ## Feature Specs
 
 - [Home and navigation](spec/home.md)
