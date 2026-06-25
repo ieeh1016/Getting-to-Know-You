@@ -1,30 +1,30 @@
 # Stocks Spec
 
-## Purpose
+## 목적
 
-Stocks let users share stock stories and holdings as conversation prompts, not financial advice or trading signals.
+Stocks는 stock story와 holding을 financial advice나 trading signal이 아니라 conversation prompt로 공유하게 한다.
 
-## Required Behavior
+## 필수 동작
 
-- Stock stories collect name, reason, upside, risk, and one question.
-- Holdings collect name, status, weight label, reason, watch point, concern, and one question.
-- Users can edit and delete their own holdings.
-- Partner stories/holdings can receive replies.
-- Lists should remain usable as item count grows through tabs/filters/detail sheets.
+- stock story는 name, reason, upside, risk, question 하나를 받는다.
+- holding은 name, status, weight label, reason, watch point, concern, question 하나를 받는다.
+- user는 자신의 holding을 edit/delete할 수 있다.
+- partner story/holding에는 reply를 남길 수 있다.
+- item count가 늘어나도 tab/filter/detail sheet로 list를 계속 사용할 수 있어야 한다.
 
-## Copy Rules
+## Copy 규칙
 
-- Avoid buy/sell advice, returns, ranking, and pressure.
-- Use reflective language such as `같이 보면 좋을 포인트`.
+- buy/sell advice, returns, ranking, pressure를 피한다.
+- `같이 보면 좋을 포인트`처럼 함께 살펴보는 language를 사용한다.
 
-## Data Rules
+## 데이터 규칙
 
-- Story add/reply writes one story document.
-- Holding add/edit/delete writes only the relevant holding document.
-- Reply metadata stores reply body, tone, author, and replied label where applicable.
+- story add/reply는 story document 하나를 쓴다.
+- holding add/edit/delete는 관련 holding document만 쓴다.
+- reply metadata는 필요한 경우 reply body, tone, author, replied label을 저장한다.
 
-## Acceptance Criteria
+## 수용 기준
 
-- Same holding shared by both users can show `함께 보유 중`.
-- Full detail sheets show long reason/risk/watch content.
-- Partner-owned items do not expose owner-only edit/delete actions.
+- 두 user가 같은 holding을 공유하면 `함께 보유 중`을 보여줄 수 있다.
+- full detail sheet는 긴 reason/risk/watch content를 보여준다.
+- partner-owned item에는 owner-only edit/delete action이 보이지 않는다.

@@ -1,24 +1,24 @@
 # Firestore And Data Policy Spec
 
-## Purpose
+## 목적
 
-This spec defines Firebase, Firestore, security, and Spark/free-plan boundaries for all features.
+이 spec은 모든 feature의 Firebase, Firestore, security, Spark/free-plan boundary를 정의한다.
 
-## Global Rules
+## 전역 규칙
 
-- Two-person private space only.
-- No public sign-up or multi-space discovery in MVP.
-- No Cloud Functions dependency unless explicitly approved.
-- No Storage media uploads, TTL, PITR, backup, restore, clone, or scheduled jobs for MVP.
-- No secrets, service account JSON, raw API keys beyond approved public client config, or private payload dumps in the repo.
+- two-person private space만 지원한다.
+- MVP에서는 public sign-up 또는 multi-space discovery를 제공하지 않는다.
+- 명시적으로 승인하지 않는 한 Cloud Functions dependency를 두지 않는다.
+- MVP에서는 Storage media upload, TTL, PITR, backup, restore, clone, scheduled job을 사용하지 않는다.
+- repo에는 secret, service account JSON, 승인된 public client config를 넘어서는 raw API key, private payload dump를 넣지 않는다.
 
-## Write Budget Rules
+## Write Budget 규칙
 
-- Typing, scrolling, route changes, tab changes, calendar navigation, map movement, and seen-state reads must not create Firestore writes.
-- Explicit save/select/edit/delete actions should write one document unless a feature spec says otherwise.
-- Batch writes require a spec note and test coverage.
+- typing, scrolling, route changes, tab changes, calendar navigation, map movement, seen-state read는 Firestore write를 만들면 안 된다.
+- feature spec이 다르게 정하지 않는 한 explicit save/select/edit/delete action은 document 하나만 써야 한다.
+- batch write는 spec note와 test coverage가 필요하다.
 
-## Current Collections
+## 현재 Collection
 
 - `spaces/{spaceId}/answers/{questionId_uid}`
 - `spaces/{spaceId}/answerComments/{questionId_ownerUid_commenterUid}`
@@ -37,7 +37,7 @@ This spec defines Firebase, Firestore, security, and Spark/free-plan boundaries 
 
 ## Rules Maintenance
 
-- Update [`../firebase_setup.md`](../firebase_setup.md) when `firestore.rules` changes.
-- Rules must validate ownership, string bounds, list bounds, and allowed enum values where practical.
-- A feature is not complete until rules allow the intended valid writes and reject obvious cross-user writes.
-- Update [`domain_model.md`](domain_model.md) when adding a collection, owner field, or cross-feature reference.
+- `firestore.rules`가 바뀌면 [`../firebase_setup.md`](../firebase_setup.md)를 함께 갱신한다.
+- practical한 범위에서 rules는 ownership, string bounds, list bounds, allowed enum value를 검증해야 한다.
+- intended valid write를 허용하고 obvious cross-user write를 거절하기 전까지 feature는 완료된 것이 아니다.
+- collection, owner field, cross-feature reference를 추가하면 [`domain_model.md`](domain_model.md)를 갱신한다.

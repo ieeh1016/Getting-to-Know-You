@@ -1,7 +1,7 @@
 # Flutter Web 카카오 지도 연동 가이드
 
-> Operational guide for the Places feature.
-> Product behavior belongs in [`spec/places.md`](spec/places.md).
+> Places feature 운영 가이드.
+> product behavior는 [`spec/places.md`](spec/places.md)에 둔다.
 
 이 앱의 `장소` 기능은 카카오 지도만 사용한다. 네이버 지도, 직접 입력 provider, 서버 프록시 기반 지역 검색은 MVP 범위에서 제외한다.
 

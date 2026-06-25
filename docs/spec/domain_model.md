@@ -1,104 +1,85 @@
 # Domain Model Spec
 
-## Purpose
+## 목적
 
-This document defines the shared data vocabulary for `조금씩`.
-Feature specs explain what users can do. This document explains which domain
-objects represent that behavior, how those objects relate to Firestore, and
-which user is allowed to change each record.
+이 문서는 `조금씩`의 shared data vocabulary를 정의한다.
+feature spec은 사용자가 무엇을 할 수 있는지 설명한다. 이 문서는 그 behavior를 어떤 domain object가 표현하는지, object가 Firestore와 어떻게 연결되는지, 어떤 사용자가 각 record를 바꿀 수 있는지 설명한다.
 
-Use this document when a change touches:
+다음 변경에서는 이 문서를 함께 확인한다.
 
 - A model in `lib/src/domain/alagagi_controller.dart`.
 - A Firestore mapper in `lib/src/data/firebase_alagagi_repositories.dart`.
 - `firestore.rules` or [`../firebase_setup.md`](../firebase_setup.md).
 - A flow that connects two features, such as meeting plans using saved places.
 
-## Source Boundaries
+## 기준 범위
 
-- Feature behavior remains owned by the relevant feature spec.
-- Firestore security details remain owned by [`firestore.md`](firestore.md) and
-  `firestore.rules`.
-- This document is the cross-feature model map. If it conflicts with a feature
-  spec, update both documents before implementation.
+- feature behavior는 관련 feature spec이 소유한다.
+- Firestore security detail은 [`firestore.md`](firestore.md)와 `firestore.rules`가 소유한다.
+- 이 문서는 cross-feature model map이다. feature spec과 충돌하면 implementation 전에 두 문서를 함께 갱신한다.
 
-## Shared Conventions
+## 공통 규칙
 
-- `spaceId` identifies the private two-person space.
-- `profileId` values are Firebase Auth UIDs for the two members.
-- `createdByProfileId` is the original author and should not silently change.
-- `updatedByProfileId` is the member who made the latest explicit save.
-- `updatedAt` is written with a server timestamp in Firebase-backed flows.
-- `createdLabel`, `repliedLabel`, and similar fields are user-facing display
-  labels. They are not ordering keys.
-- `dateKey` is a short date string, currently `YYYY-MM-DD`, based on the app's
-  calendar logic.
-- Draft typing, scrolling, tab switches, calendar movement, map movement, and
-  local seen-state changes are not domain writes.
+- `spaceId`는 두 사람의 private space를 식별한다.
+- `profileId` 값은 두 member의 Firebase Auth UID다.
+- `createdByProfileId`는 최초 작성자이며 조용히 바뀌면 안 된다.
+- `updatedByProfileId`는 가장 최근 explicit save를 수행한 member다.
+- `updatedAt`은 Firebase-backed flow에서 server timestamp로 기록한다.
+- `createdLabel`, `repliedLabel` 같은 field는 user-facing display label이며 ordering key가 아니다.
+- `dateKey`는 앱 calendar logic 기준의 짧은 date string이며 현재 형식은 `YYYY-MM-DD`다.
+- draft typing, scrolling, tab switch, calendar movement, map movement, local seen-state change는 domain write가 아니다.
 
-## Identity And Session
+## Identity와 Session
 
-| Model | Storage | Role |
+| Model | Storage | 역할 |
 | --- | --- | --- |
-| `AlagagiAuthUser` | Firebase Auth | Signed-in account identity. |
-| `AppProfile` | `users/{uid}` | Display identity, partner link, and optional owner role. |
-| `AlagagiSession` | Derived | Current `spaceId`, my profile, partner profile, and loaded space data. |
-| `AlagagiSpaceData` | Derived from space subcollections | Read model used by screens and controller state. |
-| `SpacePersonalization` | `spaces/{spaceId}` | App title/home copy/invite copy customization. |
+| `AlagagiAuthUser` | Firebase Auth | signed-in account identity. |
+| `AppProfile` | `users/{uid}` | display identity, partner link, optional owner role. |
+| `AlagagiSession` | derived | 현재 `spaceId`, 내 profile, partner profile, loaded space data. |
+| `AlagagiSpaceData` | space subcollection에서 derived | screen과 controller state가 사용하는 read model. |
+| `SpacePersonalization` | `spaces/{spaceId}` | app title/home copy/invite copy customization. |
 
-The app is scoped to known members of a single private space. Public discovery,
-multi-space browsing, and anonymous writes are outside the current domain.
+앱은 하나의 private space에 속한 known member로 범위를 제한한다. public discovery, multi-space browsing, anonymous write는 현재 domain 밖이다.
 
 ## Feature Model Map
 
-| Area | Domain models | Firestore storage | Ownership and write boundary |
+| 영역 | Domain model | Firestore storage | Ownership과 write boundary |
 | --- | --- | --- | --- |
-| Questions | `DailyQuestion`, `Answer`, `AnswerComment`, `DailyQuestionProgress` | `answers`, `answerComments`, `progress/daily` | A member writes only their own answer. A comment is one per question/answer owner/commenter pair. The answer owner can add one reply to that comment. |
-| Records | `ArchiveItem`, `QuestionCalendarDay`, `TimelineEvent`, `RelationshipInsight` | Derived from answers and catalog data | Read-only projections. They must not create writes while browsing, filtering, or changing months. |
-| Taste match | `BalanceQuestion`, `BalanceOption`, `BalanceSelection` | `balanceSelections/{questionId_uid}` | A member writes/deletes their own selection. Reason is optional; result reveal is an explicit state. |
-| Profile cards | `ProfileSlot`, `ProfileSlotValue`, `ProfileCardData` | `profileCards/{profileId}/slots/{slotId}` | A member writes their own slots. Custom slots can be deleted by the owning profile. |
-| Wishlist | `WishItem` | `wishes/{wishId}` | Creator can delete. Interest and done state are shared fields, but writes must include the acting member in `likedByProfileIds`. |
-| Music | `MusicNote` | `musicNotes/{noteId}` | Creator can create/edit/delete. Either member can explicitly update listen state without changing note content. |
-| Schedule coordination | `ScheduleTimeBlock`, `ScheduleEntry`, `MeetingCandidate` | `scheduleEntries/{dateKey_uid}` | A member writes only their own date entry. Meeting-day markers live on schedule entries. |
-| Meeting plans | `MeetingPlan` | `meetingPlans/{dateKey}` | Shared plan list for a fixed meeting day. The latest saver is captured by `updatedByProfileId`. |
-| Places | `SharedPlace`, `MeetingPlaceLink` | `sharedPlaces/{placeId}` | Creator owns place content. Either interested member can update interest or meeting links through the narrow place-link path. Provider is Kakao only. |
-| Curiosity | `CuriosityCard` | `curiosityCards/{cardId}` | Sender creates one question for the other member. Receiver writes the reply. |
-| Stocks | `StockStory`, `StockHolding` | `stockStories`, `stockHoldings` | Creator writes initial story/holding. Partner replies to story; holding owner can edit holding details and partner can reply. |
-| Improvements | `ImprovementPost` | `improvementPosts/{postId}` | Creator can create/edit/delete their post. Owner-role user can add owner note and mark resolved. |
-| Diagnostics | `DiagnosticEvent` | `diagnosticEvents/{eventId}` | Operational save-failure records. Members can create; owner-role user can read. They are not user-facing content. |
+| Questions | `DailyQuestion`, `Answer`, `AnswerComment`, `DailyQuestionProgress` | `answers`, `answerComments`, `progress/daily` | member는 자신의 answer만 쓴다. comment는 question/answer owner/commenter 조합당 하나다. answer owner는 그 comment에 reply를 하나 남길 수 있다. |
+| Records | `ArchiveItem`, `QuestionCalendarDay`, `TimelineEvent`, `RelationshipInsight` | answer와 catalog data에서 derived | read-only projection이다. browsing, filtering, month change 중 write를 만들면 안 된다. |
+| Taste match | `BalanceQuestion`, `BalanceOption`, `BalanceSelection` | `balanceSelections/{questionId_uid}` | member는 자신의 selection을 쓰거나 삭제한다. reason은 optional이고 result reveal은 explicit state다. |
+| Profile cards | `ProfileSlot`, `ProfileSlotValue`, `ProfileCardData` | `profileCards/{profileId}/slots/{slotId}` | member는 자신의 slot을 쓴다. custom slot은 owning profile이 삭제할 수 있다. |
+| Wishlist | `WishItem` | `wishes/{wishId}` | creator는 삭제할 수 있다. interest와 done state는 shared field지만 write에는 acting member가 `likedByProfileIds`에 포함되어야 한다. |
+| Music | `MusicNote` | `musicNotes/{noteId}` | creator는 create/edit/delete할 수 있다. 두 member 모두 note content를 바꾸지 않고 listen state만 명시적으로 update할 수 있다. |
+| Schedule coordination | `ScheduleTimeBlock`, `ScheduleEntry`, `MeetingCandidate` | `scheduleEntries/{dateKey_uid}` | member는 자신의 date entry만 쓴다. meeting-day marker는 schedule entry에 저장된다. |
+| Meeting plans | `MeetingPlan` | `meetingPlans/{dateKey}` | fixed meeting day의 shared plan list다. 가장 최근 saver는 `updatedByProfileId`로 기록한다. |
+| Places | `SharedPlace`, `MeetingPlaceLink` | `sharedPlaces/{placeId}` | creator가 place content를 소유한다. interested member는 narrow place-link path로 interest 또는 meeting link를 update할 수 있다. provider는 Kakao만 사용한다. |
+| Curiosity | `CuriosityCard` | `curiosityCards/{cardId}` | sender는 상대 member에게 question을 하나 만든다. receiver가 reply를 쓴다. |
+| Stocks | `StockStory`, `StockHolding` | `stockStories`, `stockHoldings` | creator가 initial story/holding을 쓴다. partner는 story에 reply하고, holding owner는 holding detail을 edit하며 partner도 reply할 수 있다. |
+| Improvements | `ImprovementPost` | `improvementPosts/{postId}` | creator는 자신의 post를 create/edit/delete할 수 있다. owner-role user는 owner note를 남기고 resolved 처리할 수 있다. |
+| Diagnostics | `DiagnosticEvent` | `diagnosticEvents/{eventId}` | operational save-failure record다. member는 create할 수 있고 owner-role user는 read할 수 있다. user-facing content가 아니다. |
 
-## Cross-Feature Relationships
+## Cross-Feature 관계
 
-- `ScheduleEntry.isMeetingDay` makes a date eligible for the `만남` tab.
-- `MeetingPlan.dateKey` is the shared plan record for that fixed meeting day.
-- `SharedPlace.meetingPlanLinks` connects saved places to meeting dates and can
-  include a `reservationTimeLabel`.
-- `WishItem.kind == place` and `SharedPlace` are related user concepts but are
-  separate domain records. Wishlist ideas do not automatically create places.
-- `Answer`, `AnswerComment`, and `CuriosityCard` are separate question flows.
-  Do not merge their storage or notification states without a spec change.
-- Home unread activity is a derived summary across feature records and local
-  seen state. It should not create Firestore writes while rendering.
+- `ScheduleEntry.isMeetingDay`는 해당 date를 `만남` tab에 표시 가능한 상태로 만든다.
+- `MeetingPlan.dateKey`는 그 fixed meeting day의 shared plan record다.
+- `SharedPlace.meetingPlanLinks`는 saved place를 meeting date와 연결하며 `reservationTimeLabel`을 포함할 수 있다.
+- `WishItem.kind == place`와 `SharedPlace`는 user concept상 관련이 있지만 서로 다른 domain record다. wishlist idea가 place를 자동 생성하지 않는다.
+- `Answer`, `AnswerComment`, `CuriosityCard`는 서로 다른 question flow다. spec change 없이 storage나 notification state를 합치지 않는다.
+- Home unread activity는 feature record와 local seen state를 모아 만든 derived summary다. rendering 중 Firestore write를 만들면 안 된다.
 
 ## Write Design Checklist
 
-Before adding or changing a Firebase-backed model:
+Firebase-backed model을 추가하거나 변경하기 전에 다음을 확인한다.
 
-1. Name the domain model and owner fields in this document.
-2. Add or update the feature spec behavior.
-3. Add the Firestore path to [`firestore.md`](firestore.md).
-4. Update `firestore.rules` and [`../firebase_setup.md`](../firebase_setup.md)
-   together.
-5. Keep one explicit user action to one document write unless a spec explicitly
-   approves a batch.
-6. Add a harness or domain test when a repository field must be accepted by
-   Firestore Rules.
+1. 이 문서에 domain model과 owner field를 명시한다.
+2. feature spec behavior를 추가하거나 갱신한다.
+3. [`firestore.md`](firestore.md)에 Firestore path를 추가한다.
+4. `firestore.rules`와 [`../firebase_setup.md`](../firebase_setup.md)를 함께 갱신한다.
+5. spec이 명시적으로 batch를 승인하지 않는 한 explicit user action 하나는 document write 하나로 유지한다.
+6. repository field가 Firestore Rules에서 허용되어야 한다면 harness 또는 domain test를 추가한다.
 
-## Current Implementation Note
+## 현재 구현 Note
 
-Most models still live in `lib/src/domain/alagagi_controller.dart` during the
-ongoing extraction. As UI modules move out of `lib/src/ui/alagagi_app.dart`,
-new or heavily changed domain models should move toward the target
-`lib/src/domain/models/`, `lib/src/domain/repositories/`, and
-`lib/src/domain/controller/` shape described in
-[`../code_structure.md`](../code_structure.md).
+진행 중인 extraction 동안 대부분의 model은 아직 `lib/src/domain/alagagi_controller.dart`에 있다.
+UI module이 `lib/src/ui/alagagi_app.dart` 밖으로 이동할수록 새로 만들거나 크게 바꾸는 domain model은 [`../code_structure.md`](../code_structure.md)에 정리된 목표 구조인 `lib/src/domain/models/`, `lib/src/domain/repositories/`, `lib/src/domain/controller/` 방향으로 옮긴다.

@@ -1,24 +1,24 @@
 # Wishlist Spec
 
-## Purpose
+## 목적
 
-Wishlist, shown as `언젠가, 같이`, captures things the two users might want to do together.
+Wishlist는 `언젠가, 같이`로 표시되며 두 user가 함께 하고 싶을 수 있는 것들을 모아둔다.
 
-## Required Behavior
+## 필수 동작
 
-- A user can add a place or activity wish.
-- A user can mark interest in a wish.
-- A user can mark a wish done where appropriate.
-- Filters help separate all, mutual, places, and activities.
-- Copy should stay low-pressure: `관심`, `같이 해보고 싶은`, not commitment-heavy language.
+- user는 place 또는 activity wish를 추가할 수 있다.
+- user는 wish에 interest를 표시할 수 있다.
+- 필요한 경우 user는 wish를 done으로 표시할 수 있다.
+- filter는 all, mutual, places, activities를 구분하게 돕는다.
+- copy는 `관심`, `같이 해보고 싶은`처럼 low-pressure를 유지하고 commitment-heavy language를 피한다.
 
-## Data Rules
+## 데이터 규칙
 
-- Wish documents store creator, kind, title, optional note/icon, interest profile IDs, done state, created/updated timestamps.
-- Add/interest/done actions should write at most one wish document.
+- wish document는 creator, kind, title, optional note/icon, interest profile IDs, done state, created/updated timestamp를 저장한다.
+- add/interest/done action은 최대 하나의 wish document만 써야 한다.
 
-## Acceptance Criteria
+## 수용 기준
 
-- Mutual interest is visible without romantic pressure.
-- Long wish lists remain scannable with filters.
-- Owner and partner actions are clear and do not conflict.
+- mutual interest는 romantic pressure 없이 보여야 한다.
+- 긴 wish list도 filter로 scan 가능해야 한다.
+- owner action과 partner action은 명확하고 충돌하지 않아야 한다.

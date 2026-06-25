@@ -1,54 +1,54 @@
 # 조금씩 Product Spec
 
-> Status: archived monolithic spec.
-> Current source of truth: [`../spec.md`](../spec.md) and the feature specs in this directory.
-> Use this file only for historical context or migration notes.
+> 상태: archived monolithic spec.
+> 현재 기준 문서: [`../spec.md`](../spec.md)와 이 directory의 feature spec.
+> 이 파일은 historical context 또는 migration note 확인용으로만 사용한다.
 
 ## 0. Source
 
-- Reference board: `/Users/admin/AndroidStudioProjects/skylife-ux3.0/webapp-design/index.html`
-- Primary visual direction: `design2.html` 시안 2, Modern Minimal
-- Included flow screens: `invite.html`, `design2.html`, `answer.html`, `archive.html`, `us.html`
-- Included plus screens: `balance.html`, `card.html`, `wishlist.html`, `features.html`
-- Alternative visual references: `design1.html`, `design3.html`
+- reference board: `/Users/admin/AndroidStudioProjects/skylife-ux3.0/webapp-design/index.html`
+- primary visual direction: `design2.html` 시안 2, Modern Minimal
+- included flow screens: `invite.html`, `design2.html`, `answer.html`, `archive.html`, `us.html`
+- included plus screens: `balance.html`, `card.html`, `wishlist.html`, `features.html`
+- alternative visual references: `design1.html`, `design3.html`
 
 ## 0.1 AI Harness / Development Contract
 
-This repository is intentionally structured so an AI coding agent can continue the app safely without relying on hidden chat context.
+이 저장소는 AI coding agent가 hidden chat context에 의존하지 않고 앱을 안전하게 이어서 개발할 수 있도록 의도적으로 구조화되어 있다.
 
-Required harness files:
+필수 harness files:
 
-- `AGENTS.md`: root-level working contract for AI agents and future maintainers.
-- `docs/spec.md`: product source of truth and acceptance criteria.
-- `docs/test_plan.md`: test intent that mirrors new spec behavior before implementation.
+- `AGENTS.md`: AI agent와 future maintainer를 위한 root-level working contract.
+- `docs/spec.md`: product source of truth와 acceptance criteria.
+- `docs/test_plan.md`: implementation 전에 new spec behavior를 반영하는 test intent.
 - `docs/agent_harness_playbook.md`: development-only multi-agent operating guide.
 - `firestore.rules`: canonical Firestore Security Rules source.
-- `firebase.json`: Firebase CLI mapping that deploys the canonical `firestore.rules` file.
-- `scripts/check_firestore_rules_sync.sh`: local/CI check that keeps `firestore.rules` and the Firebase setup guide aligned.
-- `scripts/verify.sh`: local one-command verification for dependency install, analysis, tests, and web build.
-- `.github/workflows/deploy.yml`: CI gate that runs analysis, tests, release web build, Firestore Rules deploy, and GitHub Pages deploy.
-- `.github/pull_request_template.md`: review checklist that keeps SDD/TDD, Firebase budget, UX tone, and verification visible.
+- `firebase.json`: canonical `firestore.rules` file을 deploy하는 Firebase CLI mapping.
+- `scripts/check_firestore_rules_sync.sh`: `firestore.rules`와 Firebase setup guide를 맞춰두는 local/CI check.
+- `scripts/verify.sh`: dependency install, analysis, tests, web build를 위한 local one-command verification.
+- `.github/workflows/deploy.yml`: analysis, tests, release web build, Firestore Rules deploy, GitHub Pages deploy를 실행하는 CI gate.
+- `.github/pull_request_template.md`: SDD/TDD, Firebase budget, UX tone, verification을 review에서 확인하게 하는 checklist.
 
 AI change workflow:
 
-1. Update `docs/spec.md` before changing production behavior.
-2. Update `docs/test_plan.md` and add/adjust domain or widget tests that express the behavior.
-3. Confirm the test fails or clearly covers the previous gap before implementation when practical.
-4. Implement the smallest production change that satisfies the spec and tests.
-5. Run `dart analyze` and `flutter test`; run `flutter build web` when deployment or visible web UI is affected.
-6. Keep Firebase secrets, password helper scripts, generated builds, and local-only data out of Git.
-7. When multiple AI agents are used, keep one orchestrator, assign disjoint write scopes, and follow `docs/agent_harness_playbook.md`.
+1. production behavior를 바꾸기 전에 `docs/spec.md`를 갱신한다.
+2. `docs/test_plan.md`를 갱신하고 behavior를 표현하는 domain 또는 widget test를 추가/조정한다.
+3. practical하면 implementation 전에 test가 실패하거나 기존 gap을 명확히 다루는지 확인한다.
+4. spec과 tests를 만족하는 가장 작은 production change를 구현한다.
+5. `dart analyze`와 `flutter test`를 실행한다. deployment 또는 visible web UI가 영향을 받으면 `flutter build web`도 실행한다.
+6. Firebase secret, password helper script, generated build, local-only data는 Git에 넣지 않는다.
+7. 여러 AI agent를 사용할 때는 orchestrator를 하나 두고, write scope를 분리하며 `docs/agent_harness_playbook.md`를 따른다.
 
-Acceptance Criteria:
+수용 기준:
 
-- A new AI agent can open the repository and understand the required development order without reading prior chat history.
-- CI fails when Dart analysis or tests fail.
-- Local verification is available through a single script.
-- Pull requests run the non-deploy verification gate before merge.
-- Firestore rules have a canonical repository file and docs sync check.
-- Main-branch deployments publish Firestore rules from `firestore.rules` when `FIREBASE_SERVICE_ACCOUNT` is configured.
-- Multi-agent development is documented as a development harness, not an app runtime feature.
-- PRs expose whether spec, test plan, tests, Firebase budget, and user-facing tone were considered.
+- 새 AI agent는 prior chat history를 읽지 않아도 저장소를 열고 필수 development order를 이해할 수 있다.
+- Dart analysis 또는 tests가 실패하면 CI가 실패한다.
+- local verification은 single script로 실행할 수 있다.
+- pull request는 merge 전에 non-deploy verification gate를 실행한다.
+- Firestore rules에는 canonical repository file과 docs sync check가 있다.
+- `FIREBASE_SERVICE_ACCOUNT`가 설정되면 main-branch deployment는 `firestore.rules`에서 Firestore rules를 publish한다.
+- multi-agent development는 app runtime feature가 아니라 development harness로 문서화된다.
+- PR은 spec, test plan, tests, Firebase budget, user-facing tone 검토 여부를 드러낸다.
 
 ## 1. Product Summary
 
@@ -173,7 +173,7 @@ Reference `design2.html`: Modern Minimal, sage, warm paper, serif title.
 - Main content should be constrained around 390-520px on desktop web.
 - Cards use 18-24px radius in this specific design system, matching the reference.
 - Bottom navigation is fixed at bottom with translucent paper background.
-- Avoid nested cards except where the reference explicitly frames a phone preview or a repeated list item.
+- reference가 phone preview 또는 repeated list item을 명확히 frame하는 경우를 제외하고 nested card를 피한다.
 - 초대 노트, 홈 기능 카드, 밸런스 선택지, 소개 카드 슬롯, 위시 카드의 아이콘은 모바일에서 텍스트보다 시각 우선순위가 높아지지 않게 작고 일관된 line icon으로 표시한다.
 - 실제 모바일 브라우저/PWA에서 OS 상태바가 이미 보이므로 앱 내부에는 `9:41`, 배터리, 신호 점 같은 fake status row를 렌더링하지 않는다.
 - 상단 안정감은 fake status row 대신 화면별 safe top spacing과 명확한 header/top bar로 만든다.
@@ -445,7 +445,7 @@ If the app grows, bottom navigation may become:
 
 ### MVP v0.9 Stabilization Batch
 
-This batch fixes the highest-risk gaps found after the v0.6 calendar/design audit. It must be implemented in SDD/TDD order.
+이 batch는 v0.6 calendar/design audit 이후 발견된 highest-risk gap을 수정한다. 반드시 SDD/TDD 순서로 구현한다.
 
 - Partner answer reveal:
   - In Firebase-backed mode, a partner answer is visible only after my non-skipped answer has been persisted successfully.
@@ -459,12 +459,12 @@ This batch fixes the highest-risk gaps found after the v0.6 calendar/design audi
   - Comment save failure preserves the draft/comment text and exposes a retry action instead of silently swallowing the failure.
   - Wishlist interest is additive in this MVP: tapping an already-interested wish is a no-op and creates no write.
 - Calendar:
-  - The calendar is promoted from a 2-week strip to a compact monthly grid.
-  - The displayed month follows the selected date, or today when no selected date exists.
+  - calendar는 2-week strip에서 compact monthly grid로 승격된다.
+  - displayed month는 selected date를 따르고, selected date가 없으면 today를 따른다.
   - Previous/next/today controls change only local UI state and never write to Firestore.
   - Weekday labels are fixed to Monday-Sunday so the grid reads like a familiar calendar.
   - Month leading/trailing cells are faded; start-before, future, and catalog-ended cells are disabled and never show answer CTAs.
-  - The grid must render 5 or 6 complete weeks without horizontal overflow on a 390px mobile viewport.
+  - grid는 390px mobile viewport에서 horizontal overflow 없이 5 또는 6개의 complete week를 render해야 한다.
 - Selected question detail:
   - Shows the selected date, day number, question, my answer/read-only state, partner answer when unlocked, and existing comments in read-only form.
   - For past unanswered questions, `늦게 답하기` opens the answer screen with the selected date context.
@@ -473,7 +473,7 @@ This batch fixes the highest-risk gaps found after the v0.6 calendar/design audi
   - Long answers wrap naturally and do not overlap fixed bottom navigation.
 - Mobile shell:
   - Real mobile viewport uses full available height with SafeArea.
-  - The decorative 390px phone frame is desktop/tablet-only.
+  - decorative 390px phone frame은 desktop/tablet-only다.
   - Fixed bottom navigation reserves layout space and does not cover scroll content.
   - Bottom navigation visual height stays compact on 390px mobile viewports.
 - Profile card:
@@ -487,7 +487,7 @@ This batch fixes the highest-risk gaps found after the v0.6 calendar/design audi
 
 ### MVP v0.10 Compact Monthly Question Calendar
 
-This batch focuses only on the question archive calendar UI/UX. It keeps the Firestore data model unchanged and must be implemented in SDD/TDD order.
+이 batch는 question archive calendar UI/UX에만 집중한다. Firestore data model은 변경하지 않으며 반드시 SDD/TDD 순서로 구현한다.
 
 - Default shape:
   - 질문함 캘린더는 2주 strip이 아니라 compact 월간 calendar grid를 기본으로 사용한다.
@@ -516,7 +516,7 @@ This batch focuses only on the question archive calendar UI/UX. It keeps the Fir
 
 ### MVP v0.11 Focused Home Question Card
 
-This batch focuses only on the HOME today's question card. It follows the `docs/design/home_question_card_redesign.html` focused-question option and must be implemented in SDD/TDD order.
+이 batch는 HOME today question card에만 집중한다. `docs/design/home_question_card_redesign.html`의 focused-question option을 따르며 반드시 SDD/TDD 순서로 구현한다.
 
 - Default unanswered state:
   - 홈 질문 카드는 질문을 가장 먼저 읽을 수 있는 focus card로 렌더링한다.
@@ -548,7 +548,7 @@ This batch focuses only on the HOME today's question card. It follows the `docs/
 
 ### MVP v0.13 Music Note Tab
 
-This batch follows `docs/design/music_tab_navigation_concept.html` and `docs/design/shared_playlist_concept.html`. It must be implemented in SDD/TDD order.
+이 batch는 `docs/design/music_tab_navigation_concept.html`와 `docs/design/shared_playlist_concept.html`를 따른다. 반드시 SDD/TDD 순서로 구현한다.
 
 - Navigation:
   - Bottom navigation labels are `홈`, `질문`, `음악`, `마이`.
@@ -585,20 +585,20 @@ This batch follows `docs/design/music_tab_navigation_concept.html` and `docs/des
   - Edit writes refresh `updatedAt` so local new-note summary can notice a partner's edited note.
   - Listen-state emoji writes update only `listenedByProfileIds`; they do not refresh `updatedAt` or reorder notes.
   - Load all notes with the rest of the space session data.
-  - This scope stays within Firebase free plan assumptions because it does not write on draft changes, passive viewing, or playback interactions.
+  - 이 scope는 draft change, passive viewing, playback interaction에서 write하지 않기 때문에 Firebase free plan assumption 안에 머문다.
 
 ### MVP v0.14 주식 이야기
 
-This batch follows `docs/design/stock_talk_entry_options.html` and `docs/design/stock_talk_concepts.html`.
+이 batch는 `docs/design/stock_talk_entry_options.html`와 `docs/design/stock_talk_concepts.html`를 따른다.
 
 - Naming and tone:
   - Feature name is `주식 이야기`, not `종목 대화`.
   - Copy must frame the feature as sharing observations, questions, and risk notes, not as investment advice.
-  - Avoid direct buy/sell CTA copy such as `매수`, `매도`, `추천 매수`, or return-ranking language.
+  - `매수`, `매도`, `추천 매수` 같은 직접적인 buy/sell CTA copy 또는 return-ranking language를 피한다.
 - Entry:
   - Home must not add another full-width feature card for this scope.
   - Home header exposes a compact menu button that opens `조금씩 메뉴` as a bottom sheet.
-- The menu sheet contains `궁금함 한 장`, `주식 이야기`, `건의함`, and `처음 안내`.
+- menu sheet에는 `궁금함 한 장`, `주식 이야기`, `건의함`, `처음 안내`가 들어간다.
   - `궁금함 한 장` is accessed from this menu instead of a separate home card.
   - `주식 이야기` opens a dedicated screen without adding a new bottom navigation tab.
 - Stock story data:
@@ -606,7 +606,7 @@ This batch follows `docs/design/stock_talk_entry_options.html` and `docs/design/
   - Draft input is local state only; Firestore writes happen only on explicit story submit or explicit reply submit.
   - MVP does not integrate realtime market prices, brokerage APIs, quote APIs, price alerts, return rankings, or trading actions.
 - Stock story UX:
-  - The `주식 이야기` screen has two tabs: `이야기` and `보유`.
+  - `주식 이야기` screen에는 `이야기`와 `보유` 두 tab이 있다.
   - `이야기` keeps the existing observation/question thread flow.
   - Empty state says that one stock can be left lightly for a shared conversation.
   - Add form includes stock name, interest reason, expectation point, risk point, and one question.
@@ -643,7 +643,7 @@ This batch follows `docs/design/stock_talk_entry_options.html` and `docs/design/
 
 - Entry:
   - `건의함` opens from the home header menu as a dedicated screen without adding a bottom navigation tab.
-  - The home screen does not add another feature card for this board.
+  - home screen은 이 board를 위한 feature card를 추가하지 않는다.
 - UX:
   - Users can leave a post with category, title, and body.
   - Categories are `개선`, `추가 요청`, `불편함`, and `아이디어`.
@@ -657,7 +657,7 @@ This batch follows `docs/design/stock_talk_entry_options.html` and `docs/design/
 
 ### MVP v0.14 Quiet Home Progress & Save Stability
 
-This batch covers the next two practical improvements: a quiet progress summary on Home and clearer save/offline failure handling. It must be implemented in SDD/TDD order and should not add new Firestore collections.
+이 batch는 다음 두 practical improvement를 다룬다: Home의 조용한 progress summary와 더 명확한 save/offline failure handling. 반드시 SDD/TDD 순서로 구현하며 새 Firestore collection을 추가하지 않는다.
 
 - Selected Home summary design: `docs/design/home_quiet_progress_summary.html`.
 - Home progress summary:
@@ -857,7 +857,7 @@ flowchart TD
 
 Reference: `invite.html`
 
-Purpose:
+목적:
 
 - Firebase Auth 세션이 없을 때 민영과 영우만 앱에 들어오게 한다.
 - 기존 초대장 디자인의 부드러운 분위기를 유지하되, 로그인 전 화면은 관계를 전제하는 초대 문구보다 담백한 접속 화면 톤으로 낮춘다.
@@ -888,7 +888,7 @@ State:
 - Signed in but profile document missing
 - Firebase not configured local demo mode
 
-Acceptance Criteria:
+수용 기준:
 
 - Firebase가 설정된 배포 빌드에서 첫 진입 시 로그인 화면이 보인다.
 - `youngwoo` 또는 `minyoung` 아이디는 내부적으로 `@gettoknow.local` 이메일로 매핑된다.
@@ -905,7 +905,7 @@ Acceptance Criteria:
 
 Reference: `invite.html`
 
-Purpose:
+목적:
 
 - 링크를 처음 열었을 때 앱의 분위기와 안전한 사용 방식을 알려준다.
 - 가입 없이 닉네임만 입력해 시작하게 한다.
@@ -932,7 +932,7 @@ State:
 - Submit disabled or soft validation when nickname is empty
 - Submit moves to Home
 
-Acceptance Criteria:
+수용 기준:
 
 - 첫 진입 시 `우리, 천천히 알아가 볼래요?`가 보인다.
 - 닉네임을 입력하고 CTA를 누르면 홈으로 이동한다.
@@ -942,7 +942,7 @@ Acceptance Criteria:
 
 Reference: `design2.html`
 
-Purpose:
+목적:
 
 - 매일 돌아오는 메인 화면.
 - 오늘의 질문, 내 답/상대 답 상태, 관계 기록 요약을 한눈에 보여준다.
@@ -986,7 +986,7 @@ State:
 - Both answered, partner answer visible
 - Today skipped
 
-Acceptance Criteria:
+수용 기준:
 
 - 홈에 `오늘의 질문`과 질문 번호가 보인다.
 - 내 답이 없으면 답변 CTA가 보인다.
@@ -1018,7 +1018,7 @@ Acceptance Criteria:
 
 Reference: `answer.html`
 
-Purpose:
+목적:
 
 - 오늘의 질문에 집중해서 답을 남긴다.
 - 답변 후 상대 답을 공개하거나 대기 상태를 보여준다.
@@ -1052,7 +1052,7 @@ State:
 - Save success feedback
 - Save failure retry
 
-Acceptance Criteria:
+수용 기준:
 
 - 답변 입력 시 글자 수가 갱신된다.
 - 300자를 넘으면 제출을 막거나 초과 상태를 안내한다.
@@ -1071,7 +1071,7 @@ Acceptance Criteria:
 
 Reference: `archive.html`
 
-Purpose:
+목적:
 
 - 주고받은 질문과 답변을 다시 볼 수 있게 한다.
 - 매일의 질문 진행 상태를 캘린더로 확인한다.
@@ -1129,7 +1129,7 @@ State:
 - Late answer available
 - Empty archive
 
-Acceptance Criteria:
+수용 기준:
 
 - 질문함은 `startedDateKey` 기준으로 날짜와 질문을 매핑한 캘린더를 보여준다.
 - 질문함 캘린더는 선택 날짜가 속한 월을 5~6주 complete grid로 보여준다.
@@ -1152,7 +1152,7 @@ Acceptance Criteria:
 
 Reference: `us.html`
 
-Purpose:
+목적:
 
 - 두 사람의 누적 답변과 겹치는 키워드를 보여준다.
 - “조금씩 알아가고 있네” 하는 작은 즐거움을 제공한다.
@@ -1175,7 +1175,7 @@ Required UI:
   - highlighted keyword
 - Bottom navigation
 
-Acceptance Criteria:
+수용 기준:
 
 - 홈과 같은 기준의 함께 답한 질문 수와 겹치는 키워드가 표시된다.
 - 기록 화면은 `%`, `점수`, `지수`처럼 관계를 채점하는 표현을 쓰지 않는다.
@@ -1187,7 +1187,7 @@ Acceptance Criteria:
 
 Reference: `balance.html`, `docs/design/wishlist_balance_redesign.html`
 
-Purpose:
+목적:
 
 - 글을 쓰지 않아도 1초 안에 취향을 표현하게 한다.
 - 답 안 하는 날을 줄이는 가벼운 장치다.
@@ -1224,7 +1224,7 @@ Required UI:
 
 State:
 
-- Before selection
+- selection 전
 - My selected option
 - Partner selected same option
 - Partner selected different option
@@ -1232,7 +1232,7 @@ State:
 - Last balance question completion
 - Recent history summary
 
-Acceptance Criteria:
+수용 기준:
 
 - 선택 전에는 두 선택지가 동일한 가중치로 보인다.
 - 하나를 선택하면 선택 상태가 표시된다.
@@ -1249,7 +1249,7 @@ Acceptance Criteria:
 
 Reference: `card.html`, `docs/design/profile_card_redesign.html`
 
-Purpose:
+목적:
 
 - 상대에게 보여주고 싶은 내 정보를 편한 만큼 채운다.
 - 질문 루틴과 별개로 자기소개를 가볍게 정리한다.
@@ -1309,7 +1309,7 @@ State:
 - Category filter selected
 - Recommended slot selected
 
-Acceptance Criteria:
+수용 기준:
 
 - 채워진 칸 수와 전체 칸 수가 보인다.
 - 전체 슬롯 카탈로그는 24개 내외의 다양한 소개 주제를 제공한다.
@@ -1330,7 +1330,7 @@ Acceptance Criteria:
 
 Reference: `wishlist.html`, `docs/design/wishlist_balance_redesign.html`
 
-Purpose:
+목적:
 
 - 같이 해보고 싶은 것을 부담 없이 담는다.
 - 실제 만남으로 이어질 자연스러운 다리를 만든다.
@@ -1365,7 +1365,7 @@ Required UI:
   - place/activity kind selection
   - submit button
   - cancel action
-- No recommendation/template section in MVP v2. The screen starts from saved wishes and a direct add flow only.
+- MVP v2에는 recommendation/template section을 두지 않는다. screen은 saved wish와 direct add flow에서 시작한다.
 
 State:
 
@@ -1379,7 +1379,7 @@ State:
 - Toggle interest
 - Mark as done
 
-Acceptance Criteria:
+수용 기준:
 
 - Wishlist v2는 추천 템플릿/추천 카드 섹션을 노출하지 않는다.
 - Add CTA는 하단 내비 바로 위에 고정하지 않고 콘텐츠 흐름 안에서 보여준다.
@@ -1434,7 +1434,7 @@ Firebase mode must never fabricate these records.
 - 소개 카드 비어 있음: `오늘 한 칸만 채워도 충분해요.`
 - 위시리스트 비어 있음: `같이 해보고 싶은 걸 하나만 담아볼까요?`
 
-Acceptance Criteria:
+수용 기준:
 
 - Firebase mode에서 Firestore answer 문서가 없으면 샘플 답변이 보이지 않는다.
 - Firebase mode에서 Firestore wish 문서가 없으면 샘플 wish card가 보이지 않는다.
@@ -1631,7 +1631,7 @@ Reference: `features.html`
 - 3주차: 생각과 가치관
 - 4주차 이후: 속마음
 
-Acceptance Criteria:
+수용 기준:
 
 - 질문 데이터는 depth level을 가진다.
 - 홈은 현재 day/week에 맞는 질문을 보여준다.
@@ -2048,7 +2048,7 @@ Rules:
 Rules:
 
 - Places are normalized before storage; provider-specific raw payloads are not stored.
-- Current location, movement path, and route history are not stored.
+- current location, movement path, route history는 저장하지 않는다.
 - `linkedDateKey` is empty by default and stores a meeting date key when a place is attached to a fixed meeting day.
 - Duplicate Kakao `providerPlaceId` submissions update the existing place instead of creating a second card.
 - Interest is reversible; members can add or remove their own profile id from `interestedByProfileIds`.
@@ -2163,8 +2163,8 @@ Rules:
   - Archive: progress, a bounded month-window answer query, and cursor pagination for the compact list.
   - Wishlist: visible wishes page with `limit()` and cursor pagination.
   - Profile card: one bounded profile-card document or capped slot map if the slot count stays fixed.
-- Use cursor pagination, never offset pagination.
-- Avoid broad realtime listeners; use one-shot reads or at most a tiny listener for today answers/summary.
+- cursor pagination을 사용하고 offset pagination은 사용하지 않는다.
+- broad realtime listener를 피한다. one-shot read 또는 today answers/summary를 위한 아주 작은 listener까지만 사용한다.
 - Large future features must add an estimated read/write budget before implementation.
 
 ## 15. App State Draft
@@ -2288,7 +2288,7 @@ class AlagagiState {
 
 ### Step 1: Spec Lock
 
-- Keep this document as the source of truth.
+- 이 문서를 source of truth로 유지한다.
 - Update `docs/sdd.md` to point to this new direction after user approval.
 
 ### Step 2: Domain First
@@ -2344,12 +2344,12 @@ class AlagagiState {
 - Rename seed content that remains valid product content to catalog content.
 - Move user-generated state reads to Firestore repository.
 - Add empty states for archive, records, balance, profile card, and wishlist.
-- Keep local demo fixtures isolated from Firebase mode.
+- local demo fixture는 Firebase mode와 분리한다.
 
 ### Step 9: Firestore Free Plan Guardrails
 
 - Add this spec section before implementing new Firebase-backed features.
-- Keep all new feature reads scoped to one `spaceId`.
+- 모든 새 feature read는 하나의 `spaceId`로 scope를 제한한다.
 - Estimate reads/writes/deletes for every new collection.
 - Reject features that require Storage, Cloud Functions, TTL, PITR, backup, restore, clone, or public multi-user growth.
 - Add tests proving draft updates do not call repository writes.
@@ -2368,26 +2368,26 @@ class AlagagiState {
 ### Step 11: Daily Question Progress
 
 - Add bounded `progress/daily` load to session data.
-- Keep question catalog local.
+- question catalog는 local로 유지한다.
 - Add deterministic `startedDateKey` plus Asia/Seoul date-key selection tests.
 - Add migration tests for legacy progress documents that only have `openedDateKey`.
 - Add archive calendar status derivation tests before building the UI.
 - Add late-answer route/controller tests before wiring the answer screen.
-- Keep past answered questions read-only in MVP.
-- Avoid Cloud Functions; client resolves the current question from progress and catalog.
-- Do not add a Firestore calendar collection.
+- MVP에서는 past answered question을 read-only로 유지한다.
+- Cloud Functions를 피한다. client가 progress와 catalog에서 current question을 resolve한다.
+- Firestore calendar collection을 추가하지 않는다.
 
 ### Step 12: Answer Comments
 
 - Add one bounded comment document per answer owner/commenter/question.
-- Keep comments explicit-save only; do not introduce chat, typing, presence, or realtime threads.
+- comment는 explicit-save only로 유지한다. chat, typing, presence, realtime thread를 도입하지 않는다.
 - Hide comment input until both answers are visible and not skipped.
 
 ### Step 13: Personalization
 
-- Keep text-only app title and home-line personalization as fallback data.
-- Do not expose the personalization editor in the recommended A My dashboard.
-- Avoid photos, file uploads, and Storage.
+- text-only app title과 home-line personalization을 fallback data로 유지한다.
+- recommended A My dashboard에는 personalization editor를 노출하지 않는다.
+- photo, file upload, Storage를 피한다.
 
 ## 18. Migration Notes From Initial Prototype
 

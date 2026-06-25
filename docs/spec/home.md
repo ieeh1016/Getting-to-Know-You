@@ -1,29 +1,29 @@
 # Home And Navigation Spec
 
-## Purpose
+## 목적
 
-Home is the calm entry point for the day. It should show the current question, small progress, unread activity, and feature entry points without becoming a dashboard full of secondary cards.
+Home은 하루를 시작하는 조용한 진입점이다. secondary card가 가득한 dashboard가 되지 않으면서 current question, 작은 progress, unread activity, feature entry point를 보여줘야 한다.
 
-## Required Behavior
+## 필수 동작
 
-- Home header shows the current app brand and menu action.
-- The main card prioritizes today's question and answer state.
-- Quiet progress summary may show the next useful action.
-- Feature launcher opens from the home menu.
-- Bottom navigation remains stable and does not cover scroll content.
-- Home should not show the old `닮은 취향 키워드` card. Similarity details belong in records, not home.
-- The unread activity panel shows only a short latest preview on Home. When there are more than three unread activities, a `더 보기` action opens a scrollable bottom sheet with the full unread list.
+- Home header는 현재 app brand와 menu action을 보여준다.
+- main card는 today's question과 answer state를 우선한다.
+- 조용한 progress summary는 다음에 유용한 action 하나를 보여줄 수 있다.
+- feature launcher는 home menu에서 열린다.
+- bottom navigation은 안정적으로 유지되고 scroll content를 덮지 않는다.
+- Home에는 예전 `닮은 취향 키워드` card를 보여주지 않는다. similarity detail은 Home이 아니라 records에 둔다.
+- unread activity panel은 Home에서 짧은 최신 preview만 보여준다. unread activity가 3개를 넘으면 `더 보기` action으로 전체 unread list를 담은 scrollable bottom sheet를 연다.
 
 ## Navigation
 
-- Bottom tabs: home, questions, music, meetings, places, my.
-- Additional features open from the menu: curiosity, stocks, improvements, taste match, profile cards, wishlist, first visit guide.
-- Feature screens should preserve the soft sub-screen header and clear back action unless they are bottom-tab roots.
+- bottom tabs: home, questions, music, meetings, places, my.
+- additional features는 menu에서 연다: curiosity, stocks, improvements, taste match, profile cards, wishlist, first visit guide.
+- feature screen이 bottom-tab root가 아니라면 부드러운 sub-screen header와 명확한 back action을 유지한다.
 
-## Acceptance Criteria
+## 수용 기준
 
-- Home fits a 390px-class mobile viewport without overlapping text or bottom nav.
-- Home does not expose score-like copy such as percent, points, ranking, or compatibility numbers.
-- Home menu can launch every plus feature.
-- New home cards must have a clear repeated use case; otherwise prefer moving the content into its feature screen.
-- Multiple unread activities do not make Home long or cramped; the full list is readable in a separate sheet.
+- Home은 text나 bottom nav가 겹치지 않고 390px-class mobile viewport에 맞아야 한다.
+- Home은 percent, points, ranking, compatibility number 같은 score-like copy를 노출하지 않는다.
+- Home menu에서 모든 plus feature를 열 수 있다.
+- 새 Home card는 반복 사용 목적이 명확해야 한다. 그렇지 않다면 해당 feature screen으로 옮기는 것을 우선한다.
+- unread activity가 여러 개여도 Home이 길거나 답답해지지 않는다. 전체 list는 별도 sheet에서 읽기 좋게 보여준다.

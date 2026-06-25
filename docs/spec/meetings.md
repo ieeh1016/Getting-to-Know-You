@@ -1,27 +1,27 @@
 # Meetings Spec
 
-## Purpose
+## 목적
 
-Meetings help the two users coordinate available dates, mark a confirmed meeting day, and plan what to do on fixed days.
+Meetings는 두 user가 가능한 날짜를 조율하고, confirmed meeting day를 표시하고, fixed day에 무엇을 할지 계획하도록 돕는다.
 
-## Required Behavior
+## 필수 동작
 
-- Calendar shows my entries, partner entries, mutual availability, selected date, and confirmed meeting days distinctly.
-- A user can add detailed time blocks with start/end time and title.
-- A user can mark a mutually useful date as a meeting day.
-- Meeting day details use free-form copy rather than forcing rigid time presets.
-- The `만남` tab lists only fixed meeting days and lets users organize plans for that day.
-- Plan copy uses `영우·민영의 계획`.
+- calendar는 my entries, partner entries, mutual availability, selected date, confirmed meeting day를 구분해서 보여준다.
+- user는 start/end time과 title이 있는 detailed time block을 추가할 수 있다.
+- user는 서로에게 괜찮은 날짜를 meeting day로 표시할 수 있다.
+- meeting day detail은 rigid time preset을 강제하지 않고 free-form copy를 사용한다.
+- `만남` tab은 fixed meeting day만 보여주고, 그날의 plan을 정리하게 한다.
+- plan copy는 `영우·민영의 계획`을 사용한다.
 
-## Data Rules
+## 데이터 규칙
 
-- Schedule entries are stored per `dateKey` and profile.
-- Meeting day details live on the selected schedule entry shape.
-- Editing a date writes only the relevant schedule document.
+- schedule entry는 `dateKey`와 profile별로 저장한다.
+- meeting day detail은 selected schedule entry shape에 저장된다.
+- date edit은 관련 schedule document 하나만 쓴다.
 
-## Acceptance Criteria
+## 수용 기준
 
-- Calendar indicators stay visible together when both people have entries.
-- Selected date styling is distinguishable from fixed meeting day styling.
-- Fixed meeting plan can add and remove plan items.
-- Place-board links can be imported into meeting plans without breaking place ownership.
+- 두 사람 모두 entry가 있을 때 calendar indicator들이 함께 보인다.
+- selected date styling은 fixed meeting day styling과 구분되어야 한다.
+- fixed meeting plan에서 plan item을 add/remove할 수 있다.
+- place ownership을 깨지 않고 place-board link를 meeting plan으로 가져올 수 있다.

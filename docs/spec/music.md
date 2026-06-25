@@ -1,28 +1,28 @@
 # Music Spec
 
-## Purpose
+## 목적
 
-Music notes let users share songs, notes, and whether they have listened, without turning the screen into a long unfiltered list.
+Music note는 screen을 긴 unfiltered list로 만들지 않으면서 user가 song, note, 들었는지 여부를 공유하게 한다.
 
-## Required Behavior
+## 필수 동작
 
-- A user can add a song title, artist, optional link, mood, and note.
-- Mood can be picked from quick labels or typed directly as custom text.
-- A user can edit their own music note.
-- Partner notes are read-only except for listen-state actions.
-- Listen emoji/state can be toggled without opening the detail sheet.
-- List filtering helps when music count grows.
-- New/unseen partner additions can surface in home summary.
+- user는 song title, artist, optional link, mood, note를 추가할 수 있다.
+- mood는 quick label에서 고르거나 custom text로 직접 입력할 수 있다.
+- user는 자신의 music note를 edit할 수 있다.
+- partner note는 listen-state action을 제외하고 read-only다.
+- listen emoji/state는 detail sheet를 열지 않고 toggle할 수 있다.
+- music count가 늘어나면 list filtering이 탐색을 도와야 한다.
+- 새롭거나 아직 보지 않은 partner addition은 home summary에 표시될 수 있다.
 
-## Data Rules
+## 데이터 규칙
 
-- Add/edit writes refresh `updatedAt`.
-- Listen-state writes update only `listenedByProfileIds`; they do not refresh `updatedAt`.
-- External links are normalized before opening.
+- add/edit write는 `updatedAt`을 갱신한다.
+- listen-state write는 `listenedByProfileIds`만 update하며 `updatedAt`을 갱신하지 않는다.
+- external link는 열기 전에 normalize한다.
 
-## Acceptance Criteria
+## 수용 기준
 
-- Music list prioritizes useful unread/unlistened states.
-- Edit action appears only on my notes.
-- Link action opens the normalized URL through the external link opener.
-- Long notes open in a readable detail sheet.
+- music list는 유용한 unread/unlistened state를 우선한다.
+- edit action은 내 note에만 보인다.
+- link action은 normalized URL을 external link opener로 연다.
+- long note는 readable detail sheet에서 열린다.

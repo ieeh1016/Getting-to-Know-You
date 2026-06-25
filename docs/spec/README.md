@@ -1,46 +1,46 @@
 # Modular Product Spec
 
-`조금씩` now uses a modular SPEC structure.
+`조금씩`은 modular SPEC 구조를 사용한다.
 
-## Document Roles
+## 문서 역할
 
-- [`../spec.md`](../spec.md): entry point and global rules.
-- Feature specs in this directory: current product truth for each user-facing area.
-- [`domain_model.md`](domain_model.md): shared model names, ownership fields, and Firestore mapping across features.
-- [`legacy_full_spec.md`](legacy_full_spec.md): archived monolithic spec. Use for historical context, not as the primary source.
-- [`../test_plan.md`](../test_plan.md): verification plan derived from these specs.
-- [`../firebase_setup.md`](../firebase_setup.md): Firebase setup and rules guide derived from [`firestore.md`](firestore.md).
-- [`../map_open_api_guide.md`](../map_open_api_guide.md): Kakao Map API setup guide for the Places feature.
-- [`../sdd.md`](../sdd.md): archived SDD redirect. Do not use as an active spec.
+- [`../spec.md`](../spec.md): 진입점과 전역 규칙.
+- 이 디렉터리의 feature spec: 각 user-facing 영역의 현재 product truth.
+- [`domain_model.md`](domain_model.md): feature 간 shared model name, ownership field, Firestore mapping.
+- [`legacy_full_spec.md`](legacy_full_spec.md): archived monolithic spec. 주 기준 문서가 아니라 역사적 맥락 확인용이다.
+- [`../test_plan.md`](../test_plan.md): 이 spec들에서 파생된 verification plan.
+- [`../firebase_setup.md`](../firebase_setup.md): [`firestore.md`](firestore.md)에서 파생된 Firebase setup과 rules guide.
+- [`../map_open_api_guide.md`](../map_open_api_guide.md): Places feature의 Kakao Map API setup guide.
+- [`../sdd.md`](../sdd.md): archived SDD redirect. active spec으로 사용하지 않는다.
 
-## Change Workflow
+## 변경 Workflow
 
-1. Identify the relevant feature spec.
-2. Update that spec before changing behavior.
-3. Update the test plan and tests.
-4. Implement the smallest change that satisfies the spec.
-5. Run the relevant verification gate.
+1. 관련 feature spec을 찾는다.
+2. behavior를 바꾸기 전에 해당 spec을 갱신한다.
+3. test plan과 tests를 갱신한다.
+4. spec을 만족하는 가장 작은 변경을 구현한다.
+5. 관련 verification gate를 실행한다.
 
-## Product Principles
+## 제품 원칙
 
-- Quiet, private, mobile-first.
-- Gentle curiosity over performance or obligation.
-- Shared records over live chat.
-- Explicit actions over background tracking.
-- Clear separation between private notes, shared entries, and revealed results.
+- 조용하고 private하며 mobile-first로 만든다.
+- performance나 obligation보다 gentle curiosity를 우선한다.
+- live chat보다 shared records를 우선한다.
+- background tracking보다 explicit action을 우선한다.
+- private notes, shared entries, revealed results를 명확히 구분한다.
 
-## Current Feature Map
+## 현재 Feature Map
 
-| Area | Spec |
+| 영역 | Spec |
 | --- | --- |
 | Home, navigation, first visit | [`home.md`](home.md) |
-| Shared domain model and ownership | [`domain_model.md`](domain_model.md) |
+| Shared domain model과 ownership | [`domain_model.md`](domain_model.md) |
 | Daily questions, answers, archive, records | [`questions.md`](questions.md) |
 | Taste match | [`taste_match.md`](taste_match.md) |
-| Schedule coordination and fixed meeting plans | [`meetings.md`](meetings.md) |
+| Schedule coordination과 fixed meeting plans | [`meetings.md`](meetings.md) |
 | Kakao map place board | [`places.md`](places.md) |
 | Music notes | [`music.md`](music.md) |
-| Stock stories and holdings | [`stocks.md`](stocks.md) |
+| Stock stories와 holdings | [`stocks.md`](stocks.md) |
 | Profile cards | [`profile_cards.md`](profile_cards.md) |
 | Wishlist | [`wishlist.md`](wishlist.md) |
 | Improvement board | [`improvements.md`](improvements.md) |

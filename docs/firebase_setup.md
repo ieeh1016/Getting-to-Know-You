@@ -1,6 +1,6 @@
 # Firebase Setup Guide
 
-> Spec source: [spec.md](spec.md) and [spec/firestore.md](spec/firestore.md).
+> Spec 기준: [spec.md](spec.md)와 [spec/firestore.md](spec/firestore.md).
 > 작성 기준일: 2026-06-11.
 
 이 앱은 Firebase Auth의 Email/Password 로그인을 사용하지만, 화면에는 이메일 대신 짧은 아이디만 보여준다.

@@ -1,30 +1,30 @@
 # 조금씩 Product Spec Index
 
-> Source of truth: this index plus the feature specs in [`docs/spec/`](spec/).
-> The previous monolithic spec is preserved as [`docs/spec/legacy_full_spec.md`](spec/legacy_full_spec.md) for migration context only.
+> 기준 문서: 이 index와 [`docs/spec/`](spec/) 아래의 feature spec.
+> 이전 monolithic spec은 migration context 확인용으로만 [`docs/spec/legacy_full_spec.md`](spec/legacy_full_spec.md)에 보관한다.
 
-## How To Use
+## 사용 방법
 
-1. Start with [`docs/spec/README.md`](spec/README.md) for product principles, scope rules, and document ownership.
-2. Open the relevant feature spec before changing behavior.
-3. For data, rules, or cross-feature changes, also open [`docs/spec/domain_model.md`](spec/domain_model.md).
-4. Update the feature spec first, then [`docs/test_plan.md`](test_plan.md), then tests and implementation.
-5. If specs conflict, the more specific feature spec wins over the legacy archive.
+1. product principle, scope rule, document ownership은 [`docs/spec/README.md`](spec/README.md)에서 먼저 확인한다.
+2. behavior를 바꾸기 전에 관련 feature spec을 연다.
+3. data, rules, cross-feature 변경이면 [`docs/spec/domain_model.md`](spec/domain_model.md)도 함께 확인한다.
+4. feature spec을 먼저 갱신한 뒤 [`docs/test_plan.md`](test_plan.md), tests, implementation 순서로 진행한다.
+5. spec이 충돌하면 legacy archive보다 더 구체적인 최신 feature spec을 우선한다.
 
-## Supporting Documents
+## 보조 문서
 
-- [`docs/code_structure.md`](code_structure.md): implementation structure and extraction guide.
-- [`docs/spec/domain_model.md`](spec/domain_model.md): shared domain model, ownership, and Firestore mapping guide.
-- [`docs/firebase_setup.md`](firebase_setup.md): Firebase setup and canonical Firestore Rules documentation.
-- [`docs/map_open_api_guide.md`](map_open_api_guide.md): Kakao Map API setup and operation guide for the Places feature.
+- [`docs/code_structure.md`](code_structure.md): implementation structure와 extraction guide.
+- [`docs/spec/domain_model.md`](spec/domain_model.md): shared domain model, ownership, Firestore mapping guide.
+- [`docs/firebase_setup.md`](firebase_setup.md): Firebase setup과 canonical Firestore Rules 문서.
+- [`docs/map_open_api_guide.md`](map_open_api_guide.md): Places feature의 Kakao Map API setup과 운영 가이드.
 - [`docs/agent_harness_playbook.md`](agent_harness_playbook.md): development-only multi-agent workflow guide.
-- [`docs/sdd.md`](sdd.md): archived SDD redirect. Do not use it as a behavior source of truth.
+- [`docs/sdd.md`](sdd.md): archived SDD redirect. behavior 기준 문서로 사용하지 않는다.
 
-## Feature Specs
+## Feature Spec
 
-- [Home and navigation](spec/home.md)
+- [Home과 navigation](spec/home.md)
 - [Domain model](spec/domain_model.md)
-- [Questions and records](spec/questions.md)
+- [Questions와 records](spec/questions.md)
 - [Taste match](spec/taste_match.md)
 - [Meetings](spec/meetings.md)
 - [Places](spec/places.md)
@@ -33,14 +33,14 @@
 - [Profile cards](spec/profile_cards.md)
 - [Wishlist](spec/wishlist.md)
 - [Improvement board](spec/improvements.md)
-- [Firestore and data policy](spec/firestore.md)
-- [Testing and verification](spec/testing.md)
+- [Firestore와 data policy](spec/firestore.md)
+- [Testing과 verification](spec/testing.md)
 
-## Global Rules
+## 전역 규칙
 
-- The app is a private, low-pressure space for two people to learn about each other gradually.
-- Do not use couple-app pressure, anniversary language, public social-network mechanics, scores, percentages, or ranking copy.
-- Avoid hearts and overt romantic commitment signals in core UI.
-- User-generated data must remain explicit-save oriented. Typing, scrolling, route changes, tab changes, and map movement must not create Firestore writes.
-- New Firebase-backed features must fit Spark/free-plan assumptions unless the user explicitly approves a paid dependency.
-- Behavior changes must be traceable from spec to tests to implementation.
+- 이 앱은 두 사람이 천천히 서로를 알아가는 private, low-pressure 공간이다.
+- couple-app pressure, anniversary language, public social-network mechanics, score, percentage, ranking copy를 사용하지 않는다.
+- core UI에서는 heart와 노골적인 romantic commitment signal을 피한다.
+- user-generated data는 explicit-save 중심이어야 한다. typing, scrolling, route changes, tab changes, map movement는 Firestore write를 만들면 안 된다.
+- 새 Firebase-backed feature는 사용자가 명시적으로 paid dependency를 승인하지 않는 한 Spark/free-plan assumption 안에 둔다.
+- behavior change는 spec -> tests -> implementation으로 추적 가능해야 한다.

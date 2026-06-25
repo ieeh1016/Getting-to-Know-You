@@ -1,6 +1,6 @@
 # Test Plan
 
-> Current source of truth: [spec.md](spec.md) and the relevant feature spec under [spec/](spec/). All new behavior must be added to the spec first, then covered by failing tests before production code changes.
+> 현재 기준 문서: [spec.md](spec.md)와 [spec/](spec/) 아래 관련 feature spec. 모든 새 behavior는 production code 변경 전에 먼저 spec에 추가하고, 가능하면 실패하는 test로 다룬다.
 
 ## Unit Tests
 
