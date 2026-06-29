@@ -243,6 +243,52 @@ void main() {
     );
   });
 
+  test('AI context routing and trace lookup docs are linked', () {
+    final agents = File('AGENTS.md').readAsStringSync();
+    final contextMap = File('docs/ai_context_map.md').readAsStringSync();
+    final specTrace = File('docs/spec_trace.md').readAsStringSync();
+    final testPlan = File('docs/test_plan.md').readAsStringSync();
+    final playbook = File('docs/agent_harness_playbook.md').readAsStringSync();
+
+    expect(agents, contains('docs/ai_context_map.md'));
+    expect(agents, contains('docs/spec_trace.md'));
+    expect(agents, contains('Context 효율 규칙'));
+    expect(contextMap, contains('Routing Table'));
+    expect(contextMap, contains('Verification Log Summary Rule'));
+    expect(contextMap, contains('source of truth를 대체하지 않고'));
+    expect(specTrace, contains('HARNESS-002'));
+    expect(specTrace, contains('Q-ANSWER-001'));
+    expect(specTrace, contains('MUSIC-COMMENT-001'));
+    expect(testPlan, contains('Trace ID 운영'));
+    expect(testPlan, contains('[HARNESS-002]'));
+    expect(playbook, contains('docs/ai_context_map.md'));
+    expect(playbook, contains('첫 관련 failure'));
+  });
+
+  test('portable AI app process stays bootstrap-oriented', () {
+    final process = File('AI_APP_DEV_PROCESS.md').readAsStringSync();
+    final specTrace = File('docs/spec_trace.md').readAsStringSync();
+    final testPlan = File('docs/test_plan.md').readAsStringSync();
+
+    expect(process, contains('휴대 가능한 방법론 seed'));
+    expect(process, contains('영구적인 제품 `source of truth`가 아니다'));
+    expect(process, contains('첫 30분 프로토콜'));
+    expect(process, contains('production app code는 만들거나 수정하지 마'));
+    expect(process, contains('README.md'));
+    expect(process, contains('AGENTS.md'));
+    expect(process, contains('docs/spec.md'));
+    expect(process, contains('docs/test_plan.md'));
+    expect(process, contains('docs/ai_context_map.md'));
+    expect(process, contains('docs/spec_trace.md'));
+    expect(process, contains('동작 변경은 문서화된 예외가 없는 한 fail-first testing'));
+    expect(process, contains('No-test reason'));
+    expect(process, contains('Context Budget'));
+    expect(process, contains('부트스트랩 완료 기준'));
+    expect(process, contains('이 프로토콜 후 agent는 멈춘다'));
+    expect(specTrace, contains('HARNESS-003'));
+    expect(testPlan, contains('[HARNESS-003]'));
+  });
+
   test('design proposal HTML guide is linked and structure complete', () {
     final agents = File('AGENTS.md').readAsStringSync();
     final guide = File('docs/design/README.md').readAsStringSync();

@@ -12,6 +12,8 @@
 - [`../design/README.md`](../design/README.md): 구현 전 HTML 디자인 제안서의 구조와 작성 규칙.
 - [`../firebase_setup.md`](../firebase_setup.md): [`firestore.md`](firestore.md)에서 파생된 Firebase setup과 rules guide.
 - [`../map_open_api_guide.md`](../map_open_api_guide.md): Places feature의 Kakao Map API setup guide.
+- [`../ai_context_map.md`](../ai_context_map.md): AI agent가 작업별로 먼저 읽을 문서와 검색 단서를 고르는 routing guide.
+- [`../spec_trace.md`](../spec_trace.md): 반복 검색되는 behavior의 spec/test trace lookup index.
 - [`../sdd.md`](../sdd.md): archived SDD redirect. active spec으로 사용하지 않는다.
 
 ## 변경 Workflow

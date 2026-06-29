@@ -19,6 +19,9 @@
 - [`docs/firebase_setup.md`](firebase_setup.md): Firebase setup과 canonical Firestore Rules 문서.
 - [`docs/map_open_api_guide.md`](map_open_api_guide.md): Places feature의 Kakao Map API setup과 운영 가이드.
 - [`docs/agent_harness_playbook.md`](agent_harness_playbook.md): development-only multi-agent workflow guide.
+- [`docs/ai_context_map.md`](ai_context_map.md): AI agent 작업별 context routing guide.
+- [`docs/spec_trace.md`](spec_trace.md): high-value spec/test trace lookup index.
+- [`AI_APP_DEV_PROCESS.md`](../AI_APP_DEV_PROCESS.md): 새 앱 repo에 복사해 쓰는 portable AI development bootstrap guide.
 - [`docs/sdd.md`](sdd.md): archived SDD redirect. behavior 기준 문서로 사용하지 않는다.
 
 ## Feature Spec

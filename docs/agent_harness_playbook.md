@@ -7,14 +7,16 @@
 
 모든 multi-agent task는 저장소 작업 계약을 따른다.
 
-1. `docs/spec.md`와 관련 `docs/spec/*.md` feature spec
-2. `docs/test_plan.md`와 tests
-3. production implementation
-4. verification and handoff
+1. `docs/ai_context_map.md`로 작업 유형과 initial context 범위 확인
+2. `docs/spec.md`와 관련 `docs/spec/*.md` feature spec
+3. `docs/spec_trace.md`, `docs/test_plan.md`, tests
+4. production implementation
+5. verification and handoff
 
 `docs/spec.md`와 `docs/spec/` 아래 feature spec은 `docs/test_plan.md`, tests,
 code, chat history보다 우선한다. 자료가 서로 충돌하면 최신 spec을 따른다.
 archived `docs/spec/legacy_full_spec.md`는 migration context로만 사용한다.
+`docs/ai_context_map.md`와 `docs/spec_trace.md`는 context routing용 색인이며 source of truth가 아니다.
 
 ## Agent 역할
 
@@ -68,6 +70,7 @@ archived `docs/spec/legacy_full_spec.md`는 migration context로만 사용한다
 - local full gate로 `./scripts/verify.sh`를 실행할 수 있다.
 - 기본적으로 read-only 역할이다. 검증 실패를 통과시키기 위해 test code, snapshot, golden, fixture를 임의로 수정하지 않는다.
 - test 자체가 잘못되었다고 보이면 직접 고치지 말고 실패 내용, 관련 spec, 수정 필요 판단을 Orchestrator/Test Agent에게 보고한다.
+- 긴 command output은 원문 전체 대신 command, outcome, 첫 관련 failure, 관련 파일, 다음 action으로 요약한다.
 - 남은 risk와 skipped verification을 보고한다.
 
 ## Handoff Packet
@@ -78,6 +81,7 @@ archived `docs/spec/legacy_full_spec.md`는 migration context로만 사용한다
 - 읽거나 변경한 files
 - 변경한 spec/test section
 - 수행한 verification
+- 실패한 verification이 있다면 긴 로그가 아니라 첫 관련 failure와 likely files
 - known risks 또는 open questions
 
 final handoff에는 다음을 포함한다.

@@ -2,11 +2,20 @@
 
 > 현재 기준 문서: [spec.md](spec.md)와 [spec/](spec/) 아래 관련 feature spec. 모든 새 behavior는 production code 변경 전에 먼저 spec에 추가하고, 가능하면 실패하는 test로 다룬다.
 
+## Trace ID 운영
+
+- 반복해서 검색될 가능성이 높은 behavior는 `docs/spec_trace.md`의 trace ID를 함께 사용한다.
+- 모든 항목을 한 번에 ID화하지 않는다. 새로 바꾸는 feature와 자주 실패하는 regression부터 점진적으로 붙인다.
+- AI agent는 큰 test file을 열기 전에 `docs/ai_context_map.md`와 `docs/spec_trace.md`를 먼저 확인한다.
+- trace ID가 붙은 test 이름을 바꾸면 `docs/spec_trace.md`도 함께 갱신한다.
+
 ## Unit Tests
 
-- `firestore.rules` 기준 파일과 `docs/firebase_setup.md`의 Firestore Rules 코드블록이 항상 일치한다.
-- Firestore repository에서 사용하는 collection 이름은 `firestore.rules`의 match path로 커버된다.
-- `AGENTS.md`는 `docs/agent_harness_playbook.md`를 연결하고, playbook은 Orchestrator/Spec/Test/Implementation/UI QA/Firebase Rules/Verification 역할을 정의한다.
+- `[FIRESTORE-001]` `firestore.rules` 기준 파일과 `docs/firebase_setup.md`의 Firestore Rules 코드블록이 항상 일치한다.
+- `[FIRESTORE-002]` Firestore repository에서 사용하는 collection 이름은 `firestore.rules`의 match path로 커버된다.
+- `[HARNESS-001]` `AGENTS.md`는 `docs/agent_harness_playbook.md`를 연결하고, playbook은 Orchestrator/Spec/Test/Implementation/UI QA/Firebase Rules/Verification 역할을 정의한다.
+- `[HARNESS-002]` `AGENTS.md`는 `docs/ai_context_map.md`와 `docs/spec_trace.md`를 연결하고, AI agent가 큰 문서나 test file을 열기 전에 작업별 routing과 trace lookup을 사용하도록 안내한다.
+- `[HARNESS-003]` `AI_APP_DEV_PROCESS.md`는 portable bootstrap kernel로 유지되며, 새 repo에서 project-specific source-of-truth docs를 scaffold하고 production code 생성 전 review checkpoint를 요구한다.
 - `AlagagiAuthRepository`가 짧은 로그인 아이디를 Firebase 이메일로 변환한다.
 - fake auth repository가 로그인 성공/실패/로그아웃 상태를 스트림으로 노출한다.
 - Firestore-style user data에서 `AlagagiSession`을 구성한다.
@@ -23,7 +32,7 @@
 - 답변 제출/패스가 repository 저장 경계로 전달된다.
 - 답변 수정 시작은 기존 내 답변 본문을 draft에 채운다.
 - 답변 수정 저장은 같은 question/profile answer key를 덮어쓴다.
-- 답변 draft 변경은 repository write를 호출하지 않는다.
+- `[Q-ANSWER-001]` 답변 draft 변경은 repository write를 호출하지 않는다.
 - user-triggered 저장 실패는 failed state와 retry action을 만든다.
 - retry action은 사용자가 누를 때만 repository write를 다시 호출한다.
 - 늦게 답하기 저장 실패는 질문함 선택 detail에서 실패 안내와 재시도 action을 계속 보여준다.
@@ -54,27 +63,27 @@
 - 상대 답변이 잠겨 있거나 skipped이면 comment 저장을 거부한다.
 - 소개 카드 슬롯 카탈로그는 24개 내외의 다양한 주제를 제공하고 카테고리별로 분류된다.
 - 소개 카드 슬롯은 날짜와 무관하게 바로 입력 가능하고 진행률에 반영된다.
-- 소개 카드 draft 입력은 repository write를 호출하지 않고 저장 버튼에서만 해당 slot 1개를 저장한다.
+- `[PROFILE-001]` 소개 카드 draft 입력은 repository write를 호출하지 않고 저장 버튼에서만 해당 slot 1개를 저장한다.
 - 소개 카드 슬롯 catalog는 `Day 6`, `오늘 채울 칸`, `아직 비밀` 같은 날짜 unlock copy를 만들지 않는다.
 - 위시리스트 관심 표시가 `서로 관심` 필터에 반영된다.
-- 위시 추가 draft는 제목/종류를 받아 내가 만든 wish를 저장한다.
+- `[WISH-001]` 위시 추가 draft는 제목/종류를 받아 내가 만든 wish를 저장한다.
 - 위시 추가/관심 표시/완료는 각각 1개 wish 문서 갱신으로 표현된다.
 - 위시 추가 draft 입력은 repository write를 호출하지 않고 제출 시에만 저장한다.
 - 질문/밸런스 카탈로그는 사귀는 사이를 전제하는 `하트`, `애정 표현`, `데이트 계획`, `기념일`, `커플` 문구를 노출하지 않는다.
 - 개인화 설정이 없으면 기본 이름/아바타/초대 문구로 fallback한다.
 - 홈 진행 요약은 summary/progress/today answers/music notes에서 `오늘 질문`, `둘 다 답한 질문`, `음악 노트` 상태를 계산한다.
-- 홈 진행 요약은 localStorage의 마지막 음악 탭 확인 시간 이후 상대가 남긴 music note가 있으면 `새 음악 노트가 있어요`를 계산한다.
+- `[HOME-MUSIC-001]` 홈 진행 요약은 localStorage의 마지막 음악 탭 확인 시간 이후 상대가 남긴 music note가 있으면 `새 음악 노트가 있어요`를 계산한다.
 - 홈 진행 요약은 음악 탭을 열 때만 device-local 마지막 확인 시간을 갱신하고 Firestore write를 만들지 않는다.
 - 홈 진행 요약은 내가 직접 남긴 music note를 내 기기의 `새 음악 노트` 판정에 포함하지 않는다.
 - 홈 진행 요약은 music note에 비교 가능한 `updatedAt`이 없으면 `새`로 단정하지 않고 count/latest copy로 fallback한다.
 - First visit guide visibility는 session/profile/space와 device-local seen state로만 계산한다.
 - First visit guide dismiss/tour start는 local seen state만 갱신하고 repository write를 호출하지 않는다.
 - 홈 진행 요약 primary action은 `오늘 답하기` > `질문함 보기` > `음악 보기` 우선순위로 하나만 선택한다.
-- 홈 새 소식 패널은 최신 3개만 요약하고, 4개 이상이면 `더 보기`로 전체 새 소식 bottom sheet를 연다.
+- `[HOME-UNREAD-001]` 홈 새 소식 패널은 최신 3개만 요약하고, 4개 이상이면 `더 보기`로 전체 새 소식 bottom sheet를 연다.
 - 내 music note 수정은 기존 값을 draft panel에 채우고 같은 note id/document를 덮어쓴다.
 - 상대 music note는 수정 action을 보여주지 않고 저장 호출도 허용하지 않는다.
-- music note comment draft 변경은 repository write를 호출하지 않는다.
-- music note comment 저장은 `musicNoteComments/{commentId}` 한 문서만 저장하고 parent music note `updatedAt` 기반 정렬을 바꾸지 않는다.
+- `[MUSIC-COMMENT-001]` music note comment draft 변경은 repository write를 호출하지 않는다.
+- `[MUSIC-COMMENT-001]` music note comment 저장은 `musicNoteComments/{commentId}` 한 문서만 저장하고 parent music note `updatedAt` 기반 정렬을 바꾸지 않는다.
 - music note comment 삭제는 자신이 남긴 comment 한 문서만 삭제한다.
 - partner music note comment는 홈 새 소식 음악 항목에 포함될 수 있다.
 - 저장 operation state는 idle/saving/saved/failed/offline을 구분하고 failed/offline 상태에서 draft를 유지한다.
@@ -125,15 +134,15 @@
 - 기존 내 댓글의 수정 버튼은 카드 안에서 편집 패널을 열고, 취소는 draft만 닫는다.
 - 수정 저장 실패 시 재시도 가능한 오류 문구가 보인다.
 - 답변/위시/밸런스 저장 중에는 중복 저장 버튼 입력이 방지된다.
-- Firebase mode에서 내 답 저장이 pending/failed 상태이면 상대 답과 댓글 UI는 잠긴 상태를 유지한다.
+- `[Q-ANSWER-002]` Firebase mode에서 내 답 저장이 pending/failed 상태이면 상대 답과 댓글 UI는 잠긴 상태를 유지한다.
 - 이미 `관심 표시`한 위시를 다시 탭하면 MVP에서는 no-op이며 repository write를 만들지 않는다.
 - 아카이브/기록/밸런스/소개 카드/위시 화면 내비게이션을 검증한다.
 - 질문함은 compact 월간 캘린더 header, 월 이동 control, status legend, 선택 질문 detail을 렌더링한다.
 - 질문함 캘린더는 첫 14일/2주 window가 아니라 선택 날짜가 속한 월의 5~6주 grid를 보여준다.
 - 질문함 월간 캘린더는 adjacent month cell을 흐리게 표시하고 future/start-before/catalog-ended cell은 disabled로 보여준다.
-- 질문함 캘린더의 월 이동, 날짜 선택, 오늘 shortcut은 Firestore write를 만들지 않는다.
+- `[Q-CALENDAR-001]` 질문함 캘린더의 월 이동, 날짜 선택, 오늘 shortcut은 Firestore write를 만들지 않는다.
 - 질문함에서 월 이동으로 future/catalog-ended 날짜가 선택되면 selected detail은 상태 설명만 보여주고 답변 CTA를 숨긴다.
-- 과거 미답 날짜를 선택하면 `늦게 답하기` CTA가 보인다.
+- `[Q-LATE-001]` 과거 미답 날짜를 선택하면 `늦게 답하기` CTA가 보인다.
 - 미래 날짜를 선택하면 disabled state가 보이고 답변 CTA는 보이지 않는다.
 - 과거에 이미 답한 날짜를 선택하면 답변은 read-only로 보이고 수정 CTA는 보이지 않는다.
 - 질문함 선택 detail과 기록 카드의 긴 답변은 preview로 유지되고 tap 시 전체 보기 bottom sheet를 연다.
@@ -173,33 +182,36 @@
 - 음악 탭의 `한 곡 남기기` CTA는 하단 내비 바로 위에 고정되지 않고 `들어볼 곡` 섹션 제목과 같은 콘텐츠 행에 배치된다.
 - 음악 탭에서 내 음악 노트의 edit action을 누르면 기존 값이 입력 패널에 채워지고 `수정 저장`으로 기존 카드가 갱신된다.
 - 음악 탭에서 상대 음악 노트에는 edit action이 보이지 않는다.
-- 음악 노트 카드의 listen-state emoji는 `👀 아직`/`🎧 들었어요`를 토글하고, 카드 전체보기 tap 동작과 충돌하지 않는다.
-- 음악 listen-state 저장은 `listenedByProfileIds`만 갱신하고 `updatedAt` 기반 새 음악 노트 판정을 흔들지 않는다.
+- `[MUSIC-NOTE-001]` 음악 노트 카드의 listen-state emoji는 `👀 아직`/`🎧 들었어요`를 토글하고, 카드 전체보기 tap 동작과 충돌하지 않는다.
+- `[MUSIC-NOTE-001]` 음악 listen-state 저장은 `listenedByProfileIds`만 갱신하고 `updatedAt` 기반 새 음악 노트 판정을 흔들지 않는다.
 - 음악 노트 카드는 긴 제목/아티스트/메모를 preview로 유지하고 tap 시 전체 곡 정보와 메모를 bottom sheet에서 보여준다.
 - 음악 노트 카드의 `링크 열기` action은 bare domain을 `https://`로 보정해 즉시 외부 링크로 열고, 카드의 전체보기 tap 동작과 충돌하지 않는다.
 - 음악 노트가 늘어나도 `아직`, `들었어요`, `내가 남김`, `상대가 남김` 필터로 목록을 좁힐 수 있고, 기본 목록은 내가 아직 듣지 않은 곡을 먼저 보여준다.
 - 음악 노트 카드는 댓글 수와 최신 댓글 preview를 보여주고, 댓글이 없으면 `댓글 남기기` affordance만 작게 보여준다.
 - 음악 노트 전체보기 detail은 댓글 목록과 composer를 보여주며, 입력 중에는 Firestore write를 만들지 않는다.
-- 내 음악 댓글은 detail 안에서 수정/삭제할 수 있고, 상대 댓글에는 수정/삭제 action이 보이지 않는다.
+- `[MUSIC-COMMENT-002]` 내 음악 댓글은 detail 안에서 수정/삭제할 수 있고, 상대 댓글에는 수정/삭제 action이 보이지 않는다.
 - 홈은 `주식 이야기` 추가 후에도 별도 feature card를 늘리지 않고, 상단 메뉴 sheet에서 `궁금함 한 장`, `주식 이야기`, `처음 안내`로 진입한다.
 - `주식 이야기`는 별도 bottom navigation tab을 추가하지 않고 menu sheet에서 dedicated screen으로 이동한다.
 - 주식 이야기 draft 입력은 local state only이며 submit 시 `spaces/{spaceId}/stockStories/{storyId}` 1 document 이하로 저장한다.
 - 상대가 남긴 주식 이야기에는 답장 action이 보이고, 답장 submit은 기존 stock story document를 1회 이하로 갱신한다.
 - `주식 이야기` 화면은 `이야기`와 `보유` 탭을 제공하며, `보유` 탭에서 내가 가진 종목을 공유할 수 있다.
-- 보유 주식 draft 입력은 local state only이며 submit 시 `spaces/{spaceId}/stockHoldings/{holdingId}` 1 document 이하로 저장한다.
-- 내가 공유한 보유 종목은 같은 폼에서 수정할 수 있고, 삭제 시 해당 `stockHoldings/{holdingId}` document를 제거한다.
+- `[STOCK-HOLDING-001]` 보유 주식 draft 입력은 local state only이며 submit 시 `spaces/{spaceId}/stockHoldings/{holdingId}` 1 document 이하로 저장한다.
+- `[STOCK-HOLDING-002]` 내가 공유한 보유 종목은 같은 폼에서 수정할 수 있고, 삭제 시 해당 `stockHoldings/{holdingId}` document를 제거한다.
 - 상대가 공유한 보유 종목에는 답장 action이 보이고, 같은 종목을 둘 다 공유하면 `함께 보유 중` badge가 보인다.
 - 주식 이야기/보유 목록이 늘어나도 작성자, 답장 필요, 답장 있음, 함께 보유, 보유 상태 필터로 빠르게 좁힐 수 있다.
 - 주식 이야기 화면은 매수/매도, 수익률 랭킹, 실시간 시세, 가격 알림 UI를 제공하지 않는다.
 - `건의함`은 menu sheet에서 dedicated screen으로 이동하며, category/title/body draft 입력은 local state only이다.
-- 건의글 submit은 `spaces/{spaceId}/improvementPosts/{postId}` 1 document 이하로 저장하고, 내가 남긴 건의글만 수정/삭제할 수 있다.
+- `[IMPROVE-001]` 건의글 submit은 `spaces/{spaceId}/improvementPosts/{postId}` 1 document 이하로 저장하고, 내가 남긴 건의글만 수정/삭제할 수 있다.
 - 약속 상세 일정은 빠른 시간 preset을 눌러 시작/종료/일정 내용을 채울 수 있고, 채워진 값은 사용자가 다시 수정할 수 있다.
 
 ## Manual Checks
 
 - AI Harness:
   - 새 작업자는 `AGENTS.md`만 읽어도 spec -> test_plan/tests -> implementation -> verification 순서를 알 수 있다.
+  - `[HARNESS-002]` 새 작업자는 `docs/ai_context_map.md`와 `docs/spec_trace.md`를 사용해 작업별 context routing과 trace lookup을 먼저 수행할 수 있다.
+  - `[HARNESS-003]` 새 프로젝트는 `AI_APP_DEV_PROCESS.md` 하나를 복사해 README/AGENTS/spec/test/context/trace 문서 skeleton을 생성하고 첫 feature 구현 전에 사람 검토 지점에서 멈출 수 있다.
   - 멀티 에이전트 작업은 `docs/agent_harness_playbook.md`의 역할/소유권/handoff 규칙을 따른다.
+  - verification handoff는 긴 원문 로그 대신 command, outcome, 첫 관련 failure, 관련 파일, 다음 action만 요약한다.
   - `firestore.rules`는 Firestore Security Rules의 기준 파일이며 Firebase setup 문서와 동기화되어 있다.
   - `scripts/verify.sh`는 dependency install, Dart analysis, Flutter tests, web build를 한 번에 실행한다.
   - CI는 PR에서 non-deploy 검증을 실행하고, main push에서 Firestore Rules와 GitHub Pages deploy를 실행한다.
@@ -239,9 +251,9 @@
 - Meeting calendar marks a date as `내 입력` after I save availability/time slots even when the partner has not entered anything yet.
 - Meeting calendar keeps `서로 가능`, `내 입력`, and `상대 표시` markers visible together when both people have compatible entries.
 - Meeting candidate detail lets the user save `만나는 날` with a free-form time label such as `저녁 7시쯤`, and the calendar marks that date as `만나는 날`.
-- Meeting plan tab shows only fixed meeting days, lets the user add/remove short plan items for the selected day, can expand more board places beyond the first four, and can link a saved place to that day.
+- `[MEETING-PLAN-001]` Meeting plan tab shows only fixed meeting days, lets the user add/remove short plan items for the selected day, can expand more board places beyond the first four, and can link a saved place to that day.
 - Kakao place search typing/result selection, map pan/zoom, detail open, category draft changes는 Firestore write를 만들지 않는다.
-- Place save/interest action은 사용자 명시 action에서만 shared place document를 저장한다.
+- `[PLACE-001]` Place save/interest action은 사용자 명시 action에서만 shared place document를 저장한다.
 - Place board는 현재 위치, 이동 경로, raw API payload, 이미지 blob을 저장하지 않는다.
 - Home은 전체 answer/wish/profile slot subcollection hydration 없이 summary/progress/today docs로 렌더링 가능해야 한다.
 - My dashboard는 이미 로드된 answers/profile slots/music notes로 count/preview를 계산하고 별도 Firestore read/write를 만들지 않는다.

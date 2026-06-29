@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>조금씩 · AI SDD/TDD 토큰 운영 제안서</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --outer:#e8e7e1;
+    --bg:#f4f3ef;
+    --paper:#fcfcfa;
+    --paper-2:#f8f8f4;
+    --ink:#30312d;
+    --text:#474640;
+    --muted:#8d897f;
+    --line:#e6e3dc;
+    --sage:#879a7a;
+    --sage-deep:#65775d;
+    --sage-soft:#eef2ea;
+    --clay:#b18472;
+    --clay-soft:#f7eee8;
+    --gold:#c5a962;
+    --gold-soft:#f6f0dc;
+    --lav:#9d90b1;
+    --lav-soft:#f0edf5;
+    --blue:#7d94a3;
+    --blue-soft:#e8eef1;
+    --danger:#a7665c;
+    --danger-soft:#f6e9e7;
+    --shadow:0 24px 68px rgba(57,55,48,.12);
+  }
+  html{scroll-behavior:smooth}
+  body{
+    min-height:100vh;
+    padding:38px 18px 64px;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.38),rgba(255,255,255,0) 340px),
+      var(--outer);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;
+    font-weight:400;
+    word-break:keep-all;
+    overflow-wrap:break-word;
+  }
+  h1,h2,h3{font-family:Georgia,"Times New Roman","Nanum Myeongjo",serif;letter-spacing:0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .wrap{max-width:1240px;margin:0 auto}
+  .page-title{
+    max-width:900px;
+    margin:0 auto 28px;
+    text-align:center;
+  }
+  .eyebrow{
+    margin-bottom:10px;
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:850;
+    letter-spacing:1.8px;
+  }
+  h1{
+    font-size:34px;
+    line-height:1.34;
+    font-weight:800;
+    text-wrap:balance;
+  }
+  .page-title p{
+    max-width:780px;
+    margin:12px auto 0;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.78;
+  }
+  .summary-grid{
+    display:grid;
+    grid-template-columns:1.2fr .9fr .9fr;
+    gap:14px;
+    margin:0 auto 30px;
+  }
+  .summary-card,.paper-card,.note-card{
+    border:1px solid rgba(230,227,220,.95);
+    border-radius:22px;
+    background:rgba(252,252,250,.82);
+    box-shadow:0 14px 32px rgba(62,60,52,.045);
+  }
+  .summary-card{padding:20px}
+  .summary-card.recommended{
+    border-color:rgba(101,119,93,.34);
+    background:linear-gradient(145deg,#fcfcfa,#f0f4ea);
+  }
+  .pill{
+    min-height:24px;
+    display:inline-flex;
+    align-items:center;
+    padding:0 10px;
+    border-radius:999px;
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:850;
+    letter-spacing:1px;
+  }
+  .pill.clay{background:var(--clay-soft);color:var(--clay)}
+  .pill.gold{background:var(--gold-soft);color:#947326}
+  .pill.lav{background:var(--lav-soft);color:var(--lav)}
+  .pill.blue{background:var(--blue-soft);color:#627d8d}
+  .summary-card h2{
+    margin-top:11px;
+    font-size:21px;
+    line-height:1.38;
+  }
+  .summary-card p{
+    margin-top:8px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.7;
+  }
+  .section-head{
+    margin:36px auto 16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:24px;
+  }
+  .section-head h2{font-size:26px;line-height:1.34}
+  .section-head p{
+    max-width:650px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.72;
+  }
+  .cost-map{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:12px;
+  }
+  .cost-card{
+    min-height:220px;
+    padding:16px;
+    border:1px solid var(--line);
+    border-radius:22px;
+    background:var(--paper);
+    box-shadow:0 14px 30px rgba(58,55,48,.05);
+  }
+  .cost-card strong{
+    display:block;
+    margin-top:10px;
+    color:var(--text);
+    font-size:14px;
+    line-height:1.45;
+  }
+  .cost-card p{
+    margin-top:8px;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.65;
+  }
+  .meter{
+    height:9px;
+    margin-top:14px;
+    overflow:hidden;
+    border-radius:999px;
+    background:#edeae2;
+  }
+  .meter span{
+    display:block;
+    height:100%;
+    border-radius:999px;
+    background:var(--clay);
+  }
+  .meter.mid span{background:var(--gold)}
+  .meter.low span{background:var(--sage)}
+  .diagram{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+  }
+  .panel{
+    padding:22px;
+    border:1px solid var(--line);
+    border-radius:24px;
+    background:var(--paper);
+    box-shadow:var(--shadow);
+  }
+  .panel h3{font-size:22px;line-height:1.36}
+  .panel > p{
+    margin-top:9px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.74;
+  }
+  .flow{
+    margin-top:18px;
+    display:grid;
+    gap:10px;
+  }
+  .flow-row{
+    display:grid;
+    grid-template-columns:96px 1fr 86px;
+    gap:10px;
+    align-items:center;
+    min-height:52px;
+    padding:10px;
+    border:1px solid var(--line);
+    border-radius:17px;
+    background:var(--paper-2);
+  }
+  .flow-row .label{color:var(--sage-deep);font-size:11px;font-weight:850}
+  .flow-row .body{color:var(--text);font-size:12.5px;line-height:1.5}
+  .flow-row .cost{
+    min-height:28px;
+    display:grid;
+    place-items:center;
+    border-radius:999px;
+    background:var(--danger-soft);
+    color:var(--danger);
+    font-size:11px;
+    font-weight:850;
+  }
+  .flow-row .cost.ok{background:var(--sage-soft);color:var(--sage-deep)}
+  .matrix{
+    overflow:hidden;
+    border:1px solid var(--line);
+    border-radius:24px;
+    background:var(--paper);
+    box-shadow:var(--shadow);
+  }
+  .matrix-row{
+    display:grid;
+    grid-template-columns:1.1fr 1.2fr 1.35fr 1.1fr;
+    border-bottom:1px solid var(--line);
+  }
+  .matrix-row:last-child{border-bottom:0}
+  .matrix-row.header{
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    font-weight:850;
+  }
+  .matrix-row > div{
+    min-height:64px;
+    padding:14px;
+    border-right:1px solid var(--line);
+    font-size:12.5px;
+    line-height:1.55;
+  }
+  .matrix-row > div:last-child{border-right:0}
+  .matrix-row strong{display:block;margin-bottom:4px;color:var(--text);font-size:13px}
+  .matrix-row.header div{font-size:11px;letter-spacing:.4px}
+  .method-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+  }
+  .method-card{
+    padding:19px;
+    border:1px solid var(--line);
+    border-radius:22px;
+    background:var(--paper);
+    box-shadow:0 14px 30px rgba(58,55,48,.05);
+  }
+  .step-num{
+    width:32px;
+    height:32px;
+    display:grid;
+    place-items:center;
+    border-radius:50%;
+    background:var(--sage-deep);
+    color:#fff;
+    font-size:13px;
+    font-weight:850;
+  }
+  .method-card h3{
+    margin-top:13px;
+    font-size:19px;
+    line-height:1.36;
+  }
+  .method-card p{
+    margin-top:8px;
+    color:var(--muted);
+    font-size:12.7px;
+    line-height:1.68;
+  }
+  .method-card ul{
+    margin-top:12px;
+    display:grid;
+    gap:7px;
+    list-style:none;
+  }
+  .method-card li{
+    position:relative;
+    padding-left:14px;
+    color:var(--text);
+    font-size:12.3px;
+    line-height:1.5;
+  }
+  .method-card li:before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:.65em;
+    width:5px;
+    height:5px;
+    border-radius:50%;
+    background:var(--sage);
+  }
+  .compare{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+  }
+  .context-box{
+    padding:20px;
+    border-radius:24px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    box-shadow:var(--shadow);
+  }
+  .context-box.bad{background:linear-gradient(145deg,#fcfcfa,#f8efed)}
+  .context-box.good{background:linear-gradient(145deg,#fcfcfa,#eff4ea)}
+  .context-box h3{font-size:21px;line-height:1.35}
+  .token-line{
+    min-height:42px;
+    margin-top:10px;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:rgba(252,252,250,.78);
+    color:var(--text);
+    font-size:12.2px;
+    line-height:1.5;
+  }
+  .token-line small{
+    display:block;
+    margin-bottom:3px;
+    color:var(--muted);
+    font-size:10.5px;
+    font-weight:850;
+    letter-spacing:.7px;
+  }
+  .code-block{
+    margin-top:14px;
+    padding:16px;
+    overflow:auto;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:#30312d;
+    color:#f8f8f4;
+    font-size:12px;
+    line-height:1.65;
+    white-space:pre;
+  }
+  .proposal-note{
+    margin-top:36px;
+    padding:24px;
+    border:1px solid rgba(101,119,93,.25);
+    border-radius:26px;
+    background:linear-gradient(145deg,#fcfcfa,#f0f4ea);
+    box-shadow:var(--shadow);
+  }
+  .proposal-note h2{font-size:25px}
+  .note-grid{
+    margin-top:16px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  .note-card{
+    padding:17px;
+    box-shadow:none;
+  }
+  .note-card strong{display:block;color:var(--text);font-size:13.5px}
+  .note-card p{
+    margin-top:7px;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.65;
+  }
+  .metric-strip{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+    margin-top:18px;
+  }
+  .metric{
+    min-height:92px;
+    padding:14px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:var(--paper-2);
+  }
+  .metric strong{
+    display:block;
+    color:var(--sage-deep);
+    font-size:20px;
+    line-height:1.2;
+  }
+  .metric span{
+    display:block;
+    margin-top:6px;
+    color:var(--muted);
+    font-size:11.5px;
+    line-height:1.5;
+  }
+  @media (max-width:980px){
+    .summary-grid,.diagram,.compare,.note-grid{grid-template-columns:1fr}
+    .cost-map,.method-grid{grid-template-columns:repeat(2,1fr)}
+    .matrix-row{grid-template-columns:1fr}
+    .matrix-row > div{border-right:0;border-bottom:1px solid var(--line)}
+    .matrix-row > div:last-child{border-bottom:0}
+    .metric-strip{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:640px){
+    body{padding:28px 14px 48px}
+    h1{font-size:29px}
+    .section-head{display:block}
+    .section-head p{margin-top:8px}
+    .cost-map,.method-grid,.metric-strip{grid-template-columns:1fr}
+    .flow-row{grid-template-columns:1fr}
+    .flow-row .cost{justify-self:start;padding:0 12px}
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="page-title">
+    <div class="eyebrow">AI DEVELOPMENT PROPOSAL</div>
+    <h1>SDD/TDD를 유지하면서 AI 토큰 비용을 줄이는 운영안</h1>
+    <p>
+      지금의 문서 기반 개발은 품질을 지키는 힘이 있다. 문제는 AI가 매번 너무 많은 기준 문서,
+      테스트 파일, 검증 로그를 읽으면 작은 변경도 큰 대화가 된다는 점이다. 이 제안서는
+      품질은 유지하고, AI가 읽는 문맥을 작업 단위로 좁히는 실제 운영 방법을 정리한다.
+    </p>
+  </header>
+
+  <section class="summary-grid" aria-label="핵심 결론">
+    <article class="summary-card recommended">
+      <span class="pill">추천 방향</span>
+      <h2>전체 문서 읽기에서 작업별 컨텍스트 팩으로 전환</h2>
+      <p>
+        SDD/TDD 자체를 줄이지 않는다. 대신 작업 유형마다 반드시 읽을 문서, 검색할 테스트,
+        열어볼 구현 파일을 작게 정한다. AI에게 필요한 문맥만 주면 품질과 비용이 같이 좋아진다.
+      </p>
+    </article>
+    <article class="summary-card">
+      <span class="pill clay">가장 큰 비용</span>
+      <h2>기준 문서와 대형 테스트 파일의 반복 탐색</h2>
+      <p>
+        spec, domain model, test plan, 큰 widget test를 매번 처음부터 훑는 순간 토큰이 크게 늘어난다.
+      </p>
+    </article>
+    <article class="summary-card">
+      <span class="pill gold">운영 목표</span>
+      <h2>AI가 읽는 입력량을 먼저 설계하기</h2>
+      <p>
+        구현 전에 컨텍스트 예산을 잡고, 실패 로그는 요약해서 보고, 추적 ID로 문서와 테스트를 연결한다.
+      </p>
+    </article>
+  </section>
+
+  <section aria-label="토큰 비용 지도">
+    <div class="section-head">
+      <div>
+        <span class="pill blue">COST MAP</span>
+        <h2>어디서 토큰이 많이 쓰이는가</h2>
+      </div>
+      <p>
+        AI 개발툴은 코드를 쓰는 순간보다, 무엇을 지켜야 하는지 알아내는 순간에 토큰을 많이 쓴다.
+        아래 항목은 이 프로젝트의 SDD/TDD 구조에서 자주 발생하는 비용 순서다.
+      </p>
+    </div>
+    <div class="cost-map">
+      <article class="cost-card">
+        <span class="pill clay">매우 큼</span>
+        <strong>긴 기준 문서 반복 읽기</strong>
+        <p><code>spec.md</code>, feature spec, <code>test_plan.md</code>, <code>domain_model.md</code>를 작업마다 모두 열면 고정비가 커진다.</p>
+        <div class="meter"><span style="width:92%"></span></div>
+      </article>
+      <article class="cost-card">
+        <span class="pill clay">매우 큼</span>
+        <strong>대형 테스트 파일 탐색</strong>
+        <p>기존 패턴을 맞추려면 큰 widget/domain test를 보게 된다. 필요한 테스트명만 찾지 못하면 주변 코드까지 읽는다.</p>
+        <div class="meter"><span style="width:88%"></span></div>
+      </article>
+      <article class="cost-card">
+        <span class="pill gold">큼</span>
+        <strong>동일 정책의 중복 검증</strong>
+        <p>Firestore write boundary, ownership, 금지 copy가 여러 문서와 rules에 반복되면 일관성 확인 비용이 생긴다.</p>
+        <div class="meter mid"><span style="width:76%"></span></div>
+      </article>
+      <article class="cost-card">
+        <span class="pill gold">큼</span>
+        <strong>긴 검증 로그</strong>
+        <p>Flutter test 실패, analyzer 출력, build log는 실제 원인보다 주변 정보가 길다. 그대로 대화에 올리면 비용이 급증한다.</p>
+        <div class="meter mid"><span style="width:70%"></span></div>
+      </article>
+      <article class="cost-card">
+        <span class="pill">중간</span>
+        <strong>불명확한 작업 범위</strong>
+        <p>수정 범위가 흐리면 AI가 혹시 몰라 더 많이 읽는다. scope가 명확할수록 검색과 추론이 짧아진다.</p>
+        <div class="meter low"><span style="width:56%"></span></div>
+      </article>
+    </div>
+  </section>
+
+  <section aria-label="현재 방식과 목표 방식 비교">
+    <div class="section-head">
+      <div>
+        <span class="pill">OPERATING MODEL</span>
+        <h2>문제는 SDD/TDD가 아니라 읽는 방식이다</h2>
+      </div>
+      <p>
+        SDD와 TDD는 AI에게 좋은 안전장치다. 다만 작업마다 전체 문서를 다 읽는 방식이면,
+        작은 변경도 큰 context load가 된다. 목표는 문서를 줄이는 게 아니라, 문서를 라우팅하는 것이다.
+      </p>
+    </div>
+    <div class="diagram">
+      <article class="panel">
+        <span class="pill clay">현재 자주 생기는 루프</span>
+        <h3>정확하려고 많이 읽는 방식</h3>
+        <p>AI가 불안해서 전체 기준을 훑고, 큰 테스트 파일을 열고, 실패 로그를 길게 해석한다.</p>
+        <div class="flow">
+          <div class="flow-row">
+            <div class="label">문서</div>
+            <div class="body">AGENTS, spec index, feature spec, test_plan, domain_model을 넓게 확인</div>
+            <div class="cost">고비용</div>
+          </div>
+          <div class="flow-row">
+            <div class="label">테스트</div>
+            <div class="body">관련 테스트명을 찾기 전에 큰 파일을 넓게 읽음</div>
+            <div class="cost">고비용</div>
+          </div>
+          <div class="flow-row">
+            <div class="label">구현</div>
+            <div class="body">패턴을 맞추기 위해 주변 UI와 controller를 추가로 탐색</div>
+            <div class="cost">중비용</div>
+          </div>
+          <div class="flow-row">
+            <div class="label">검증</div>
+            <div class="body">긴 로그를 그대로 분석하고 다시 많은 파일을 열어봄</div>
+            <div class="cost">고비용</div>
+          </div>
+        </div>
+      </article>
+      <article class="panel">
+        <span class="pill">목표 운영 방식</span>
+        <h3>작업별 컨텍스트 팩 방식</h3>
+        <p>작업 유형을 먼저 고르고, 필요한 문서와 테스트만 열며, 로그는 실패 원인 중심으로 자른다.</p>
+        <div class="flow">
+          <div class="flow-row">
+            <div class="label">분류</div>
+            <div class="body">작업을 UI copy, domain behavior, Firestore, refactor, doc-only로 분류</div>
+            <div class="cost ok">저비용</div>
+          </div>
+          <div class="flow-row">
+            <div class="label">문서</div>
+            <div class="body">라우팅 표에 적힌 2개에서 4개 문서만 우선 확인</div>
+            <div class="cost ok">저비용</div>
+          </div>
+          <div class="flow-row">
+            <div class="label">테스트</div>
+            <div class="body">TEST-ID나 테스트명 검색으로 필요한 블록만 읽음</div>
+            <div class="cost ok">저비용</div>
+          </div>
+          <div class="flow-row">
+            <div class="label">검증</div>
+            <div class="body">실패 로그는 첫 에러, 관련 파일, 재현 명령만 남김</div>
+            <div class="cost ok">저비용</div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section aria-label="작업 유형별 라우팅 표">
+    <div class="section-head">
+      <div>
+        <span class="pill lav">CONTEXT ROUTING</span>
+        <h2>AI에게 먼저 줄 작업별 읽기 지도</h2>
+      </div>
+      <p>
+        이 표를 <code>docs/ai_context_map.md</code> 같은 작은 파일로 만들면 좋다.
+        AI는 작업 시작 시 이 표를 먼저 보고, 필요한 문서만 선택한다.
+      </p>
+    </div>
+    <div class="matrix" role="table" aria-label="작업 유형별 컨텍스트 라우팅">
+      <div class="matrix-row header" role="row">
+        <div role="columnheader">작업 유형</div>
+        <div role="columnheader">먼저 읽을 문서</div>
+        <div role="columnheader">검색할 테스트와 코드</div>
+        <div role="columnheader">토큰 절약 포인트</div>
+      </div>
+      <div class="matrix-row" role="row">
+        <div role="cell"><strong>UI copy 또는 화면 배치</strong>홈 카드, 버튼, 문구, 모바일 겹침 수정</div>
+        <div role="cell"><code>spec.md</code>, 관련 feature spec, <code>spec/testing.md</code></div>
+        <div role="cell">테스트명에서 copy, mobile, overflow, feature명 검색. 구현은 해당 <code>features/&lt;feature&gt;</code>만 우선 확인</div>
+        <div role="cell">전체 <code>test_plan.md</code> 대신 관련 문구만 검색한다.</div>
+      </div>
+      <div class="matrix-row" role="row">
+        <div role="cell"><strong>Domain behavior</strong>상태 전환, retry, reveal, filter, calendar 계산</div>
+        <div role="cell">관련 feature spec, <code>domain_model.md</code>, <code>test_plan.md</code> 관련 항목</div>
+        <div role="cell"><code>alagagi_auth_test.dart</code> 또는 <code>alagagi_controller_test.dart</code>에서 동작명 검색</div>
+        <div role="cell">controller 전체를 열기 전에 model, method, 테스트명으로 좁힌다.</div>
+      </div>
+      <div class="matrix-row" role="row">
+        <div role="cell"><strong>Firestore-backed 변경</strong>새 collection, owner field, write budget</div>
+        <div role="cell"><code>firestore.md</code>, <code>domain_model.md</code>, 관련 feature spec</div>
+        <div role="cell"><code>harness_contract_test.dart</code>, repository method, <code>firestore.rules</code> match path</div>
+        <div role="cell">rules와 setup 문서 sync 여부만 focused test로 본다.</div>
+      </div>
+      <div class="matrix-row" role="row">
+        <div role="cell"><strong>Refactor 또는 file extraction</strong>화면 분리, shared component 이동</div>
+        <div role="cell"><code>code_structure.md</code>, <code>spec/testing.md</code>, 관련 feature spec</div>
+        <div role="cell">이동 대상 widget key, import, focused widget test만 확인</div>
+        <div role="cell">동작 변경이 아니면 새 product spec 전체 탐색을 줄인다.</div>
+      </div>
+      <div class="matrix-row" role="row">
+        <div role="cell"><strong>문서-only 변경</strong>spec 정리, test plan 정리, design proposal</div>
+        <div role="cell">수정 대상 문서와 상위 index만 확인</div>
+        <div role="cell">링크, 중복 문구, source of truth 충돌만 검색</div>
+        <div role="cell">구현 파일과 대형 테스트 파일은 기본적으로 열지 않는다.</div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-label="구체적 운영 방법">
+    <div class="section-head">
+      <div>
+        <span class="pill">METHOD</span>
+        <h2>다음 작업부터 적용할 6단계 방법</h2>
+      </div>
+      <p>
+        핵심은 AI에게 일을 맡기기 전에 입력 문맥의 크기를 설계하는 것이다.
+        이 6단계는 SDD/TDD 순서를 깨지 않고 토큰 낭비만 줄인다.
+      </p>
+    </div>
+    <div class="method-grid">
+      <article class="method-card">
+        <div class="step-num">1</div>
+        <h3>작업을 먼저 분류한다</h3>
+        <p>요청을 받으면 바로 파일을 열지 않고, 작업 유형을 먼저 고른다.</p>
+        <ul>
+          <li>UI copy/layout</li>
+          <li>domain behavior</li>
+          <li>Firestore/rules</li>
+          <li>refactor</li>
+          <li>documentation-only</li>
+        </ul>
+      </article>
+      <article class="method-card">
+        <div class="step-num">2</div>
+        <h3>컨텍스트 예산을 잡는다</h3>
+        <p>작업 시작 전 “처음 읽을 파일은 최대 4개”처럼 작은 예산을 둔다.</p>
+        <ul>
+          <li>작은 UI 수정: 2개에서 3개 파일</li>
+          <li>domain 변경: 4개에서 6개 파일</li>
+          <li>Firestore 변경: rules 포함 5개에서 7개 파일</li>
+        </ul>
+      </article>
+      <article class="method-card">
+        <div class="step-num">3</div>
+        <h3>문서에는 추적 ID를 붙인다</h3>
+        <p>긴 test plan 항목을 사람이 읽는 문장 그대로 두되, 찾기 쉬운 ID를 붙인다.</p>
+        <ul>
+          <li><code>Q-ANSWER-001</code>: answer draft는 write하지 않음</li>
+          <li><code>MUSIC-COMMENT-002</code>: comment save는 comment 문서만 씀</li>
+          <li><code>HOME-UNREAD-003</code>: 새 소식은 3개만 preview</li>
+        </ul>
+      </article>
+      <article class="method-card">
+        <div class="step-num">4</div>
+        <h3>테스트명과 연결한다</h3>
+        <p>각 추적 ID 아래에 실제 테스트 파일과 테스트명을 적는다.</p>
+        <ul>
+          <li>AI가 큰 test file 전체를 읽지 않아도 된다.</li>
+          <li>실패한 테스트가 어떤 spec을 지키는지 바로 보인다.</li>
+          <li>review 때 빠진 coverage를 발견하기 쉽다.</li>
+        </ul>
+      </article>
+      <article class="method-card">
+        <div class="step-num">5</div>
+        <h3>검증 로그를 잘라서 본다</h3>
+        <p>긴 로그는 원문 전체를 대화에 올리지 않고, 실패 요약 형식으로 남긴다.</p>
+        <ul>
+          <li>실패 command</li>
+          <li>첫 에러 1개에서 3개</li>
+          <li>관련 파일과 라인</li>
+          <li>재현 명령</li>
+        </ul>
+      </article>
+      <article class="method-card">
+        <div class="step-num">6</div>
+        <h3>handoff에 토큰 원인을 기록한다</h3>
+        <p>작업이 끝나면 무엇을 많이 읽었는지 짧게 기록한다.</p>
+        <ul>
+          <li>많이 읽은 문서</li>
+          <li>열지 않아도 됐던 파일</li>
+          <li>다음부터 routing map에 추가할 단서</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <section aria-label="컨텍스트 팩 예시">
+    <div class="section-head">
+      <div>
+        <span class="pill gold">BEFORE AND AFTER</span>
+        <h2>AI에게 이렇게 주면 비용이 달라진다</h2>
+      </div>
+      <p>
+        같은 기능 수정이라도 요청 방식에 따라 AI가 읽는 양이 크게 달라진다.
+        아래 예시는 “음악 댓글 저장 실패 retry”를 고친다고 가정한 것이다.
+      </p>
+    </div>
+    <div class="compare">
+      <article class="context-box bad">
+        <span class="pill clay">비싼 요청</span>
+        <h3>전체 문맥을 다시 찾게 만드는 방식</h3>
+        <div class="token-line">
+          <small>요청</small>
+          음악 댓글 저장 실패 처리를 고쳐줘. SDD/TDD 잘 맞게 해줘.
+        </div>
+        <div class="token-line">
+          <small>AI가 하게 되는 일</small>
+          spec index부터 관련 문서 추정, test plan 전체 탐색, music/widget/domain/firestore 파일을 넓게 확인.
+        </div>
+        <div class="token-line">
+          <small>결과</small>
+          정확성은 올라가지만, 탐색 토큰이 커지고 작업 초반이 길어진다.
+        </div>
+      </article>
+      <article class="context-box good">
+        <span class="pill">절약되는 요청</span>
+        <h3>작업별 컨텍스트 팩을 주는 방식</h3>
+        <div class="token-line">
+          <small>요청</small>
+          <code>MUSIC-COMMENT-RETRY</code> 범위로 수정해줘. 읽을 문서는 <code>spec/music.md</code>, <code>spec/domain_model.md</code>, <code>test_plan.md</code>의 music comment 항목.
+        </div>
+        <div class="token-line">
+          <small>테스트 단서</small>
+          <code>alagagi_auth_test.dart</code>에서 music note comment, retry, failed 검색. UI는 <code>alagagi_app_test.dart</code>의 music detail comment 테스트만 확인.
+        </div>
+        <div class="token-line">
+          <small>결과</small>
+          AI가 어디를 봐야 하는지 바로 알기 때문에 SDD/TDD 품질은 유지되고 탐색 비용은 줄어든다.
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section aria-label="추적 ID 문서 예시">
+    <div class="section-head">
+      <div>
+        <span class="pill blue">TEMPLATE</span>
+        <h2>추가하면 좋은 작은 문서 2개</h2>
+      </div>
+      <p>
+        새 거대한 문서를 만들자는 뜻이 아니다. AI가 시작할 때 방향을 잡는 얇은 지도와,
+        긴 test plan을 빠르게 찾게 해주는 색인만 추가한다.
+      </p>
+    </div>
+    <div class="diagram">
+      <article class="panel">
+        <span class="pill">문서 1</span>
+        <h3><code>docs/ai_context_map.md</code></h3>
+        <p>작업 유형별로 읽을 문서와 테스트 파일을 지정하는 routing map이다.</p>
+        <pre class="code-block"># AI Context Map
+
+## Music comment change
+- Spec: docs/spec/music.md
+- Domain: docs/spec/domain_model.md if storage changes
+- Tests:
+  - test/src/domain/alagagi_auth_test.dart
+  - test/src/ui/alagagi_app_test.dart
+- Search terms:
+  - music note comment
+  - comment draft
+  - retry
+  - updatedAt
+
+## Firestore rules change
+- Spec: docs/spec/firestore.md
+- Domain: docs/spec/domain_model.md
+- Tests:
+  - test/harness_contract_test.dart
+- Verify:
+  - ./scripts/check_firestore_rules_sync.sh</pre>
+      </article>
+      <article class="panel">
+        <span class="pill">문서 2</span>
+        <h3><code>docs/spec_trace.md</code></h3>
+        <p>spec/test_plan/test name을 ID로 연결하는 작은 추적표다.</p>
+        <pre class="code-block"># Spec Trace
+
+| ID | Behavior | Source | Tests |
+| --- | --- | --- | --- |
+| Q-ANSWER-001 | answer draft typing does not write | questions.md | alagagi_auth_test: answer draft changes do not call repository writes |
+| Q-ANSWER-002 | failed save keeps partner answer locked | questions.md | alagagi_auth_test: partner answer stays locked until my answer save succeeds |
+| MUSIC-COMMENT-001 | comment draft does not write | music.md | alagagi_auth_test: music note comment draft does not save until submit |
+| HOME-UNREAD-001 | Home shows latest 3 unread previews | home.md | alagagi_app_test: home unread panel opens a scrollable full activity sheet |</pre>
+      </article>
+    </div>
+  </section>
+
+  <section aria-label="토큰 예산 대시보드">
+    <div class="section-head">
+      <div>
+        <span class="pill lav">MEASUREMENT</span>
+        <h2>토큰을 줄였는지 확인하는 지표</h2>
+      </div>
+      <p>
+        실제 token count를 매번 정확히 재지 않아도 된다. 대신 작업마다 읽은 파일 수,
+        대형 파일 접근 횟수, 로그 길이, 재탐색 횟수를 보면 개선 여부가 보인다.
+      </p>
+    </div>
+    <div class="panel">
+      <h3>작업 handoff에 남길 작은 계측</h3>
+      <p>이 네 가지를 기록하면 어떤 작업이 토큰을 많이 먹는지 금방 패턴이 보인다.</p>
+      <div class="metric-strip">
+        <div class="metric">
+          <strong>3개 이하</strong>
+          <span>작은 UI/copy 수정에서 처음 읽는 파일 목표</span>
+        </div>
+        <div class="metric">
+          <strong>6개 이하</strong>
+          <span>domain behavior 변경에서 처음 읽는 파일 목표</span>
+        </div>
+        <div class="metric">
+          <strong>30줄 이하</strong>
+          <span>대화에 공유하는 실패 로그 요약 목표</span>
+        </div>
+        <div class="metric">
+          <strong>1회 이하</strong>
+          <span>같은 문서를 다시 넓게 훑는 재탐색 목표</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="proposal-note" aria-label="실행 제안">
+    <h2>실행 제안</h2>
+    <div class="note-grid">
+      <article class="note-card">
+        <strong>1차 적용: 문서 추가만 한다</strong>
+        <p>
+          먼저 <code>docs/ai_context_map.md</code>와 <code>docs/spec_trace.md</code>를 얇게 만든다.
+          production code, Firestore write, UI 동작은 바꾸지 않는다.
+        </p>
+      </article>
+      <article class="note-card">
+        <strong>2차 적용: AGENTS.md에 짧게 연결한다</strong>
+        <p>
+          AI agent가 작업 시작 시 routing map을 먼저 보도록 한 줄을 추가한다.
+          기존 SDD/TDD 순서는 그대로 유지한다.
+        </p>
+      </article>
+      <article class="note-card">
+        <strong>3차 적용: test_plan에 ID를 점진적으로 붙인다</strong>
+        <p>
+          한 번에 전체를 바꾸지 말고, 다음 변경이 닿는 항목부터 ID를 붙인다.
+          이렇게 하면 문서 정리 자체가 큰 비용이 되지 않는다.
+        </p>
+      </article>
+      <article class="note-card">
+        <strong>4차 적용: 검증 로그 요약 규칙을 둔다</strong>
+        <p>
+          실패 로그는 원문 전체 대신 첫 에러, 관련 파일, 재현 명령만 handoff한다.
+          full log는 로컬 터미널에 남기고 대화에는 요약만 올린다.
+        </p>
+      </article>
+    </div>
+  </section>
+</main>
+</body>
+</html>

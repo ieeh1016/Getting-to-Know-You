@@ -4,13 +4,25 @@
 
 ## 필수 진행 순서
 
-1. `docs/spec.md`와 `docs/spec/` 아래의 관련 feature spec을 읽는다.
-2. domain model, Firestore mapping, ownership field, cross-feature data flow를 건드리는 변경이면 `docs/spec/domain_model.md`도 읽는다.
-3. production behavior를 바꾸기 전에 top-level spec index 또는 feature spec을 먼저 갱신한다.
-4. 새 동작에 맞춰 `docs/test_plan.md`를 갱신하고 domain/widget test를 추가하거나 조정한다.
-5. 가능하면 production edit 전에 새로 추가하거나 바꾼 test가 실패하는 것을 먼저 확인한다.
-6. spec과 test를 만족하는 가장 작은 production change를 구현한다.
-7. 마무리 전에 verification을 실행한다.
+1. 작업 유형과 읽을 문서 범위는 먼저 `docs/ai_context_map.md`에서 확인한다.
+2. `docs/spec.md`와 `docs/spec/` 아래의 관련 feature spec을 읽는다.
+3. domain model, Firestore mapping, ownership field, cross-feature data flow를 건드리는 변경이면 `docs/spec/domain_model.md`도 읽는다.
+4. 관련 test를 찾을 때는 큰 test file을 열기 전에 `docs/spec_trace.md`와 `docs/test_plan.md`를 먼저 검색한다.
+5. production behavior를 바꾸기 전에 top-level spec index 또는 feature spec을 먼저 갱신한다.
+6. 새 동작에 맞춰 `docs/test_plan.md`를 갱신하고 domain/widget test를 추가하거나 조정한다.
+7. 가능하면 production edit 전에 새로 추가하거나 바꾼 test가 실패하는 것을 먼저 확인한다.
+8. spec과 test를 만족하는 가장 작은 production change를 구현한다.
+9. 마무리 전에 verification을 실행한다.
+
+`docs/ai_context_map.md`와 `docs/spec_trace.md`는 token/context 사용량을 줄이기 위한 운영 색인이다. 기준 문서는 여전히 `docs/spec.md`, 관련 feature spec, `docs/test_plan.md`다.
+
+## Context 효율 규칙
+
+- 작업 시작 시 documentation-only, UI/copy, domain behavior, Firestore-backed, refactor 중 하나로 먼저 분류한다.
+- 첫 탐색은 `docs/ai_context_map.md`의 routing table에 있는 문서와 검색 단서로 제한한다.
+- test를 찾을 때는 trace ID, feature명, 테스트명 일부로 검색하고 필요한 block만 읽는다.
+- 작업 범위가 넓어지는 경우에만 추가 문서를 연다.
+- handoff에는 실제로 읽은 주요 문서와 실행한 verification을 적는다.
 
 순수 기계적 변경, documentation-only 변경, 긴급 수정이라면 production behavior test가 필요 없는 이유를 설명한다.
 
@@ -39,6 +51,8 @@ local one-command gate는 다음과 같다.
 ```sh
 ./scripts/verify.sh
 ```
+
+긴 command output은 handoff에 그대로 붙이지 않는다. 실패한 command, outcome, 첫 관련 failure, 관련 파일, 다음 action만 요약한다. 전체 로그가 필요하면 terminal에 남긴다.
 
 ## 제품 Guardrail
 
