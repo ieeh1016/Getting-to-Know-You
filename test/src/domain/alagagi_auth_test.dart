@@ -454,6 +454,7 @@ void main() {
             ),
           ),
           repository: repository,
+          todayDateKey: '2026-06-20',
         );
 
         controller.goTo(AlagagiRoute.meetingPlans);
@@ -580,6 +581,7 @@ void main() {
           ),
         ),
         repository: repository,
+        todayDateKey: '2026-06-20',
       );
 
       controller.goTo(AlagagiRoute.meetingPlans);

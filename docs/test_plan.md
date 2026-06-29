@@ -39,6 +39,7 @@
 - 긴 답변 preview는 접힘/펼침 상태를 controller state에 반영한다.
 - 아카이브 필터가 전체/둘 다 답함/닮은 답을 구분한다.
 - `startedDateKey`와 Asia/Seoul 기준 오늘 날짜로 오늘 질문 id를 계산한다.
+- session controller에 `todayDateKey`가 주어지면 오늘 질문과 날짜 기반 meeting day 판정을 같은 기준일로 계산해 날짜 fixture가 시간에 따라 흔들리지 않는다.
 - `startedDateKey`가 없는 기존 progress 문서는 `openedDateKey`를 시작일로 사용해 migration state를 만든다.
 - 같은 날짜의 새로고침/route 이동/tab switch는 progress repository write를 호출하지 않는다.
 - 질문 캘린더는 progress와 answers만으로 future/unanswered/my-only/partner-only/both/skipped/catalog-ended 상태를 계산한다.

@@ -2507,6 +2507,7 @@ class AlagagiController extends ChangeNotifier {
   }) : _repository = repository,
        _musicNoteSeenStore = musicNoteSeenStore ?? MemoryMusicNoteSeenStore(),
        _firstVisitGuideStore = firstVisitGuideStore,
+       _todayDateKeyOverride = null,
        _spaceId = null,
        _usesDemoData = true,
        _todayQuestion = seedQuestions.first,
@@ -2538,6 +2539,7 @@ class AlagagiController extends ChangeNotifier {
   }) : _repository = repository,
        _musicNoteSeenStore = musicNoteSeenStore ?? MemoryMusicNoteSeenStore(),
        _firstVisitGuideStore = firstVisitGuideStore,
+       _todayDateKeyOverride = todayDateKey,
        _spaceId = session.spaceId,
        _usesDemoData = false,
        _dailyProgress = _resolveDailyQuestionProgress(
@@ -2575,6 +2577,7 @@ class AlagagiController extends ChangeNotifier {
   final AlagagiDataRepository? _repository;
   final MusicNoteSeenStore _musicNoteSeenStore;
   final FirstVisitGuideStore? _firstVisitGuideStore;
+  final String? _todayDateKeyOverride;
   final String? _spaceId;
   final bool _usesDemoData;
 
@@ -3383,6 +3386,8 @@ class AlagagiController extends ChangeNotifier {
     final questionIndex = dayOffset.clamp(0, catalog.length - 1);
     return catalog[questionIndex];
   }
+
+  String _currentDateKey() => _todayDateKeyOverride ?? _todayDateKey();
 
   static String _todayDateKey() {
     final koreaNow = DateTime.now().toUtc().add(const Duration(hours: 9));
@@ -5024,7 +5029,7 @@ class AlagagiController extends ChangeNotifier {
   bool get canRetryStockHoldingSave => _lastFailedStockHolding != null;
 
   String get selectedMeetingDateKey =>
-      _state.selectedMeetingDateKey ?? _todayDateKey();
+      _state.selectedMeetingDateKey ?? _currentDateKey();
 
   ScheduleEntry? get mySelectedScheduleEntry =>
       scheduleEntryFor(_state.me.id, selectedMeetingDateKey);
@@ -5048,7 +5053,7 @@ class AlagagiController extends ChangeNotifier {
         .map(meetingDayEntryFor)
         .nonNulls
         .toList();
-    final today = _todayDateKey();
+    final today = _currentDateKey();
     entries.sort((a, b) {
       final aUpcoming = a.dateKey.compareTo(today) >= 0;
       final bUpcoming = b.dateKey.compareTo(today) >= 0;
@@ -5063,14 +5068,14 @@ class AlagagiController extends ChangeNotifier {
   }
 
   List<ScheduleEntry> get upcomingMeetingDayEntries {
-    final today = _todayDateKey();
+    final today = _currentDateKey();
     return List<ScheduleEntry>.unmodifiable(
       meetingDayEntries.where((entry) => entry.dateKey.compareTo(today) >= 0),
     );
   }
 
   List<ScheduleEntry> get pastMeetingDayEntries {
-    final today = _todayDateKey();
+    final today = _currentDateKey();
     return List<ScheduleEntry>.unmodifiable(
       meetingDayEntries.where((entry) => entry.dateKey.compareTo(today) < 0),
     );
@@ -5099,7 +5104,7 @@ class AlagagiController extends ChangeNotifier {
 
   String get selectedMeetingPlanDateKey {
     final selectedDateKey = _state.selectedMeetingPlanDateKey;
-    final today = _todayDateKey();
+    final today = _currentDateKey();
     if (selectedDateKey != null &&
         selectedDateKey.compareTo(today) >= 0 &&
         meetingDayEntryFor(selectedDateKey) != null) {
