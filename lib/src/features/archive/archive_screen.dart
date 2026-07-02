@@ -506,10 +506,10 @@ class _SelectedQuestionDetail extends StatelessWidget {
             ReceivedAnswerCommentBlock(
               controller: controller,
               comment: receivedComment,
-              label: '받은 댓글',
+              label: '${controller.state.partner.nickname}님의 댓글',
               onOpenFull: () => showReadableDetailSheet(
                 context,
-                label: '받은 댓글',
+                label: '${controller.state.partner.nickname}님의 댓글',
                 title: '내 답에 남겨진 댓글',
                 body: receivedComment.body,
               ),
@@ -654,6 +654,13 @@ class _ArchiveCard extends StatelessWidget {
     final skipped = item.myAnswer?.skipped ?? false;
     final waiting =
         item.myAnswer != null && item.partnerAnswer == null && !skipped;
+    final receivedComment = item.myAnswer == null || skipped
+        ? null
+        : controller.commentForAnswer(
+            item.myAnswer!.questionId,
+            item.myAnswer!.profileId,
+            controller.state.partner.id,
+          );
     return AlagagiPaperCard(
       radius: 20,
       dashed: waiting || skipped,
@@ -771,6 +778,19 @@ class _ArchiveCard extends StatelessWidget {
                 item.myAnswer!.profileId,
               ),
             ),
+            if (receivedComment != null) ...[
+              const SizedBox(height: 10),
+              ReadOnlyCommentBlock(
+                label: '$partnerName님의 댓글',
+                body: receivedComment.body,
+                onOpenFull: () => showReadableDetailSheet(
+                  context,
+                  label: '$partnerName님의 댓글',
+                  title: '내 답에 남겨진 댓글',
+                  body: receivedComment.body,
+                ),
+              ),
+            ],
             const SizedBox(height: 10),
             AnswerLine(
               tag: partnerName,

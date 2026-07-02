@@ -1296,6 +1296,13 @@ void main() {
                     body: '이 답을 읽으니 마음이 편해졌어요.',
                     createdLabel: '6월 7일',
                   ),
+                  AnswerComment(
+                    questionId: 'q019',
+                    answerOwnerProfileId: 'youngwooUid',
+                    commenterProfileId: 'minyoungUid',
+                    body: '상대가 내 답에 남긴 댓글이에요.',
+                    createdLabel: '6월 7일',
+                  ),
                 ],
                 dailyProgress: DailyQuestionProgress(
                   startedDateKey: '2026-05-20',
@@ -1338,6 +1345,8 @@ void main() {
     expect(find.text('말투가 부드러울 때 오래 기억나요.'), findsWidgets);
     expect(find.text('내 댓글'), findsWidgets);
     expect(find.text('이 답을 읽으니 마음이 편해졌어요.'), findsWidgets);
+    expect(find.text('민영님의 댓글'), findsNWidgets(2));
+    expect(find.text('상대가 내 답에 남긴 댓글이에요.'), findsNWidgets(2));
 
     await tester.tap(find.byKey(archiveCalendarTodayButtonKey));
     await tester.pumpAndSettle();
