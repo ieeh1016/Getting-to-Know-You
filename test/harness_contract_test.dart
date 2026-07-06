@@ -393,6 +393,8 @@ void main() {
         workflow,
         contains('firebase deploy --only firestore:rules,functions'),
       );
+      expect(workflow, contains('--non-interactive --force'));
+      expect(workflow, contains('Firebase deploy failed'));
       expect(workflow, contains('npm install --prefix functions'));
       expect(workflow, contains('FIREBASE_SERVICE_ACCOUNT'));
       expect(workflow, contains('google-github-actions/auth@v2'));

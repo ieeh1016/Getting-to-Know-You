@@ -1688,9 +1688,10 @@ Service account key 파일은 저장소에 커밋하지 않는다.
 
 Secrets를 추가한 뒤 `main` 브랜치에 push하면 GitHub Actions가 Flutter Web을 다시
 빌드하고, `firebase.json`이 가리키는 `firestore.rules`와 `functions/` 소스 코드를
-`firebase deploy --only firestore:rules,functions`로 배포한다. PR에서는 rules sync,
-analyze, test, build만 검증하고 Firebase Rules, Cloud Functions, GitHub Pages를 실제
-배포하지 않는다.
+`firebase deploy --only firestore:rules,functions --non-interactive --force`로
+배포한다. `--force`는 저장소에서 제거된 옛 Cloud Functions를 CI가 대화형 확인 없이
+정리할 수 있게 한다. PR에서는 rules sync, analyze, test, build만 검증하고 Firebase
+Rules, Cloud Functions, GitHub Pages를 실제 배포하지 않는다.
 
 ## 8. 배포 확인
 
