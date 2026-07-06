@@ -36,6 +36,10 @@ export '../shared/ui_style.dart';
 
 const alagagiShellKey = Key('alagagi-shell');
 
+const kPushNotificationsEnabled = bool.fromEnvironment(
+  'ENABLE_PUSH_NOTIFICATIONS',
+);
+
 const _brandName = '조금씩';
 const _brandKicker = '천천히 알아가는 기록';
 
@@ -65,11 +69,12 @@ class AlagagiApp extends StatelessWidget {
     if (firebaseEnabled) {
       final auth = authRepository ?? FirebaseAlagagiAuthRepository();
       final data = dataRepository ?? FirestoreAlagagiDataRepository();
-      final pushNotifications =
-          pushNotificationService ??
-          (authRepository == null && dataRepository == null
-              ? FirebasePushNotificationService()
-              : null);
+      final pushNotifications = kPushNotificationsEnabled
+          ? pushNotificationService ??
+                (authRepository == null && dataRepository == null
+                    ? FirebasePushNotificationService()
+                    : null)
+          : null;
       home = AlagagiAuthGate(
         authRepository: auth,
         dataRepository: data,

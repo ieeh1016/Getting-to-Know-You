@@ -16,7 +16,7 @@
 - [ ] Mobile layout was considered for 390px-class screens.
 - [ ] Firestore writes happen only on explicit user actions.
 - [ ] `firestore.rules` and `docs/firebase_setup.md` stayed in sync when rules changed.
-- [ ] Firebase deploy remains main-branch only and uses `firebase.json` -> `firestore.rules` plus `functions/`.
+- [ ] Firebase deploy remains main-branch only and Spark-compatible, using `firebase.json` -> `firestore.rules` without Functions deploy.
 - [ ] Firebase Spark/free-plan boundaries remain acceptable.
 - [ ] No secrets, passwords, service account files, or local helper scripts are included.
 

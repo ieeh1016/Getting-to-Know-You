@@ -232,6 +232,8 @@
 
 ### Push Notifications
 
+Spark plan에서는 기본 비활성화되어 있다. 푸시 관련 변경은 먼저 `ENABLE_PUSH_NOTIFICATIONS`, `ENABLE_ACTIVITY_EVENTS`, CI의 Functions 배포 여부를 확인한다.
+
 - 먼저 읽을 문서:
   - `docs/spec/notifications.md`
   - `docs/spec/firestore.md`
@@ -242,6 +244,8 @@
   - `notificationTokens`
   - `notificationSettings`
   - `activityEvents`
+  - `ENABLE_PUSH_NOTIFICATIONS`
+  - `ENABLE_ACTIVITY_EVENTS`
   - `notifyActivityEventCreated`
   - `sendEachForMulticast`
 - 주요 code/test:

@@ -108,33 +108,26 @@ minyoung@gettoknow.local
 
 Firestore Console에서 배열은 `array` 타입으로 넣는다.
 
-`spaces/main/curiosityCards` 하위 컬렉션은 앱에서 처음 `질문 보내기`를 누를 때 자동으로 만들어진다. `spaces/main/memoryCards` 하위 컬렉션은 `서로의 기억`에서 처음 기억 카드를 저장할 때 만들어지고, `spaces/main/memoryCardResponses` 하위 컬렉션은 상대가 공유 카드에 처음 반응하거나 수정 제안을 남길 때 만들어진다. `spaces/main/stockStories` 하위 컬렉션도 `주식 이야기`에서 처음 `이야기 남기기`를 누를 때 자동으로 만들어진다. `spaces/main/stockHoldings` 하위 컬렉션은 `보유` 탭에서 처음 `보유 공유하기`를 누를 때 자동으로 만들어진다. `spaces/main/improvementPosts` 하위 컬렉션은 `건의함`에서 처음 `건의 남기기`를 누를 때 자동으로 만들어진다. `spaces/main/activityEvents` 하위 컬렉션은 상대에게 알려야 하는 저장 동작이 성공할 때 앱이 자동으로 만든다. `users/{uid}/notificationSettings/push`와 `users/{uid}/notificationTokens/{tokenId}`는 사용자가 마이 화면에서 푸시 알림을 켤 때 앱이 자동으로 만든다. Console에서 빈 컬렉션을 미리 만들 필요는 없지만, 아래 Security Rules에는 `curiosityCards`, `memoryCards`, `memoryCardResponses`, `stockStories`, `stockHoldings`, `improvementPosts`, `activityEvents`, `notificationSettings`, `notificationTokens` 규칙이 포함되어 있어야 한다.
+`spaces/main/curiosityCards` 하위 컬렉션은 앱에서 처음 `질문 보내기`를 누를 때 자동으로 만들어진다. `spaces/main/memoryCards` 하위 컬렉션은 `서로의 기억`에서 처음 기억 카드를 저장할 때 만들어지고, `spaces/main/memoryCardResponses` 하위 컬렉션은 상대가 공유 카드에 처음 반응하거나 수정 제안을 남길 때 만들어진다. `spaces/main/stockStories` 하위 컬렉션도 `주식 이야기`에서 처음 `이야기 남기기`를 누를 때 자동으로 만들어진다. `spaces/main/stockHoldings` 하위 컬렉션은 `보유` 탭에서 처음 `보유 공유하기`를 누를 때 자동으로 만들어진다. `spaces/main/improvementPosts` 하위 컬렉션은 `건의함`에서 처음 `건의 남기기`를 누를 때 자동으로 만들어진다. Spark plan에서는 푸시 알림 서버 경로는 휴면 상태라 `spaces/main/activityEvents`, `users/{uid}/notificationSettings/push`, `users/{uid}/notificationTokens/{tokenId}`를 기본 생성하지 않는다. Console에서 빈 컬렉션을 미리 만들 필요는 없지만, 아래 Security Rules에는 나중에 Blaze 전환 시 다시 켤 수 있도록 `activityEvents`, `notificationSettings`, `notificationTokens` 규칙이 남아 있다.
 
-## 5-1. Android/iPhone 푸시 알림 준비
+## 5-1. 푸시 알림 상태
 
-푸시 알림은 Firebase Cloud Messaging과 Cloud Functions를 사용한다. Home 새 소식이 기준 데이터이고, 푸시는 앱 밖에서 알려주는 신호다.
+현재 운영 기준은 Spark plan이다. Spark에서는 Cloud Functions를 배포할 수 없으므로 푸시 알림 서버 경로는 휴면 상태로 둔다. Home 새 소식과 읽지 않은 활동이 계속 source of truth다.
 
-Android:
+기본 빌드 동작:
 
-1. Android 앱을 Firebase Project settings -> General -> Your apps에 등록한다.
-2. 앱 package name은 `android/app/build.gradle.kts`의 `applicationId`와 맞춘다.
-3. Firebase Console에서 받은 `google-services.json`을 `android/app/`에 둔다.
-4. Android 13 이상은 사용자가 `마이` 화면에서 푸시 알림을 켤 때 알림 권한 prompt가 뜬다.
+- `ENABLE_PUSH_NOTIFICATIONS`를 주지 않으면 앱은 FCM permission prompt를 띄우지 않는다.
+- `ENABLE_ACTIVITY_EVENTS`를 주지 않으면 Firestore 저장 시 `activityEvents`를 만들지 않는다.
+- GitHub Actions는 `functions/`를 설치하거나 배포하지 않는다.
 
-iPhone:
+나중에 Blaze plan으로 전환해 푸시를 되살릴 때만 아래 준비를 진행한다.
 
-1. iOS 앱을 Firebase Project settings -> General -> Your apps에 등록한다.
-2. bundle id는 Xcode Runner target의 bundle identifier와 맞춘다.
-3. Firebase Console에서 받은 `GoogleService-Info.plist`를 Xcode Runner target에 추가한다.
-4. Apple Developer에서 APNs authentication key를 만들고 Firebase Console -> Project settings -> Cloud Messaging -> APNs authentication key에 업로드한다.
-5. Xcode Runner target에서 `Push Notifications` capability를 켠다.
+Android/iPhone:
 
-Cloud Functions:
-
-1. Firebase Console -> Project settings -> Cloud Messaging에서 Cloud Messaging API가 enabled인지 확인한다.
-2. Firebase CLI로 로그인한 뒤 `firebase deploy --only functions`를 실행한다.
-3. 첫 배포 전 Google Cloud/Firebase 요금제와 Cloud Functions 사용 가능 상태를 확인한다.
-4. Firestore trigger는 `activityEvents` 생성 이벤트만 감지한다. private 카드 본문이나 사용자가 쓴 긴 본문은 payload에 넣지 않는다.
+1. Android/iOS 앱을 Firebase Project settings -> General -> Your apps에 등록한다.
+2. Android는 `google-services.json`, iOS는 `GoogleService-Info.plist`를 네이티브 프로젝트에 추가한다.
+3. iOS는 APNs authentication key와 Xcode Push Notifications capability를 준비한다.
+4. Blaze 전환 후 `ENABLE_PUSH_NOTIFICATIONS=true`, `ENABLE_ACTIVITY_EVENTS=true` 빌드 define과 Cloud Functions 배포를 별도로 다시 켠다.
 
 ## 6. Firestore Security Rules
 
@@ -1633,7 +1626,7 @@ service cloud.firestore {
 
 MVP 규칙은 두 사람 전용 공간을 전제로 한다. 나중에 사용자가 늘어나면 관리자 권한, 초대 코드, 필드별 write 제한을 더 촘촘하게 분리한다.
 
-Cloud Functions는 Admin SDK로 `spaces/{spaceId}/notificationEvents/{eventId}` 중복 발송 방지 로그를 쓰고, 실패한 FCM token은 `users/{uid}/notificationTokens/{tokenId}.enabled = false`로 비활성화한다. 이 경로는 client write path가 아니라 Functions 운영 path다.
+Spark plan에서는 Cloud Functions를 배포하지 않는다. `functions/` 소스와 `notificationEvents` 규칙은 나중에 Blaze 전환 시 되살릴 수 있는 휴면 경로이며, 현재 client write path가 아니다.
 
 ## 7. GitHub Secrets 추가
 
@@ -1650,32 +1643,13 @@ KAKAO_MAP_JS_KEY
 FIREBASE_SERVICE_ACCOUNT
 ```
 
-`FIREBASE_SERVICE_ACCOUNT`는 GitHub Actions가 Firestore Security Rules와 Cloud Functions를 배포할 때 사용한다.
+`FIREBASE_SERVICE_ACCOUNT`는 GitHub Actions가 Firestore Security Rules를 배포할 때 사용한다.
 Google Cloud Console에서 배포용 service account를 만들고, 프로젝트에
 아래 권한을 모두 준 뒤 JSON key 전체를 GitHub Secret 값으로 저장한다. 이 값은
 base64로 인코딩하지 않은 raw JSON이어야 한다.
 
 - `Firebase Rules Admin`(`roles/firebaserules.admin`): Firestore Security Rules ruleset/release를 배포한다.
-- `Service Usage Admin`(`roles/serviceusage.serviceUsageAdmin`): Firebase CLI가 Functions 배포에 필요한 Google Cloud API를 처음 활성화할 수 있게 한다. 프로젝트 Owner가 아래 API를 미리 켜 둔 경우에는 이후 `Service Usage Viewer`(`roles/serviceusage.serviceUsageViewer`)로 낮출 수 있다.
-- `Cloud Functions Developer`(`roles/cloudfunctions.developer`): Cloud Functions를 배포한다.
-- `Service Account User`(`roles/iam.serviceAccountUser`): Functions runtime service account와 Cloud Build service account를 사용할 수 있게 한다.
-
-Cloud Functions 공식 IAM 문서는 배포자에게 `Cloud Functions Admin` 또는
-`Cloud Functions Developer` 같은 배포 권한과, runtime service account 및 Cloud
-Build service account에 대한 `Service Account User` 권한이 필요하다고 안내한다.
-Cloud Run functions(2nd gen)의 기본 runtime service account는 보통
-`PROJECT_NUMBER-compute@developer.gserviceaccount.com` 형태다. 프로젝트에 따라
-Cloud Build service account에 `Cloud Build Service Account`
-(`roles/cloudbuild.builds.builder`) 권한이 필요한 경우도 있다.
-
-첫 Functions 배포 전에 Google Cloud Console -> APIs & Services -> Enabled APIs &
-services에서 최소한 다음 API가 활성화되어 있어야 한다. 활성화되어 있지 않으면
-Firebase CLI가 CI 중에 켜려고 시도하므로, 배포용 service account에
-`roles/serviceusage.serviceUsageAdmin`이 필요하다.
-
-- `cloudfunctions.googleapis.com`
-- `cloudbuild.googleapis.com`
-- `artifactregistry.googleapis.com`
+- `Service Usage Viewer`(`roles/serviceusage.serviceUsageViewer`): Firebase CLI가 필요한 API 상태를 조회할 수 있게 한다. Rules 배포에 문제가 없다면 생략할 수 있다.
 
 권한은 `IAM 및 관리자` -> `IAM` 화면에서 프로젝트 principal로 부여한다.
 `서비스 계정` 상세 화면의 `권한` 탭은 "누가 이 서비스 계정을 사용할 수 있는가"에
@@ -1696,11 +1670,10 @@ GitHub Actions workflow는 `google-github-actions/auth@v2`에
 Service account key 파일은 저장소에 커밋하지 않는다.
 
 Secrets를 추가한 뒤 `main` 브랜치에 push하면 GitHub Actions가 Flutter Web을 다시
-빌드하고, `firebase.json`이 가리키는 `firestore.rules`와 `functions/` 소스 코드를
-`firebase deploy --only firestore:rules,functions --non-interactive --force`로
-배포한다. `--force`는 저장소에서 제거된 옛 Cloud Functions를 CI가 대화형 확인 없이
-정리할 수 있게 한다. PR에서는 rules sync, analyze, test, build만 검증하고 Firebase
-Rules, Cloud Functions, GitHub Pages를 실제 배포하지 않는다.
+빌드하고, `firebase.json`이 가리키는 `firestore.rules`를
+`firebase deploy --only firestore:rules --non-interactive`로 배포한다. PR에서는 rules
+sync, analyze, test, build만 검증하고 Firebase Rules와 GitHub Pages를 실제 배포하지
+않는다.
 
 ## 8. 배포 확인
 

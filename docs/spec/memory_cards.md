@@ -59,7 +59,8 @@
 
 ## Push Notification
 
-- 사용자가 푸시 알림을 켠 경우, shared memory card 저장과 shared card response 저장은 safe activity event를 통해 상대에게 push notification을 보낼 수 있다.
+- Spark 기본 빌드에서는 푸시 알림 서버 경로가 휴면 상태라 shared memory card 저장과 shared card response 저장이 activity event를 만들지 않는다.
+- Blaze 전환 후 푸시 알림을 다시 켠 경우, shared memory card 저장과 shared card response 저장은 safe activity event를 통해 상대에게 push notification을 보낼 수 있다.
 - private memory card는 push notification을 보내지 않는다.
 - notification payload에는 route, feature, target id만 담고 카드 본문/수정 제안 전문을 담지 않는다.
 - Home unread activity는 계속 source of truth이며 push delivery 실패로 사라지면 안 된다.

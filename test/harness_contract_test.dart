@@ -237,7 +237,8 @@ void main() {
     );
   });
 
-  test('push notification rules and functions keep tokens owner scoped', () {
+  test('push notification pipeline stays dormant for Spark plan', () {
+    final app = File('lib/src/ui/alagagi_app.dart').readAsStringSync();
     final pushService = File(
       'lib/src/data/push_notifications.dart',
     ).readAsStringSync();
@@ -249,6 +250,17 @@ void main() {
       'lib/src/data/firebase_alagagi_repositories.dart',
     ).readAsStringSync();
 
+    expect(
+      app,
+      contains(
+        "const kPushNotificationsEnabled = bool.fromEnvironment(\n  'ENABLE_PUSH_NOTIFICATIONS'",
+      ),
+    );
+    expect(
+      firebaseRepository,
+      contains("bool.fromEnvironment('ENABLE_ACTIVITY_EVENTS')"),
+    );
+    expect(firebaseRepository, contains('if (!_activityEventsEnabled ||'));
     expect(pushService, contains("collection('notificationSettings')"));
     expect(pushService, contains("collection('notificationTokens')"));
     expect(firebaseRepository, contains("collection('activityEvents')"));
@@ -262,7 +274,7 @@ void main() {
       rules,
       contains('request.resource.data.actorProfileId == request.auth.uid'),
     );
-    expect(firebaseConfig, contains('"functions"'));
+    expect(firebaseConfig, isNot(contains('"functions"')));
     expect(functions, contains('notifyActivityEventCreated'));
     expect(functions, contains('activityEvents'));
     expect(functions, contains('ACTIVITY_NOTIFICATION_COPY'));
@@ -271,8 +283,8 @@ void main() {
     expect(functions, contains('markNotificationEvent'));
     expect(functions, isNot(contains('card.title')));
     expect(functions, isNot(contains('card.body')));
-    expect(firebaseSetup, contains('APNs authentication key'));
-    expect(firebaseSetup, contains('firebase deploy --only functions'));
+    expect(firebaseSetup, contains('Spark'));
+    expect(firebaseSetup, contains('푸시 알림 서버 경로는 휴면'));
   });
 
   test('meeting plan rules do not cap plan item count at eight', () {
@@ -374,48 +386,40 @@ void main() {
     expect(guide, contains('status bar mock'));
   });
 
-  test(
-    'CI deploys canonical Firebase rules and functions from repository source',
-    () {
-      final firebaseConfig =
-          jsonDecode(File('firebase.json').readAsStringSync())
-              as Map<String, dynamic>;
-      final firestoreConfig =
-          firebaseConfig['firestore'] as Map<String, dynamic>;
-      final functionsConfig =
-          firebaseConfig['functions'] as Map<String, dynamic>;
-      final workflow = File('.github/workflows/deploy.yml').readAsStringSync();
-      final firebaseSetup = File('docs/firebase_setup.md').readAsStringSync();
+  test('CI deploys Spark-compatible Firebase rules from repository source', () {
+    final firebaseConfig =
+        jsonDecode(File('firebase.json').readAsStringSync())
+            as Map<String, dynamic>;
+    final firestoreConfig = firebaseConfig['firestore'] as Map<String, dynamic>;
+    final workflow = File('.github/workflows/deploy.yml').readAsStringSync();
+    final firebaseSetup = File('docs/firebase_setup.md').readAsStringSync();
 
-      expect(firestoreConfig['rules'], 'firestore.rules');
-      expect(functionsConfig['source'], 'functions');
-      expect(
-        workflow,
-        contains('firebase deploy --only firestore:rules,functions'),
-      );
-      expect(workflow, contains('--non-interactive --force'));
-      expect(workflow, contains('Firebase deploy failed'));
-      expect(workflow, contains('npm install --prefix functions'));
-      expect(workflow, contains('FIREBASE_SERVICE_ACCOUNT'));
-      expect(workflow, contains('google-github-actions/auth@v2'));
-      expect(workflow, contains('credentials_json:'));
-      expect(workflow, contains('create_credentials_file: true'));
-      expect(workflow, contains('export_environment_variables: true'));
-      expect(
-        workflow,
-        isNot(contains(r'''printf '%s' "$FIREBASE_SERVICE_ACCOUNT"''')),
-        reason:
-            'CI should let the Google auth action create the ADC file instead '
-            'of writing service account JSON by hand.',
-      );
-      expect(workflow, contains("if: github.event_name != 'pull_request'"));
-      expect(firebaseSetup, contains('roles/firebaserules.admin'));
-      expect(firebaseSetup, contains('roles/serviceusage.serviceUsageAdmin'));
-      expect(firebaseSetup, contains('roles/serviceusage.serviceUsageViewer'));
-      expect(firebaseSetup, contains('roles/cloudfunctions.developer'));
-      expect(firebaseSetup, contains('roles/iam.serviceAccountUser'));
-    },
-  );
+    expect(firestoreConfig['rules'], 'firestore.rules');
+    expect(firebaseConfig.containsKey('functions'), isFalse);
+    expect(workflow, contains('firebase deploy --only firestore:rules'));
+    expect(
+      workflow,
+      isNot(contains('firebase deploy --only firestore:rules,functions')),
+    );
+    expect(workflow, contains('Firebase rules deploy failed'));
+    expect(workflow, isNot(contains('npm install --prefix functions')));
+    expect(workflow, contains('FIREBASE_SERVICE_ACCOUNT'));
+    expect(workflow, contains('google-github-actions/auth@v2'));
+    expect(workflow, contains('credentials_json:'));
+    expect(workflow, contains('create_credentials_file: true'));
+    expect(workflow, contains('export_environment_variables: true'));
+    expect(
+      workflow,
+      isNot(contains(r'''printf '%s' "$FIREBASE_SERVICE_ACCOUNT"''')),
+      reason:
+          'CI should let the Google auth action create the ADC file instead '
+          'of writing service account JSON by hand.',
+    );
+    expect(workflow, contains("if: github.event_name != 'pull_request'"));
+    expect(firebaseSetup, contains('roles/firebaserules.admin'));
+    expect(firebaseSetup, contains('Spark'));
+    expect(firebaseSetup, contains('firebase deploy --only firestore:rules'));
+  });
 }
 
 String _extractFirestoreRulesBlock(String markdown) {

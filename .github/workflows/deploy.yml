@@ -74,10 +74,6 @@ jobs:
         if: github.event_name != 'pull_request'
         run: npm install -g firebase-tools
 
-      - name: Install Cloud Functions dependencies
-        if: github.event_name != 'pull_request'
-        run: npm install --prefix functions
-
       - name: Authenticate Firebase deploy service account
         if: github.event_name != 'pull_request'
         uses: google-github-actions/auth@v2
@@ -86,20 +82,20 @@ jobs:
           create_credentials_file: true
           export_environment_variables: true
 
-      - name: Deploy Firebase rules and functions
+      - name: Deploy Firebase rules
         if: github.event_name != 'pull_request'
         env:
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
         shell: bash
         run: |
           set +e
-          firebase deploy --only firestore:rules,functions --project "$FIREBASE_PROJECT_ID" --non-interactive --force 2>&1 | tee firebase-deploy.log
+          firebase deploy --only firestore:rules --project "$FIREBASE_PROJECT_ID" --non-interactive 2>&1 | tee firebase-deploy.log
           status=${PIPESTATUS[0]}
           set -e
 
           if [ "$status" -ne 0 ]; then
             {
-              echo "### Firebase deploy failed"
+              echo "### Firebase rules deploy failed"
               echo
               echo '```'
               grep -Ei 'error|failed|permission|denied|forbidden|unauthorized|requires|must|missing|not enabled|already exists|delete' firebase-deploy.log | tail -n 40
@@ -113,7 +109,7 @@ jobs:
             summary="${summary//'%'/'%25'}"
             summary="${summary//$'\r'/'%0D'}"
             summary="${summary//$'\n'/'%0A'}"
-            echo "::error title=Firebase deploy failed::$summary"
+            echo "::error title=Firebase rules deploy failed::$summary"
             exit "$status"
           fi
 

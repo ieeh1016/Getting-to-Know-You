@@ -103,7 +103,7 @@ void main() {
       expect(find.text('오늘의 질문'), findsOneWidget);
     });
 
-    testWidgets('push notifications can be enabled from my screen', (
+    testWidgets('push notifications stay hidden in Spark-compatible mode', (
       tester,
     ) async {
       final auth = FakeAlagagiAuthRepository(
@@ -131,23 +131,12 @@ void main() {
 
       await tester.tap(find.text('마이'));
       await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(
-        find.text('푸시 알림'),
-        160,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.pumpAndSettle();
 
-      expect(find.byKey(myPushNotificationSwitchKey), findsOneWidget);
-      expect(find.text('꺼짐'), findsOneWidget);
-
-      await tester.tap(find.byKey(myPushNotificationSwitchKey));
-      await tester.pumpAndSettle();
-
-      expect(pushNotifications.loadCalls, 1);
-      expect(pushNotifications.enableCalls, 1);
-      expect(pushNotifications.enabledSessions.single.spaceId, 'main');
-      expect(find.text('켜짐'), findsOneWidget);
+      expect(find.byKey(myPushNotificationSwitchKey), findsNothing);
+      expect(find.text('푸시 알림'), findsNothing);
+      expect(pushNotifications.loadCalls, 0);
+      expect(pushNotifications.enableCalls, 0);
+      expect(pushNotifications.enabledSessions, isEmpty);
     });
 
     testWidgets('home refresh reloads the Firebase session', (tester) async {

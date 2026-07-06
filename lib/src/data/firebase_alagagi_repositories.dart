@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../domain/alagagi_controller.dart';
 
+const _activityEventsEnabled = bool.fromEnvironment('ENABLE_ACTIVITY_EVENTS');
+
 class FirebaseAlagagiAuthRepository implements AlagagiAuthRepository {
   FirebaseAlagagiAuthRepository({FirebaseAuth? auth})
     : _auth = auth ?? FirebaseAuth.instance;
@@ -111,7 +113,9 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     String spaceId,
     _ActivityEventDraft? activityEvent,
   ) {
-    if (activityEvent == null || activityEvent.actorProfileId.isEmpty) {
+    if (!_activityEventsEnabled ||
+        activityEvent == null ||
+        activityEvent.actorProfileId.isEmpty) {
       return;
     }
     final reference = _firestore

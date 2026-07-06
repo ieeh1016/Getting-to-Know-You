@@ -75,8 +75,8 @@ lib/src/domain/
 - `lib/src/features/questions/answer_blocks.dart`: Home과 Archive에서 쓰는 shared answer preview, answer line, comment composer, read-only comment, question support block.
 - `lib/src/features/questions/question_formatters.dart`: answer/archive flow를 위한 shared question date display helper.
 - `lib/src/features/records/records_screen.dart`: relationship insight summary, matched keywords, stats grid, timeline view.
-- `lib/src/data/push_notifications.dart`: Firebase Messaging permission/token registration, notification tap routing, foreground message adapter.
-- `functions/index.js`: Firestore-triggered FCM send logic for safe activity events.
+- `lib/src/data/push_notifications.dart`: dormant Firebase Messaging permission/token registration, notification tap routing, foreground message adapter. Spark 기본 빌드에서는 `ENABLE_PUSH_NOTIFICATIONS`가 꺼져 있어 bind되지 않는다.
+- `functions/index.js`: dormant Firestore-triggered FCM send logic for safe activity events. Spark CI에서는 배포하지 않는다.
 
 ## 추출 순서
 
