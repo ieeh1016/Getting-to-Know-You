@@ -108,7 +108,7 @@ minyoung@gettoknow.local
 
 Firestore Console에서 배열은 `array` 타입으로 넣는다.
 
-`spaces/main/curiosityCards` 하위 컬렉션은 앱에서 처음 `질문 보내기`를 누를 때 자동으로 만들어진다. `spaces/main/stockStories` 하위 컬렉션도 `주식 이야기`에서 처음 `이야기 남기기`를 누를 때 자동으로 만들어진다. `spaces/main/stockHoldings` 하위 컬렉션은 `보유` 탭에서 처음 `보유 공유하기`를 누를 때 자동으로 만들어진다. `spaces/main/improvementPosts` 하위 컬렉션은 `건의함`에서 처음 `건의 남기기`를 누를 때 자동으로 만들어진다. Console에서 빈 컬렉션을 미리 만들 필요는 없지만, 아래 Security Rules에는 `curiosityCards`, `stockStories`, `stockHoldings`, `improvementPosts` 규칙이 포함되어 있어야 한다.
+`spaces/main/curiosityCards` 하위 컬렉션은 앱에서 처음 `질문 보내기`를 누를 때 자동으로 만들어진다. `spaces/main/memoryCards` 하위 컬렉션은 `서로의 기억`에서 처음 기억 카드를 저장할 때 만들어지고, `spaces/main/memoryCardResponses` 하위 컬렉션은 상대가 공유 카드에 처음 반응하거나 수정 제안을 남길 때 만들어진다. `spaces/main/stockStories` 하위 컬렉션도 `주식 이야기`에서 처음 `이야기 남기기`를 누를 때 자동으로 만들어진다. `spaces/main/stockHoldings` 하위 컬렉션은 `보유` 탭에서 처음 `보유 공유하기`를 누를 때 자동으로 만들어진다. `spaces/main/improvementPosts` 하위 컬렉션은 `건의함`에서 처음 `건의 남기기`를 누를 때 자동으로 만들어진다. Console에서 빈 컬렉션을 미리 만들 필요는 없지만, 아래 Security Rules에는 `curiosityCards`, `memoryCards`, `memoryCardResponses`, `stockStories`, `stockHoldings`, `improvementPosts` 규칙이 포함되어 있어야 한다.
 
 ## 6. Firestore Security Rules
 
@@ -395,6 +395,107 @@ service cloud.firestore {
             && request.auth.uid in resource.data.listenedByProfileIds
           )
         );
+    }
+
+    function validMemoryCardShape(spaceId, cardId) {
+      return request.resource.data.keys().hasOnly([
+          'id',
+          'type',
+          'title',
+          'body',
+          'createdByProfileId',
+          'subjectProfileId',
+          'visibility',
+          'createdLabel',
+          'updatedByProfileId',
+          'updatedAt'
+        ])
+        && request.resource.data.id == cardId
+        && request.resource.data.type in ['likes', 'dislikes', 'current', 'together', 'care']
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 2
+        && request.resource.data.title.size() <= 48
+        && request.resource.data.body is string
+        && request.resource.data.body.size() > 0
+        && request.resource.data.body.size() <= 240
+        && request.resource.data.createdByProfileId is string
+        && request.resource.data.subjectProfileId is string
+        && request.resource.data.createdByProfileId != request.resource.data.subjectProfileId
+        && request.resource.data.createdByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        && request.resource.data.subjectProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        && request.resource.data.visibility in ['shared', 'private']
+        && request.resource.data.createdLabel is string
+        && request.resource.data.createdLabel.size() <= 16
+        && request.resource.data.updatedByProfileId == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function validNewMemoryCard(spaceId, cardId) {
+      return validMemoryCardShape(spaceId, cardId)
+        && request.resource.data.createdByProfileId == request.auth.uid
+        && request.resource.data.subjectProfileId != request.auth.uid;
+    }
+
+    function validMemoryCardOwnerEdit(spaceId, cardId) {
+      return validMemoryCardShape(spaceId, cardId)
+        && resource.data.createdByProfileId == request.auth.uid
+        && request.resource.data.createdByProfileId == resource.data.createdByProfileId
+        && request.resource.data.subjectProfileId == resource.data.subjectProfileId
+        && request.resource.data.createdLabel == resource.data.createdLabel
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'type',
+          'title',
+          'body',
+          'visibility',
+          'updatedByProfileId',
+          'updatedAt'
+        ]);
+    }
+
+    function memoryCardExists(spaceId, cardId) {
+      return exists(/databases/$(database)/documents/spaces/$(spaceId)/memoryCards/$(cardId));
+    }
+
+    function memoryCardDocument(spaceId, cardId) {
+      return get(/databases/$(database)/documents/spaces/$(spaceId)/memoryCards/$(cardId));
+    }
+
+    function validMemoryCardResponseShape(spaceId, responseId) {
+      return request.resource.data.keys().hasOnly([
+          'id',
+          'cardId',
+          'responderProfileId',
+          'reaction',
+          'correctionText',
+          'updatedAt'
+        ])
+        && request.resource.data.id == responseId
+        && request.resource.data.cardId is string
+        && request.resource.data.responderProfileId is string
+        && request.resource.data.responderProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        && responseId == request.resource.data.cardId + '_' + request.resource.data.responderProfileId
+        && request.resource.data.reaction in ['agree', 'liked', 'correction']
+        && request.resource.data.correctionText is string
+        && request.resource.data.correctionText.size() <= 240
+        && (
+          (
+            request.resource.data.reaction == 'correction'
+            && request.resource.data.correctionText.size() > 0
+          )
+          || (
+            request.resource.data.reaction in ['agree', 'liked']
+            && request.resource.data.correctionText == ''
+          )
+        )
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function validMemoryCardResponseWrite(spaceId, responseId) {
+      return validMemoryCardResponseShape(spaceId, responseId)
+        && request.resource.data.responderProfileId == request.auth.uid
+        && memoryCardExists(spaceId, request.resource.data.cardId)
+        && memoryCardDocument(spaceId, request.resource.data.cardId).data.visibility == 'shared'
+        && memoryCardDocument(spaceId, request.resource.data.cardId).data.createdByProfileId != request.auth.uid;
     }
 
     function musicNoteExists(spaceId, noteId) {
@@ -1247,6 +1348,26 @@ service cloud.firestore {
           && request.resource.data.done is bool;
         allow delete: if isSpaceMember(spaceId)
           && resource.data.createdByProfileId == request.auth.uid;
+      }
+
+      match /memoryCards/{cardId} {
+        allow read: if isSpaceMember(spaceId)
+          && (
+            resource.data.visibility == 'shared'
+            || resource.data.createdByProfileId == request.auth.uid
+          );
+        allow create: if isSpaceMember(spaceId)
+          && validNewMemoryCard(spaceId, cardId);
+        allow update: if isSpaceMember(spaceId)
+          && validMemoryCardOwnerEdit(spaceId, cardId);
+        allow delete: if false;
+      }
+
+      match /memoryCardResponses/{responseId} {
+        allow read: if isSpaceMember(spaceId);
+        allow create, update: if isSpaceMember(spaceId)
+          && validMemoryCardResponseWrite(spaceId, responseId);
+        allow delete: if false;
       }
 
       match /musicNotes/{noteId} {

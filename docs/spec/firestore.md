@@ -26,6 +26,8 @@
 - `spaces/{spaceId}/balanceSelections/{questionId_uid}`
 - `spaces/{spaceId}/profileCards/{profileId}/slots/{slotId}`
 - `spaces/{spaceId}/wishes/{wishId}`
+- `spaces/{spaceId}/memoryCards/{cardId}`
+- `spaces/{spaceId}/memoryCardResponses/{responseId}`
 - `spaces/{spaceId}/musicNotes/{noteId}`
 - `spaces/{spaceId}/musicNoteComments/{commentId}`
 - `spaces/{spaceId}/scheduleEntries/{dateKey_uid}`

@@ -17,6 +17,7 @@ enum AlagagiRoute {
   balance,
   profileCard,
   wishlist,
+  memoryCards,
   my,
 }
 
@@ -29,6 +30,7 @@ enum UnreadActivityFeature {
   stocks,
   music,
   improvements,
+  memoryCards,
 }
 
 enum ArchiveFilter { all, bothAnswered, similar }
@@ -38,6 +40,12 @@ enum ProfileCardTab { partner, me }
 enum WishlistFilter { all, mutual, places, activities }
 
 enum WishKind { place, activity }
+
+enum MemoryCardType { likes, dislikes, current, together, care }
+
+enum MemoryCardVisibility { shared, private }
+
+enum MemoryCardReaction { agree, liked, correction }
 
 enum MusicListFilter { all, unlistened, listened, mine, partner }
 
@@ -69,6 +77,13 @@ const stockStoryReplyToneOptions = ['같이 볼래요', '더 찾아볼게요', '
 const stockHoldingStatusOptions = ['보유 중', '정리 고민 중', '최근 정리함'];
 const stockHoldingWeightOptions = ['작게', '보통', '크게'];
 const improvementPostCategoryOptions = ['개선', '추가 요청', '불편함', '아이디어'];
+const memoryCardTypeOptions = [
+  MemoryCardType.likes,
+  MemoryCardType.dislikes,
+  MemoryCardType.current,
+  MemoryCardType.together,
+  MemoryCardType.care,
+];
 
 enum QuestionDepth { light, daily, beliefs, inner }
 
@@ -156,6 +171,8 @@ class AlagagiSpaceData {
     this.stockStories = const [],
     this.stockHoldings = const [],
     this.improvementPosts = const [],
+    this.memoryCards = const [],
+    this.memoryCardResponses = const [],
     this.dailyProgress,
     this.personalization = const SpacePersonalization(),
   });
@@ -174,6 +191,8 @@ class AlagagiSpaceData {
   final List<StockStory> stockStories;
   final List<StockHolding> stockHoldings;
   final List<ImprovementPost> improvementPosts;
+  final List<MemoryCard> memoryCards;
+  final List<MemoryCardResponse> memoryCardResponses;
   final DailyQuestionProgress? dailyProgress;
   final SpacePersonalization personalization;
 }
@@ -263,6 +282,13 @@ abstract class AlagagiDataRepository {
   Future<void> saveWish(String spaceId, WishItem wish);
 
   Future<void> deleteWish(String spaceId, String wishId);
+
+  Future<void> saveMemoryCard(String spaceId, MemoryCard card);
+
+  Future<void> saveMemoryCardResponse(
+    String spaceId,
+    MemoryCardResponse response,
+  );
 
   Future<void> saveMusicNote(String spaceId, MusicNote note);
 
@@ -926,6 +952,152 @@ class WishItem {
       done: done ?? this.done,
       updatedAt: updatedAt ?? this.updatedAt,
       updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
+    );
+  }
+}
+
+extension MemoryCardTypeMeta on MemoryCardType {
+  String get label {
+    return switch (this) {
+      MemoryCardType.likes => '좋아하는 것',
+      MemoryCardType.dislikes => '싫어하는 것',
+      MemoryCardType.current => '요즘 이야기',
+      MemoryCardType.together => '함께 할 것',
+      MemoryCardType.care => '조심할 것',
+    };
+  }
+
+  String get storageKey {
+    return switch (this) {
+      MemoryCardType.likes => 'likes',
+      MemoryCardType.dislikes => 'dislikes',
+      MemoryCardType.current => 'current',
+      MemoryCardType.together => 'together',
+      MemoryCardType.care => 'care',
+    };
+  }
+}
+
+extension MemoryCardVisibilityMeta on MemoryCardVisibility {
+  String get label {
+    return switch (this) {
+      MemoryCardVisibility.shared => '공유',
+      MemoryCardVisibility.private => '나만 보기',
+    };
+  }
+
+  String get storageKey {
+    return switch (this) {
+      MemoryCardVisibility.shared => 'shared',
+      MemoryCardVisibility.private => 'private',
+    };
+  }
+}
+
+extension MemoryCardReactionMeta on MemoryCardReaction {
+  String get label {
+    return switch (this) {
+      MemoryCardReaction.agree => '맞아요',
+      MemoryCardReaction.liked => '좋아요',
+      MemoryCardReaction.correction => '수정 제안',
+    };
+  }
+
+  String get storageKey {
+    return switch (this) {
+      MemoryCardReaction.agree => 'agree',
+      MemoryCardReaction.liked => 'liked',
+      MemoryCardReaction.correction => 'correction',
+    };
+  }
+}
+
+class MemoryCard {
+  const MemoryCard({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.body,
+    required this.createdByProfileId,
+    required this.subjectProfileId,
+    required this.visibility,
+    required this.createdLabel,
+    this.updatedAt,
+    this.updatedByProfileId,
+  });
+
+  final String id;
+  final MemoryCardType type;
+  final String title;
+  final String body;
+  final String createdByProfileId;
+  final String subjectProfileId;
+  final MemoryCardVisibility visibility;
+  final String createdLabel;
+  final DateTime? updatedAt;
+  final String? updatedByProfileId;
+
+  bool get isShared => visibility == MemoryCardVisibility.shared;
+
+  String get lastChangedByProfileId => updatedByProfileId ?? createdByProfileId;
+
+  MemoryCard copyWith({
+    MemoryCardType? type,
+    String? title,
+    String? body,
+    String? createdByProfileId,
+    String? subjectProfileId,
+    MemoryCardVisibility? visibility,
+    String? createdLabel,
+    DateTime? updatedAt,
+    String? updatedByProfileId,
+  }) {
+    return MemoryCard(
+      id: id,
+      type: type ?? this.type,
+      title: title ?? this.title,
+      body: body ?? this.body,
+      createdByProfileId: createdByProfileId ?? this.createdByProfileId,
+      subjectProfileId: subjectProfileId ?? this.subjectProfileId,
+      visibility: visibility ?? this.visibility,
+      createdLabel: createdLabel ?? this.createdLabel,
+      updatedAt: updatedAt ?? this.updatedAt,
+      updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
+    );
+  }
+}
+
+class MemoryCardResponse {
+  const MemoryCardResponse({
+    required this.id,
+    required this.cardId,
+    required this.responderProfileId,
+    required this.reaction,
+    this.correctionText = '',
+    this.updatedAt,
+  });
+
+  final String id;
+  final String cardId;
+  final String responderProfileId;
+  final MemoryCardReaction reaction;
+  final String correctionText;
+  final DateTime? updatedAt;
+
+  bool get hasCorrection => correctionText.trim().isNotEmpty;
+
+  MemoryCardResponse copyWith({
+    MemoryCardReaction? reaction,
+    String? correctionText,
+    DateTime? updatedAt,
+  }) {
+    return MemoryCardResponse(
+      id: id,
+      cardId: cardId,
+      responderProfileId: responderProfileId,
+      reaction: reaction ?? this.reaction,
+      correctionText: correctionText ?? this.correctionText,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }
@@ -1635,6 +1807,7 @@ extension UnreadActivityFeatureMeta on UnreadActivityFeature {
       UnreadActivityFeature.stocks => 'stocks',
       UnreadActivityFeature.music => 'music',
       UnreadActivityFeature.improvements => 'improvements',
+      UnreadActivityFeature.memoryCards => 'memoryCards',
     };
   }
 
@@ -1648,6 +1821,7 @@ extension UnreadActivityFeatureMeta on UnreadActivityFeature {
       UnreadActivityFeature.stocks => '주식 이야기',
       UnreadActivityFeature.music => '음악 노트',
       UnreadActivityFeature.improvements => '건의함',
+      UnreadActivityFeature.memoryCards => '서로의 기억',
     };
   }
 
@@ -1661,6 +1835,7 @@ extension UnreadActivityFeatureMeta on UnreadActivityFeature {
       UnreadActivityFeature.stocks => AlagagiRoute.stockStory,
       UnreadActivityFeature.music => AlagagiRoute.music,
       UnreadActivityFeature.improvements => AlagagiRoute.improvements,
+      UnreadActivityFeature.memoryCards => AlagagiRoute.memoryCards,
     };
   }
 }
@@ -2606,6 +2781,8 @@ class AlagagiController extends ChangeNotifier {
   final List<StockStory> _stockStories = [];
   final List<StockHolding> _stockHoldings = [];
   final List<ImprovementPost> _improvementPosts = [];
+  final List<MemoryCard> _memoryCards = [];
+  final List<MemoryCardResponse> _memoryCardResponses = [];
   final Map<String, Future<void>> _sharedPlaceSaveChains = {};
   final Map<String, int> _sharedPlaceSaveVersions = {};
   Answer? _lastFailedAnswer;
@@ -2824,6 +3001,42 @@ class AlagagiController extends ChangeNotifier {
         description: description,
         updatedAt: wish.updatedAt,
         actorProfileId: wish.lastChangedByProfileId,
+      );
+    }
+    for (final card in _memoryCards) {
+      if (!card.isShared) {
+        continue;
+      }
+      _addUnreadActivity(
+        activities,
+        feature: UnreadActivityFeature.memoryCards,
+        id: 'memory-card-${card.id}',
+        title: '기억 카드가 업데이트됐어요',
+        description: '$partnerName님이 "${card.title}"을 남겼어요.',
+        updatedAt: card.updatedAt,
+        actorProfileId: card.lastChangedByProfileId,
+      );
+    }
+    for (final response in _memoryCardResponses) {
+      final card = _memoryCards.cast<MemoryCard?>().firstWhere(
+        (candidate) => candidate?.id == response.cardId,
+        orElse: () => null,
+      );
+      if (card == null ||
+          !card.isShared ||
+          card.createdByProfileId != _state.me.id) {
+        continue;
+      }
+      _addUnreadActivity(
+        activities,
+        feature: UnreadActivityFeature.memoryCards,
+        id: 'memory-response-${response.id}',
+        title: '기억 카드에 반응이 있어요',
+        description: response.reaction == MemoryCardReaction.correction
+            ? '$partnerName님이 "${card.title}"에 수정 제안을 남겼어요.'
+            : '$partnerName님이 "${card.title}"에 ${response.reaction.label}를 남겼어요.',
+        updatedAt: response.updatedAt,
+        actorProfileId: response.responderProfileId,
       );
     }
     for (final entry in _scheduleEntries) {
@@ -3067,6 +3280,35 @@ class AlagagiController extends ChangeNotifier {
           );
         }),
       );
+    _memoryCards
+      ..clear()
+      ..addAll(
+        seedMemoryCards.map((card) {
+          return card.copyWith(
+            createdByProfileId: _mapSeedProfileId(card.createdByProfileId),
+            subjectProfileId: _mapSeedProfileId(card.subjectProfileId),
+            updatedByProfileId: card.updatedByProfileId == null
+                ? null
+                : _mapSeedProfileId(card.updatedByProfileId!),
+          );
+        }),
+      );
+    _sortMemoryCardsByUpdatedAt();
+    _memoryCardResponses
+      ..clear()
+      ..addAll(
+        seedMemoryCardResponses.map((response) {
+          return MemoryCardResponse(
+            id: response.id,
+            cardId: response.cardId,
+            responderProfileId: _mapSeedProfileId(response.responderProfileId),
+            reaction: response.reaction,
+            correctionText: response.correctionText,
+            updatedAt: response.updatedAt,
+          );
+        }),
+      );
+    _sortMemoryCardResponsesByUpdatedAt();
     _musicNotes
       ..clear()
       ..addAll(
@@ -3292,6 +3534,14 @@ class AlagagiController extends ChangeNotifier {
     _wishes
       ..clear()
       ..addAll(data.wishes);
+    _memoryCards
+      ..clear()
+      ..addAll(data.memoryCards);
+    _sortMemoryCardsByUpdatedAt();
+    _memoryCardResponses
+      ..clear()
+      ..addAll(data.memoryCardResponses);
+    _sortMemoryCardResponsesByUpdatedAt();
     _musicNotes
       ..clear()
       ..addAll(data.musicNotes);
@@ -3714,6 +3964,26 @@ class AlagagiController extends ChangeNotifier {
             );
             notifyListeners();
           }),
+    );
+  }
+
+  void _persistMemoryCard(MemoryCard card) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      return;
+    }
+    unawaited(repository.saveMemoryCard(spaceId, card).catchError((_) {}));
+  }
+
+  void _persistMemoryCardResponse(MemoryCardResponse response) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      return;
+    }
+    unawaited(
+      repository.saveMemoryCardResponse(spaceId, response).catchError((_) {}),
     );
   }
 
@@ -4943,6 +5213,54 @@ class AlagagiController extends ChangeNotifier {
     };
   }
 
+  List<MemoryCard> get visibleMemoryCards {
+    return List<MemoryCard>.unmodifiable(_visibleMemoryCards());
+  }
+
+  List<MemoryCardResponse> get memoryCardResponses {
+    return List<MemoryCardResponse>.unmodifiable(_memoryCardResponses);
+  }
+
+  List<MemoryCard> memoryCardsForOwner(String ownerProfileId) {
+    return List<MemoryCard>.unmodifiable(
+      _visibleMemoryCards().where(
+        (card) => card.createdByProfileId == ownerProfileId,
+      ),
+    );
+  }
+
+  int memoryCardCountForOwner(String ownerProfileId) {
+    return memoryCardsForOwner(ownerProfileId).length;
+  }
+
+  MemoryCard? get latestVisibleMemoryCard {
+    final cards = _visibleMemoryCards();
+    if (cards.isEmpty) {
+      return null;
+    }
+    return cards.first;
+  }
+
+  MemoryCardResponse? memoryResponseForCard(
+    String cardId, {
+    String? responderProfileId,
+  }) {
+    final profileId = responderProfileId ?? _state.me.id;
+    return _memoryCardResponses.cast<MemoryCardResponse?>().firstWhere(
+      (response) =>
+          response?.cardId == cardId &&
+          response?.responderProfileId == profileId,
+      orElse: () => null,
+    );
+  }
+
+  List<MemoryCard> _visibleMemoryCards() {
+    return _memoryCards.where((card) {
+      return card.visibility == MemoryCardVisibility.shared ||
+          card.createdByProfileId == _state.me.id;
+    }).toList();
+  }
+
   List<MusicNote> get musicNotes => List<MusicNote>.unmodifiable(_musicNotes);
 
   List<MusicNoteComment> get musicNoteComments =>
@@ -5568,6 +5886,10 @@ class AlagagiController extends ChangeNotifier {
       UnreadActivityFeature.improvements => _latestTimestamp(
         _improvementPosts.map((post) => post.updatedAt),
       ),
+      UnreadActivityFeature.memoryCards => _latestTimestamp([
+        ..._memoryCards.map((card) => card.updatedAt),
+        ..._memoryCardResponses.map((response) => response.updatedAt),
+      ]),
     };
   }
 
@@ -5615,6 +5937,7 @@ class AlagagiController extends ChangeNotifier {
       AlagagiRoute.stockStory => UnreadActivityFeature.stocks,
       AlagagiRoute.music => UnreadActivityFeature.music,
       AlagagiRoute.improvements => UnreadActivityFeature.improvements,
+      AlagagiRoute.memoryCards => UnreadActivityFeature.memoryCards,
       _ => null,
     };
   }
@@ -5645,6 +5968,40 @@ class AlagagiController extends ChangeNotifier {
       return null;
     }
     return hour * 60 + minute;
+  }
+
+  void _sortMemoryCardsByUpdatedAt() {
+    _memoryCards.sort((a, b) {
+      final aUpdatedAt = a.updatedAt;
+      final bUpdatedAt = b.updatedAt;
+      if (aUpdatedAt == null && bUpdatedAt == null) {
+        return b.id.compareTo(a.id);
+      }
+      if (aUpdatedAt == null) {
+        return 1;
+      }
+      if (bUpdatedAt == null) {
+        return -1;
+      }
+      return bUpdatedAt.compareTo(aUpdatedAt);
+    });
+  }
+
+  void _sortMemoryCardResponsesByUpdatedAt() {
+    _memoryCardResponses.sort((a, b) {
+      final aUpdatedAt = a.updatedAt;
+      final bUpdatedAt = b.updatedAt;
+      if (aUpdatedAt == null && bUpdatedAt == null) {
+        return b.id.compareTo(a.id);
+      }
+      if (aUpdatedAt == null) {
+        return 1;
+      }
+      if (bUpdatedAt == null) {
+        return -1;
+      }
+      return bUpdatedAt.compareTo(aUpdatedAt);
+    });
   }
 
   void _sortMusicNotesByUpdatedAt() {
@@ -6962,6 +7319,136 @@ class AlagagiController extends ChangeNotifier {
     } else {
       _persistWish(wish);
     }
+  }
+
+  MemoryCard? createMemoryCard({
+    required MemoryCardType type,
+    required String title,
+    required String body,
+    MemoryCardVisibility visibility = MemoryCardVisibility.shared,
+  }) {
+    final trimmedTitle = title.trim();
+    final trimmedBody = body.trim();
+    if (trimmedTitle.length < 2 || trimmedTitle.length > 48) {
+      return null;
+    }
+    if (trimmedBody.isEmpty || trimmedBody.length > 240) {
+      return null;
+    }
+    final now = DateTime.now();
+    final card = MemoryCard(
+      id: 'memory_${_state.me.id}_${now.microsecondsSinceEpoch}',
+      type: type,
+      title: trimmedTitle,
+      body: trimmedBody,
+      createdByProfileId: _state.me.id,
+      subjectProfileId: _state.partner.id,
+      visibility: visibility,
+      createdLabel: '오늘',
+      updatedAt: now,
+      updatedByProfileId: _state.me.id,
+    );
+    _memoryCards.insert(0, card);
+    _sortMemoryCardsByUpdatedAt();
+    notifyListeners();
+    _persistMemoryCard(card);
+    return card;
+  }
+
+  MemoryCard? setMemoryCardVisibility(
+    String cardId,
+    MemoryCardVisibility visibility,
+  ) {
+    final index = _memoryCards.indexWhere((card) => card.id == cardId);
+    if (index == -1 || _memoryCards[index].createdByProfileId != _state.me.id) {
+      return null;
+    }
+    final updatedCard = _memoryCards[index].copyWith(
+      visibility: visibility,
+      updatedAt: DateTime.now(),
+      updatedByProfileId: _state.me.id,
+    );
+    _memoryCards[index] = updatedCard;
+    _sortMemoryCardsByUpdatedAt();
+    notifyListeners();
+    _persistMemoryCard(updatedCard);
+    return updatedCard;
+  }
+
+  MemoryCardResponse? respondToMemoryCard(
+    String cardId,
+    MemoryCardReaction reaction, {
+    String correctionText = '',
+  }) {
+    final card = _memoryCards.cast<MemoryCard?>().firstWhere(
+      (candidate) => candidate?.id == cardId,
+      orElse: () => null,
+    );
+    if (card == null ||
+        !card.isShared ||
+        card.createdByProfileId == _state.me.id) {
+      return null;
+    }
+    final trimmedCorrection = correctionText.trim();
+    if (reaction == MemoryCardReaction.correction &&
+        trimmedCorrection.isEmpty) {
+      return null;
+    }
+    if (trimmedCorrection.length > 240) {
+      return null;
+    }
+
+    final now = DateTime.now();
+    final response = MemoryCardResponse(
+      id: '${card.id}_${_state.me.id}',
+      cardId: card.id,
+      responderProfileId: _state.me.id,
+      reaction: reaction,
+      correctionText: reaction == MemoryCardReaction.correction
+          ? trimmedCorrection
+          : '',
+      updatedAt: now,
+    );
+    final index = _memoryCardResponses.indexWhere(
+      (candidate) => candidate.id == response.id,
+    );
+    if (index == -1) {
+      _memoryCardResponses.insert(0, response);
+    } else {
+      _memoryCardResponses[index] = response;
+    }
+    _sortMemoryCardResponsesByUpdatedAt();
+    notifyListeners();
+    _persistMemoryCardResponse(response);
+    return response;
+  }
+
+  MemoryCard? applyMemoryCardCorrection(
+    String cardId, {
+    required String responderProfileId,
+  }) {
+    final cardIndex = _memoryCards.indexWhere((card) => card.id == cardId);
+    if (cardIndex == -1 ||
+        _memoryCards[cardIndex].createdByProfileId != _state.me.id) {
+      return null;
+    }
+    final response = memoryResponseForCard(
+      cardId,
+      responderProfileId: responderProfileId,
+    );
+    if (response == null || !response.hasCorrection) {
+      return null;
+    }
+    final updatedCard = _memoryCards[cardIndex].copyWith(
+      body: response.correctionText.trim(),
+      updatedAt: DateTime.now(),
+      updatedByProfileId: _state.me.id,
+    );
+    _memoryCards[cardIndex] = updatedCard;
+    _sortMemoryCardsByUpdatedAt();
+    notifyListeners();
+    _persistMemoryCard(updatedCard);
+    return updatedCard;
   }
 
   String curiosityReplyDraftFor(String cardId) {
@@ -10530,6 +11017,48 @@ const seedWishes = [
     kind: WishKind.place,
     likedByProfileIds: {'me', 'partner'},
     done: true,
+  ),
+];
+
+const seedMemoryCards = [
+  MemoryCard(
+    id: 'memory_seed_1',
+    type: MemoryCardType.likes,
+    title: '조용한 카페 자리',
+    body: '민영이는 창가 쪽보다 조금 안쪽에 앉는 걸 더 편하게 느낀다고 했어요.',
+    createdByProfileId: 'me',
+    subjectProfileId: 'partner',
+    visibility: MemoryCardVisibility.shared,
+    createdLabel: '오늘',
+  ),
+  MemoryCard(
+    id: 'memory_seed_2',
+    type: MemoryCardType.care,
+    title: '너무 갑작스러운 약속은 조심',
+    body: '일정이 가까울수록 선택지가 적으면 부담스러울 수 있어서 미리 후보를 몇 개만 정해두기.',
+    createdByProfileId: 'me',
+    subjectProfileId: 'partner',
+    visibility: MemoryCardVisibility.shared,
+    createdLabel: '오늘',
+  ),
+  MemoryCard(
+    id: 'memory_seed_3',
+    type: MemoryCardType.current,
+    title: '요즘은 가벼운 산책',
+    body: '길게 정해진 코스보다 걷다가 괜찮은 곳에 잠깐 들르는 쪽을 좋아한다고 했어요.',
+    createdByProfileId: 'partner',
+    subjectProfileId: 'me',
+    visibility: MemoryCardVisibility.shared,
+    createdLabel: '어제',
+  ),
+];
+
+const seedMemoryCardResponses = [
+  MemoryCardResponse(
+    id: 'memory_seed_1_partner',
+    cardId: 'memory_seed_1',
+    responderProfileId: 'partner',
+    reaction: MemoryCardReaction.agree,
   ),
 ];
 

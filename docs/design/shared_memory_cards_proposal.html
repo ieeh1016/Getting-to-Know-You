@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>알아가기 · 서로의 기억 카드 제안</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --outer:#e9e8e2;
+    --bg:#f4f3ef;
+    --paper:#fcfcfa;
+    --ink:#2e2e2c;
+    --text:#45443f;
+    --soft-text:#6f6c65;
+    --muted:#8f8b82;
+    --line:#e8e6df;
+    --sage:#8a9a7e;
+    --sage-deep:#6f7f63;
+    --sage-soft:#eef1e9;
+    --lav:#b9a8c9;
+    --lav-soft:#f0edf5;
+    --clay:#b18472;
+    --clay-soft:#f5ede9;
+    --gold:#c8ad6d;
+    --gold-soft:#f6f0de;
+    --warm:#f8f8f4;
+    --danger:#b35a49;
+  }
+  body{
+    min-height:100vh;
+    background:var(--outer);
+    color:var(--ink);
+    font-family:'Noto Sans KR',system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+    font-weight:300;
+    padding:36px 18px 48px;
+  }
+  svg{display:block}
+  button,input,textarea{font:inherit;color:inherit}
+  button{border:0;cursor:default}
+  .wrap{max-width:1260px;margin:0 auto}
+  .page-title{text-align:center;margin-bottom:28px}
+  .eyebrow{
+    display:block;
+    margin-bottom:8px;
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:3px;
+  }
+  .page-title h1{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:31px;
+    line-height:1.35;
+    font-weight:800;
+  }
+  .page-title p{
+    max-width:780px;
+    margin:10px auto 0;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.75;
+  }
+  .principles{
+    max-width:1040px;
+    margin:0 auto 32px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+  }
+  .principle{
+    padding:19px 20px;
+    border:1px solid rgba(232,230,223,.94);
+    border-radius:20px;
+    background:rgba(252,252,250,.76);
+  }
+  .principle b{
+    display:block;
+    margin-bottom:7px;
+    font-size:14px;
+    color:var(--text);
+  }
+  .principle p{
+    color:var(--muted);
+    font-size:12.8px;
+    line-height:1.7;
+  }
+  .stage{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(300px,390px));
+    gap:24px;
+    justify-content:center;
+    align-items:start;
+  }
+  .caption{margin:0 0 12px 2px}
+  .caption .tag{
+    display:inline-flex;
+    align-items:center;
+    min-height:24px;
+    padding:5px 9px;
+    border:1px solid rgba(111,127,99,.22);
+    border-radius:999px;
+    background:rgba(252,252,250,.74);
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    line-height:1.2;
+  }
+  .caption h2{
+    margin-top:8px;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:19px;
+    line-height:1.35;
+    font-weight:800;
+  }
+  .caption p{
+    margin-top:5px;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.65;
+  }
+  .phone{
+    width:390px;
+    max-width:100%;
+    min-height:844px;
+    position:relative;
+    overflow:hidden;
+    border:8px solid #fff;
+    border-radius:40px;
+    background:var(--bg);
+    box-shadow:0 28px 70px rgba(60,60,50,.18);
+  }
+  .screen{padding:27px 23px 118px}
+  .topbar{
+    min-height:42px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:17px;
+  }
+  .side{
+    width:56px;
+    min-width:56px;
+    display:flex;
+    align-items:center;
+  }
+  .side.right{justify-content:flex-end}
+  .paper-btn{
+    width:38px;
+    height:38px;
+    border:1px solid rgba(232,230,223,.92);
+    border-radius:50%;
+    background:rgba(252,252,250,.88);
+    color:#656d5e;
+    display:grid;
+    place-items:center;
+    box-shadow:0 8px 18px rgba(80,80,70,.035);
+  }
+  .paper-btn svg{width:18px;height:18px}
+  .title-serif{
+    flex:1;
+    min-width:0;
+    text-align:center;
+    font-family:'Nanum Myeongjo',serif;
+    font-size:18px;
+    line-height:1.25;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .screen-head{margin:2px 0 15px}
+  .screen-head small{
+    display:block;
+    margin-bottom:7px;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:2.5px;
+  }
+  .screen-head h3{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:24px;
+    line-height:1.38;
+    font-weight:800;
+  }
+  .screen-head p{
+    margin-top:7px;
+    color:var(--muted);
+    font-size:12.8px;
+    line-height:1.64;
+  }
+  .space-tabs{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:7px;
+    padding:5px;
+    border:1px solid rgba(232,230,223,.94);
+    border-radius:18px;
+    background:rgba(252,252,250,.72);
+    margin-bottom:12px;
+  }
+  .space-tab{
+    min-height:42px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    border-radius:14px;
+    color:var(--muted);
+    font-size:11px;
+    line-height:1.25;
+  }
+  .space-tab b{
+    color:inherit;
+    font-size:12.7px;
+    font-weight:700;
+  }
+  .space-tab.active{
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+    box-shadow:0 8px 16px rgba(111,127,99,.08);
+  }
+  .quiet-note{
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    padding:12px 13px;
+    border:1px solid rgba(138,154,126,.23);
+    border-radius:18px;
+    background:var(--sage-soft);
+    color:var(--soft-text);
+    font-size:12px;
+    line-height:1.58;
+    margin-bottom:12px;
+  }
+  .note-icon{
+    width:22px;
+    min-width:22px;
+    height:22px;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    color:var(--sage-deep);
+    background:rgba(255,255,255,.56);
+    margin-top:1px;
+  }
+  .note-icon svg{width:14px;height:14px}
+  .filter-row{
+    display:flex;
+    gap:7px;
+    overflow:hidden;
+    margin-bottom:12px;
+  }
+  .filter{
+    flex:0 0 auto;
+    min-height:33px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:8px 11px;
+    border:1px solid rgba(138,154,126,.22);
+    border-radius:999px;
+    background:rgba(252,252,250,.78);
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:700;
+  }
+  .filter.muted{
+    color:var(--muted);
+    border-color:rgba(232,230,223,.9);
+  }
+  .memory-card{
+    position:relative;
+    padding:15px 15px 14px;
+    border:1px solid var(--line);
+    border-radius:22px;
+    background:var(--paper);
+    box-shadow:0 14px 34px rgba(80,80,70,.038);
+    margin-bottom:10px;
+  }
+  .card-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:9px;
+  }
+  .card-kind{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    min-width:0;
+    color:var(--sage-deep);
+    font-size:11px;
+    font-weight:700;
+  }
+  .kind-dot{
+    width:8px;
+    min-width:8px;
+    height:8px;
+    border-radius:50%;
+    background:var(--sage);
+  }
+  .kind-dot.lav{background:var(--lav)}
+  .kind-dot.clay{background:var(--clay)}
+  .kind-dot.gold{background:var(--gold)}
+  .visibility{
+    min-height:26px;
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:5px 8px;
+    border-radius:999px;
+    background:var(--warm);
+    color:var(--muted);
+    font-size:10.5px;
+    font-weight:700;
+    white-space:nowrap;
+  }
+  .visibility svg{width:12px;height:12px}
+  .memory-card h4{
+    color:var(--text);
+    font-size:15px;
+    line-height:1.44;
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  .memory-card p{
+    color:var(--soft-text);
+    font-size:12.4px;
+    line-height:1.68;
+  }
+  .card-foot{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-top:11px;
+    padding-top:10px;
+    border-top:1px solid rgba(232,230,223,.82);
+    color:var(--muted);
+    font-size:11.2px;
+    line-height:1.35;
+  }
+  .reaction-row{
+    display:flex;
+    gap:6px;
+    margin-top:11px;
+  }
+  .reaction{
+    min-height:30px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:7px 10px;
+    border:1px solid rgba(232,230,223,.94);
+    border-radius:999px;
+    background:rgba(248,248,244,.78);
+    color:var(--muted);
+    font-size:11px;
+    font-weight:700;
+  }
+  .reaction.active{
+    border-color:rgba(138,154,126,.26);
+    background:var(--sage-soft);
+    color:var(--sage-deep);
+  }
+  .primary-action{
+    width:100%;
+    min-height:48px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    border-radius:17px;
+    background:var(--sage-deep);
+    color:#fff;
+    font-size:13px;
+    font-weight:700;
+    box-shadow:0 12px 24px rgba(111,127,99,.18);
+  }
+  .primary-action svg{width:17px;height:17px}
+  .secondary-action{
+    width:100%;
+    min-height:44px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    border:1px solid rgba(232,230,223,.94);
+    border-radius:16px;
+    background:rgba(252,252,250,.82);
+    color:var(--sage-deep);
+    font-size:12.6px;
+    font-weight:700;
+  }
+  .form-card{
+    padding:16px 16px 17px;
+    border:1px solid var(--line);
+    border-radius:22px;
+    background:rgba(252,252,250,.86);
+    box-shadow:0 14px 34px rgba(80,80,70,.04);
+    margin-bottom:12px;
+  }
+  .field-label{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:9px;
+  }
+  .field-label b{
+    color:var(--text);
+    font-size:13px;
+    font-weight:700;
+  }
+  .field-label span{
+    color:var(--muted);
+    font-size:11px;
+    white-space:nowrap;
+  }
+  .type-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-bottom:13px;
+  }
+  .type-option{
+    min-height:54px;
+    padding:11px 11px;
+    border:1px solid rgba(232,230,223,.94);
+    border-radius:15px;
+    background:var(--warm);
+  }
+  .type-option.active{
+    border-color:rgba(138,154,126,.32);
+    background:var(--sage-soft);
+  }
+  .type-option small{
+    display:block;
+    margin-bottom:4px;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    line-height:1.2;
+  }
+  .type-option p{
+    color:var(--soft-text);
+    font-size:12px;
+    line-height:1.35;
+  }
+  .input-mock{
+    min-height:48px;
+    padding:12px 13px;
+    border:1px solid rgba(232,230,223,.9);
+    border-radius:16px;
+    background:var(--warm);
+    color:var(--soft-text);
+    font-size:12.8px;
+    line-height:1.52;
+    margin-bottom:9px;
+  }
+  .textarea-mock{
+    min-height:95px;
+    padding:12px 13px;
+    border:1px solid rgba(232,230,223,.9);
+    border-radius:16px;
+    background:var(--warm);
+    color:var(--soft-text);
+    font-size:12.8px;
+    line-height:1.72;
+  }
+  .visibility-panel{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-top:11px;
+  }
+  .visibility-option{
+    min-height:62px;
+    padding:11px;
+    border:1px solid rgba(232,230,223,.94);
+    border-radius:16px;
+    background:rgba(248,248,244,.84);
+  }
+  .visibility-option.active{
+    border-color:rgba(138,154,126,.28);
+    background:var(--sage-soft);
+  }
+  .visibility-option b{
+    display:block;
+    color:var(--text);
+    font-size:12.4px;
+    margin-bottom:4px;
+  }
+  .visibility-option p{
+    color:var(--muted);
+    font-size:10.8px;
+    line-height:1.42;
+  }
+  .owner-switch{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .owner-option{
+    min-height:48px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:10px 12px;
+    border:1px solid rgba(232,230,223,.94);
+    border-radius:16px;
+    background:rgba(252,252,250,.78);
+  }
+  .owner-option.active{
+    border-color:rgba(138,154,126,.28);
+    background:var(--sage-soft);
+  }
+  .owner-option b{
+    color:var(--text);
+    font-size:12.5px;
+    line-height:1.3;
+  }
+  .owner-option span{
+    margin-top:3px;
+    color:var(--muted);
+    font-size:10.8px;
+    line-height:1.35;
+  }
+  .shared-alert{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    padding:12px 13px;
+    border:1px solid rgba(200,173,109,.24);
+    border-radius:18px;
+    background:var(--gold-soft);
+    color:#786942;
+    font-size:12px;
+    line-height:1.52;
+    margin-bottom:12px;
+  }
+  .shared-alert svg{width:17px;height:17px;min-width:17px;margin-top:1px}
+  .comment-box{
+    padding:13px 14px;
+    border:1px solid rgba(185,168,201,.24);
+    border-radius:18px;
+    background:var(--lav-soft);
+    margin:10px 0 12px;
+  }
+  .comment-box b{
+    display:block;
+    color:#7b6a89;
+    font-size:12.5px;
+    margin-bottom:5px;
+  }
+  .comment-box p{
+    color:var(--soft-text);
+    font-size:12.2px;
+    line-height:1.58;
+  }
+  .request-box{
+    padding:14px 15px;
+    border:1px solid rgba(177,132,114,.24);
+    border-radius:20px;
+    background:var(--clay-soft);
+    margin-bottom:11px;
+  }
+  .request-box small{
+    display:block;
+    margin-bottom:6px;
+    color:#8d6656;
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:1.5px;
+  }
+  .request-box h4{
+    color:var(--text);
+    font-size:14.2px;
+    line-height:1.42;
+    font-weight:700;
+    margin-bottom:5px;
+  }
+  .request-box p{
+    color:var(--soft-text);
+    font-size:12.2px;
+    line-height:1.62;
+  }
+  .dual-actions{
+    display:grid;
+    grid-template-columns:1fr 1.1fr;
+    gap:8px;
+  }
+  .section-label{
+    margin:18px 0 10px;
+    color:var(--text);
+    font-size:13px;
+    font-weight:700;
+  }
+  .home-memory-entry{
+    padding:17px 17px 16px;
+    border:1px solid rgba(138,154,126,.28);
+    border-radius:24px;
+    background:var(--paper);
+    box-shadow:0 16px 36px rgba(80,80,70,.048);
+    margin-bottom:12px;
+  }
+  .entry-kicker{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:10px;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:1.5px;
+  }
+  .entry-kicker span:last-child{
+    color:var(--muted);
+    letter-spacing:0;
+    font-size:11px;
+  }
+  .home-memory-entry h4{
+    color:var(--text);
+    font-size:16px;
+    line-height:1.45;
+    font-weight:700;
+    margin-bottom:7px;
+  }
+  .home-memory-entry p{
+    color:var(--soft-text);
+    font-size:12.4px;
+    line-height:1.65;
+  }
+  .memory-stat-row{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:8px;
+    margin:13px 0;
+  }
+  .memory-stat{
+    min-height:54px;
+    padding:10px 11px;
+    border:1px solid rgba(232,230,223,.9);
+    border-radius:16px;
+    background:var(--warm);
+  }
+  .memory-stat small{
+    display:block;
+    color:var(--muted);
+    font-size:10.5px;
+    line-height:1.25;
+    margin-bottom:4px;
+  }
+  .memory-stat b{
+    color:var(--text);
+    font-size:13.5px;
+    line-height:1.25;
+  }
+  .inline-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-top:12px;
+  }
+  .mini-action{
+    min-height:39px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    border:1px solid rgba(232,230,223,.94);
+    border-radius:15px;
+    background:rgba(248,248,244,.84);
+    color:var(--sage-deep);
+    font-size:11.5px;
+    font-weight:700;
+  }
+  .mini-action.primary{
+    border-color:rgba(111,127,99,.2);
+    background:var(--sage-deep);
+    color:#fff;
+  }
+  .mini-action svg{width:15px;height:15px}
+  .compact-question{
+    padding:15px 16px;
+    border:1px solid var(--line);
+    border-radius:20px;
+    background:rgba(252,252,250,.78);
+    margin-bottom:10px;
+  }
+  .compact-question small{
+    display:block;
+    color:var(--sage-deep);
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:1.2px;
+    margin-bottom:7px;
+  }
+  .compact-question p{
+    color:var(--text);
+    font-size:13.2px;
+    line-height:1.58;
+    font-weight:600;
+  }
+  .menu-sheet{
+    position:absolute;
+    left:10px;
+    right:10px;
+    bottom:82px;
+    max-height:646px;
+    padding:13px 14px 15px;
+    border:1px solid rgba(232,230,223,.94);
+    border-radius:26px 26px 0 0;
+    background:rgba(252,252,250,.98);
+    box-shadow:0 -16px 38px rgba(70,70,60,.12);
+  }
+  .sheet-handle{
+    width:40px;
+    height:4px;
+    border-radius:999px;
+    background:#d7d5cc;
+    margin:0 auto 16px;
+  }
+  .menu-intro h4{
+    font-family:'Nanum Myeongjo',serif;
+    color:var(--text);
+    font-size:21px;
+    line-height:1.34;
+    font-weight:800;
+  }
+  .menu-intro p{
+    margin-top:6px;
+    color:var(--muted);
+    font-size:12.2px;
+    line-height:1.58;
+  }
+  .menu-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    min-height:67px;
+    padding:12px 13px;
+    border:1px solid rgba(232,230,223,.9);
+    border-radius:18px;
+    background:var(--paper);
+    margin-top:8px;
+  }
+  .menu-row.featured{
+    border-color:rgba(138,154,126,.28);
+    background:var(--sage-soft);
+  }
+  .menu-icon{
+    width:40px;
+    min-width:40px;
+    height:40px;
+    display:grid;
+    place-items:center;
+    border-radius:14px;
+    background:rgba(255,255,255,.64);
+    color:var(--sage-deep);
+  }
+  .menu-icon svg{width:19px;height:19px}
+  .menu-row div:nth-child(2){min-width:0;flex:1}
+  .menu-row b{
+    display:block;
+    color:var(--text);
+    font-size:13.4px;
+    line-height:1.35;
+    margin-bottom:4px;
+  }
+  .menu-row p{
+    color:var(--muted);
+    font-size:11.4px;
+    line-height:1.42;
+  }
+  .menu-badge{
+    min-width:25px;
+    height:25px;
+    padding:0 8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:999px;
+    background:var(--gold-soft);
+    color:#856f3d;
+    font-size:10.5px;
+    font-weight:700;
+  }
+  .bottom-nav{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    height:82px;
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:1px;
+    padding:10px 8px 13px;
+    border-top:1px solid rgba(232,230,223,.9);
+    background:rgba(252,252,250,.94);
+  }
+  .nav-item{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    color:var(--muted);
+    font-size:9.2px;
+    line-height:1.15;
+  }
+  .nav-item svg{width:16px;height:16px}
+  .nav-item.active{color:var(--sage-deep);font-weight:700}
+  .proposal-note{
+    max-width:1040px;
+    margin:34px auto 0;
+    padding:24px 24px 25px;
+    border:1px solid rgba(232,230,223,.94);
+    border-radius:24px;
+    background:rgba(252,252,250,.76);
+  }
+  .proposal-note h2{
+    font-family:'Nanum Myeongjo',serif;
+    font-size:22px;
+    line-height:1.35;
+    font-weight:800;
+    margin-bottom:13px;
+  }
+  .note-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:14px;
+  }
+  .note-box{
+    padding:17px 18px;
+    border:1px solid rgba(232,230,223,.9);
+    border-radius:18px;
+    background:rgba(248,248,244,.72);
+  }
+  .note-box b{
+    display:block;
+    color:var(--text);
+    font-size:13.5px;
+    margin-bottom:8px;
+  }
+  .note-box ul{padding-left:17px}
+  .note-box li{
+    color:var(--muted);
+    font-size:12.6px;
+    line-height:1.75;
+    margin:2px 0;
+  }
+  @media (max-width:1120px){
+    .principles{grid-template-columns:repeat(2,1fr)}
+    .stage{grid-template-columns:repeat(2,minmax(300px,390px))}
+  }
+  @media (max-width:760px){
+    body{padding:28px 14px 42px}
+    .page-title h1{font-size:27px}
+    .principles,.stage,.note-grid{grid-template-columns:1fr}
+    .principles{margin-bottom:28px}
+    .phone{margin:0 auto}
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="page-title">
+    <span class="eyebrow">DESIGN PROPOSAL</span>
+    <h1>홈에서 발견하고 메뉴에서 다시 여는 기억 카드</h1>
+    <p>하단 네비게이션을 늘리지 않고, 홈의 주요 카드와 기능 모아보기 메뉴를 통해 영우와 민영이가 서로에 대해 기억하고 싶은 내용을 직접 남기고 공유하는 MVP 제안입니다.</p>
+  </header>
+
+  <section class="principles" aria-label="디자인 원칙">
+    <article class="principle">
+      <b>직접 쓰는 기억</b>
+      <p>앱이 대화를 해석하지 않습니다. 사용자가 기억하고 싶은 내용만 카드로 남깁니다.</p>
+    </article>
+    <article class="principle">
+      <b>홈에서 잘 보이기</b>
+      <p>하단 탭을 추가하지 않고 홈 주요 카드로 현재 카드 수와 최근 기억을 보여줍니다.</p>
+    </article>
+    <article class="principle">
+      <b>메뉴에서 다시 찾기</b>
+      <p>기능 모아보기 메뉴에도 같은 진입점을 둬서 홈에서 지나쳐도 쉽게 돌아올 수 있습니다.</p>
+    </article>
+    <article class="principle">
+      <b>부드러운 수정</b>
+      <p>상대가 “조금 다르게 기억해줘”라고 요청할 수 있어 오해가 쌓이지 않습니다.</p>
+    </article>
+  </section>
+
+  <section class="stage" aria-label="제안 화면">
+    <article>
+      <div class="caption">
+        <span class="tag">1차 진입</span>
+        <h2>홈 주요 카드</h2>
+        <p>하단 탭을 늘리지 않고 홈 안에서 기능의 존재감과 최근 기억을 보여줍니다.</p>
+      </div>
+      <div class="phone" aria-label="홈 주요 기억 카드 화면 목업">
+        <div class="screen">
+          <div class="topbar">
+            <div class="side"></div>
+            <div class="title-serif">조금씩</div>
+            <div class="side right">
+              <button class="paper-btn" aria-label="메뉴 열기">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="screen-head">
+            <small>TODAY</small>
+            <h3>오늘도 조금씩<br>서로를 알아가요</h3>
+            <p>질문과 기록 사이에, 잊고 싶지 않은 작은 기억을 조용히 꺼내봅니다.</p>
+          </div>
+
+          <div class="compact-question">
+            <small>TODAY'S QUESTION</small>
+            <p>요즘 내가 편하게 느끼는 시간은 언제야?</p>
+          </div>
+
+          <div class="section-label">서로의 기억</div>
+
+          <section class="home-memory-entry" aria-label="홈 기억 카드 진입">
+            <div class="entry-kicker">
+              <span>MEMORY CARDS</span>
+              <span>최근 업데이트 1개</span>
+            </div>
+            <h4>내가 기억하는 민영이, 민영이가 기억하는 나</h4>
+            <p>서로에게 보여줘도 좋은 기억은 함께 보고, 조심스러운 메모는 나만 간직해요.</p>
+
+            <div class="memory-stat-row">
+              <div class="memory-stat">
+                <small>영우의 공간</small>
+                <b>민영이에 대해 3개</b>
+              </div>
+              <div class="memory-stat">
+                <small>민영이의 공간</small>
+                <b>영우에 대해 2개</b>
+              </div>
+            </div>
+
+            <article class="memory-card">
+              <div class="card-top">
+                <div class="card-kind"><span class="kind-dot"></span>좋아하는 것</div>
+                <span class="visibility">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="3"/></svg>
+                  공유
+                </span>
+              </div>
+              <h4>음악이 작고 오래 앉기 편한 카페</h4>
+              <p>민영이가 더 정확하게 고쳐준 최근 기억이에요.</p>
+            </article>
+
+            <div class="inline-actions">
+              <button class="mini-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-3-6 3V3z"/></svg>
+                전체 보기
+              </button>
+              <button class="mini-action primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                카드 만들기
+              </button>
+            </div>
+          </section>
+        </div>
+
+        <nav class="bottom-nav" aria-label="하단 탭">
+          <div class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+            홈
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8l3 4v12H5V8l3-4z"/><path d="M8 4v4h8V4"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>
+            질문
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            음악
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg>
+            약속
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+            만남
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-4.4 7-11a7 7 0 0 0-14 0c0 6.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            장소
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.8-4 14.2-4 16 0"/></svg>
+            마이
+          </div>
+        </nav>
+      </div>
+    </article>
+
+    <article>
+      <div class="caption">
+        <span class="tag">2차 진입</span>
+        <h2>메뉴에서도 진입</h2>
+        <p>홈 카드를 놓쳐도 기능 모아보기 메뉴에서 기억 카드를 다시 열 수 있습니다.</p>
+      </div>
+      <div class="phone" aria-label="기능 모아보기 메뉴 기억 카드 진입 화면 목업">
+        <div class="screen">
+          <div class="topbar">
+            <div class="side"></div>
+            <div class="title-serif">조금씩</div>
+            <div class="side right">
+              <button class="paper-btn" aria-label="메뉴 열기">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="screen-head">
+            <small>HOME MENU</small>
+            <h3>가끔 꺼내볼 기능을<br>한곳에 모아요</h3>
+            <p>기억 카드는 하단 탭에 넣지 않고 메뉴의 보조 기능 흐름에 함께 둡니다.</p>
+          </div>
+
+          <div class="compact-question">
+            <small>MAIN ENTRY</small>
+            <p>홈 주요 카드에서 먼저 보여주고, 메뉴에서는 항상 다시 찾을 수 있게 둡니다.</p>
+          </div>
+        </div>
+
+        <section class="menu-sheet" aria-label="기능 모아보기 메뉴">
+          <div class="sheet-handle"></div>
+          <div class="menu-intro">
+            <h4>기능 모아보기</h4>
+            <p>오늘 질문을 방해하지 않는 선에서, 가끔 꺼내볼 기능을 한곳에 모았어요.</p>
+          </div>
+
+          <article class="menu-row featured">
+            <div class="menu-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-3-6 3V3z"/></svg>
+            </div>
+            <div>
+              <b>서로의 기억</b>
+              <p>까먹고 싶지 않은 서로의 작은 기억</p>
+            </div>
+            <span class="menu-badge">새 1</span>
+          </article>
+
+          <article class="menu-row">
+            <div class="menu-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+            </div>
+            <div>
+              <b>궁금함 한 장</b>
+              <p>상대에게 짧게 물어보기</p>
+            </div>
+          </article>
+
+          <article class="menu-row">
+            <div class="menu-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10"/><path d="M7 12h10"/><path d="M7 17h6"/><rect x="4" y="3" width="16" height="18" rx="2"/></svg>
+            </div>
+            <div>
+              <b>소개 카드</b>
+              <p>취향과 대화 방식을 편한 만큼 채우기</p>
+            </div>
+          </article>
+
+          <article class="menu-row">
+            <div class="menu-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg>
+            </div>
+            <div>
+              <b>취향 매치</b>
+              <p>둘 중 하나를 고르고 서로의 취향 보기</p>
+            </div>
+          </article>
+        </section>
+
+        <nav class="bottom-nav" aria-label="하단 탭">
+          <div class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+            홈
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8l3 4v12H5V8l3-4z"/><path d="M8 4v4h8V4"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>
+            질문
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            음악
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg>
+            약속
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+            만남
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-4.4 7-11a7 7 0 0 0-14 0c0 6.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            장소
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.8-4 14.2-4 16 0"/></svg>
+            마이
+          </div>
+        </nav>
+      </div>
+    </article>
+
+    <article>
+      <div class="caption">
+        <span class="tag">작성 흐름</span>
+        <h2>직접 카드 만들기</h2>
+        <p>카드 유형과 공개 범위를 선택하고, 내가 기억하고 싶은 문장을 직접 저장합니다.</p>
+      </div>
+      <div class="phone" aria-label="직접 기억 카드 만들기 화면 목업">
+        <div class="screen">
+          <div class="topbar">
+            <div class="side">
+              <button class="paper-btn" aria-label="닫기">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div class="title-serif">새 기억</div>
+            <div class="side right"></div>
+          </div>
+
+          <div class="screen-head">
+            <small>WRITE YOURSELF</small>
+            <h3>까먹고 싶지 않은<br>작은 내용을 남기기</h3>
+            <p>분석보다 기록에 가깝게, 상대에게 보여줘도 부담 없는 말투를 기본으로 합니다.</p>
+          </div>
+
+          <div class="owner-switch" aria-label="기억 공간 선택">
+            <div class="owner-option active">
+              <b>영우의 공간</b>
+              <span>민영이에 대해 남김</span>
+            </div>
+            <div class="owner-option">
+              <b>민영이의 공간</b>
+              <span>영우에 대해 남김</span>
+            </div>
+          </div>
+
+          <section class="form-card" aria-label="기억 카드 작성 폼">
+            <div class="field-label">
+              <b>카드 유형</b>
+              <span>하나 선택</span>
+            </div>
+            <div class="type-grid">
+              <div class="type-option active">
+                <small>좋아하는 것</small>
+                <p>취향, 장소, 말투</p>
+              </div>
+              <div class="type-option">
+                <small>싫어하는 것</small>
+                <p>부담, 불편함</p>
+              </div>
+              <div class="type-option">
+                <small>요즘 이야기</small>
+                <p>일정, 고민, 상태</p>
+              </div>
+              <div class="type-option">
+                <small>함께 할 것</small>
+                <p>약속, 가보고 싶은 곳</p>
+              </div>
+            </div>
+
+            <div class="field-label">
+              <b>제목</b>
+              <span>짧게</span>
+            </div>
+            <div class="input-mock">조용한 카페에서 오래 이야기하기</div>
+
+            <div class="field-label">
+              <b>기억할 내용</b>
+              <span>한두 문장</span>
+            </div>
+            <div class="textarea-mock">
+              민영이는 사람이 너무 많은 곳보다 조용하고 앉기 편한 카페를 좋아한다. 오래 이야기할 수 있는 자리면 더 편해 보였다.
+            </div>
+
+            <div class="visibility-panel" aria-label="공개 범위">
+              <div class="visibility-option active">
+                <b>서로 보기</b>
+                <p>상대도 볼 수 있고 반응할 수 있음</p>
+              </div>
+              <div class="visibility-option">
+                <b>나만 보기</b>
+                <p>작성자에게만 보이는 개인 메모</p>
+              </div>
+            </div>
+          </section>
+
+          <button class="primary-action">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            저장하고 공유하기
+          </button>
+        </div>
+
+        <nav class="bottom-nav" aria-label="하단 탭">
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+            홈
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8l3 4v12H5V8l3-4z"/><path d="M8 4v4h8V4"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>
+            질문
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            음악
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg>
+            약속
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+            만남
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-4.4 7-11a7 7 0 0 0-14 0c0 6.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            장소
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.8-4 14.2-4 16 0"/></svg>
+            마이
+          </div>
+        </nav>
+      </div>
+    </article>
+
+    <article>
+      <div class="caption">
+        <span class="tag">공유의 안전장치</span>
+        <h2>반응과 수정 요청</h2>
+        <p>상대는 카드에 가볍게 반응하거나, 부담 없이 다르게 기억해달라고 요청합니다.</p>
+      </div>
+      <div class="phone" aria-label="공유 카드 반응과 수정 요청 화면 목업">
+        <div class="screen">
+          <div class="topbar">
+            <div class="side">
+              <button class="paper-btn" aria-label="뒤로">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+            </div>
+            <div class="title-serif">공유 카드</div>
+            <div class="side right">
+              <button class="paper-btn" aria-label="더 보기">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="screen-head">
+            <small>CARD RESPONSE</small>
+            <h3>맞으면 가볍게,<br>다르면 부드럽게</h3>
+            <p>카드가 틀렸을 때도 지적처럼 느껴지지 않도록 수정 요청을 별도 흐름으로 둡니다.</p>
+          </div>
+
+          <div class="shared-alert">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            <span>민영이가 이 카드를 확인했어요. 지금은 공유 카드로 유지됩니다.</span>
+          </div>
+
+          <article class="memory-card">
+            <div class="card-top">
+              <div class="card-kind"><span class="kind-dot"></span>좋아하는 것</div>
+              <span class="visibility">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="3"/></svg>
+                공유
+              </span>
+            </div>
+            <h4>조용한 카페에서 오래 이야기하기</h4>
+            <p>민영이는 사람이 너무 많은 곳보다 조용하고 앉기 편한 카페를 좋아한다.</p>
+            <div class="card-foot">
+              <span>영우가 남김</span>
+              <span>7월 6일</span>
+            </div>
+            <div class="reaction-row" aria-label="카드 반응">
+              <span class="reaction active">맞아</span>
+              <span class="reaction">좋아</span>
+              <span class="reaction">조금 수정</span>
+            </div>
+          </article>
+
+          <div class="comment-box">
+            <b>민영이의 반응</b>
+            <p>맞아. 근데 너무 조용한 곳보다는 음악이 작게 있는 곳이 더 좋아.</p>
+          </div>
+
+          <section class="request-box" aria-label="수정 요청 예시">
+            <small>SOFT EDIT REQUEST</small>
+            <h4>이렇게 바꿔서 기억해줘</h4>
+            <p>“조용한 카페”보다 “음악이 작고 오래 앉기 편한 카페”로 저장하면 더 정확해요.</p>
+          </section>
+
+          <div class="dual-actions">
+            <button class="secondary-action">나만 보기로</button>
+            <button class="primary-action">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+              반영하기
+            </button>
+          </div>
+        </div>
+
+        <nav class="bottom-nav" aria-label="하단 탭">
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+            홈
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8l3 4v12H5V8l3-4z"/><path d="M8 4v4h8V4"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>
+            질문
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            음악
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg>
+            약속
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+            만남
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-4.4 7-11a7 7 0 0 0-14 0c0 6.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            장소
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.8-4 14.2-4 16 0"/></svg>
+            마이
+          </div>
+        </nav>
+      </div>
+    </article>
+  </section>
+
+  <section class="proposal-note" aria-label="구현 방향 메모">
+    <h2>구현 방향 메모</h2>
+    <div class="note-grid">
+      <article class="note-box">
+        <b>MVP 범위</b>
+        <ul>
+          <li>대화 회고와 자동 생성은 제외하고, 사용자가 직접 만드는 기억 카드만 제공합니다.</li>
+          <li>하단 네비게이션에는 추가하지 않고, 홈 주요 카드와 기능 모아보기 메뉴에서 진입합니다.</li>
+          <li>기억 화면 안에서는 영우의 공간, 민영이의 공간처럼 작성자 기준 공간을 나누어 카드를 모읍니다.</li>
+          <li>카드 유형은 좋아하는 것, 싫어하는 것, 요즘 이야기, 함께 할 것, 조심할 것 정도로 시작합니다.</li>
+        </ul>
+      </article>
+      <article class="note-box">
+        <b>공유와 안전장치</b>
+        <ul>
+          <li>카드 공개 범위는 `서로 보기`와 `나만 보기`를 카드마다 선택합니다.</li>
+          <li>상대는 공유 카드에 `맞아`, `좋아`, `조금 수정`으로 반응할 수 있습니다.</li>
+          <li>수정 요청은 원문을 즉시 바꾸지 않고, 작성자가 `반영하기`를 눌러야 적용됩니다.</li>
+        </ul>
+      </article>
+      <article class="note-box">
+        <b>Firestore write 경계</b>
+        <ul>
+          <li>타이핑, 탭 이동, 필터 변경, 카드 열람은 Firestore write를 만들지 않습니다.</li>
+          <li>카드 저장, 공개 범위 변경, 반응 등록, 수정 요청, 요청 반영에서만 Firestore write가 발생합니다.</li>
+          <li>나만 보기 카드는 작성자 ownerUid만 읽고 쓸 수 있어야 합니다.</li>
+        </ul>
+      </article>
+      <article class="note-box">
+        <b>데이터 모델과 테스트</b>
+        <ul>
+          <li>`memoryCards`: ownerUid, subjectUid, type, title, body, visibility, createdAt, updatedAt.</li>
+          <li>`memoryCardResponses`: cardId, responderUid, reaction, correctionText, status, createdAt.</li>
+          <li>390px 폭에서 홈 주요 카드, 메뉴 행, 공간 탭, 공개 범위 버튼, 기존 하단 탭 텍스트가 겹치지 않는지 확인합니다.</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+</main>
+</body>
+</html>

@@ -1495,6 +1495,131 @@ void main() {
       expect(controller.visibleWishes, isEmpty);
     });
 
+    test('memory card writes only when a card is submitted', () async {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        firebaseTestSession,
+        repository: repository,
+      );
+
+      expect(repository.savedMemoryCards, isEmpty);
+      expect(
+        controller.createMemoryCard(
+          type: MemoryCardType.likes,
+          title: ' ',
+          body: '아직 제목이 없어요.',
+        ),
+        isNull,
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(repository.savedMemoryCards, isEmpty);
+
+      final card = controller.createMemoryCard(
+        type: MemoryCardType.likes,
+        title: '조용한 카페 자리',
+        body: '민영이는 창가보다 안쪽 자리를 더 편하게 느낀다고 했어요.',
+        visibility: MemoryCardVisibility.shared,
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(card, isNotNull);
+      expect(controller.visibleMemoryCards.single.title, '조용한 카페 자리');
+      expect(
+        controller.visibleMemoryCards.single.createdByProfileId,
+        'youngwooUid',
+      );
+      expect(repository.savedMemoryCards.single.spaceId, 'main');
+      expect(
+        repository.savedMemoryCards.single.card.visibility,
+        MemoryCardVisibility.shared,
+      );
+    });
+
+    test('memory card visibility keeps partner private cards hidden', () {
+      final controller = AlagagiController.forSession(
+        firebaseSessionWithData(
+          AlagagiSpaceData(
+            memoryCards: [
+              MemoryCard(
+                id: 'partner_shared',
+                type: MemoryCardType.current,
+                title: '공유 카드',
+                body: '상대가 공유한 기억이에요.',
+                createdByProfileId: 'minyoungUid',
+                subjectProfileId: 'youngwooUid',
+                visibility: MemoryCardVisibility.shared,
+                createdLabel: '오늘',
+              ),
+              MemoryCard(
+                id: 'partner_private',
+                type: MemoryCardType.care,
+                title: '비공개 카드',
+                body: '상대에게 보이면 안 되는 카드예요.',
+                createdByProfileId: 'minyoungUid',
+                subjectProfileId: 'youngwooUid',
+                visibility: MemoryCardVisibility.private,
+                createdLabel: '오늘',
+              ),
+            ],
+          ),
+        ),
+      );
+
+      expect(
+        controller.visibleMemoryCards.map((card) => card.id),
+        contains('partner_shared'),
+      );
+      expect(
+        controller.visibleMemoryCards.map((card) => card.id),
+        isNot(contains('partner_private')),
+      );
+      expect(controller.memoryCardCountForOwner('minyoungUid'), 1);
+    });
+
+    test(
+      'memory card responses are saved as separate response documents',
+      () async {
+        final repository = RecordingAlagagiRepository();
+        final controller = AlagagiController.forSession(
+          firebaseSessionWithData(
+            AlagagiSpaceData(
+              memoryCards: [
+                MemoryCard(
+                  id: 'memory_partner',
+                  type: MemoryCardType.likes,
+                  title: '산책 방식',
+                  body: '정해진 코스보다 걷다가 멈추는 걸 좋아한다고 했어요.',
+                  createdByProfileId: 'minyoungUid',
+                  subjectProfileId: 'youngwooUid',
+                  visibility: MemoryCardVisibility.shared,
+                  createdLabel: '오늘',
+                ),
+              ],
+            ),
+          ),
+          repository: repository,
+        );
+
+        final response = controller.respondToMemoryCard(
+          'memory_partner',
+          MemoryCardReaction.agree,
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(response, isNotNull);
+        expect(repository.savedMemoryCardResponses.single.spaceId, 'main');
+        expect(
+          repository.savedMemoryCardResponses.single.response.id,
+          'memory_partner_youngwooUid',
+        );
+        expect(
+          repository.savedMemoryCardResponses.single.response.reaction,
+          MemoryCardReaction.agree,
+        );
+        expect(repository.savedMemoryCards, isEmpty);
+      },
+    );
+
     test(
       'custom profile cards can be saved, hidden, restored, and deleted',
       () async {
@@ -1655,6 +1780,20 @@ void main() {
                 updatedByProfileId: 'minyoungUid',
               ),
             ],
+            memoryCards: [
+              MemoryCard(
+                id: 'memory_partner_unread',
+                type: MemoryCardType.current,
+                title: '요즘 산책',
+                body: '길게 걷는 것보다 짧게 쉬어가는 산책이 편하다고 했어요.',
+                createdByProfileId: 'minyoungUid',
+                subjectProfileId: 'youngwooUid',
+                visibility: MemoryCardVisibility.shared,
+                createdLabel: '오늘',
+                updatedAt: DateTime.parse('2026-06-09T10:15:00.000Z'),
+                updatedByProfileId: 'minyoungUid',
+              ),
+            ],
             stockStories: [
               StockStory(
                 id: 'stock_partner',
@@ -1705,6 +1844,7 @@ void main() {
           UnreadActivityFeature.wishlist,
           UnreadActivityFeature.meetings,
           UnreadActivityFeature.places,
+          UnreadActivityFeature.memoryCards,
           UnreadActivityFeature.stocks,
           UnreadActivityFeature.music,
           UnreadActivityFeature.improvements,
@@ -3267,6 +3407,9 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   deletedProfileSlots = [];
   final List<({String spaceId, WishItem wish})> savedWishes = [];
   final List<({String spaceId, String wishId})> deletedWishes = [];
+  final List<({String spaceId, MemoryCard card})> savedMemoryCards = [];
+  final List<({String spaceId, MemoryCardResponse response})>
+  savedMemoryCardResponses = [];
   final List<({String spaceId, MusicNote note})> savedMusicNotes = [];
   final List<({String spaceId, MusicNote note})> savedMusicListenStates = [];
   final List<({String spaceId, String noteId})> deletedMusicNotes = [];
@@ -3365,6 +3508,19 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   @override
   Future<void> deleteWish(String spaceId, String wishId) async {
     deletedWishes.add((spaceId: spaceId, wishId: wishId));
+  }
+
+  @override
+  Future<void> saveMemoryCard(String spaceId, MemoryCard card) async {
+    savedMemoryCards.add((spaceId: spaceId, card: card));
+  }
+
+  @override
+  Future<void> saveMemoryCardResponse(
+    String spaceId,
+    MemoryCardResponse response,
+  ) async {
+    savedMemoryCardResponses.add((spaceId: spaceId, response: response));
   }
 
   @override

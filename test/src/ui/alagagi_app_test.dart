@@ -86,6 +86,49 @@ void main() {
     expect(find.text('대기 1장'), findsOneWidget);
   });
 
+  testWidgets(
+    'memory cards open from home card and home menu without bottom tab',
+    (tester) async {
+      await tester.pumpWidget(const AlagagiApp());
+      await enterSpace(tester);
+
+      await tester.ensureVisible(find.byKey(homeMemoryCardKey));
+      await tester.pumpAndSettle();
+      expect(find.byKey(homeMemoryCardKey), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(bottomNavigationKey),
+          matching: find.text('기억'),
+        ),
+        findsNothing,
+      );
+
+      await tester.tap(find.byKey(homeMemoryOpenButtonKey));
+      await tester.pumpAndSettle();
+      expect(find.byKey(memoryCardsScreenKey), findsOneWidget);
+      expect(find.text('서로의 기억'), findsWidgets);
+
+      await tester.tap(find.byKey(subScreenBackButtonKey));
+      await tester.pumpAndSettle();
+      expect(find.byKey(homeMemoryCardKey), findsOneWidget);
+
+      await tester.tap(find.byKey(homeMenuButtonKey));
+      await tester.pumpAndSettle();
+      expect(find.byKey(homeMenuMemoryButtonKey), findsOneWidget);
+      await tester.tap(find.byKey(homeMenuMemoryButtonKey));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(memoryCardsScreenKey), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(bottomNavigationKey),
+          matching: find.text('기억'),
+        ),
+        findsNothing,
+      );
+    },
+  );
+
   testWidgets('saves a curiosity reply and a new question in the sheet', (
     tester,
   ) async {
@@ -412,6 +455,8 @@ void main() {
     await tester.tap(find.byKey(subScreenBackButtonKey));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(homeMenuButtonKey));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(homeMenuWishlistButtonKey));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(homeMenuWishlistButtonKey));
     await tester.pumpAndSettle();
@@ -4352,4 +4397,13 @@ class _FailingSaveRepository implements AlagagiDataRepository {
 
   @override
   Future<void> deleteWish(String spaceId, String wishId) async {}
+
+  @override
+  Future<void> saveMemoryCard(String spaceId, MemoryCard card) async {}
+
+  @override
+  Future<void> saveMemoryCardResponse(
+    String spaceId,
+    MemoryCardResponse response,
+  ) async {}
 }

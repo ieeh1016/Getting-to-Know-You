@@ -246,6 +246,20 @@ void showHomeMenuSheet({
                 ),
                 const SizedBox(height: 8),
                 _HomeMenuRow(
+                  rowKey: homeMenuMemoryButtonKey,
+                  icon: Icons.bookmark_added_outlined,
+                  title: '서로의 기억',
+                  subtitle: '잊고 싶지 않은 대화 내용을 직접 카드로 남기기',
+                  badgeCount: controller.unreadCountForFeature(
+                    UnreadActivityFeature.memoryCards,
+                  ),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    controller.goTo(AlagagiRoute.memoryCards);
+                  },
+                ),
+                const SizedBox(height: 8),
+                _HomeMenuRow(
                   rowKey: homeMenuStockStoryButtonKey,
                   icon: Icons.bar_chart_rounded,
                   title: '주식 이야기',

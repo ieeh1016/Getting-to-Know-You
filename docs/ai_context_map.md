@@ -208,6 +208,28 @@
   - `test/src/ui/alagagi_auth_gate_test.dart`
   - `test/src/ui/alagagi_app_test.dart`
 
+### Memory Cards
+
+- 먼저 읽을 문서:
+  - `docs/spec/memory_cards.md`
+  - `docs/spec/home.md`
+  - `docs/spec/domain_model.md`
+  - `docs/spec/firestore.md`
+  - `docs/test_plan.md` entries with `MEMORY-`
+- 검색 단서:
+  - `memory card`
+  - `memoryCards`
+  - `memoryCardResponses`
+  - `home menu`
+  - `feature launcher`
+- 주요 code/test:
+  - `lib/src/features/memory/`
+  - `lib/src/features/home/`
+  - `lib/src/data/firebase_alagagi_repositories.dart`
+  - `test/src/domain/alagagi_auth_test.dart`
+  - `test/src/ui/alagagi_app_test.dart`
+  - `test/harness_contract_test.dart`
+
 ### Improvements
 
 - 먼저 읽을 문서:

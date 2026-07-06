@@ -70,6 +70,9 @@
 - `[WISH-001]` 위시 추가 draft는 제목/종류를 받아 내가 만든 wish를 저장한다.
 - 위시 추가/관심 표시/완료는 각각 1개 wish 문서 갱신으로 표현된다.
 - 위시 추가 draft 입력은 repository write를 호출하지 않고 제출 시에만 저장한다.
+- `[MEMORY-002]` 기억 카드 draft 입력, 유형 선택, 공개 범위 선택은 repository write를 호출하지 않고 제출 시에만 `memoryCards/{cardId}` 한 문서를 저장한다.
+- `[MEMORY-002]` 기억 카드 반응과 수정 요청은 `memoryCardResponses/{cardId_responderUid}` 한 문서만 저장하고 원문 카드를 자동 수정하지 않는다.
+- private 기억 카드는 작성자에게만 보이고 partner 목록/카운트에 노출되지 않는다.
 - 질문/밸런스 카탈로그는 사귀는 사이를 전제하는 `하트`, `애정 표현`, `데이트 계획`, `기념일`, `커플` 문구를 노출하지 않는다.
 - 개인화 설정이 없으면 기본 이름/아바타/초대 문구로 fallback한다.
 - 홈 진행 요약은 summary/progress/today answers/music notes에서 `오늘 질문`, `둘 다 답한 질문`, `음악 노트` 상태를 계산한다.
@@ -170,7 +173,10 @@
 - 하단 탭 루트 화면인 `약속`, `장소`, `마이`는 sub screen back action을 보여주지 않는다.
 - 홈은 질문 카드 아래에 조용한 진행 요약을 보여주고, 390px 모바일 viewport에서 질문 CTA보다 강하게 보이지 않는다.
 - 홈은 `Today's Question` 아래에 작은 `궁금함` 상태 카드를 보여주고, 카드를 누르면 실제 질문/답장 bottom sheet를 연다.
-- 홈 header menu는 `기능 모아보기`로 동작하며 `궁금함 한 장`, `주식 이야기`, `건의함`, `취향 매치`, `소개 카드`, `언젠가, 같이`, `처음 안내`를 한곳에서 열 수 있다.
+- 홈 header menu는 `기능 모아보기`로 동작하며 `궁금함 한 장`, `서로의 기억`, `주식 이야기`, `건의함`, `취향 매치`, `소개 카드`, `언젠가, 같이`, `처음 안내`를 한곳에서 열 수 있다.
+- `[MEMORY-001]` 홈은 하단 tab을 추가하지 않고 `서로의 기억` 주요 카드와 menu entry에서 기억 카드 화면을 연다.
+- `[MEMORY-001]` `서로의 기억` 홈 카드는 영우의 공간/민영이의 공간 count, 최근 공유 카드 preview, `기억 보기`/`카드 만들기` action을 보여준다.
+- 기억 카드 화면은 작성자 기준 공간 tab, card type filter, 직접 작성 form, shared/private 공개 범위, shared card reaction/correction flow를 제공한다.
 - 홈 `궁금함` 메뉴는 받은 질문, `답장 저장하기`, 내가 보낸 질문 상태, `질문 보내기`, `나중에 보기`를 보여준다.
 - `궁금함` 질문 draft와 답장 draft 변경은 repository write를 호출하지 않고, `질문 보내기`/`답장 저장하기` submit 시에만 `curiosityCards` 문서를 저장한다.
 - 답장을 기다리는 내가 보낸 `curiosityCards` 문서가 있으면 새 질문 submit은 repository write를 호출하지 않고 대기 안내를 보여준다.

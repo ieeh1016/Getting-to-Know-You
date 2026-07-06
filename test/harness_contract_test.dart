@@ -206,6 +206,36 @@ void main() {
     );
   });
 
+  test('memory card rules cover visibility and response writes', () {
+    final repository = File(
+      'lib/src/data/firebase_alagagi_repositories.dart',
+    ).readAsStringSync();
+    final rules = File('firestore.rules').readAsStringSync();
+
+    expect(repository, contains("collection('memoryCards')"));
+    expect(repository, contains("collection('memoryCardResponses')"));
+    expect(rules, contains('match /memoryCards/{cardId}'));
+    expect(rules, contains('match /memoryCardResponses/{responseId}'));
+    expect(rules, contains("resource.data.visibility == 'shared'"));
+    expect(
+      rules,
+      contains('request.resource.data.createdByProfileId == request.auth.uid'),
+    );
+    expect(rules, contains('function validMemoryCardResponseWrite'));
+    expect(
+      rules,
+      contains(
+        "memoryCardDocument(spaceId, request.resource.data.cardId).data.visibility == 'shared'",
+      ),
+    );
+    expect(
+      rules,
+      contains(
+        'memoryCardDocument(spaceId, request.resource.data.cardId).data.createdByProfileId != request.auth.uid',
+      ),
+    );
+  });
+
   test('meeting plan rules do not cap plan item count at eight', () {
     final rules = File('firestore.rules').readAsStringSync();
 

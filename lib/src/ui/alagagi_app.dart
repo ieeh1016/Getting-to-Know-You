@@ -15,6 +15,7 @@ import '../features/home/first_visit_guide_overlay.dart';
 import '../features/home/first_visit_guide_book_sheet.dart';
 import '../features/home/home_screen.dart';
 import '../features/improvements/improvement_board_screen.dart';
+import '../features/memory/memory_cards_screen.dart';
 import '../features/meeting/meeting_plan_screen.dart';
 import '../features/meeting/meeting_screen.dart';
 import '../features/music/music_screen.dart';
@@ -213,6 +214,7 @@ class _AlagagiRootState extends State<AlagagiRoot> {
       AlagagiRoute.balance => BalanceScreen(controller: _controller),
       AlagagiRoute.profileCard => ProfileCardScreen(controller: _controller),
       AlagagiRoute.wishlist => WishlistScreen(controller: _controller),
+      AlagagiRoute.memoryCards => MemoryCardsScreen(controller: _controller),
       AlagagiRoute.my => MyScreen(
         controller: _controller,
         onOpenGuideBook: () => showFirstVisitGuideBook(context),

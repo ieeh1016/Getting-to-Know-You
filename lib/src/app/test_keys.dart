@@ -53,7 +53,11 @@ const homeMenuImprovementButtonKey = Key('home-menu-improvement-button');
 const homeMenuBalanceButtonKey = Key('home-menu-balance-button');
 const homeMenuProfileCardButtonKey = Key('home-menu-profile-card-button');
 const homeMenuWishlistButtonKey = Key('home-menu-wishlist-button');
+const homeMenuMemoryButtonKey = Key('home-menu-memory-button');
 const homeMenuGuideButtonKey = Key('home-menu-guide-button');
+const homeMemoryCardKey = Key('home-memory-card');
+const homeMemoryOpenButtonKey = Key('home-memory-open-button');
+const homeMemoryCreateButtonKey = Key('home-memory-create-button');
 const homeCuriositySheetKey = Key('home-curiosity-sheet');
 const curiosityHistoryPanelKey = Key('curiosity-history-panel');
 const curiosityQuestionFieldKey = Key('curiosity-question-field');
@@ -184,6 +188,23 @@ const wishlistBoardKey = Key('wishlist-board');
 Key wishEditButtonKey(String wishId) => Key('wish-edit-button-$wishId');
 Key wishDoneButtonKey(String wishId) => Key('wish-done-button-$wishId');
 Key wishDeleteButtonKey(String wishId) => Key('wish-delete-button-$wishId');
+
+const memoryCardsScreenKey = Key('memory-cards-screen');
+const memoryCardTitleFieldKey = Key('memory-card-title-field');
+const memoryCardBodyFieldKey = Key('memory-card-body-field');
+const memoryCardSubmitButtonKey = Key('memory-card-submit-button');
+const memoryCorrectionFieldKey = Key('memory-correction-field');
+Key memoryOwnerTabKey(String ownerId) => Key('memory-owner-tab-$ownerId');
+Key memoryCardTypeButtonKey(String type) => Key('memory-card-type-$type');
+Key memoryVisibilityButtonKey(String visibility) =>
+    Key('memory-visibility-$visibility');
+Key memoryCardKey(String cardId) => Key('memory-card-$cardId');
+Key memoryResponseButtonKey(String cardId, String reaction) =>
+    Key('memory-response-$cardId-$reaction');
+Key memoryCorrectionSaveButtonKey(String cardId) =>
+    Key('memory-correction-save-$cardId');
+Key memoryCorrectionApplyButtonKey(String cardId, String responderId) =>
+    Key('memory-correction-apply-$cardId-$responderId');
 
 const answerFieldKey = Key('answer-field');
 const answerRetryButtonKey = Key('answer-retry-button');

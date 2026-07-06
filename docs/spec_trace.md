@@ -19,6 +19,7 @@
 | `STOCK-` | stock stories and holdings |
 | `PROFILE-` | profile cards and slots |
 | `WISH-` | wishlist |
+| `MEMORY-` | shared memory cards |
 | `IMPROVE-` | improvement board |
 | `FIRESTORE-` | Firestore rules, repository paths, write budget |
 
@@ -51,6 +52,8 @@
 | `STOCK-HOLDING-002` | Stock holding owner can edit/delete own holding, and partner reply updates existing partner holding document. | `docs/spec/stocks.md` | Unit Tests, Widget Tests | `test/src/domain/alagagi_auth_test.dart`: `stock holding owner can edit and delete own holding`; `test/src/domain/alagagi_auth_test.dart`: `stock holding reply updates the existing partner holding document`; `test/src/ui/alagagi_app_test.dart`: `stock holding cards allow owners to edit and delete holdings` |
 | `PROFILE-001` | Profile cards can be saved, hidden, restored, and deleted by the owning profile. | `docs/spec/profile_cards.md`, `docs/spec/domain_model.md` | Unit Tests, Widget Tests | `test/src/domain/alagagi_auth_test.dart`: `custom profile cards can be saved, hidden, restored, and deleted`; `test/src/ui/alagagi_app_test.dart`: `profile card can add custom cards and hide default prompts` |
 | `WISH-001` | Wish draft creates and saves my wish only on explicit submit. | `docs/spec/wishlist.md`, `docs/spec/domain_model.md` | Unit Tests, Widget Tests, Firestore Free Plan Budget Checks | `test/src/domain/alagagi_auth_test.dart`: `wish draft creates and saves my wish`; `test/src/ui/alagagi_auth_gate_test.dart`: `wishlist add CTA creates a new wish card` |
+| `MEMORY-001` | Memory cards enter from Home card and Home menu without adding a bottom navigation tab. | `docs/spec/memory_cards.md`, `docs/spec/home.md` | Widget Tests | `test/src/ui/alagagi_app_test.dart`: `memory cards open from home card and home menu without bottom tab` |
+| `MEMORY-002` | Memory card draft is local until explicit submit, and shared/private visibility controls read/write scope. | `docs/spec/memory_cards.md`, `docs/spec/domain_model.md`, `docs/spec/firestore.md` | Unit Tests, Widget Tests, Firestore Free Plan Budget Checks | `test/src/domain/alagagi_auth_test.dart`: `memory card writes only when a card is submitted`; `test/harness_contract_test.dart`: `memory card rules cover visibility and response writes` |
 | `IMPROVE-001` | Improvement post creator can edit/delete own posts, while owner-only reply and completion stay owner-only. | `docs/spec/improvements.md`, `docs/spec/domain_model.md` | Unit Tests, Widget Tests | `test/src/domain/alagagi_auth_test.dart`: `improvement board saves edits and deletes owner posts`; `test/src/domain/alagagi_auth_test.dart`: `only owner can reply and resolve improvement posts`; `test/src/ui/alagagi_app_test.dart`: `improvement board owner replies and moves completed posts` |
 
 ## Maintenance Notes

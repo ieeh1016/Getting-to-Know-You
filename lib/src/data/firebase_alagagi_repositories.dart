@@ -313,6 +313,48 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
   }
 
   @override
+  Future<void> saveMemoryCard(String spaceId, MemoryCard card) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('memoryCards')
+        .doc(card.id)
+        .set({
+          'id': card.id,
+          'type': card.type.storageKey,
+          'title': card.title,
+          'body': card.body,
+          'createdByProfileId': card.createdByProfileId,
+          'subjectProfileId': card.subjectProfileId,
+          'visibility': card.visibility.storageKey,
+          'createdLabel': card.createdLabel,
+          'updatedByProfileId':
+              card.updatedByProfileId ?? card.createdByProfileId,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> saveMemoryCardResponse(
+    String spaceId,
+    MemoryCardResponse response,
+  ) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('memoryCardResponses')
+        .doc(response.id)
+        .set({
+          'id': response.id,
+          'cardId': response.cardId,
+          'responderProfileId': response.responderProfileId,
+          'reaction': response.reaction.storageKey,
+          'correctionText': response.correctionText,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+  }
+
+  @override
   Future<void> saveMusicNote(String spaceId, MusicNote note) {
     return _firestore
         .collection('spaces')
@@ -632,6 +674,18 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     final commentsSnapshot = await space.collection('answerComments').get();
     final balanceSnapshot = await space.collection('balanceSelections').get();
     final wishesSnapshot = await space.collection('wishes').get();
+    final sharedMemoryCardsSnapshot = await space
+        .collection('memoryCards')
+        .where('visibility', isEqualTo: 'shared')
+        .get();
+    final privateMemoryCardsSnapshot = await space
+        .collection('memoryCards')
+        .where('visibility', isEqualTo: 'private')
+        .where('createdByProfileId', isEqualTo: meId)
+        .get();
+    final memoryCardResponsesSnapshot = await space
+        .collection('memoryCardResponses')
+        .get();
     final musicNotesSnapshot = await space.collection('musicNotes').get();
     final musicNoteCommentsSnapshot = await space
         .collection('musicNoteComments')
@@ -685,6 +739,14 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       profileSlots: profileSlots,
       wishes: wishesSnapshot.docs
           .map((doc) => _wishFromData(doc.id, doc.data()))
+          .nonNulls
+          .toList(),
+      memoryCards: [
+        ...sharedMemoryCardsSnapshot.docs,
+        ...privateMemoryCardsSnapshot.docs,
+      ].map((doc) => _memoryCardFromData(doc.id, doc.data())).nonNulls.toList(),
+      memoryCardResponses: memoryCardResponsesSnapshot.docs
+          .map((doc) => _memoryCardResponseFromData(doc.id, doc.data()))
           .nonNulls
           .toList(),
       musicNotes: musicNotesSnapshot.docs
@@ -853,6 +915,55 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       done: data['done'] == true,
       updatedAt: _readDateTime(data, 'updatedAt'),
       updatedByProfileId: _readString(data, 'updatedByProfileId'),
+    );
+  }
+
+  MemoryCard? _memoryCardFromData(
+    String fallbackId,
+    Map<String, dynamic> data,
+  ) {
+    final title = _readString(data, 'title');
+    final body = _readString(data, 'body');
+    final createdByProfileId = _readString(data, 'createdByProfileId');
+    final subjectProfileId = _readString(data, 'subjectProfileId');
+    if (title == null ||
+        body == null ||
+        createdByProfileId == null ||
+        subjectProfileId == null) {
+      return null;
+    }
+    return MemoryCard(
+      id: _readString(data, 'id') ?? fallbackId,
+      type: _memoryCardTypeFromData(_readString(data, 'type')),
+      title: title,
+      body: body,
+      createdByProfileId: createdByProfileId,
+      subjectProfileId: subjectProfileId,
+      visibility: _memoryCardVisibilityFromData(
+        _readString(data, 'visibility'),
+      ),
+      createdLabel: _readString(data, 'createdLabel') ?? '오늘',
+      updatedAt: _readDateTime(data, 'updatedAt'),
+      updatedByProfileId: _readString(data, 'updatedByProfileId'),
+    );
+  }
+
+  MemoryCardResponse? _memoryCardResponseFromData(
+    String fallbackId,
+    Map<String, dynamic> data,
+  ) {
+    final cardId = _readString(data, 'cardId');
+    final responderProfileId = _readString(data, 'responderProfileId');
+    if (cardId == null || responderProfileId == null) {
+      return null;
+    }
+    return MemoryCardResponse(
+      id: _readString(data, 'id') ?? fallbackId,
+      cardId: cardId,
+      responderProfileId: responderProfileId,
+      reaction: _memoryCardReactionFromData(_readString(data, 'reaction')),
+      correctionText: _readString(data, 'correctionText') ?? '',
+      updatedAt: _readDateTime(data, 'updatedAt'),
     );
   }
 
@@ -1159,6 +1270,34 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       'homeLine': personalization.homeLine,
       'inviteLine': personalization.inviteLine,
       'accentEmoji': personalization.accentEmoji,
+    };
+  }
+
+  MemoryCardType _memoryCardTypeFromData(String? value) {
+    return switch (value) {
+      'likes' => MemoryCardType.likes,
+      'dislikes' => MemoryCardType.dislikes,
+      'current' => MemoryCardType.current,
+      'together' => MemoryCardType.together,
+      'care' => MemoryCardType.care,
+      _ => MemoryCardType.current,
+    };
+  }
+
+  MemoryCardVisibility _memoryCardVisibilityFromData(String? value) {
+    return switch (value) {
+      'private' => MemoryCardVisibility.private,
+      'shared' => MemoryCardVisibility.shared,
+      _ => MemoryCardVisibility.shared,
+    };
+  }
+
+  MemoryCardReaction _memoryCardReactionFromData(String? value) {
+    return switch (value) {
+      'agree' => MemoryCardReaction.agree,
+      'liked' => MemoryCardReaction.liked,
+      'correction' => MemoryCardReaction.correction,
+      _ => MemoryCardReaction.agree,
     };
   }
 
