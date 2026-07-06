@@ -74,6 +74,10 @@ jobs:
         if: github.event_name != 'pull_request'
         run: npm install -g firebase-tools
 
+      - name: Install Cloud Functions dependencies
+        if: github.event_name != 'pull_request'
+        run: npm install --prefix functions
+
       - name: Authenticate Firebase deploy service account
         if: github.event_name != 'pull_request'
         uses: google-github-actions/auth@v2
