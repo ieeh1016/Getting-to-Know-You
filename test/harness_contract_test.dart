@@ -410,6 +410,7 @@ void main() {
       );
       expect(workflow, contains("if: github.event_name != 'pull_request'"));
       expect(firebaseSetup, contains('roles/firebaserules.admin'));
+      expect(firebaseSetup, contains('roles/serviceusage.serviceUsageAdmin'));
       expect(firebaseSetup, contains('roles/serviceusage.serviceUsageViewer'));
       expect(firebaseSetup, contains('roles/cloudfunctions.developer'));
       expect(firebaseSetup, contains('roles/iam.serviceAccountUser'));
