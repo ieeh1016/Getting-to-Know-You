@@ -57,6 +57,13 @@
 - 내가 만든 카드와 내가 남긴 반응은 내 unread activity가 아니다.
 - memory card seen state는 device-local store를 사용하며 Firestore write를 만들지 않는다.
 
+## Push Notification
+
+- 사용자가 푸시 알림을 켠 경우, 새 shared memory card create와 shared card response create는 상대에게 push notification을 보낼 수 있다.
+- private memory card는 push notification을 보내지 않는다.
+- notification payload에는 route, feature, target id만 담고 카드 본문/수정 제안 전문을 담지 않는다.
+- Home unread activity는 계속 source of truth이며 push delivery 실패로 사라지면 안 된다.
+
 ## Copy Guardrail
 
 - 카드 copy는 상대를 평가하거나 채점하지 않는다.

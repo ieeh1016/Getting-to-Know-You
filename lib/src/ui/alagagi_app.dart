@@ -6,6 +6,7 @@ import '../data/external_link_opener.dart';
 import '../data/first_visit_guide_store.dart';
 import '../data/firebase_alagagi_repositories.dart';
 import '../data/music_note_seen_store.dart';
+import '../data/push_notifications.dart';
 import '../domain/alagagi_controller.dart';
 import '../features/answer/answer_screen.dart';
 import '../features/archive/archive_screen.dart';
@@ -46,6 +47,7 @@ class AlagagiApp extends StatelessWidget {
     this.dataRepository,
     this.musicNoteSeenStore,
     this.firstVisitGuideStore,
+    this.pushNotificationService,
     this.onOpenExternalLink,
   });
 
@@ -54,6 +56,7 @@ class AlagagiApp extends StatelessWidget {
   final AlagagiDataRepository? dataRepository;
   final MusicNoteSeenStore? musicNoteSeenStore;
   final FirstVisitGuideStore? firstVisitGuideStore;
+  final AlagagiPushNotificationService? pushNotificationService;
   final ValueChanged<String>? onOpenExternalLink;
 
   @override
@@ -62,11 +65,17 @@ class AlagagiApp extends StatelessWidget {
     if (firebaseEnabled) {
       final auth = authRepository ?? FirebaseAlagagiAuthRepository();
       final data = dataRepository ?? FirestoreAlagagiDataRepository();
+      final pushNotifications =
+          pushNotificationService ??
+          (authRepository == null && dataRepository == null
+              ? FirebasePushNotificationService()
+              : null);
       home = AlagagiAuthGate(
         authRepository: auth,
         dataRepository: data,
         musicNoteSeenStore: musicNoteSeenStore,
         firstVisitGuideStore: firstVisitGuideStore,
+        pushNotificationService: pushNotifications,
         onOpenExternalLink: onOpenExternalLink,
       );
     } else {
@@ -105,6 +114,9 @@ class AlagagiRoot extends StatefulWidget {
     this.onSignOut,
     this.musicNoteSeenStore,
     this.firstVisitGuideStore,
+    this.pushNotificationState,
+    this.onEnablePushNotifications,
+    this.onDisablePushNotifications,
     this.onOpenExternalLink,
     this.onRefreshSession,
     this.onRouteEntered,
@@ -115,6 +127,9 @@ class AlagagiRoot extends StatefulWidget {
   final VoidCallback? onSignOut;
   final MusicNoteSeenStore? musicNoteSeenStore;
   final FirstVisitGuideStore? firstVisitGuideStore;
+  final PushNotificationSetupState? pushNotificationState;
+  final Future<void> Function()? onEnablePushNotifications;
+  final Future<void> Function()? onDisablePushNotifications;
   final ValueChanged<String>? onOpenExternalLink;
   final Future<void> Function()? onRefreshSession;
   final ValueChanged<AlagagiRoute>? onRouteEntered;
@@ -217,6 +232,9 @@ class _AlagagiRootState extends State<AlagagiRoot> {
       AlagagiRoute.memoryCards => MemoryCardsScreen(controller: _controller),
       AlagagiRoute.my => MyScreen(
         controller: _controller,
+        pushNotificationState: widget.pushNotificationState,
+        onEnablePushNotifications: widget.onEnablePushNotifications,
+        onDisablePushNotifications: widget.onDisablePushNotifications,
         onOpenGuideBook: () => showFirstVisitGuideBook(context),
         onOpenReadableDetail:
             ({required label, required title, required body, meta}) =>
@@ -294,6 +312,7 @@ class AlagagiAuthGate extends StatelessWidget {
     required this.dataRepository,
     this.musicNoteSeenStore,
     this.firstVisitGuideStore,
+    this.pushNotificationService,
     this.onOpenExternalLink,
   });
 
@@ -301,6 +320,7 @@ class AlagagiAuthGate extends StatelessWidget {
   final AlagagiDataRepository dataRepository;
   final MusicNoteSeenStore? musicNoteSeenStore;
   final FirstVisitGuideStore? firstVisitGuideStore;
+  final AlagagiPushNotificationService? pushNotificationService;
   final ValueChanged<String>? onOpenExternalLink;
 
   @override
@@ -327,6 +347,7 @@ class AlagagiAuthGate extends StatelessWidget {
           dataRepository: dataRepository,
           musicNoteSeenStore: musicNoteSeenStore,
           firstVisitGuideStore: firstVisitGuideStore,
+          pushNotificationService: pushNotificationService,
           onOpenExternalLink: onOpenExternalLink,
         );
       },
@@ -342,6 +363,7 @@ class _SessionGate extends StatefulWidget {
     required this.dataRepository,
     this.musicNoteSeenStore,
     this.firstVisitGuideStore,
+    this.pushNotificationService,
     this.onOpenExternalLink,
   });
 
@@ -350,6 +372,7 @@ class _SessionGate extends StatefulWidget {
   final AlagagiDataRepository dataRepository;
   final MusicNoteSeenStore? musicNoteSeenStore;
   final FirstVisitGuideStore? firstVisitGuideStore;
+  final AlagagiPushNotificationService? pushNotificationService;
   final ValueChanged<String>? onOpenExternalLink;
 
   @override
@@ -359,13 +382,22 @@ class _SessionGate extends StatefulWidget {
 class _SessionGateState extends State<_SessionGate> {
   late Future<AlagagiSession?> _sessionFuture;
   AlagagiController? _controller;
+  AlagagiSession? _currentSession;
+  PushNotificationSetupState? _pushNotificationState;
+  StreamSubscription<PushNotificationIntent>? _openedNotificationSubscription;
+  StreamSubscription<PushNotificationIntent>?
+  _foregroundNotificationSubscription;
+  StreamSubscription<String>? _tokenRefreshSubscription;
+  PushNotificationIntent? _pendingNotificationIntent;
   bool _sessionRefreshInProgress = false;
+  bool _pushStateLoadInProgress = false;
   DateTime? _lastRouteRefreshAt;
 
   @override
   void initState() {
     super.initState();
     _sessionFuture = widget.dataRepository.loadSession(widget.user);
+    _bindPushNotifications();
   }
 
   @override
@@ -375,12 +407,20 @@ class _SessionGateState extends State<_SessionGate> {
         oldWidget.dataRepository != widget.dataRepository) {
       _controller?.dispose();
       _controller = null;
+      _currentSession = null;
+      _pushNotificationState = null;
+      _pushStateLoadInProgress = false;
       _sessionFuture = widget.dataRepository.loadSession(widget.user);
+    }
+    if (oldWidget.pushNotificationService != widget.pushNotificationService) {
+      _unbindPushNotifications();
+      _bindPushNotifications();
     }
   }
 
   @override
   void dispose() {
+    _unbindPushNotifications();
     _controller?.dispose();
     super.dispose();
   }
@@ -420,12 +460,16 @@ class _SessionGateState extends State<_SessionGate> {
       if (controller == null || !controller.canApplySession(session)) {
         controller?.dispose();
         _controller = _createController(session);
+        _currentSession = session;
+        _applyPendingNotificationIntent();
         setState(() {
           _sessionFuture = Future<AlagagiSession?>.value(session);
         });
       } else {
+        _currentSession = session;
         controller.refreshFromSession(session);
       }
+      _syncPushNotificationState(session, refreshOnly: true);
       if (mounted && showFeedback) {
         ScaffoldMessenger.of(
           context,
@@ -460,6 +504,194 @@ class _SessionGateState extends State<_SessionGate> {
     unawaited(_refreshSession(showFeedback: false));
   }
 
+  void _bindPushNotifications() {
+    final service = widget.pushNotificationService;
+    if (service == null) {
+      return;
+    }
+    _openedNotificationSubscription = service.openedIntents().listen(
+      _openNotificationIntent,
+    );
+    _foregroundNotificationSubscription = service.foregroundIntents().listen(
+      _showForegroundNotification,
+    );
+    _tokenRefreshSubscription = service.tokenRefreshes().listen(
+      _registerRefreshedPushToken,
+    );
+    unawaited(_captureInitialNotificationIntent());
+  }
+
+  void _unbindPushNotifications() {
+    _openedNotificationSubscription?.cancel();
+    _foregroundNotificationSubscription?.cancel();
+    _tokenRefreshSubscription?.cancel();
+    _openedNotificationSubscription = null;
+    _foregroundNotificationSubscription = null;
+    _tokenRefreshSubscription = null;
+  }
+
+  Future<void> _captureInitialNotificationIntent() async {
+    final service = widget.pushNotificationService;
+    if (service == null) {
+      return;
+    }
+    final intent = await service.initialIntent();
+    if (!mounted || intent == null) {
+      return;
+    }
+    _pendingNotificationIntent = intent;
+    _applyPendingNotificationIntent();
+  }
+
+  void _applyPendingNotificationIntent() {
+    final intent = _pendingNotificationIntent;
+    final controller = _controller;
+    if (intent == null || controller == null) {
+      return;
+    }
+    _pendingNotificationIntent = null;
+    controller.goTo(intent.route);
+  }
+
+  void _openNotificationIntent(PushNotificationIntent intent) {
+    final controller = _controller;
+    if (controller == null) {
+      _pendingNotificationIntent = intent;
+      return;
+    }
+    controller.goTo(intent.route);
+  }
+
+  void _showForegroundNotification(PushNotificationIntent intent) {
+    if (!mounted) {
+      return;
+    }
+    final title = intent.title.isEmpty ? '새 알림이 도착했어요.' : intent.title;
+    final body = intent.body.isEmpty ? '앱에서 확인할 수 있어요.' : intent.body;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$title\n$body'),
+        action: SnackBarAction(
+          label: '열기',
+          onPressed: () => _openNotificationIntent(intent),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _registerRefreshedPushToken(String token) async {
+    final service = widget.pushNotificationService;
+    final session = _currentSession;
+    final state = _pushNotificationState;
+    if (service == null || session == null || state?.enabled != true) {
+      return;
+    }
+    await service.registerTokenForSession(
+      user: widget.user,
+      session: session,
+      token: token,
+    );
+  }
+
+  void _syncPushNotificationState(
+    AlagagiSession session, {
+    bool refreshOnly = false,
+  }) {
+    final service = widget.pushNotificationService;
+    if (service == null) {
+      return;
+    }
+    if (refreshOnly && _pushNotificationState != null) {
+      return;
+    }
+    if (_pushStateLoadInProgress) {
+      return;
+    }
+    _pushStateLoadInProgress = true;
+    unawaited(() async {
+      try {
+        final state = await service.loadState(user: widget.user);
+        if (!mounted || _currentSession?.spaceId != session.spaceId) {
+          return;
+        }
+        setState(() {
+          _pushNotificationState = state;
+        });
+        if (state.enabled) {
+          await service.registerTokenForSession(
+            user: widget.user,
+            session: session,
+          );
+        }
+      } finally {
+        _pushStateLoadInProgress = false;
+      }
+    }());
+  }
+
+  Future<void> _enablePushNotifications() async {
+    final service = widget.pushNotificationService;
+    final session = _currentSession;
+    if (service == null || session == null) {
+      return;
+    }
+    setState(() {
+      _pushNotificationState =
+          (_pushNotificationState ??
+                  const PushNotificationSetupState(
+                    supported: true,
+                    enabled: false,
+                    permissionStatus:
+                        PushNotificationPermissionStatus.notDetermined,
+                  ))
+              .copyWith(inProgress: true, message: '');
+    });
+    final state = await service.enable(user: widget.user, session: session);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _pushNotificationState = state.copyWith(inProgress: false);
+    });
+    _showPushSetupFeedback(state);
+  }
+
+  Future<void> _disablePushNotifications() async {
+    final service = widget.pushNotificationService;
+    final session = _currentSession;
+    if (service == null || session == null) {
+      return;
+    }
+    setState(() {
+      _pushNotificationState =
+          (_pushNotificationState ??
+                  const PushNotificationSetupState(
+                    supported: true,
+                    enabled: true,
+                    permissionStatus:
+                        PushNotificationPermissionStatus.authorized,
+                  ))
+              .copyWith(inProgress: true, message: '');
+    });
+    final state = await service.disable(user: widget.user, session: session);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _pushNotificationState = state.copyWith(inProgress: false);
+    });
+    _showPushSetupFeedback(state);
+  }
+
+  void _showPushSetupFeedback(PushNotificationSetupState state) {
+    if (state.message.isEmpty) {
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(state.message)));
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<AlagagiSession?>(
@@ -480,10 +712,20 @@ class _SessionGateState extends State<_SessionGate> {
         }
 
         _controller ??= _createController(session);
+        _currentSession = session;
+        _applyPendingNotificationIntent();
+        _syncPushNotificationState(session, refreshOnly: true);
         return AlagagiRoot(
           key: ValueKey('root-${widget.user.uid}-${session.spaceId}'),
           controller: _controller,
           onSignOut: widget.authRepository.signOut,
+          pushNotificationState: _pushNotificationState,
+          onEnablePushNotifications: widget.pushNotificationService == null
+              ? null
+              : _enablePushNotifications,
+          onDisablePushNotifications: widget.pushNotificationService == null
+              ? null
+              : _disablePushNotifications,
           onOpenExternalLink: widget.onOpenExternalLink,
           onRefreshSession: _refreshSession,
           onRouteEntered: _refreshSessionForRoute,

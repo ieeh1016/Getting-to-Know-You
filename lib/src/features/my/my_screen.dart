@@ -22,12 +22,18 @@ class MyScreen extends StatelessWidget {
     required this.controller,
     required this.onOpenGuideBook,
     required this.onOpenReadableDetail,
+    this.pushNotificationState,
+    this.onEnablePushNotifications,
+    this.onDisablePushNotifications,
     this.onSignOut,
   });
 
   final AlagagiController controller;
   final VoidCallback onOpenGuideBook;
   final MyReadableDetailOpener onOpenReadableDetail;
+  final PushNotificationSetupState? pushNotificationState;
+  final Future<void> Function()? onEnablePushNotifications;
+  final Future<void> Function()? onDisablePushNotifications;
   final VoidCallback? onSignOut;
 
   @override
@@ -61,6 +67,16 @@ class MyScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _MyProfileSummaryCard(controller: controller),
+            if (pushNotificationState != null &&
+                onEnablePushNotifications != null &&
+                onDisablePushNotifications != null) ...[
+              const SizedBox(height: 16),
+              _MyPushNotificationCard(
+                state: pushNotificationState!,
+                onEnable: onEnablePushNotifications!,
+                onDisable: onDisablePushNotifications!,
+              ),
+            ],
             const SizedBox(height: 16),
             const _MySectionHeader(title: '내 기록', trailing: '최근 기준'),
             Row(
@@ -194,6 +210,135 @@ class MyScreen extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+class _MyPushNotificationCard extends StatelessWidget {
+  const _MyPushNotificationCard({
+    required this.state,
+    required this.onEnable,
+    required this.onDisable,
+  });
+
+  final PushNotificationSetupState state;
+  final Future<void> Function() onEnable;
+  final Future<void> Function() onDisable;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = state.enabled && state.supported;
+    final statusText = _statusText(state);
+    return AlagagiPaperCard(
+      radius: 20,
+      padding: const EdgeInsets.all(15),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: enabled
+                  ? const Color(0xFFEEF2EA)
+                  : const Color(0xFFF3F0EA),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              enabled
+                  ? Icons.notifications_active_outlined
+                  : Icons.notifications_none_rounded,
+              size: 20,
+              color: enabled ? AlagagiColors.sageDeep : const Color(0xFF8D826F),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '푸시 알림',
+                        style: sans(
+                          size: 13.4,
+                          weight: FontWeight.w800,
+                          color: const Color(0xFF46443F),
+                        ),
+                      ),
+                    ),
+                    Text(
+                      statusText,
+                      style: sans(
+                        size: 11.2,
+                        weight: FontWeight.w800,
+                        color: enabled
+                            ? AlagagiColors.sageDeep
+                            : AlagagiColors.muted,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  state.supported
+                      ? '새 공유 기억 카드와 반응이 생기면 휴대폰에서 조용히 알려드려요.'
+                      : '푸시 알림은 Android와 iPhone 앱에서 사용할 수 있어요.',
+                  style: sans(
+                    size: 11.7,
+                    color: AlagagiColors.muted,
+                    height: 1.55,
+                  ),
+                ),
+                if (state.message.isNotEmpty) ...[
+                  const SizedBox(height: 7),
+                  Text(
+                    state.message,
+                    style: sans(
+                      size: 11.2,
+                      color: const Color(0xFF7E6D4F),
+                      height: 1.45,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Switch.adaptive(
+            key: myPushNotificationSwitchKey,
+            value: enabled,
+            onChanged: state.inProgress || !state.supported
+                ? null
+                : (value) {
+                    if (value) {
+                      onEnable();
+                    } else {
+                      onDisable();
+                    }
+                  },
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _statusText(PushNotificationSetupState state) {
+    if (state.inProgress) {
+      return '확인 중';
+    }
+    if (!state.supported) {
+      return '미지원';
+    }
+    if (state.enabled) {
+      return state.tokenRegistered ? '켜짐' : '준비 중';
+    }
+    return switch (state.permissionStatus) {
+      PushNotificationPermissionStatus.denied => '권한 꺼짐',
+      PushNotificationPermissionStatus.unsupported => '미지원',
+      _ => '꺼짐',
+    };
   }
 }
 

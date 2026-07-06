@@ -108,7 +108,33 @@ minyoung@gettoknow.local
 
 Firestore Console에서 배열은 `array` 타입으로 넣는다.
 
-`spaces/main/curiosityCards` 하위 컬렉션은 앱에서 처음 `질문 보내기`를 누를 때 자동으로 만들어진다. `spaces/main/memoryCards` 하위 컬렉션은 `서로의 기억`에서 처음 기억 카드를 저장할 때 만들어지고, `spaces/main/memoryCardResponses` 하위 컬렉션은 상대가 공유 카드에 처음 반응하거나 수정 제안을 남길 때 만들어진다. `spaces/main/stockStories` 하위 컬렉션도 `주식 이야기`에서 처음 `이야기 남기기`를 누를 때 자동으로 만들어진다. `spaces/main/stockHoldings` 하위 컬렉션은 `보유` 탭에서 처음 `보유 공유하기`를 누를 때 자동으로 만들어진다. `spaces/main/improvementPosts` 하위 컬렉션은 `건의함`에서 처음 `건의 남기기`를 누를 때 자동으로 만들어진다. Console에서 빈 컬렉션을 미리 만들 필요는 없지만, 아래 Security Rules에는 `curiosityCards`, `memoryCards`, `memoryCardResponses`, `stockStories`, `stockHoldings`, `improvementPosts` 규칙이 포함되어 있어야 한다.
+`spaces/main/curiosityCards` 하위 컬렉션은 앱에서 처음 `질문 보내기`를 누를 때 자동으로 만들어진다. `spaces/main/memoryCards` 하위 컬렉션은 `서로의 기억`에서 처음 기억 카드를 저장할 때 만들어지고, `spaces/main/memoryCardResponses` 하위 컬렉션은 상대가 공유 카드에 처음 반응하거나 수정 제안을 남길 때 만들어진다. `spaces/main/stockStories` 하위 컬렉션도 `주식 이야기`에서 처음 `이야기 남기기`를 누를 때 자동으로 만들어진다. `spaces/main/stockHoldings` 하위 컬렉션은 `보유` 탭에서 처음 `보유 공유하기`를 누를 때 자동으로 만들어진다. `spaces/main/improvementPosts` 하위 컬렉션은 `건의함`에서 처음 `건의 남기기`를 누를 때 자동으로 만들어진다. `users/{uid}/notificationSettings/push`와 `users/{uid}/notificationTokens/{tokenId}`는 사용자가 마이 화면에서 푸시 알림을 켤 때 앱이 자동으로 만든다. Console에서 빈 컬렉션을 미리 만들 필요는 없지만, 아래 Security Rules에는 `curiosityCards`, `memoryCards`, `memoryCardResponses`, `stockStories`, `stockHoldings`, `improvementPosts`, `notificationSettings`, `notificationTokens` 규칙이 포함되어 있어야 한다.
+
+## 5-1. Android/iPhone 푸시 알림 준비
+
+푸시 알림은 Firebase Cloud Messaging과 Cloud Functions를 사용한다. Home 새 소식이 기준 데이터이고, 푸시는 앱 밖에서 알려주는 신호다.
+
+Android:
+
+1. Android 앱을 Firebase Project settings -> General -> Your apps에 등록한다.
+2. 앱 package name은 `android/app/build.gradle.kts`의 `applicationId`와 맞춘다.
+3. Firebase Console에서 받은 `google-services.json`을 `android/app/`에 둔다.
+4. Android 13 이상은 사용자가 `마이` 화면에서 푸시 알림을 켤 때 알림 권한 prompt가 뜬다.
+
+iPhone:
+
+1. iOS 앱을 Firebase Project settings -> General -> Your apps에 등록한다.
+2. bundle id는 Xcode Runner target의 bundle identifier와 맞춘다.
+3. Firebase Console에서 받은 `GoogleService-Info.plist`를 Xcode Runner target에 추가한다.
+4. Apple Developer에서 APNs authentication key를 만들고 Firebase Console -> Project settings -> Cloud Messaging -> APNs authentication key에 업로드한다.
+5. Xcode Runner target에서 `Push Notifications` capability를 켠다.
+
+Cloud Functions:
+
+1. Firebase Console -> Project settings -> Cloud Messaging에서 Cloud Messaging API가 enabled인지 확인한다.
+2. Firebase CLI로 로그인한 뒤 `firebase deploy --only functions`를 실행한다.
+3. 첫 배포 전 Google Cloud/Firebase 요금제와 Cloud Functions 사용 가능 상태를 확인한다.
+4. Firestore trigger는 `shared` 기억 카드와 shared 카드 반응만 발송한다. private 카드 본문은 payload에 넣지 않는다.
 
 ## 6. Firestore Security Rules
 
@@ -159,6 +185,41 @@ service cloud.firestore {
         && personalization.inviteLine.size() <= 40
         && personalization.accentEmoji is string
         && personalization.accentEmoji.size() <= 8;
+    }
+
+    function validPushNotificationSetting(userId, settingId) {
+      return request.auth.uid == userId
+        && settingId == 'push'
+        && request.resource.data.keys().hasOnly([
+          'enabled',
+          'spaceId',
+          'updatedAt'
+        ])
+        && request.resource.data.enabled is bool
+        && request.resource.data.spaceId is string
+        && request.resource.data.spaceId == currentUserProfile().data.spaceId
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function validPushNotificationToken(userId, tokenId) {
+      return request.auth.uid == userId
+        && tokenId.size() > 0
+        && tokenId.size() <= 512
+        && request.resource.data.keys().hasOnly([
+          'token',
+          'platform',
+          'spaceId',
+          'enabled',
+          'updatedAt'
+        ])
+        && request.resource.data.token is string
+        && request.resource.data.token.size() >= 20
+        && request.resource.data.token.size() <= 1024
+        && request.resource.data.platform in ['android', 'ios', 'unknown']
+        && request.resource.data.spaceId is string
+        && request.resource.data.spaceId == currentUserProfile().data.spaceId
+        && request.resource.data.enabled is bool
+        && request.resource.data.updatedAt == request.time;
     }
 
     function validDiagnosticEvent(spaceId, eventId) {
@@ -1214,6 +1275,23 @@ service cloud.firestore {
           )
         );
       allow write: if false;
+
+      match /notificationSettings/{settingId} {
+        allow read: if signedIn()
+          && request.auth.uid == userId;
+        allow create, update: if hasUserProfile()
+          && validPushNotificationSetting(userId, settingId);
+        allow delete: if false;
+      }
+
+      match /notificationTokens/{tokenId} {
+        allow read: if signedIn()
+          && request.auth.uid == userId;
+        allow create, update: if hasUserProfile()
+          && validPushNotificationToken(userId, tokenId);
+        allow delete: if signedIn()
+          && request.auth.uid == userId;
+      }
     }
 
     match /spaces/{spaceId} {
@@ -1473,6 +1551,8 @@ service cloud.firestore {
 
 MVP 규칙은 두 사람 전용 공간을 전제로 한다. 나중에 사용자가 늘어나면 관리자 권한, 초대 코드, 필드별 write 제한을 더 촘촘하게 분리한다.
 
+Cloud Functions는 Admin SDK로 `spaces/{spaceId}/notificationEvents/{eventId}` 중복 발송 방지 로그를 쓰고, 실패한 FCM token은 `users/{uid}/notificationTokens/{tokenId}.enabled = false`로 비활성화한다. 이 경로는 client write path가 아니라 Functions 운영 path다.
+
 ## 7. GitHub Secrets 추가
 
 GitHub repo -> Settings -> Secrets and variables -> Actions -> New repository secret에서 아래 이름으로 추가한다.
@@ -1532,6 +1612,12 @@ Firebase Rules나 GitHub Pages를 실제 배포하지 않는다.
 - Firebase Auth Flutter Email/Password: <https://firebase.google.com/docs/auth/flutter/password-auth>
 - Firebase Auth Flutter 시작하기: <https://firebase.google.com/docs/auth/flutter/start>
 - Firestore Security Rules 시작하기: <https://firebase.google.com/docs/firestore/security/get-started>
+- Firebase Cloud Messaging Flutter: <https://firebase.google.com/docs/cloud-messaging/flutter/get-started>
+- Firebase Cloud Messaging receive messages: <https://firebase.google.com/docs/cloud-messaging/flutter/receive-messages>
+- Firebase Cloud Functions Firestore triggers: <https://firebase.google.com/docs/functions/firestore-events>
+- Firebase Admin SDK FCM send: <https://firebase.google.com/docs/cloud-messaging/send/admin-sdk>
+- Firebase iOS APNs setup: <https://firebase.google.com/docs/cloud-messaging/ios/get-started>
+- Android notification permission: <https://developer.android.com/develop/ui/compose/notifications/notification-permission>
 - Firebase Security Rules 배포 관리: <https://firebase.google.com/docs/rules/manage-deploy>
 - Firebase Security Rules IAM 역할: <https://cloud.google.com/iam/docs/roles-permissions/firebaserules>
 - FlutterFire Auth usage: <https://firebase.flutter.dev/docs/auth/usage>

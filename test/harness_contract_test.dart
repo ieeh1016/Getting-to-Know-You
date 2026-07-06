@@ -236,6 +236,33 @@ void main() {
     );
   });
 
+  test('push notification rules and functions keep tokens owner scoped', () {
+    final pushService = File(
+      'lib/src/data/push_notifications.dart',
+    ).readAsStringSync();
+    final rules = File('firestore.rules').readAsStringSync();
+    final functions = File('functions/index.js').readAsStringSync();
+    final firebaseConfig = File('firebase.json').readAsStringSync();
+    final firebaseSetup = File('docs/firebase_setup.md').readAsStringSync();
+
+    expect(pushService, contains("collection('notificationSettings')"));
+    expect(pushService, contains("collection('notificationTokens')"));
+    expect(rules, contains('match /notificationSettings/{settingId}'));
+    expect(rules, contains('match /notificationTokens/{tokenId}'));
+    expect(rules, contains('request.auth.uid == userId'));
+    expect(rules, contains('validPushNotificationToken'));
+    expect(firebaseConfig, contains('"functions"'));
+    expect(functions, contains('notifyMemoryCardCreated'));
+    expect(functions, contains('notifyMemoryCardResponseCreated'));
+    expect(functions, contains('card.visibility !== "shared"'));
+    expect(functions, contains('sendEachForMulticast'));
+    expect(functions, contains('markNotificationEvent'));
+    expect(functions, isNot(contains('card.title')));
+    expect(functions, isNot(contains('card.body')));
+    expect(firebaseSetup, contains('APNs authentication key'));
+    expect(firebaseSetup, contains('firebase deploy --only functions'));
+  });
+
   test('meeting plan rules do not cap plan item count at eight', () {
     final rules = File('firestore.rules').readAsStringSync();
 

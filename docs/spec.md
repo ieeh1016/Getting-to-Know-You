@@ -37,6 +37,7 @@
 - [Profile cards](spec/profile_cards.md)
 - [Wishlist](spec/wishlist.md)
 - [Memory cards](spec/memory_cards.md)
+- [Push notifications](spec/notifications.md)
 - [Improvement board](spec/improvements.md)
 - [Firestore와 data policy](spec/firestore.md)
 - [Testing과 verification](spec/testing.md)

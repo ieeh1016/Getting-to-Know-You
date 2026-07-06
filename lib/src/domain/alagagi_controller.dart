@@ -91,6 +91,14 @@ enum SaveStatus { idle, saving, saved, failed }
 
 enum HomeProgressSummaryTone { calm, waiting, ready }
 
+enum PushNotificationPermissionStatus {
+  unsupported,
+  notDetermined,
+  denied,
+  authorized,
+  provisional,
+}
+
 enum QuestionCalendarStatus {
   future,
   unanswered,
@@ -139,6 +147,100 @@ abstract class AlagagiAuthRepository {
   });
 
   Future<void> signOut();
+}
+
+class PushNotificationSetupState {
+  const PushNotificationSetupState({
+    required this.supported,
+    required this.enabled,
+    required this.permissionStatus,
+    this.tokenRegistered = false,
+    this.inProgress = false,
+    this.message = '',
+  });
+
+  const PushNotificationSetupState.unsupported()
+    : supported = false,
+      enabled = false,
+      permissionStatus = PushNotificationPermissionStatus.unsupported,
+      tokenRegistered = false,
+      inProgress = false,
+      message = '';
+
+  final bool supported;
+  final bool enabled;
+  final PushNotificationPermissionStatus permissionStatus;
+  final bool tokenRegistered;
+  final bool inProgress;
+  final String message;
+
+  bool get permissionAllowsNotifications =>
+      permissionStatus == PushNotificationPermissionStatus.authorized ||
+      permissionStatus == PushNotificationPermissionStatus.provisional;
+
+  PushNotificationSetupState copyWith({
+    bool? supported,
+    bool? enabled,
+    PushNotificationPermissionStatus? permissionStatus,
+    bool? tokenRegistered,
+    bool? inProgress,
+    String? message,
+  }) {
+    return PushNotificationSetupState(
+      supported: supported ?? this.supported,
+      enabled: enabled ?? this.enabled,
+      permissionStatus: permissionStatus ?? this.permissionStatus,
+      tokenRegistered: tokenRegistered ?? this.tokenRegistered,
+      inProgress: inProgress ?? this.inProgress,
+      message: message ?? this.message,
+    );
+  }
+}
+
+class PushNotificationIntent {
+  const PushNotificationIntent({
+    required this.route,
+    this.feature = '',
+    this.targetId = '',
+    this.title = '',
+    this.body = '',
+  });
+
+  final AlagagiRoute route;
+  final String feature;
+  final String targetId;
+  final String title;
+  final String body;
+}
+
+abstract class AlagagiPushNotificationService {
+  bool get isSupported;
+
+  Future<PushNotificationSetupState> loadState({required AlagagiAuthUser user});
+
+  Future<PushNotificationSetupState> enable({
+    required AlagagiAuthUser user,
+    required AlagagiSession session,
+  });
+
+  Future<PushNotificationSetupState> disable({
+    required AlagagiAuthUser user,
+    required AlagagiSession session,
+  });
+
+  Future<void> registerTokenForSession({
+    required AlagagiAuthUser user,
+    required AlagagiSession session,
+    String? token,
+  });
+
+  Future<PushNotificationIntent?> initialIntent();
+
+  Stream<PushNotificationIntent> openedIntents();
+
+  Stream<PushNotificationIntent> foregroundIntents();
+
+  Stream<String> tokenRefreshes();
 }
 
 class AlagagiSession {

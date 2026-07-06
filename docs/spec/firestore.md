@@ -9,6 +9,7 @@
 - two-person private space만 지원한다.
 - MVP에서는 public sign-up 또는 multi-space discovery를 제공하지 않는다.
 - 명시적으로 승인하지 않는 한 Cloud Functions dependency를 두지 않는다.
+- 예외: 푸시 알림은 사용자 승인 후 Firebase Cloud Messaging과 Cloud Functions를 사용한다. client는 알림 토큰/설정만 쓰고, 실제 발송은 Admin SDK가 수행한다.
 - MVP에서는 Storage media upload, TTL, PITR, backup, restore, clone, scheduled job을 사용하지 않는다.
 - repo에는 secret, service account JSON, 승인된 public client config를 넘어서는 raw API key, private payload dump를 넣지 않는다.
 
@@ -37,6 +38,9 @@
 - `spaces/{spaceId}/stockStories/{storyId}`
 - `spaces/{spaceId}/stockHoldings/{holdingId}`
 - `spaces/{spaceId}/improvementPosts/{postId}`
+- `spaces/{spaceId}/notificationEvents/{eventId}`: Cloud Functions idempotency log. client read/write 없음.
+- `users/{uid}/notificationSettings/push`
+- `users/{uid}/notificationTokens/{tokenId}`
 
 ## Rules Maintenance
 

@@ -41,6 +41,41 @@ service cloud.firestore {
         && personalization.accentEmoji.size() <= 8;
     }
 
+    function validPushNotificationSetting(userId, settingId) {
+      return request.auth.uid == userId
+        && settingId == 'push'
+        && request.resource.data.keys().hasOnly([
+          'enabled',
+          'spaceId',
+          'updatedAt'
+        ])
+        && request.resource.data.enabled is bool
+        && request.resource.data.spaceId is string
+        && request.resource.data.spaceId == currentUserProfile().data.spaceId
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function validPushNotificationToken(userId, tokenId) {
+      return request.auth.uid == userId
+        && tokenId.size() > 0
+        && tokenId.size() <= 512
+        && request.resource.data.keys().hasOnly([
+          'token',
+          'platform',
+          'spaceId',
+          'enabled',
+          'updatedAt'
+        ])
+        && request.resource.data.token is string
+        && request.resource.data.token.size() >= 20
+        && request.resource.data.token.size() <= 1024
+        && request.resource.data.platform in ['android', 'ios', 'unknown']
+        && request.resource.data.spaceId is string
+        && request.resource.data.spaceId == currentUserProfile().data.spaceId
+        && request.resource.data.enabled is bool
+        && request.resource.data.updatedAt == request.time;
+    }
+
     function validDiagnosticEvent(spaceId, eventId) {
       return request.resource.data.keys().hasOnly([
           'id',
@@ -1094,6 +1129,23 @@ service cloud.firestore {
           )
         );
       allow write: if false;
+
+      match /notificationSettings/{settingId} {
+        allow read: if signedIn()
+          && request.auth.uid == userId;
+        allow create, update: if hasUserProfile()
+          && validPushNotificationSetting(userId, settingId);
+        allow delete: if false;
+      }
+
+      match /notificationTokens/{tokenId} {
+        allow read: if signedIn()
+          && request.auth.uid == userId;
+        allow create, update: if hasUserProfile()
+          && validPushNotificationToken(userId, tokenId);
+        allow delete: if signedIn()
+          && request.auth.uid == userId;
+      }
     }
 
     match /spaces/{spaceId} {

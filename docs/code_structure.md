@@ -75,6 +75,8 @@ lib/src/domain/
 - `lib/src/features/questions/answer_blocks.dart`: Home과 Archive에서 쓰는 shared answer preview, answer line, comment composer, read-only comment, question support block.
 - `lib/src/features/questions/question_formatters.dart`: answer/archive flow를 위한 shared question date display helper.
 - `lib/src/features/records/records_screen.dart`: relationship insight summary, matched keywords, stats grid, timeline view.
+- `lib/src/data/push_notifications.dart`: Firebase Messaging permission/token registration, notification tap routing, foreground message adapter.
+- `functions/index.js`: Firestore-triggered FCM send logic for shared memory cards and memory card responses.
 
 ## 추출 순서
 

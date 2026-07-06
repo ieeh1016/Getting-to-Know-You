@@ -230,6 +230,28 @@
   - `test/src/ui/alagagi_app_test.dart`
   - `test/harness_contract_test.dart`
 
+### Push Notifications
+
+- 먼저 읽을 문서:
+  - `docs/spec/notifications.md`
+  - `docs/spec/firestore.md`
+  - `docs/firebase_setup.md` if platform setup changes
+  - `docs/test_plan.md` entries with `PUSH-`
+- 검색 단서:
+  - `PushNotificationSetupState`
+  - `notificationTokens`
+  - `notificationSettings`
+  - `notifyMemoryCardCreated`
+  - `sendEachForMulticast`
+- 주요 code/test:
+  - `lib/src/data/push_notifications.dart`
+  - `lib/src/ui/alagagi_app.dart`
+  - `lib/src/features/my/my_screen.dart`
+  - `functions/index.js`
+  - `firestore.rules`
+  - `test/src/ui/alagagi_auth_gate_test.dart`
+  - `test/harness_contract_test.dart`
+
 ### Improvements
 
 - 먼저 읽을 문서:
@@ -262,6 +284,8 @@
 - 주요 code/test:
   - `firestore.rules`
   - `lib/src/data/firebase_alagagi_repositories.dart`
+  - `lib/src/data/push_notifications.dart`
+  - `functions/index.js`
   - `test/harness_contract_test.dart`
   - `scripts/check_firestore_rules_sync.sh`
 

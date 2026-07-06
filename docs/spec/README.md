@@ -47,6 +47,7 @@
 | Profile cards | [`profile_cards.md`](profile_cards.md) |
 | Wishlist | [`wishlist.md`](wishlist.md) |
 | Memory cards | [`memory_cards.md`](memory_cards.md) |
+| Push notifications | [`notifications.md`](notifications.md) |
 | Improvement board | [`improvements.md`](improvements.md) |
 | Firestore data/rules/budget | [`firestore.md`](firestore.md) |
 | Testing | [`testing.md`](testing.md) |

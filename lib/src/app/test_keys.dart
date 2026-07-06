@@ -76,6 +76,7 @@ const myDashboardKey = Key('my-dashboard');
 const myNextPrimaryButtonKey = Key('my-next-primary-button');
 const myProfileCardActionButtonKey = Key('my-profile-card-action-button');
 const myMusicActionButtonKey = Key('my-music-action-button');
+const myPushNotificationSwitchKey = Key('my-push-notification-switch');
 const myFirstVisitGuideButtonKey = Key('my-first-visit-guide-button');
 Key myTraceCardKey(String type) => Key('my-trace-card-$type');
 

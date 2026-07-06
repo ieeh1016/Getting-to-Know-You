@@ -103,6 +103,53 @@ void main() {
       expect(find.text('오늘의 질문'), findsOneWidget);
     });
 
+    testWidgets('push notifications can be enabled from my screen', (
+      tester,
+    ) async {
+      final auth = FakeAlagagiAuthRepository(
+        initialUser: const AlagagiAuthUser(
+          uid: 'youngwooUid',
+          loginId: 'youngwoo',
+          email: 'youngwoo@gettoknow.local',
+        ),
+      );
+      final data = FakeAlagagiDataRepository(
+        sessionsByUid: {'youngwooUid': testSession},
+      );
+      final pushNotifications = FakeAlagagiPushNotificationService();
+
+      await tester.pumpWidget(
+        AlagagiApp(
+          firebaseEnabled: true,
+          authRepository: auth,
+          dataRepository: data,
+          firstVisitGuideStore: _seenGuideStore(),
+          pushNotificationService: pushNotifications,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('마이'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('푸시 알림'),
+        160,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(myPushNotificationSwitchKey), findsOneWidget);
+      expect(find.text('꺼짐'), findsOneWidget);
+
+      await tester.tap(find.byKey(myPushNotificationSwitchKey));
+      await tester.pumpAndSettle();
+
+      expect(pushNotifications.loadCalls, 1);
+      expect(pushNotifications.enableCalls, 1);
+      expect(pushNotifications.enabledSessions.single.spaceId, 'main');
+      expect(find.text('켜짐'), findsOneWidget);
+    });
+
     testWidgets('home refresh reloads the Firebase session', (tester) async {
       final auth = FakeAlagagiAuthRepository(
         initialUser: const AlagagiAuthUser(
@@ -386,6 +433,97 @@ class FakeAlagagiAuthRepository implements AlagagiAuthRepository {
   Future<void> signOut() async {
     _currentUser = null;
     _changes.add(null);
+  }
+}
+
+class FakeAlagagiPushNotificationService
+    implements AlagagiPushNotificationService {
+  FakeAlagagiPushNotificationService({PushNotificationSetupState? initialState})
+    : state =
+          initialState ??
+          const PushNotificationSetupState(
+            supported: true,
+            enabled: false,
+            permissionStatus: PushNotificationPermissionStatus.notDetermined,
+          );
+
+  PushNotificationSetupState state;
+  int loadCalls = 0;
+  int enableCalls = 0;
+  int disableCalls = 0;
+  final enabledSessions = <AlagagiSession>[];
+  final disabledSessions = <AlagagiSession>[];
+  final tokenRegistrations = <String?>[];
+
+  @override
+  bool get isSupported => state.supported;
+
+  @override
+  Future<PushNotificationSetupState> loadState({
+    required AlagagiAuthUser user,
+  }) async {
+    loadCalls += 1;
+    return state;
+  }
+
+  @override
+  Future<PushNotificationSetupState> enable({
+    required AlagagiAuthUser user,
+    required AlagagiSession session,
+  }) async {
+    enableCalls += 1;
+    enabledSessions.add(session);
+    state = const PushNotificationSetupState(
+      supported: true,
+      enabled: true,
+      permissionStatus: PushNotificationPermissionStatus.authorized,
+      tokenRegistered: true,
+      message: '새 기억이 생기면 휴대폰으로 알려드릴게요.',
+    );
+    return state;
+  }
+
+  @override
+  Future<PushNotificationSetupState> disable({
+    required AlagagiAuthUser user,
+    required AlagagiSession session,
+  }) async {
+    disableCalls += 1;
+    disabledSessions.add(session);
+    state = const PushNotificationSetupState(
+      supported: true,
+      enabled: false,
+      permissionStatus: PushNotificationPermissionStatus.authorized,
+      message: '푸시 알림을 꺼두었어요.',
+    );
+    return state;
+  }
+
+  @override
+  Future<void> registerTokenForSession({
+    required AlagagiAuthUser user,
+    required AlagagiSession session,
+    String? token,
+  }) async {
+    tokenRegistrations.add(token);
+  }
+
+  @override
+  Future<PushNotificationIntent?> initialIntent() async => null;
+
+  @override
+  Stream<PushNotificationIntent> openedIntents() {
+    return const Stream<PushNotificationIntent>.empty();
+  }
+
+  @override
+  Stream<PushNotificationIntent> foregroundIntents() {
+    return const Stream<PushNotificationIntent>.empty();
+  }
+
+  @override
+  Stream<String> tokenRefreshes() {
+    return const Stream<String>.empty();
   }
 }
 

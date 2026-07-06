@@ -13,6 +13,7 @@
 
 - `[FIRESTORE-001]` `firestore.rules` 기준 파일과 `docs/firebase_setup.md`의 Firestore Rules 코드블록이 항상 일치한다.
 - `[FIRESTORE-002]` Firestore repository에서 사용하는 collection 이름은 `firestore.rules`의 match path로 커버된다.
+- `[PUSH-001]` 푸시 알림 token/settings collection은 Firestore Rules로 본인 쓰기만 허용되고, Functions는 shared memory event만 발송한다.
 - `[HARNESS-001]` `AGENTS.md`는 `docs/agent_harness_playbook.md`를 연결하고, playbook은 Orchestrator/Spec/Test/Implementation/UI QA/Firebase Rules/Verification 역할을 정의한다.
 - `[HARNESS-002]` `AGENTS.md`는 `docs/ai_context_map.md`와 `docs/spec_trace.md`를 연결하고, AI agent가 큰 문서나 test file을 열기 전에 작업별 routing과 trace lookup을 사용하도록 안내한다.
 - `[HARNESS-003]` `AI_APP_DEV_PROCESS.md`는 portable bootstrap kernel로 유지되며, 새 repo에서 project-specific source-of-truth docs를 scaffold하고 production code 생성 전 review checkpoint를 요구한다.
@@ -73,6 +74,7 @@
 - `[MEMORY-002]` 기억 카드 draft 입력, 유형 선택, 공개 범위 선택은 repository write를 호출하지 않고 제출 시에만 `memoryCards/{cardId}` 한 문서를 저장한다.
 - `[MEMORY-002]` 기억 카드 반응과 수정 요청은 `memoryCardResponses/{cardId_responderUid}` 한 문서만 저장하고 원문 카드를 자동 수정하지 않는다.
 - private 기억 카드는 작성자에게만 보이고 partner 목록/카운트에 노출되지 않는다.
+- `[PUSH-001]` 푸시 알림 token refresh는 사용자가 push setting을 켠 경우에만 token 문서를 갱신한다.
 - 질문/밸런스 카탈로그는 사귀는 사이를 전제하는 `하트`, `애정 표현`, `데이트 계획`, `기념일`, `커플` 문구를 노출하지 않는다.
 - 개인화 설정이 없으면 기본 이름/아바타/초대 문구로 fallback한다.
 - 홈 진행 요약은 summary/progress/today answers/music notes에서 `오늘 질문`, `둘 다 답한 질문`, `음악 노트` 상태를 계산한다.
@@ -166,6 +168,7 @@
 - 소개 카드 상대 탭은 상대가 채운 슬롯만 읽기 카드로 보여주고 빈 슬롯 목록과 작성 CTA를 노출하지 않는다.
 - 소개 카드의 채워진 슬롯은 우상단 icon affordance로 전체 보기 bottom sheet를 열 수 있고, 전체 보기만으로 저장을 만들지 않는다.
 - 마이 화면은 추천 A 대시보드로 내 프로필, 내 기록, 다음에 해볼 것, 최근 내 흔적, 계정 섹션을 보여준다.
+- `[PUSH-001]` Firebase mode 마이 화면은 푸시 알림 토글을 보여주고, 사용자가 켤 때 fake push service의 enable flow를 호출한다.
 - 마이 화면은 `내 공간 다듬기`, 앱 이름/홈 문구 입력, `커스텀 저장`을 주요 화면에 노출하지 않는다.
 - 마이 화면의 대표 CTA는 오늘 질문 답변 화면으로 이동하고, 보조 CTA는 내 소개 카드와 내 음악 노트 흐름으로 이동한다.
 - 마이 대시보드 진입, 스크롤, CTA 표시 자체는 repository write를 호출하지 않는다.
