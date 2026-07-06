@@ -833,6 +833,7 @@ class _MeetingPlanTaskList extends StatelessWidget {
       padding: EdgeInsets.zero,
       buildDefaultDragHandles: false,
       itemCount: items.length,
+      // ignore: deprecated_member_use
       onReorder: controller.reorderMeetingPlanDraftItem,
       itemBuilder: (context, index) {
         return Padding(
@@ -1076,6 +1077,7 @@ class _MeetingPlanLinkedPlaceList extends StatelessWidget {
       padding: EdgeInsets.zero,
       buildDefaultDragHandles: false,
       itemCount: places.length,
+      // ignore: deprecated_member_use
       onReorder: (oldIndex, newIndex) {
         controller.reorderMeetingPlanPlaces(
           selectedDateKey,
