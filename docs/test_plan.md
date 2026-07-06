@@ -13,7 +13,7 @@
 
 - `[FIRESTORE-001]` `firestore.rules` 기준 파일과 `docs/firebase_setup.md`의 Firestore Rules 코드블록이 항상 일치한다.
 - `[FIRESTORE-002]` Firestore repository에서 사용하는 collection 이름은 `firestore.rules`의 match path로 커버된다.
-- `[PUSH-001]` 푸시 알림 token/settings collection은 Firestore Rules로 본인 쓰기만 허용되고, Functions는 shared memory event만 발송한다.
+- `[PUSH-001]` 푸시 알림 token/settings collection은 Firestore Rules로 본인 쓰기만 허용되고, Functions는 safe activity event만 발송한다.
 - `[HARNESS-001]` `AGENTS.md`는 `docs/agent_harness_playbook.md`를 연결하고, playbook은 Orchestrator/Spec/Test/Implementation/UI QA/Firebase Rules/Verification 역할을 정의한다.
 - `[HARNESS-002]` `AGENTS.md`는 `docs/ai_context_map.md`와 `docs/spec_trace.md`를 연결하고, AI agent가 큰 문서나 test file을 열기 전에 작업별 routing과 trace lookup을 사용하도록 안내한다.
 - `[HARNESS-003]` `AI_APP_DEV_PROCESS.md`는 portable bootstrap kernel로 유지되며, 새 repo에서 project-specific source-of-truth docs를 scaffold하고 production code 생성 전 review checkpoint를 요구한다.
@@ -224,10 +224,10 @@
   - verification handoff는 긴 원문 로그 대신 command, outcome, 첫 관련 failure, 관련 파일, 다음 action만 요약한다.
   - `firestore.rules`는 Firestore Security Rules의 기준 파일이며 Firebase setup 문서와 동기화되어 있다.
   - `scripts/verify.sh`는 dependency install, Dart analysis, Flutter tests, web build를 한 번에 실행한다.
-  - CI는 PR에서 non-deploy 검증을 실행하고, main push에서 Firestore Rules와 GitHub Pages deploy를 실행한다.
+  - CI는 PR에서 non-deploy 검증을 실행하고, main push에서 Firestore Rules, Cloud Functions, GitHub Pages deploy를 실행한다.
   - CI는 GitHub Pages build 전에 rules sync check, `dart analyze`, `flutter test`를 모두 실행한다.
-  - `firebase.json`은 기준 `firestore.rules` 파일을 가리키고, workflow는 `FIREBASE_SERVICE_ACCOUNT` raw JSON을 `google-github-actions/auth@v2`에 전달해 ADC를 만든 뒤 `firebase deploy --only firestore:rules`를 실행한다.
-  - `FIREBASE_SERVICE_ACCOUNT`용 service account는 `roles/firebaserules.admin`과 `roles/serviceusage.serviceUsageViewer`를 함께 가진다.
+  - `firebase.json`은 기준 `firestore.rules` 파일과 `functions/` source를 가리키고, workflow는 `FIREBASE_SERVICE_ACCOUNT` raw JSON을 `google-github-actions/auth@v2`에 전달해 ADC를 만든 뒤 `firebase deploy --only firestore:rules,functions`를 실행한다.
+  - `FIREBASE_SERVICE_ACCOUNT`용 service account는 rules deploy 권한과 Cloud Functions deploy 권한을 함께 가진다.
   - PR checklist는 spec/test/Firebase budget/UX tone/verification 항목을 노출한다.
 - 모바일 폭 390px 기준에서 텍스트가 잘리지 않는다.
 - 웹에서 스크롤, 탭, 상태 표시가 자연스럽다.

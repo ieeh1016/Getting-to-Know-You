@@ -10,21 +10,37 @@
 - 앱 첫 진입이나 로그인 직후에 권한 prompt를 자동으로 띄우지 않는다.
 - Android와 iPhone 앱을 1차 지원한다. Web push는 VAPID/service worker 설정 전까지 지원하지 않는다.
 - private memory card는 절대 푸시를 보내지 않는다.
-- 알림 title/body에는 기억 카드 본문, 수정 제안 전문, private note를 넣지 않는다.
-- 알림을 누르면 해당 feature route로 이동한다. 현재 1차 대상은 `서로의 기억`이다.
+- 알림 title/body에는 기억 카드 본문, 수정 제안 전문, private note, 질문/댓글/건의 본문 같은 긴 사용자 입력을 넣지 않는다.
+- 알림을 누르면 해당 feature route로 이동한다.
 - 사용자가 알림을 꺼도 Firestore 데이터와 Home 활동은 계속 남아야 한다.
 
 ## Trigger Events
 
-- `spaces/{spaceId}/memoryCards/{cardId}` create
-  - `visibility == shared`인 경우에만 `subjectProfileId`에게 발송한다.
-  - `createdByProfileId == subjectProfileId`이면 발송하지 않는다.
-- `spaces/{spaceId}/memoryCardResponses/{responseId}` create
-  - 원본 카드가 shared일 때만 카드 작성자에게 발송한다.
-  - responder가 카드 작성자와 같으면 발송하지 않는다.
+- client는 사용자가 명시적으로 저장/작성/반응한 동작이 성공할 때 `spaces/{spaceId}/activityEvents/{eventId}`를 생성한다.
+- Cloud Functions는 `activityEvents` create만 감지하고, 같은 space의 상대 member에게 발송한다.
+- 현재 activity event 대상:
+  - 질문 답변/넘김, 답변 댓글/답장
+  - 밸런스 선택
+  - 프로필 카드 저장
+  - 위시 저장/상태 변경
+  - shared 기억 카드 저장, shared 기억 카드 반응/수정 제안
+  - 음악 노트 저장, 들었어요, 음악 댓글
+  - 만남 가능 시간, 만남 계획, 장소/장소 계획 저장
+  - 질문 카드 보내기/답장
+  - 주식 이야기/보유 이야기 저장 또는 답장
+  - 건의함 글, 답변, 처리 완료
+- 앱 접속, 화면 보기, 스크롤, 임시 입력, 저장 실패, private 기억 카드는 activity event를 만들지 않는다.
 
 ## Data Model
 
+- `spaces/{spaceId}/activityEvents/{eventId}`
+  - `id: string`
+  - `type: string`
+  - `actorProfileId: string`
+  - `route: string`
+  - `feature: string`
+  - `targetId: string`
+  - `createdAt: server timestamp`
 - `users/{uid}/notificationSettings/push`
   - `enabled: bool`
   - `spaceId: string`
@@ -48,8 +64,9 @@
 
 ## Server Behavior
 
-- Cloud Functions Firestore create trigger가 memory card/create response event를 감지한다.
-- 발송 전 `notificationEvents/{eventId}`를 transaction으로 먼저 생성해 중복 발송을 줄인다.
+- Cloud Functions Firestore create trigger가 `activityEvents`를 감지한다.
+- 발송 전 `notificationEvents/activity-{eventId}`를 transaction으로 먼저 생성해 function retry 중복 발송을 줄인다.
+- recipient는 `spaces/{spaceId}.memberIds` 중 `actorProfileId`가 아닌 member로 계산한다.
 - recipient의 `notificationSettings/push.enabled == true`이고 token의 `enabled == true`, `spaceId`가 같은 경우에만 전송한다.
 - invalid FCM token은 `enabled: false`로 비활성화한다.
 
@@ -62,5 +79,5 @@
 ## Verification
 
 - Widget test: fake push service로 `마이` 화면에서 push setting을 켤 수 있음을 검증한다.
-- Harness test: Firestore Rules, push token paths, Cloud Functions trigger/privacy guard를 검증한다.
-- Manual smoke: Android/iPhone 실기기에서 권한 prompt, token 등록, shared memory card 알림, notification tap route를 확인한다.
+- Harness test: Firestore Rules, push token paths, activity event trigger/privacy guard를 검증한다.
+- Manual smoke: Android/iPhone 실기기에서 권한 prompt, token 등록, activity event 알림, notification tap route를 확인한다.

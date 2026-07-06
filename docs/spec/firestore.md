@@ -38,6 +38,7 @@
 - `spaces/{spaceId}/stockStories/{storyId}`
 - `spaces/{spaceId}/stockHoldings/{holdingId}`
 - `spaces/{spaceId}/improvementPosts/{postId}`
+- `spaces/{spaceId}/activityEvents/{eventId}`: client가 명시적 저장 동작 성공 시 생성하는 푸시 알림용 활동 이벤트. client read/update/delete 없음.
 - `spaces/{spaceId}/notificationEvents/{eventId}`: Cloud Functions idempotency log. client read/write 없음.
 - `users/{uid}/notificationSettings/push`
 - `users/{uid}/notificationTokens/{tokenId}`

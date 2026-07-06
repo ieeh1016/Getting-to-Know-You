@@ -62,11 +62,11 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
           if [ -z "$FIREBASE_PROJECT_ID" ]; then
-            echo "FIREBASE_PROJECT_ID secret is required for Firestore Rules deploy." >&2
+            echo "FIREBASE_PROJECT_ID secret is required for Firebase deploy." >&2
             exit 1
           fi
           if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            echo "FIREBASE_SERVICE_ACCOUNT secret is required for Firestore Rules deploy." >&2
+            echo "FIREBASE_SERVICE_ACCOUNT secret is required for Firebase deploy." >&2
             exit 1
           fi
 
@@ -82,12 +82,12 @@ jobs:
           create_credentials_file: true
           export_environment_variables: true
 
-      - name: Deploy Firestore rules
+      - name: Deploy Firebase rules and functions
         if: github.event_name != 'pull_request'
         env:
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
         run: |
-          firebase deploy --only firestore:rules --project "$FIREBASE_PROJECT_ID" --non-interactive
+          firebase deploy --only firestore:rules,functions --project "$FIREBASE_PROJECT_ID" --non-interactive
 
       - name: Configure Pages
         if: github.event_name != 'pull_request'

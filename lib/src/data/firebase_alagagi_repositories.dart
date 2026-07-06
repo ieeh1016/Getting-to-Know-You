@@ -81,6 +81,55 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
 
   final FirebaseFirestore _firestore;
 
+  Future<void> _setWithActivityEvent(
+    String spaceId,
+    DocumentReference<Map<String, dynamic>> reference,
+    Map<String, Object?> data, {
+    SetOptions? options,
+    _ActivityEventDraft? activityEvent,
+  }) {
+    final batch = _firestore.batch();
+    batch.set(reference, data, options);
+    _addActivityEvent(batch, spaceId, activityEvent);
+    return batch.commit();
+  }
+
+  Future<void> _updateWithActivityEvent(
+    String spaceId,
+    DocumentReference<Map<String, dynamic>> reference,
+    Map<String, Object?> data, {
+    _ActivityEventDraft? activityEvent,
+  }) {
+    final batch = _firestore.batch();
+    batch.update(reference, data);
+    _addActivityEvent(batch, spaceId, activityEvent);
+    return batch.commit();
+  }
+
+  void _addActivityEvent(
+    WriteBatch batch,
+    String spaceId,
+    _ActivityEventDraft? activityEvent,
+  ) {
+    if (activityEvent == null || activityEvent.actorProfileId.isEmpty) {
+      return;
+    }
+    final reference = _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('activityEvents')
+        .doc();
+    batch.set(reference, {
+      'id': reference.id,
+      'type': activityEvent.type,
+      'actorProfileId': activityEvent.actorProfileId,
+      'route': activityEvent.route,
+      'feature': activityEvent.feature,
+      'targetId': activityEvent.targetId,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   @override
   Future<AlagagiSession?> loadSession(AlagagiAuthUser user) async {
     final users = _firestore.collection('users');
@@ -124,44 +173,70 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveAnswer(String spaceId, Answer answer) {
-    return _firestore
-        .collection('spaces')
-        .doc(spaceId)
-        .collection('answers')
-        .doc('${answer.questionId}_${answer.profileId}')
-        .set({
-          'questionId': answer.questionId,
-          'profileId': answer.profileId,
-          'body': answer.body,
-          'createdLabel': answer.createdLabel,
-          'skipped': answer.skipped,
-          'edited': answer.edited,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+    return _setWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('answers')
+          .doc('${answer.questionId}_${answer.profileId}'),
+      {
+        'questionId': answer.questionId,
+        'profileId': answer.profileId,
+        'body': answer.body,
+        'createdLabel': answer.createdLabel,
+        'skipped': answer.skipped,
+        'edited': answer.edited,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      options: SetOptions(merge: true),
+      activityEvent: _ActivityEventDraft(
+        type: answer.skipped ? 'answerSkipped' : 'answerSaved',
+        actorProfileId: answer.profileId,
+        route: 'answer',
+        feature: 'answers',
+        targetId: answer.questionId,
+      ),
+    );
   }
 
   @override
   Future<void> saveAnswerComment(String spaceId, AnswerComment comment) {
-    return _firestore
-        .collection('spaces')
-        .doc(spaceId)
-        .collection('answerComments')
-        .doc(
-          '${comment.questionId}_${comment.answerOwnerProfileId}_${comment.commenterProfileId}',
-        )
-        .set({
-          'questionId': comment.questionId,
-          'answerOwnerProfileId': comment.answerOwnerProfileId,
-          'commenterProfileId': comment.commenterProfileId,
-          'body': comment.body,
-          'createdLabel': comment.createdLabel,
-          'edited': comment.edited,
-          'replyBody': comment.replyBody,
-          'repliedByProfileId': comment.repliedByProfileId,
-          'replyCreatedLabel': comment.replyCreatedLabel,
-          'replyEdited': comment.replyEdited,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+    final isReply = comment.hasReply && comment.repliedByProfileId.isNotEmpty;
+    return _setWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('answerComments')
+          .doc(
+            '${comment.questionId}_${comment.answerOwnerProfileId}_${comment.commenterProfileId}',
+          ),
+      {
+        'questionId': comment.questionId,
+        'answerOwnerProfileId': comment.answerOwnerProfileId,
+        'commenterProfileId': comment.commenterProfileId,
+        'body': comment.body,
+        'createdLabel': comment.createdLabel,
+        'edited': comment.edited,
+        'replyBody': comment.replyBody,
+        'repliedByProfileId': comment.repliedByProfileId,
+        'replyCreatedLabel': comment.replyCreatedLabel,
+        'replyEdited': comment.replyEdited,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      options: SetOptions(merge: true),
+      activityEvent: _ActivityEventDraft(
+        type: isReply ? 'answerCommentReplySaved' : 'answerCommentSaved',
+        actorProfileId: isReply
+            ? comment.repliedByProfileId
+            : comment.commenterProfileId,
+        route: 'answer',
+        feature: 'comments',
+        targetId:
+            '${comment.questionId}_${comment.answerOwnerProfileId}_${comment.commenterProfileId}',
+      ),
+    );
   }
 
   @override
@@ -210,12 +285,23 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     if (resultRevealedAt != null) {
       data['resultRevealedAt'] = Timestamp.fromDate(resultRevealedAt);
     }
-    return _firestore
-        .collection('spaces')
-        .doc(spaceId)
-        .collection('balanceSelections')
-        .doc('${selection.questionId}_${selection.profileId}')
-        .set(data, SetOptions(merge: true));
+    return _setWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('balanceSelections')
+          .doc('${selection.questionId}_${selection.profileId}'),
+      data,
+      options: SetOptions(merge: true),
+      activityEvent: _ActivityEventDraft(
+        type: 'balanceSelectionSaved',
+        actorProfileId: selection.profileId,
+        route: 'balance',
+        feature: 'balance',
+        targetId: selection.questionId,
+      ),
+    );
   }
 
   @override
@@ -238,28 +324,39 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     String profileId,
     ProfileSlot slot,
   ) {
-    return _firestore
-        .collection('spaces')
-        .doc(spaceId)
-        .collection('profileCards')
-        .doc(profileId)
-        .collection('slots')
-        .doc(slot.id)
-        .set({
-          'id': slot.id,
-          'label': slot.label,
-          'icon': slot.icon,
-          'category': slot.category,
-          'inputHint': slot.inputHint,
-          'value': slot.value,
-          'locked': slot.locked,
-          'unlockHint': slot.unlockHint,
-          'skipped': slot.skipped,
-          'hidden': slot.hidden,
-          'custom': slot.custom,
-          'updatedByProfileId': slot.updatedByProfileId ?? profileId,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+    return _setWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('profileCards')
+          .doc(profileId)
+          .collection('slots')
+          .doc(slot.id),
+      {
+        'id': slot.id,
+        'label': slot.label,
+        'icon': slot.icon,
+        'category': slot.category,
+        'inputHint': slot.inputHint,
+        'value': slot.value,
+        'locked': slot.locked,
+        'unlockHint': slot.unlockHint,
+        'skipped': slot.skipped,
+        'hidden': slot.hidden,
+        'custom': slot.custom,
+        'updatedByProfileId': slot.updatedByProfileId ?? profileId,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      options: SetOptions(merge: true),
+      activityEvent: _ActivityEventDraft(
+        type: 'profileSlotSaved',
+        actorProfileId: slot.updatedByProfileId ?? profileId,
+        route: 'profileCard',
+        feature: 'profileCard',
+        targetId: slot.id,
+      ),
+    );
   }
 
   @override
@@ -280,26 +377,37 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveWish(String spaceId, WishItem wish) {
-    return _firestore
-        .collection('spaces')
-        .doc(spaceId)
-        .collection('wishes')
-        .doc(wish.id)
-        .set({
-          'id': wish.id,
-          'icon': wish.icon,
-          'title': wish.title,
-          'createdByProfileId': wish.createdByProfileId,
-          'kind': switch (wish.kind) {
-            WishKind.place => 'place',
-            WishKind.activity => 'activity',
-          },
-          'likedByProfileIds': wish.likedByProfileIds.toList(),
-          'done': wish.done,
-          'updatedByProfileId':
-              wish.updatedByProfileId ?? wish.createdByProfileId,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+    return _setWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('wishes')
+          .doc(wish.id),
+      {
+        'id': wish.id,
+        'icon': wish.icon,
+        'title': wish.title,
+        'createdByProfileId': wish.createdByProfileId,
+        'kind': switch (wish.kind) {
+          WishKind.place => 'place',
+          WishKind.activity => 'activity',
+        },
+        'likedByProfileIds': wish.likedByProfileIds.toList(),
+        'done': wish.done,
+        'updatedByProfileId':
+            wish.updatedByProfileId ?? wish.createdByProfileId,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      options: SetOptions(merge: true),
+      activityEvent: _ActivityEventDraft(
+        type: 'wishSaved',
+        actorProfileId: wish.updatedByProfileId ?? wish.createdByProfileId,
+        route: 'wishlist',
+        feature: 'wishlist',
+        targetId: wish.id,
+      ),
+    );
   }
 
   @override
@@ -314,24 +422,38 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveMemoryCard(String spaceId, MemoryCard card) {
-    return _firestore
-        .collection('spaces')
-        .doc(spaceId)
-        .collection('memoryCards')
-        .doc(card.id)
-        .set({
-          'id': card.id,
-          'type': card.type.storageKey,
-          'title': card.title,
-          'body': card.body,
-          'createdByProfileId': card.createdByProfileId,
-          'subjectProfileId': card.subjectProfileId,
-          'visibility': card.visibility.storageKey,
-          'createdLabel': card.createdLabel,
-          'updatedByProfileId':
-              card.updatedByProfileId ?? card.createdByProfileId,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+    return _setWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('memoryCards')
+          .doc(card.id),
+      {
+        'id': card.id,
+        'type': card.type.storageKey,
+        'title': card.title,
+        'body': card.body,
+        'createdByProfileId': card.createdByProfileId,
+        'subjectProfileId': card.subjectProfileId,
+        'visibility': card.visibility.storageKey,
+        'createdLabel': card.createdLabel,
+        'updatedByProfileId':
+            card.updatedByProfileId ?? card.createdByProfileId,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      options: SetOptions(merge: true),
+      activityEvent: card.visibility == MemoryCardVisibility.shared
+          ? _ActivityEventDraft(
+              type: 'memoryCardSaved',
+              actorProfileId:
+                  card.updatedByProfileId ?? card.createdByProfileId,
+              route: 'memoryCards',
+              feature: 'memoryCards',
+              targetId: card.id,
+            )
+          : null,
+    );
   }
 
   @override
@@ -339,50 +461,87 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     String spaceId,
     MemoryCardResponse response,
   ) {
-    return _firestore
-        .collection('spaces')
-        .doc(spaceId)
-        .collection('memoryCardResponses')
-        .doc(response.id)
-        .set({
-          'id': response.id,
-          'cardId': response.cardId,
-          'responderProfileId': response.responderProfileId,
-          'reaction': response.reaction.storageKey,
-          'correctionText': response.correctionText,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+    return _setWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('memoryCardResponses')
+          .doc(response.id),
+      {
+        'id': response.id,
+        'cardId': response.cardId,
+        'responderProfileId': response.responderProfileId,
+        'reaction': response.reaction.storageKey,
+        'correctionText': response.correctionText,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      options: SetOptions(merge: true),
+      activityEvent: _ActivityEventDraft(
+        type: 'memoryCardResponseSaved',
+        actorProfileId: response.responderProfileId,
+        route: 'memoryCards',
+        feature: 'memoryCards',
+        targetId: response.cardId,
+      ),
+    );
   }
 
   @override
   Future<void> saveMusicNote(String spaceId, MusicNote note) {
-    return _firestore
-        .collection('spaces')
-        .doc(spaceId)
-        .collection('musicNotes')
-        .doc(note.id)
-        .set({
-          'id': note.id,
-          'title': note.title,
-          'artist': note.artist,
-          'link': note.link,
-          'note': note.note,
-          'mood': note.mood,
-          'createdByProfileId': note.createdByProfileId,
-          'createdLabel': note.createdLabel,
-          'listenedByProfileIds': note.listenedByProfileIds.toList(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+    return _setWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('musicNotes')
+          .doc(note.id),
+      {
+        'id': note.id,
+        'title': note.title,
+        'artist': note.artist,
+        'link': note.link,
+        'note': note.note,
+        'mood': note.mood,
+        'createdByProfileId': note.createdByProfileId,
+        'createdLabel': note.createdLabel,
+        'listenedByProfileIds': note.listenedByProfileIds.toList(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      options: SetOptions(merge: true),
+      activityEvent: _ActivityEventDraft(
+        type: 'musicNoteSaved',
+        actorProfileId: note.createdByProfileId,
+        route: 'music',
+        feature: 'music',
+        targetId: note.id,
+      ),
+    );
   }
 
   @override
   Future<void> saveMusicNoteListenState(String spaceId, MusicNote note) {
-    return _firestore
-        .collection('spaces')
-        .doc(spaceId)
-        .collection('musicNotes')
-        .doc(note.id)
-        .update({'listenedByProfileIds': note.listenedByProfileIds.toList()});
+    final listenerProfileId = note.listenedByProfileIds
+        .where((profileId) => profileId != note.createdByProfileId)
+        .firstOrNull;
+    return _updateWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('musicNotes')
+          .doc(note.id),
+      {'listenedByProfileIds': note.listenedByProfileIds.toList()},
+      activityEvent: listenerProfileId == null
+          ? null
+          : _ActivityEventDraft(
+              type: 'musicNoteListened',
+              actorProfileId: listenerProfileId,
+              route: 'music',
+              feature: 'music',
+              targetId: note.id,
+            ),
+    );
   }
 
   @override
@@ -410,12 +569,23 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     data['createdAt'] = createdAt == null
         ? FieldValue.serverTimestamp()
         : Timestamp.fromDate(createdAt);
-    return _firestore
-        .collection('spaces')
-        .doc(spaceId)
-        .collection('musicNoteComments')
-        .doc(comment.id)
-        .set(data, SetOptions(merge: true));
+    return _setWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('musicNoteComments')
+          .doc(comment.id),
+      data,
+      options: SetOptions(merge: true),
+      activityEvent: _ActivityEventDraft(
+        type: 'musicNoteCommentSaved',
+        actorProfileId: comment.createdByProfileId,
+        route: 'music',
+        feature: 'music',
+        targetId: comment.musicNoteId,
+      ),
+    );
   }
 
   @override
@@ -430,49 +600,82 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveScheduleEntry(String spaceId, ScheduleEntry entry) {
-    return _firestore
-        .collection('spaces')
-        .doc(spaceId)
-        .collection('scheduleEntries')
-        .doc(entry.id)
-        .set({
-          'dateKey': entry.dateKey,
-          'profileId': entry.profileId,
-          'availability': _availabilityToData(entry.availability),
-          'timeSlots': entry.timeSlots.map(_timeSlotToData).toList(),
-          'timeBlocks': entry.timeBlocks.map(_timeBlockToData).toList(),
-          'sharedMemo': entry.sharedMemo,
-          'isMeetingDay': entry.isMeetingDay,
-          'meetingTimeLabel': entry.meetingTimeLabel,
-          'meetingNote': entry.meetingNote,
-          'meetingPlanItems': entry.meetingPlanItems,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+    return _setWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('scheduleEntries')
+          .doc(entry.id),
+      {
+        'dateKey': entry.dateKey,
+        'profileId': entry.profileId,
+        'availability': _availabilityToData(entry.availability),
+        'timeSlots': entry.timeSlots.map(_timeSlotToData).toList(),
+        'timeBlocks': entry.timeBlocks.map(_timeBlockToData).toList(),
+        'sharedMemo': entry.sharedMemo,
+        'isMeetingDay': entry.isMeetingDay,
+        'meetingTimeLabel': entry.meetingTimeLabel,
+        'meetingNote': entry.meetingNote,
+        'meetingPlanItems': entry.meetingPlanItems,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      options: SetOptions(merge: true),
+      activityEvent: _ActivityEventDraft(
+        type: 'scheduleEntrySaved',
+        actorProfileId: entry.profileId,
+        route: 'meetings',
+        feature: 'meetings',
+        targetId: entry.dateKey,
+      ),
+    );
   }
 
   @override
   Future<void> saveMeetingPlan(String spaceId, MeetingPlan plan) {
-    return _firestore
-        .collection('spaces')
-        .doc(spaceId)
-        .collection('meetingPlans')
-        .doc(plan.id)
-        .set({
-          'dateKey': plan.dateKey,
-          'items': plan.items,
-          'updatedByProfileId': plan.updatedByProfileId,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+    return _setWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('meetingPlans')
+          .doc(plan.id),
+      {
+        'dateKey': plan.dateKey,
+        'items': plan.items,
+        'updatedByProfileId': plan.updatedByProfileId,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      options: SetOptions(merge: true),
+      activityEvent: _ActivityEventDraft(
+        type: 'meetingPlanSaved',
+        actorProfileId: plan.updatedByProfileId,
+        route: 'meetingPlans',
+        feature: 'meetingPlans',
+        targetId: plan.dateKey,
+      ),
+    );
   }
 
   @override
   Future<void> saveSharedPlace(String spaceId, SharedPlace place) {
-    return _firestore
-        .collection('spaces')
-        .doc(spaceId)
-        .collection('sharedPlaces')
-        .doc(place.id)
-        .set(_sharedPlaceToData(place), SetOptions(merge: true));
+    return _setWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('sharedPlaces')
+          .doc(place.id),
+      _sharedPlaceToData(place),
+      options: SetOptions(merge: true),
+      activityEvent: _ActivityEventDraft(
+        type: 'sharedPlaceSaved',
+        actorProfileId: place.updatedByProfileId ?? place.createdByProfileId,
+        route: 'places',
+        feature: 'places',
+        targetId: place.id,
+      ),
+    );
   }
 
   @override
@@ -482,20 +685,33 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         .doc(spaceId)
         .collection('sharedPlaces')
         .doc(place.id);
-    return reference
-        .update(
-          _sharedPlaceMeetingLinkPatchToData(place, useServerTimestamp: false),
-        )
-        .catchError((Object error) {
-          if (error is FirebaseException &&
-              error.code == 'not-found' &&
-              place.updatedByProfileId == place.createdByProfileId &&
-              place.interestedByProfileIds.length == 1 &&
-              place.interestedByProfileIds.contains(place.createdByProfileId)) {
-            return reference.set(_sharedPlaceToData(place));
-          }
-          throw error;
-        });
+    final activityEvent = _ActivityEventDraft(
+      type: 'sharedPlaceMeetingLinksSaved',
+      actorProfileId: place.updatedByProfileId ?? place.createdByProfileId,
+      route: 'meetingPlans',
+      feature: 'places',
+      targetId: place.id,
+    );
+    return _updateWithActivityEvent(
+      spaceId,
+      reference,
+      _sharedPlaceMeetingLinkPatchToData(place, useServerTimestamp: false),
+      activityEvent: activityEvent,
+    ).catchError((Object error) {
+      if (error is FirebaseException &&
+          error.code == 'not-found' &&
+          place.updatedByProfileId == place.createdByProfileId &&
+          place.interestedByProfileIds.length == 1 &&
+          place.interestedByProfileIds.contains(place.createdByProfileId)) {
+        return _setWithActivityEvent(
+          spaceId,
+          reference,
+          _sharedPlaceToData(place),
+          activityEvent: activityEvent,
+        );
+      }
+      throw error;
+    });
   }
 
   @override
@@ -529,53 +745,78 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveCuriosityCard(String spaceId, CuriosityCard card) {
-    return _firestore
-        .collection('spaces')
-        .doc(spaceId)
-        .collection('curiosityCards')
-        .doc(card.id)
-        .set({
-          'id': card.id,
-          'fromProfileId': card.fromProfileId,
-          'toProfileId': card.toProfileId,
-          'question': card.question,
-          'reply': card.reply ?? '',
-          'createdLabel': card.createdLabel,
-          'repliedLabel': card.repliedLabel ?? '',
-          'updatedByProfileId':
-              card.updatedByProfileId ??
-              (card.hasReply ? card.toProfileId : card.fromProfileId),
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+    final actorProfileId =
+        card.updatedByProfileId ??
+        (card.hasReply ? card.toProfileId : card.fromProfileId);
+    return _setWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('curiosityCards')
+          .doc(card.id),
+      {
+        'id': card.id,
+        'fromProfileId': card.fromProfileId,
+        'toProfileId': card.toProfileId,
+        'question': card.question,
+        'reply': card.reply ?? '',
+        'createdLabel': card.createdLabel,
+        'repliedLabel': card.repliedLabel ?? '',
+        'updatedByProfileId': actorProfileId,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      options: SetOptions(merge: true),
+      activityEvent: _ActivityEventDraft(
+        type: card.hasReply ? 'curiosityReplySaved' : 'curiosityQuestionSaved',
+        actorProfileId: actorProfileId,
+        route: 'home',
+        feature: 'curiosity',
+        targetId: card.id,
+      ),
+    );
   }
 
   @override
   Future<void> saveStockStory(String spaceId, StockStory story) {
-    return _firestore
-        .collection('spaces')
-        .doc(spaceId)
-        .collection('stockStories')
-        .doc(story.id)
-        .set({
-          'id': story.id,
-          'symbol': FieldValue.delete(),
-          'name': story.name,
-          'reason': story.reason,
-          'upside': story.upside,
-          'risk': story.risk,
-          'question': story.question,
-          'createdByProfileId': story.createdByProfileId,
-          'createdLabel': story.createdLabel,
-          'replyTone': story.replyTone ?? '',
-          'reply': story.reply ?? '',
-          'repliedByProfileId': story.repliedByProfileId ?? '',
-          'repliedLabel': story.repliedLabel ?? '',
-          'updatedByProfileId':
-              story.updatedByProfileId ??
-              story.repliedByProfileId ??
-              story.createdByProfileId,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+    final actorProfileId = _firstNonEmpty([
+      story.updatedByProfileId,
+      story.repliedByProfileId,
+      story.createdByProfileId,
+    ]);
+    return _setWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('stockStories')
+          .doc(story.id),
+      {
+        'id': story.id,
+        'symbol': FieldValue.delete(),
+        'name': story.name,
+        'reason': story.reason,
+        'upside': story.upside,
+        'risk': story.risk,
+        'question': story.question,
+        'createdByProfileId': story.createdByProfileId,
+        'createdLabel': story.createdLabel,
+        'replyTone': story.replyTone ?? '',
+        'reply': story.reply ?? '',
+        'repliedByProfileId': story.repliedByProfileId ?? '',
+        'repliedLabel': story.repliedLabel ?? '',
+        'updatedByProfileId': actorProfileId,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      options: SetOptions(merge: true),
+      activityEvent: _ActivityEventDraft(
+        type: 'stockStorySaved',
+        actorProfileId: actorProfileId,
+        route: 'stockStory',
+        feature: 'stocks',
+        targetId: story.id,
+      ),
+    );
   }
 
   @override
@@ -590,33 +831,46 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveStockHolding(String spaceId, StockHolding holding) {
-    return _firestore
-        .collection('spaces')
-        .doc(spaceId)
-        .collection('stockHoldings')
-        .doc(holding.id)
-        .set({
-          'id': holding.id,
-          'symbol': FieldValue.delete(),
-          'name': holding.name,
-          'status': holding.status,
-          'weightLabel': holding.weightLabel,
-          'reason': holding.reason,
-          'watchPoint': holding.watchPoint,
-          'concern': holding.concern,
-          'question': holding.question,
-          'createdByProfileId': holding.createdByProfileId,
-          'createdLabel': holding.createdLabel,
-          'replyTone': holding.replyTone ?? '',
-          'reply': holding.reply ?? '',
-          'repliedByProfileId': holding.repliedByProfileId ?? '',
-          'repliedLabel': holding.repliedLabel ?? '',
-          'updatedByProfileId':
-              holding.updatedByProfileId ??
-              holding.repliedByProfileId ??
-              holding.createdByProfileId,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+    final actorProfileId = _firstNonEmpty([
+      holding.updatedByProfileId,
+      holding.repliedByProfileId,
+      holding.createdByProfileId,
+    ]);
+    return _setWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('stockHoldings')
+          .doc(holding.id),
+      {
+        'id': holding.id,
+        'symbol': FieldValue.delete(),
+        'name': holding.name,
+        'status': holding.status,
+        'weightLabel': holding.weightLabel,
+        'reason': holding.reason,
+        'watchPoint': holding.watchPoint,
+        'concern': holding.concern,
+        'question': holding.question,
+        'createdByProfileId': holding.createdByProfileId,
+        'createdLabel': holding.createdLabel,
+        'replyTone': holding.replyTone ?? '',
+        'reply': holding.reply ?? '',
+        'repliedByProfileId': holding.repliedByProfileId ?? '',
+        'repliedLabel': holding.repliedLabel ?? '',
+        'updatedByProfileId': actorProfileId,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      options: SetOptions(merge: true),
+      activityEvent: _ActivityEventDraft(
+        type: 'stockHoldingSaved',
+        actorProfileId: actorProfileId,
+        route: 'stockStory',
+        feature: 'stocks',
+        targetId: holding.id,
+      ),
+    );
   }
 
   @override
@@ -631,26 +885,38 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveImprovementPost(String spaceId, ImprovementPost post) {
-    return _firestore
-        .collection('spaces')
-        .doc(spaceId)
-        .collection('improvementPosts')
-        .doc(post.id)
-        .set({
-          'id': post.id,
-          'title': post.title,
-          'body': post.body,
-          'category': post.category,
-          'createdByProfileId': post.createdByProfileId,
-          'createdLabel': post.createdLabel,
-          'ownerNote': post.ownerNote,
-          'ownerNoteProfileId': post.ownerNoteProfileId,
-          'ownerNoteLabel': post.ownerNoteLabel,
-          'resolved': post.resolved,
-          'resolvedByProfileId': post.resolvedByProfileId,
-          'resolvedLabel': post.resolvedLabel,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+    final actorProfileId = _improvementActorProfileId(post);
+    return _setWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('improvementPosts')
+          .doc(post.id),
+      {
+        'id': post.id,
+        'title': post.title,
+        'body': post.body,
+        'category': post.category,
+        'createdByProfileId': post.createdByProfileId,
+        'createdLabel': post.createdLabel,
+        'ownerNote': post.ownerNote,
+        'ownerNoteProfileId': post.ownerNoteProfileId,
+        'ownerNoteLabel': post.ownerNoteLabel,
+        'resolved': post.resolved,
+        'resolvedByProfileId': post.resolvedByProfileId,
+        'resolvedLabel': post.resolvedLabel,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      options: SetOptions(merge: true),
+      activityEvent: _ActivityEventDraft(
+        type: _improvementActivityType(post),
+        actorProfileId: actorProfileId,
+        route: 'improvements',
+        feature: 'improvements',
+        targetId: post.id,
+      ),
+    );
   }
 
   @override
@@ -1512,6 +1778,34 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     return null;
   }
 
+  String _firstNonEmpty(Iterable<String?> values) {
+    for (final value in values) {
+      if (value != null && value.trim().isNotEmpty) {
+        return value.trim();
+      }
+    }
+    return '';
+  }
+
+  String _improvementActorProfileId(ImprovementPost post) {
+    return _firstNonEmpty([
+      post.resolvedByProfileId,
+      post.ownerNoteProfileId,
+      post.createdByProfileId,
+    ]);
+  }
+
+  String _improvementActivityType(ImprovementPost post) {
+    if (post.resolved && post.resolvedByProfileId.isNotEmpty) {
+      return 'improvementPostResolved';
+    }
+    if (post.ownerNote.trim().isNotEmpty &&
+        post.ownerNoteProfileId.isNotEmpty) {
+      return 'improvementPostOwnerNoteSaved';
+    }
+    return 'improvementPostSaved';
+  }
+
   String? _readString(Map<String, dynamic> data, String key) {
     final value = data[key];
     if (value is String && value.trim().isNotEmpty) {
@@ -1533,4 +1827,20 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     }
     return null;
   }
+}
+
+class _ActivityEventDraft {
+  const _ActivityEventDraft({
+    required this.type,
+    required this.actorProfileId,
+    required this.route,
+    required this.feature,
+    required this.targetId,
+  });
+
+  final String type;
+  final String actorProfileId;
+  final String route;
+  final String feature;
+  final String targetId;
 }

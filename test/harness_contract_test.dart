@@ -152,7 +152,8 @@ void main() {
     expect(patchPayload, contains("'meetingPlanLinks'"));
     expect(patchPayload, contains("'linkedDateKey'"));
     expect(patchPayload, contains("'interestedByProfileIds'"));
-    expect(method, contains('.update('));
+    expect(method, contains('_updateWithActivityEvent('));
+    expect(repository, contains('batch.update(reference, data)'));
     expect(method, isNot(contains('SetOptions(merge: true)')));
     expect(patchPayload, isNot(contains("'name'")));
     expect(patchPayload, isNot(contains("'providerPlaceId'")));
@@ -244,17 +245,28 @@ void main() {
     final functions = File('functions/index.js').readAsStringSync();
     final firebaseConfig = File('firebase.json').readAsStringSync();
     final firebaseSetup = File('docs/firebase_setup.md').readAsStringSync();
+    final firebaseRepository = File(
+      'lib/src/data/firebase_alagagi_repositories.dart',
+    ).readAsStringSync();
 
     expect(pushService, contains("collection('notificationSettings')"));
     expect(pushService, contains("collection('notificationTokens')"));
+    expect(firebaseRepository, contains("collection('activityEvents')"));
     expect(rules, contains('match /notificationSettings/{settingId}'));
     expect(rules, contains('match /notificationTokens/{tokenId}'));
+    expect(rules, contains('match /activityEvents/{eventId}'));
     expect(rules, contains('request.auth.uid == userId'));
     expect(rules, contains('validPushNotificationToken'));
+    expect(rules, contains('validActivityEvent'));
+    expect(
+      rules,
+      contains('request.resource.data.actorProfileId == request.auth.uid'),
+    );
     expect(firebaseConfig, contains('"functions"'));
-    expect(functions, contains('notifyMemoryCardCreated'));
-    expect(functions, contains('notifyMemoryCardResponseCreated'));
-    expect(functions, contains('card.visibility !== "shared"'));
+    expect(functions, contains('notifyActivityEventCreated'));
+    expect(functions, contains('activityEvents'));
+    expect(functions, contains('ACTIVITY_NOTIFICATION_COPY'));
+    expect(functions, contains('resolveRecipientUid'));
     expect(functions, contains('sendEachForMulticast'));
     expect(functions, contains('markNotificationEvent'));
     expect(functions, isNot(contains('card.title')));
@@ -362,32 +374,44 @@ void main() {
     expect(guide, contains('status bar mock'));
   });
 
-  test('CI deploys canonical Firestore rules from repository source', () {
-    final firebaseConfig =
-        jsonDecode(File('firebase.json').readAsStringSync())
-            as Map<String, dynamic>;
-    final firestoreConfig = firebaseConfig['firestore'] as Map<String, dynamic>;
-    final workflow = File('.github/workflows/deploy.yml').readAsStringSync();
-    final firebaseSetup = File('docs/firebase_setup.md').readAsStringSync();
+  test(
+    'CI deploys canonical Firebase rules and functions from repository source',
+    () {
+      final firebaseConfig =
+          jsonDecode(File('firebase.json').readAsStringSync())
+              as Map<String, dynamic>;
+      final firestoreConfig =
+          firebaseConfig['firestore'] as Map<String, dynamic>;
+      final functionsConfig =
+          firebaseConfig['functions'] as Map<String, dynamic>;
+      final workflow = File('.github/workflows/deploy.yml').readAsStringSync();
+      final firebaseSetup = File('docs/firebase_setup.md').readAsStringSync();
 
-    expect(firestoreConfig['rules'], 'firestore.rules');
-    expect(workflow, contains('firebase deploy --only firestore:rules'));
-    expect(workflow, contains('FIREBASE_SERVICE_ACCOUNT'));
-    expect(workflow, contains('google-github-actions/auth@v2'));
-    expect(workflow, contains('credentials_json:'));
-    expect(workflow, contains('create_credentials_file: true'));
-    expect(workflow, contains('export_environment_variables: true'));
-    expect(
-      workflow,
-      isNot(contains(r'''printf '%s' "$FIREBASE_SERVICE_ACCOUNT"''')),
-      reason:
-          'CI should let the Google auth action create the ADC file instead '
-          'of writing service account JSON by hand.',
-    );
-    expect(workflow, contains("if: github.event_name != 'pull_request'"));
-    expect(firebaseSetup, contains('roles/firebaserules.admin'));
-    expect(firebaseSetup, contains('roles/serviceusage.serviceUsageViewer'));
-  });
+      expect(firestoreConfig['rules'], 'firestore.rules');
+      expect(functionsConfig['source'], 'functions');
+      expect(
+        workflow,
+        contains('firebase deploy --only firestore:rules,functions'),
+      );
+      expect(workflow, contains('FIREBASE_SERVICE_ACCOUNT'));
+      expect(workflow, contains('google-github-actions/auth@v2'));
+      expect(workflow, contains('credentials_json:'));
+      expect(workflow, contains('create_credentials_file: true'));
+      expect(workflow, contains('export_environment_variables: true'));
+      expect(
+        workflow,
+        isNot(contains(r'''printf '%s' "$FIREBASE_SERVICE_ACCOUNT"''')),
+        reason:
+            'CI should let the Google auth action create the ADC file instead '
+            'of writing service account JSON by hand.',
+      );
+      expect(workflow, contains("if: github.event_name != 'pull_request'"));
+      expect(firebaseSetup, contains('roles/firebaserules.admin'));
+      expect(firebaseSetup, contains('roles/serviceusage.serviceUsageViewer'));
+      expect(firebaseSetup, contains('roles/cloudfunctions.developer'));
+      expect(firebaseSetup, contains('roles/iam.serviceAccountUser'));
+    },
+  );
 }
 
 String _extractFirestoreRulesBlock(String markdown) {

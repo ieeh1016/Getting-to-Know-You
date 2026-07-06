@@ -108,7 +108,7 @@ minyoung@gettoknow.local
 
 Firestore Console에서 배열은 `array` 타입으로 넣는다.
 
-`spaces/main/curiosityCards` 하위 컬렉션은 앱에서 처음 `질문 보내기`를 누를 때 자동으로 만들어진다. `spaces/main/memoryCards` 하위 컬렉션은 `서로의 기억`에서 처음 기억 카드를 저장할 때 만들어지고, `spaces/main/memoryCardResponses` 하위 컬렉션은 상대가 공유 카드에 처음 반응하거나 수정 제안을 남길 때 만들어진다. `spaces/main/stockStories` 하위 컬렉션도 `주식 이야기`에서 처음 `이야기 남기기`를 누를 때 자동으로 만들어진다. `spaces/main/stockHoldings` 하위 컬렉션은 `보유` 탭에서 처음 `보유 공유하기`를 누를 때 자동으로 만들어진다. `spaces/main/improvementPosts` 하위 컬렉션은 `건의함`에서 처음 `건의 남기기`를 누를 때 자동으로 만들어진다. `users/{uid}/notificationSettings/push`와 `users/{uid}/notificationTokens/{tokenId}`는 사용자가 마이 화면에서 푸시 알림을 켤 때 앱이 자동으로 만든다. Console에서 빈 컬렉션을 미리 만들 필요는 없지만, 아래 Security Rules에는 `curiosityCards`, `memoryCards`, `memoryCardResponses`, `stockStories`, `stockHoldings`, `improvementPosts`, `notificationSettings`, `notificationTokens` 규칙이 포함되어 있어야 한다.
+`spaces/main/curiosityCards` 하위 컬렉션은 앱에서 처음 `질문 보내기`를 누를 때 자동으로 만들어진다. `spaces/main/memoryCards` 하위 컬렉션은 `서로의 기억`에서 처음 기억 카드를 저장할 때 만들어지고, `spaces/main/memoryCardResponses` 하위 컬렉션은 상대가 공유 카드에 처음 반응하거나 수정 제안을 남길 때 만들어진다. `spaces/main/stockStories` 하위 컬렉션도 `주식 이야기`에서 처음 `이야기 남기기`를 누를 때 자동으로 만들어진다. `spaces/main/stockHoldings` 하위 컬렉션은 `보유` 탭에서 처음 `보유 공유하기`를 누를 때 자동으로 만들어진다. `spaces/main/improvementPosts` 하위 컬렉션은 `건의함`에서 처음 `건의 남기기`를 누를 때 자동으로 만들어진다. `spaces/main/activityEvents` 하위 컬렉션은 상대에게 알려야 하는 저장 동작이 성공할 때 앱이 자동으로 만든다. `users/{uid}/notificationSettings/push`와 `users/{uid}/notificationTokens/{tokenId}`는 사용자가 마이 화면에서 푸시 알림을 켤 때 앱이 자동으로 만든다. Console에서 빈 컬렉션을 미리 만들 필요는 없지만, 아래 Security Rules에는 `curiosityCards`, `memoryCards`, `memoryCardResponses`, `stockStories`, `stockHoldings`, `improvementPosts`, `activityEvents`, `notificationSettings`, `notificationTokens` 규칙이 포함되어 있어야 한다.
 
 ## 5-1. Android/iPhone 푸시 알림 준비
 
@@ -134,7 +134,7 @@ Cloud Functions:
 1. Firebase Console -> Project settings -> Cloud Messaging에서 Cloud Messaging API가 enabled인지 확인한다.
 2. Firebase CLI로 로그인한 뒤 `firebase deploy --only functions`를 실행한다.
 3. 첫 배포 전 Google Cloud/Firebase 요금제와 Cloud Functions 사용 가능 상태를 확인한다.
-4. Firestore trigger는 `shared` 기억 카드와 shared 카드 반응만 발송한다. private 카드 본문은 payload에 넣지 않는다.
+4. Firestore trigger는 `activityEvents` 생성 이벤트만 감지한다. private 카드 본문이나 사용자가 쓴 긴 본문은 payload에 넣지 않는다.
 
 ## 6. Firestore Security Rules
 
@@ -249,6 +249,81 @@ service cloud.firestore {
         && request.resource.data.detail.size() <= 1000
         && request.resource.data.createdByProfileId == request.auth.uid
         && request.resource.data.createdByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        && request.resource.data.createdAt == request.time;
+    }
+
+    function validActivityEvent(spaceId, eventId) {
+      return request.resource.data.keys().hasOnly([
+          'id',
+          'type',
+          'actorProfileId',
+          'route',
+          'feature',
+          'targetId',
+          'createdAt'
+        ])
+        && request.resource.data.id == eventId
+        && request.resource.data.type in [
+          'answerSaved',
+          'answerSkipped',
+          'answerCommentSaved',
+          'answerCommentReplySaved',
+          'balanceSelectionSaved',
+          'profileSlotSaved',
+          'wishSaved',
+          'memoryCardSaved',
+          'memoryCardResponseSaved',
+          'musicNoteSaved',
+          'musicNoteListened',
+          'musicNoteCommentSaved',
+          'scheduleEntrySaved',
+          'meetingPlanSaved',
+          'sharedPlaceSaved',
+          'sharedPlaceMeetingLinksSaved',
+          'curiosityQuestionSaved',
+          'curiosityReplySaved',
+          'stockStorySaved',
+          'stockHoldingSaved',
+          'improvementPostSaved',
+          'improvementPostOwnerNoteSaved',
+          'improvementPostResolved'
+        ]
+        && request.resource.data.actorProfileId == request.auth.uid
+        && request.resource.data.actorProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        && request.resource.data.route in [
+          'home',
+          'answer',
+          'archive',
+          'records',
+          'music',
+          'meetings',
+          'meetingPlans',
+          'places',
+          'stockStory',
+          'improvements',
+          'balance',
+          'profileCard',
+          'wishlist',
+          'memoryCards'
+        ]
+        && request.resource.data.feature in [
+          'activity',
+          'answers',
+          'comments',
+          'balance',
+          'profileCard',
+          'wishlist',
+          'memoryCards',
+          'music',
+          'meetings',
+          'meetingPlans',
+          'places',
+          'curiosity',
+          'stocks',
+          'improvements'
+        ]
+        && request.resource.data.targetId is string
+        && request.resource.data.targetId.size() <= 160
         && request.resource.data.createdAt == request.time;
     }
 
@@ -1340,6 +1415,13 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
+      match /activityEvents/{eventId} {
+        allow read: if false;
+        allow create: if isSpaceMember(spaceId)
+          && validActivityEvent(spaceId, eventId);
+        allow update, delete: if false;
+      }
+
       match /balanceSelections/{selectionId} {
         allow read: if isSpaceMember(spaceId);
         allow create, update: if isSpaceMember(spaceId)
@@ -1568,13 +1650,23 @@ KAKAO_MAP_JS_KEY
 FIREBASE_SERVICE_ACCOUNT
 ```
 
-`FIREBASE_SERVICE_ACCOUNT`는 GitHub Actions가 Firestore Security Rules를 배포할 때만 사용한다.
+`FIREBASE_SERVICE_ACCOUNT`는 GitHub Actions가 Firestore Security Rules와 Cloud Functions를 배포할 때 사용한다.
 Google Cloud Console에서 배포용 service account를 만들고, 프로젝트에
 아래 권한을 모두 준 뒤 JSON key 전체를 GitHub Secret 값으로 저장한다. 이 값은
 base64로 인코딩하지 않은 raw JSON이어야 한다.
 
 - `Firebase Rules Admin`(`roles/firebaserules.admin`): Firestore Security Rules ruleset/release를 배포한다.
 - `Service Usage Viewer`(`roles/serviceusage.serviceUsageViewer`): Firebase CLI가 `firestore.googleapis.com` 활성화 상태를 조회한다.
+- `Cloud Functions Developer`(`roles/cloudfunctions.developer`): Cloud Functions를 배포한다.
+- `Service Account User`(`roles/iam.serviceAccountUser`): Functions runtime service account와 Cloud Build service account를 사용할 수 있게 한다.
+
+Cloud Functions 공식 IAM 문서는 배포자에게 `Cloud Functions Admin` 또는
+`Cloud Functions Developer` 같은 배포 권한과, runtime service account 및 Cloud
+Build service account에 대한 `Service Account User` 권한이 필요하다고 안내한다.
+Cloud Run functions(2nd gen)의 기본 runtime service account는 보통
+`PROJECT_NUMBER-compute@developer.gserviceaccount.com` 형태다. 프로젝트에 따라
+Cloud Build service account에 `Cloud Build Service Account`
+(`roles/cloudbuild.builds.builder`) 권한이 필요한 경우도 있다.
 
 권한은 `IAM 및 관리자` -> `IAM` 화면에서 프로젝트 principal로 부여한다.
 `서비스 계정` 상세 화면의 `권한` 탭은 "누가 이 서비스 계정을 사용할 수 있는가"에
@@ -1595,9 +1687,10 @@ GitHub Actions workflow는 `google-github-actions/auth@v2`에
 Service account key 파일은 저장소에 커밋하지 않는다.
 
 Secrets를 추가한 뒤 `main` 브랜치에 push하면 GitHub Actions가 Flutter Web을 다시
-빌드하고, `firebase.json`이 가리키는 `firestore.rules`를 `firebase deploy --only
-firestore:rules`로 배포한다. PR에서는 rules sync, analyze, test, build만 검증하고
-Firebase Rules나 GitHub Pages를 실제 배포하지 않는다.
+빌드하고, `firebase.json`이 가리키는 `firestore.rules`와 `functions/` 소스 코드를
+`firebase deploy --only firestore:rules,functions`로 배포한다. PR에서는 rules sync,
+analyze, test, build만 검증하고 Firebase Rules, Cloud Functions, GitHub Pages를 실제
+배포하지 않는다.
 
 ## 8. 배포 확인
 

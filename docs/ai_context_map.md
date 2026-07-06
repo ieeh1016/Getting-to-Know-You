@@ -241,7 +241,8 @@
   - `PushNotificationSetupState`
   - `notificationTokens`
   - `notificationSettings`
-  - `notifyMemoryCardCreated`
+  - `activityEvents`
+  - `notifyActivityEventCreated`
   - `sendEachForMulticast`
 - 주요 code/test:
   - `lib/src/data/push_notifications.dart`

@@ -76,7 +76,7 @@ lib/src/domain/
 - `lib/src/features/questions/question_formatters.dart`: answer/archive flow를 위한 shared question date display helper.
 - `lib/src/features/records/records_screen.dart`: relationship insight summary, matched keywords, stats grid, timeline view.
 - `lib/src/data/push_notifications.dart`: Firebase Messaging permission/token registration, notification tap routing, foreground message adapter.
-- `functions/index.js`: Firestore-triggered FCM send logic for shared memory cards and memory card responses.
+- `functions/index.js`: Firestore-triggered FCM send logic for safe activity events.
 
 ## 추출 순서
 

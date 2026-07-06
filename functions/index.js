@@ -6,99 +6,165 @@ const logger = require("firebase-functions/logger");
 
 initializeApp();
 
-const MEMORY_ROUTE = "memoryCards";
-const MEMORY_FEATURE = "memoryCards";
 const INVALID_TOKEN_ERROR_CODES = new Set([
   "messaging/invalid-registration-token",
   "messaging/registration-token-not-registered",
 ]);
 
-exports.notifyMemoryCardCreated = onDocumentCreated(
-  "spaces/{spaceId}/memoryCards/{cardId}",
+const ACTIVITY_NOTIFICATION_COPY = {
+  answerSaved: {
+    title: "질문에 답했어요",
+    body: "새 답변을 확인해요.",
+  },
+  answerSkipped: {
+    title: "오늘 질문에 표시를 남겼어요",
+    body: "조금씩에서 확인해요.",
+  },
+  answerCommentSaved: {
+    title: "답변에 댓글을 남겼어요",
+    body: "조금씩에서 확인해요.",
+  },
+  answerCommentReplySaved: {
+    title: "댓글에 답장을 남겼어요",
+    body: "조금씩에서 확인해요.",
+  },
+  balanceSelectionSaved: {
+    title: "밸런스 질문을 골랐어요",
+    body: "서로의 선택을 확인해요.",
+  },
+  profileSlotSaved: {
+    title: "프로필 카드를 채웠어요",
+    body: "새로 알게 된 점을 확인해요.",
+  },
+  wishSaved: {
+    title: "위시리스트를 업데이트했어요",
+    body: "함께 하고 싶은 것을 확인해요.",
+  },
+  memoryCardSaved: {
+    title: "기억 카드를 남겼어요",
+    body: "서로의 기억에서 확인해요.",
+  },
+  memoryCardResponseSaved: {
+    title: "기억 카드에 반응했어요",
+    body: "서로의 기억에서 확인해요.",
+  },
+  musicNoteSaved: {
+    title: "음악을 남겼어요",
+    body: "같이 듣고 싶은 음악을 확인해요.",
+  },
+  musicNoteListened: {
+    title: "음악을 들었어요",
+    body: "음악 공간에서 확인해요.",
+  },
+  musicNoteCommentSaved: {
+    title: "음악에 댓글을 남겼어요",
+    body: "음악 공간에서 확인해요.",
+  },
+  scheduleEntrySaved: {
+    title: "만남 가능 시간을 남겼어요",
+    body: "만남 달력에서 확인해요.",
+  },
+  meetingPlanSaved: {
+    title: "만남 계획을 업데이트했어요",
+    body: "같이 볼 계획을 확인해요.",
+  },
+  sharedPlaceSaved: {
+    title: "장소를 공유했어요",
+    body: "가보고 싶은 곳을 확인해요.",
+  },
+  sharedPlaceMeetingLinksSaved: {
+    title: "장소 계획을 업데이트했어요",
+    body: "만남 계획에서 확인해요.",
+  },
+  curiosityQuestionSaved: {
+    title: "질문을 보냈어요",
+    body: "홈에서 받은 질문을 확인해요.",
+  },
+  curiosityReplySaved: {
+    title: "질문에 답했어요",
+    body: "홈에서 답장을 확인해요.",
+  },
+  stockStorySaved: {
+    title: "주식 이야기를 남겼어요",
+    body: "주식 이야기에서 확인해요.",
+  },
+  stockHoldingSaved: {
+    title: "보유 이야기를 남겼어요",
+    body: "주식 이야기에서 확인해요.",
+  },
+  improvementPostSaved: {
+    title: "건의를 남겼어요",
+    body: "건의함에서 확인해요.",
+  },
+  improvementPostOwnerNoteSaved: {
+    title: "건의에 답변을 남겼어요",
+    body: "건의함에서 확인해요.",
+  },
+  improvementPostResolved: {
+    title: "건의를 처리했어요",
+    body: "건의함에서 확인해요.",
+  },
+};
+
+exports.notifyActivityEventCreated = onDocumentCreated(
+  "spaces/{spaceId}/activityEvents/{eventId}",
   async (event) => {
     const snapshot = event.data;
     if (!snapshot) {
       return;
     }
-    const {spaceId, cardId} = event.params;
-    const card = snapshot.data();
-    if (card.visibility !== "shared") {
+    const {spaceId, eventId} = event.params;
+    const activity = snapshot.data();
+    const type = readString(activity, "type");
+    const copy = ACTIVITY_NOTIFICATION_COPY[type];
+    if (!copy) {
+      logger.info("Unsupported activity notification type", {
+        eventId,
+        spaceId,
+        type,
+      });
       return;
     }
-    const actorUid = readString(card, "createdByProfileId");
-    const recipientUid = readString(card, "subjectProfileId");
-    if (!actorUid || !recipientUid || actorUid === recipientUid) {
+
+    const actorUid = readString(activity, "actorProfileId");
+    if (!actorUid) {
       return;
     }
+    const recipientUid = await resolveRecipientUid(spaceId, actorUid);
+    if (!recipientUid || recipientUid === actorUid) {
+      return;
+    }
+
     const actorName = await readDisplayName(actorUid);
+    const route = readString(activity, "route") || "home";
+    const feature = readString(activity, "feature") || "activity";
+    const targetId = readString(activity, "targetId");
     await sendUserNotification({
-      eventId: `memory-card-created-${cardId}`,
+      eventId: `activity-${eventId}`,
       spaceId,
       recipientUid,
-      title: `${actorName}님이 기억 카드를 남겼어요`,
-      body: "서로의 기억에서 확인해요.",
+      title: `${actorName}님이 ${copy.title}`,
+      body: copy.body,
       data: {
-        type: "memoryCardCreated",
-        route: MEMORY_ROUTE,
-        feature: MEMORY_FEATURE,
-        targetId: cardId,
-        cardId,
+        type,
+        route,
+        feature,
+        targetId,
+        activityEventId: eventId,
         spaceId,
       },
     });
   },
 );
 
-exports.notifyMemoryCardResponseCreated = onDocumentCreated(
-  "spaces/{spaceId}/memoryCardResponses/{responseId}",
-  async (event) => {
-    const snapshot = event.data;
-    if (!snapshot) {
-      return;
-    }
-    const {spaceId, responseId} = event.params;
-    const response = snapshot.data();
-    const cardId = readString(response, "cardId");
-    const actorUid = readString(response, "responderProfileId");
-    if (!cardId || !actorUid) {
-      return;
-    }
-    const cardSnapshot = await getFirestore()
-      .collection("spaces")
-      .doc(spaceId)
-      .collection("memoryCards")
-      .doc(cardId)
-      .get();
-    if (!cardSnapshot.exists) {
-      return;
-    }
-    const card = cardSnapshot.data() || {};
-    if (card.visibility !== "shared") {
-      return;
-    }
-    const recipientUid = readString(card, "createdByProfileId");
-    if (!recipientUid || actorUid === recipientUid) {
-      return;
-    }
-    const actorName = await readDisplayName(actorUid);
-    await sendUserNotification({
-      eventId: `memory-card-response-created-${responseId}`,
-      spaceId,
-      recipientUid,
-      title: `${actorName}님이 기억 카드에 반응했어요`,
-      body: "서로의 기억에서 확인해요.",
-      data: {
-        type: "memoryCardResponseCreated",
-        route: MEMORY_ROUTE,
-        feature: MEMORY_FEATURE,
-        targetId: cardId,
-        cardId,
-        responseId,
-        spaceId,
-      },
-    });
-  },
-);
+async function resolveRecipientUid(spaceId, actorUid) {
+  const snapshot = await getFirestore().collection("spaces").doc(spaceId).get();
+  const space = snapshot.data() || {};
+  const memberIds = Array.isArray(space.memberIds) ? space.memberIds : [];
+  return memberIds.find((memberId) => {
+    return typeof memberId === "string" && memberId && memberId !== actorUid;
+  }) || "";
+}
 
 async function sendUserNotification({
   eventId,
@@ -139,7 +205,7 @@ async function sendUserNotification({
       },
     });
     await disableInvalidTokens(chunk, response);
-    logger.info("Sent memory notification", {
+    logger.info("Sent activity notification", {
       eventId,
       recipientUid,
       successCount: response.successCount,

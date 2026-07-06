@@ -104,7 +104,7 @@ class FirebasePushNotificationService
         enabled: true,
         permissionStatus: permissionStatus,
         tokenRegistered: true,
-        message: '새 기억이 생기면 휴대폰으로 알려드릴게요.',
+        message: '새 소식이 생기면 휴대폰으로 알려드릴게요.',
       );
     } catch (_) {
       return const PushNotificationSetupState(
@@ -336,6 +336,19 @@ class FirebasePushNotificationService
 
   AlagagiRoute? _routeFromData(String? route) {
     return switch (route) {
+      'home' => AlagagiRoute.home,
+      'answer' => AlagagiRoute.answer,
+      'archive' => AlagagiRoute.archive,
+      'records' => AlagagiRoute.records,
+      'music' => AlagagiRoute.music,
+      'meetings' => AlagagiRoute.meetings,
+      'meetingPlans' => AlagagiRoute.meetingPlans,
+      'places' => AlagagiRoute.places,
+      'stockStory' => AlagagiRoute.stockStory,
+      'improvements' => AlagagiRoute.improvements,
+      'balance' => AlagagiRoute.balance,
+      'profileCard' => AlagagiRoute.profileCard,
+      'wishlist' => AlagagiRoute.wishlist,
       'memoryCards' => AlagagiRoute.memoryCards,
       _ => null,
     };
