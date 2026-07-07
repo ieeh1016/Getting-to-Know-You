@@ -1893,10 +1893,14 @@ class _BalanceOptionIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Icon(
-      _iconForOption(optionId),
-      size: 34,
-      color: selected ? AlagagiColors.sageDeep : const Color(0xFF6F7567),
+    return AlagagiSymbolMark(
+      icon: _iconForOption(optionId),
+      size: 58,
+      iconSize: 28,
+      tone: selected ? AlagagiColors.skyPanel : AlagagiColors.skySoft,
+      iconColor: selected ? const Color(0xFF315F7A) : const Color(0xFF5B7D91),
+      radius: 19,
+      selected: selected,
     );
   }
 

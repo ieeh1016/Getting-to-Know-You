@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/alagagi_controller.dart';
+import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
 class HomePlusGrid extends StatelessWidget {
@@ -102,15 +103,12 @@ class _PlusTile extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(12, 11, 12, 10),
           child: Row(
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: tone,
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                alignment: Alignment.center,
-                child: Icon(icon, size: 18, color: iconColor),
+              AlagagiSymbolMark(
+                icon: icon,
+                size: 38,
+                iconSize: 18,
+                tone: tone,
+                iconColor: iconColor,
               ),
               const SizedBox(width: 10),
               Expanded(

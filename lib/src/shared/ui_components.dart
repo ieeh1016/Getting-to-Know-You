@@ -120,19 +120,7 @@ class AlagagiFeatureHero extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.12),
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: Icon(icon, size: 21, color: const Color(0xFFBEE4F7)),
-              ),
+              _AlagagiHeroVisualMark(icon: icon),
             ],
           ),
           const SizedBox(height: 18),
@@ -196,7 +184,17 @@ class _AlagagiFeatureHeroStat extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(stat.icon, size: 14, color: const Color(0xFFBEE4F7)),
+            Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.13),
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+              ),
+              alignment: Alignment.center,
+              child: Icon(stat.icon, size: 13, color: const Color(0xFFBEE4F7)),
+            ),
             const Spacer(),
             Text(
               stat.value,
@@ -215,6 +213,71 @@ class _AlagagiFeatureHeroStat extends StatelessWidget {
   }
 }
 
+class _AlagagiHeroVisualMark extends StatelessWidget {
+  const _AlagagiHeroVisualMark({required this.icon});
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 50,
+      height: 50,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 5,
+            top: 5,
+            child: Container(
+              width: 9,
+              height: 9,
+              decoration: BoxDecoration(
+                color: const Color(0xFFBEE4F7),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 7,
+            bottom: 7,
+            child: Container(
+              width: 15,
+              height: 15,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.18),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Center(
+            child: Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              alignment: Alignment.center,
+              child: Icon(icon, size: 21, color: const Color(0xFFE6F6FF)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class AlagagiBrandLeafMark extends StatelessWidget {
   const AlagagiBrandLeafMark({super.key, this.size = 42, this.iconSize = 20});
 
@@ -223,39 +286,172 @@ class AlagagiBrandLeafMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final avatarSize = size * 0.37;
+    final bridgeSize = size * 0.36;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AlagagiColors.paper,
+                border: Border.all(color: const Color(0x6686B9D6)),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x142F617A),
+                    blurRadius: 18,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            left: size * 0.2,
+            top: size * 0.23,
+            child: _AlagagiBrandAvatarDot(
+              size: avatarSize,
+              color: AlagagiColors.skyPanel,
+            ),
+          ),
+          Positioned(
+            right: size * 0.2,
+            bottom: size * 0.23,
+            child: _AlagagiBrandAvatarDot(
+              size: avatarSize,
+              color: AlagagiColors.lavenderSoft,
+            ),
+          ),
+          Center(
+            child: Container(
+              width: bridgeSize,
+              height: bridgeSize,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFEFF8FD),
+                border: Border.all(color: const Color(0x99FFFEFA)),
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                Icons.favorite_rounded,
+                size: iconSize * 0.6,
+                color: AlagagiColors.sky,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AlagagiBrandAvatarDot extends StatelessWidget {
+  const _AlagagiBrandAvatarDot({required this.size, required this.color});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: AlagagiColors.paper,
-        border: Border.all(color: AlagagiColors.line),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0F57624C),
-            blurRadius: 18,
-            offset: Offset(0, 8),
+        color: color,
+        border: Border.all(color: Colors.white, width: 1.4),
+      ),
+    );
+  }
+}
+
+class AlagagiSymbolMark extends StatelessWidget {
+  const AlagagiSymbolMark({
+    super.key,
+    required this.icon,
+    this.size = 40,
+    this.iconSize = 19,
+    this.tone = AlagagiColors.skySoft,
+    this.iconColor = AlagagiColors.sky,
+    this.radius = 14,
+    this.selected = false,
+    this.muted = false,
+  });
+
+  final IconData icon;
+  final double size;
+  final double iconSize;
+  final Color tone;
+  final Color iconColor;
+  final double radius;
+  final bool selected;
+  final bool muted;
+
+  @override
+  Widget build(BuildContext context) {
+    final softenedTone = Color.lerp(tone, Colors.white, 0.44) ?? tone;
+    final markBorder = muted
+        ? AlagagiColors.line
+        : selected
+        ? AlagagiColors.sky
+        : const Color(0x6686B9D6);
+    final foreground = muted
+        ? const Color(0xFF9A988E)
+        : selected
+        ? const Color(0xFF315F7A)
+        : iconColor;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(radius),
+                gradient: LinearGradient(
+                  colors: [softenedTone, tone],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                border: Border.all(color: markBorder),
+                boxShadow: selected
+                    ? const [
+                        BoxShadow(
+                          color: Color(0x1F4F95B8),
+                          blurRadius: 16,
+                          offset: Offset(0, 8),
+                        ),
+                      ]
+                    : null,
+              ),
+            ),
+          ),
+          Positioned(
+            right: size * 0.14,
+            top: size * 0.14,
+            child: Container(
+              width: size * 0.16,
+              height: size * 0.16,
+              decoration: BoxDecoration(
+                color: muted
+                    ? const Color(0xFFDAD8D0)
+                    : selected
+                    ? AlagagiColors.sky
+                    : Colors.white.withValues(alpha: 0.82),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Center(
+            child: Icon(icon, size: iconSize, color: foreground),
           ),
         ],
-      ),
-      alignment: Alignment.center,
-      child: Container(
-        width: size * 0.62,
-        height: size * 0.62,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-            colors: [AlagagiColors.roseSoft, AlagagiColors.goldSoft],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        alignment: Alignment.center,
-        child: Icon(
-          Icons.favorite_border_rounded,
-          size: iconSize,
-          color: AlagagiColors.rose,
-        ),
       ),
     );
   }
@@ -292,6 +488,25 @@ class AlagagiAvatarStack extends StatelessWidget {
               color: AlagagiColors.lavenderSoft,
             ),
           ),
+          Positioned(
+            left: 22,
+            top: 8,
+            child: Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF8FD),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xCCFFFEFA)),
+              ),
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.favorite_rounded,
+                size: 10,
+                color: Color(0xFF6BAACB),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -312,7 +527,14 @@ class _AlagagiSmallAvatar extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: color,
-        border: Border.all(color: AlagagiColors.ink, width: 2),
+        border: Border.all(color: AlagagiColors.paper, width: 2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x172F617A),
+            blurRadius: 10,
+            offset: Offset(0, 5),
+          ),
+        ],
       ),
       alignment: Alignment.center,
       child: Text(avatar, style: const TextStyle(fontSize: 15)),

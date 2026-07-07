@@ -1015,14 +1015,13 @@ class _MyNextTile extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: tone,
-                        borderRadius: BorderRadius.circular(13),
-                      ),
-                      child: Icon(icon, size: 18, color: iconColor),
+                    AlagagiSymbolMark(
+                      icon: icon,
+                      size: 36,
+                      iconSize: 18,
+                      tone: tone,
+                      iconColor: iconColor,
+                      radius: 13,
                     ),
                     const SizedBox(width: 8),
                     Expanded(

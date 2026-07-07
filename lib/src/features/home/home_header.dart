@@ -703,21 +703,13 @@ class _HomeMenuRow extends StatelessWidget {
           padding: const EdgeInsets.all(10),
           child: Row(
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEEF2EA),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                alignment: Alignment.center,
-                child: Icon(
-                  icon,
-                  size: 19,
-                  color: enabled
-                      ? AlagagiColors.sageDeep
-                      : const Color(0xFF9A988E),
-                ),
+              AlagagiSymbolMark(
+                icon: icon,
+                size: 38,
+                iconSize: 18,
+                tone: const Color(0xFFEAF7FD),
+                iconColor: const Color(0xFF315F7A),
+                muted: !enabled,
               ),
               const SizedBox(width: 10),
               Expanded(

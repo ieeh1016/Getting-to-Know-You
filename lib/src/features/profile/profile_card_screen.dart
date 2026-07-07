@@ -1986,19 +1986,13 @@ class _ProfileSlotIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 28,
-      height: 28,
-      decoration: BoxDecoration(
-        color: AlagagiColors.softSage,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      alignment: Alignment.center,
-      child: Icon(
-        _iconForSlot(slotId),
-        size: 15,
-        color: AlagagiColors.sageDeep,
-      ),
+    return AlagagiSymbolMark(
+      icon: _iconForSlot(slotId),
+      size: 30,
+      iconSize: 15,
+      tone: AlagagiColors.skySoft,
+      iconColor: const Color(0xFF315F7A),
+      radius: 11,
     );
   }
 
