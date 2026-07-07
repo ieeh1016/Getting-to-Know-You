@@ -116,11 +116,7 @@ class HomeProgressStrip extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF34322D),
-            AlagagiColors.sageDeep,
-            AlagagiColors.clay,
-          ],
+          colors: [Color(0xFF315F7A), AlagagiColors.blue, AlagagiColors.sky],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

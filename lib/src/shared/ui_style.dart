@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class AlagagiColors {
-  static const outerBackground = Color(0xFFE7E5DD);
-  static const appBackground = Color(0xFFF6F3ED);
+  static const outerBackground = Color(0xFFD9EEF8);
+  static const appBackground = Color(0xFFEAF7FD);
   static const paper = Color(0xFFFFFEFA);
   static const ink = Color(0xFF2F2E2A);
   static const muted = Color(0xFF8C877D);
@@ -20,6 +20,9 @@ class AlagagiColors {
   static const goldSoft = Color(0xFFF4ECD9);
   static const blue = Color(0xFF718EA1);
   static const blueSoft = Color(0xFFE7EEF1);
+  static const sky = Color(0xFF86B9D6);
+  static const skySoft = Color(0xFFEAF7FD);
+  static const skyPanel = Color(0xFFDDF0F9);
   static const midnight = Color(0xFF2B2A25);
   static const moss = Color(0xFF55654F);
   static const blush = Color(0xFFD8A49A);

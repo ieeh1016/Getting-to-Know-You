@@ -99,7 +99,7 @@ class AlagagiApp extends StatelessWidget {
         fontFamily: 'Apple SD Gothic Neo',
         fontFamilyFallback: alagagiSansFonts,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: AlagagiColors.sageDeep,
+          seedColor: AlagagiColors.sky,
           brightness: Brightness.light,
         ),
         textTheme: ThemeData.light().textTheme.apply(
@@ -277,9 +277,9 @@ class _PhoneShell extends StatelessWidget {
             color: AlagagiColors.appBackground,
             gradient: LinearGradient(
               colors: [
-                Color(0xFFFBF7EF),
+                Color(0xFFF5FCFF),
                 AlagagiColors.appBackground,
-                Color(0xFFEAE6DA),
+                Color(0xFFD4ECF8),
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -305,9 +305,9 @@ class _PhoneShell extends StatelessWidget {
             color: AlagagiColors.appBackground,
             gradient: const LinearGradient(
               colors: [
-                Color(0xFFFBF7EF),
+                Color(0xFFF5FCFF),
                 AlagagiColors.appBackground,
-                Color(0xFFEAE6DA),
+                Color(0xFFD4ECF8),
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,

@@ -18,45 +18,33 @@ class HomeProgressSummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: AlagagiColors.midnight,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            padding: const EdgeInsets.fromLTRB(15, 14, 14, 14),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  alignment: Alignment.center,
-                  child: const Icon(
-                    Icons.route_rounded,
-                    size: 18,
-                    color: Color(0xFFEFD797),
-                  ),
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: AlagagiColors.blueSoft,
+                  borderRadius: BorderRadius.circular(13),
                 ),
-                const SizedBox(width: 11),
-                Expanded(
-                  child: Text(
-                    '오늘의 작은 흐름',
-                    style: serif(
-                      context,
-                      size: 17,
-                      weight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
-                  ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.route_rounded,
+                  size: 17,
+                  color: AlagagiColors.blue,
                 ),
-                AlagagiSmallBadge(label: '우리 상태판', dark: true),
-              ],
-            ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  '오늘의 작은 흐름',
+                  style: serif(context, size: 16, weight: FontWeight.w800),
+                ),
+              ),
+              const AlagagiSmallBadge(label: '상태판'),
+            ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           for (var index = 0; index < summary.items.length; index++) ...[
             if (index > 0) const SizedBox(height: 8),
             _HomeProgressSummaryRow(
@@ -89,12 +77,12 @@ class _HomeSummaryCardContainer extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AlagagiColors.creamPanel, AlagagiColors.paper],
+          colors: [Color(0xF2FFFFFF), AlagagiColors.skyPanel],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border.all(color: const Color(0x33B99856)),
-        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: const Color(0x6686B9D6)),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0F2F2E2A),
@@ -103,7 +91,7 @@ class _HomeSummaryCardContainer extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 15),
+      padding: const EdgeInsets.fromLTRB(15, 15, 15, 14),
       child: child,
     );
   }
@@ -144,7 +132,7 @@ class _HomeProgressSummaryRow extends StatelessWidget {
               if (!isLast)
                 Container(
                   width: 2,
-                  height: 18,
+                  height: 12,
                   margin: const EdgeInsets.only(top: 6),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.22),
@@ -168,7 +156,7 @@ class _HomeProgressSummaryRow extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: sans(
-                    size: 13,
+                    size: 12.5,
                     weight: FontWeight.w500,
                     color: const Color(0xFF4C4B46),
                     height: 1.35,
