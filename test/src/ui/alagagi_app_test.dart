@@ -2743,6 +2743,20 @@ void main() {
     expect(entry.meetingPlanItems, isEmpty);
     expect(find.byKey(meetingDayIndicatorKey(dateKey)), findsOneWidget);
     expect(find.text('만나는 날로 저장했어요.'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(meetingDayCancelButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(meetingDayCancelButtonKey));
+    await tester.pumpAndSettle();
+    expect(find.text('만남을 취소할까요?'), findsOneWidget);
+
+    await tester.tap(find.byKey(meetingDayCancelConfirmButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(controller.meetingDayEntryFor(dateKey), isNull);
+    expect(controller.meetingPlanFor(dateKey)?.isCancelled, isTrue);
+    expect(find.byKey(meetingDayIndicatorKey(dateKey)), findsNothing);
+    expect(find.text('만남을 취소했어요.'), findsOneWidget);
   });
 
   testWidgets(

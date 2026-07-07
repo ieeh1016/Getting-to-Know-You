@@ -95,6 +95,10 @@ const meetingDayTimeFieldKey = Key('meeting-day-time-field');
 const meetingDayNoteFieldKey = Key('meeting-day-note-field');
 const meetingDayPlanFieldKey = Key('meeting-day-plan-field');
 const meetingDaySaveButtonKey = Key('meeting-day-save-button');
+const meetingDayCancelButtonKey = Key('meeting-day-cancel-button');
+const meetingDayCancelConfirmButtonKey = Key(
+  'meeting-day-cancel-confirm-button',
+);
 const meetingCandidateMoreButtonKey = Key('meeting-candidate-more-button');
 Key meetingCandidateCardKey(String dateKey) =>
     Key('meeting-candidate-card-$dateKey');

@@ -47,6 +47,41 @@ String meetingTimeBlockLabel(ScheduleTimeBlock block) {
   return '${block.timeLabel} · ${block.title}';
 }
 
+Future<void> confirmCancelMeetingDay(
+  BuildContext context,
+  AlagagiController controller,
+  String dateKey,
+) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('만남을 취소할까요?', style: serif(context, size: 20)),
+      content: Text(
+        '${meetingDateLabel(dateKey)} 만남이 만남 탭에서 빠져요.',
+        style: sans(size: 13, height: 1.45, color: AlagagiColors.muted),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text('아니요', style: sans(size: 13, weight: FontWeight.w800)),
+        ),
+        FilledButton(
+          key: meetingDayCancelConfirmButtonKey,
+          onPressed: () => Navigator.of(context).pop(true),
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF8F5C4D),
+            foregroundColor: Colors.white,
+          ),
+          child: Text('만남 취소', style: sans(size: 13, weight: FontWeight.w800)),
+        ),
+      ],
+    ),
+  );
+  if (confirmed == true && context.mounted) {
+    controller.cancelMeetingDay(dateKey);
+  }
+}
+
 class MeetingSaveStatus extends StatelessWidget {
   const MeetingSaveStatus({super.key, required this.controller});
 

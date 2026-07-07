@@ -832,6 +832,28 @@ class _MeetingDayPanel extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 38,
+              child: OutlinedButton.icon(
+                key: meetingDayCancelButtonKey,
+                onPressed: () => confirmCancelMeetingDay(
+                  context,
+                  controller,
+                  controller.selectedMeetingDateKey,
+                ),
+                icon: const Icon(Icons.event_busy_rounded, size: 16),
+                label: const Text('만남 취소'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFFFDDD2),
+                  side: const BorderSide(color: Color(0x55FFD6CB)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  textStyle: sans(size: 12.5, weight: FontWeight.w800),
+                ),
+              ),
+            ),
           ],
         ],
       ),

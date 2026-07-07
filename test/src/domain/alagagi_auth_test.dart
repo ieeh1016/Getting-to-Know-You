@@ -483,6 +483,67 @@ void main() {
       },
     );
 
+    test('session meeting cancellation hides a partner fixed day', () async {
+      final repository = RecordingAlagagiRepository();
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            scheduleEntries: [
+              ScheduleEntry(
+                dateKey: '2099-06-26',
+                profileId: 'minyoungUid',
+                availability: MeetingAvailability.available,
+                timeSlots: {MeetingTimeSlot.evening},
+                isMeetingDay: true,
+                meetingTimeLabel: '저녁 7시쯤',
+              ),
+            ],
+            meetingPlans: [
+              MeetingPlan(
+                dateKey: '2099-06-26',
+                items: ['전시 보기'],
+                updatedByProfileId: 'minyoungUid',
+              ),
+            ],
+          ),
+        ),
+        repository: repository,
+        todayDateKey: '2099-06-20',
+      );
+
+      controller.goTo(AlagagiRoute.meetingPlans);
+      expect(controller.upcomingMeetingDayEntries.single.dateKey, '2099-06-26');
+
+      controller.cancelMeetingDay('2099-06-26');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(repository.savedScheduleEntries, isEmpty);
+      expect(repository.savedMeetingPlans.single.spaceId, 'main');
+      expect(repository.savedMeetingPlans.single.plan.dateKey, '2099-06-26');
+      expect(repository.savedMeetingPlans.single.plan.items, ['전시 보기']);
+      expect(repository.savedMeetingPlans.single.plan.isCancelled, isTrue);
+      expect(
+        repository.savedMeetingPlans.single.plan.updatedByProfileId,
+        'youngwooUid',
+      );
+      expect(controller.meetingDayEntryFor('2099-06-26'), isNull);
+      expect(controller.upcomingMeetingDayEntries, isEmpty);
+      expect(controller.state.meetingSaveFeedback, '만남을 취소했어요.');
+    });
+
     test(
       'session meeting day save migrates legacy plan items to shared document',
       () async {

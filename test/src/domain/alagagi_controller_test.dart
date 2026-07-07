@@ -207,6 +207,36 @@ void main() {
       expect(controller.meetingDayEntryFor('2026-06-11'), entry);
     });
 
+    test('meeting day can be cancelled and reactivated', () {
+      final controller = AlagagiController()..enterSpace('영우');
+
+      controller.selectMeetingDate('2026-06-11');
+      controller.updateMeetingDayDraft(timeLabel: '저녁 7시쯤');
+      controller.submitMeetingDayDraft();
+      controller.goTo(AlagagiRoute.meetingPlans);
+      controller.updateMeetingPlanItemDraft('전시 보기');
+      controller.addMeetingPlanDraftItem();
+      controller.submitMeetingPlanDraft();
+
+      controller.cancelMeetingDay('2026-06-11');
+
+      expect(controller.meetingDayEntryFor('2026-06-11'), isNull);
+      expect(controller.meetingDayDateKeys, isEmpty);
+      expect(controller.meetingPlanFor('2026-06-11')?.isCancelled, isTrue);
+      expect(controller.meetingPlanItemsFor('2026-06-11'), ['전시 보기']);
+      expect(controller.state.meetingSaveFeedback, '만남을 취소했어요.');
+
+      controller.goTo(AlagagiRoute.meetings);
+      controller.selectMeetingDate('2026-06-11');
+      expect(controller.state.meetingDraftIsMeetingDay, isFalse);
+
+      controller.submitMeetingDayDraft();
+
+      expect(controller.meetingDayEntryFor('2026-06-11'), isNotNull);
+      expect(controller.meetingPlanFor('2026-06-11')?.isCancelled, isFalse);
+      expect(controller.meetingPlanItemsFor('2026-06-11'), ['전시 보기']);
+    });
+
     test('meeting plan draft stores line-separated things to do', () {
       final controller = AlagagiController()..enterSpace('영우');
 

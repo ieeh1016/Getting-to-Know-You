@@ -648,6 +648,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         'dateKey': plan.dateKey,
         'items': plan.items,
         'updatedByProfileId': plan.updatedByProfileId,
+        'isCancelled': plan.isCancelled,
         'updatedAt': FieldValue.serverTimestamp(),
       },
       options: SetOptions(merge: true),
@@ -1333,6 +1334,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       dateKey: dateKey,
       items: items,
       updatedByProfileId: updatedByProfileId,
+      isCancelled: _readBool(data, 'isCancelled') ?? false,
       updatedAt: _readDateTime(data, 'updatedAt'),
     );
   }

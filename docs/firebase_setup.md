@@ -1106,12 +1106,15 @@ service cloud.firestore {
           'dateKey',
           'items',
           'updatedByProfileId',
+          'isCancelled',
           'updatedAt'
         ])
         && request.resource.data.dateKey is string
         && request.resource.data.dateKey.size() <= 16
         && planId == request.resource.data.dateKey
         && request.resource.data.items is list
+        && (!request.resource.data.keys().hasAny(['isCancelled'])
+          || request.resource.data.isCancelled is bool)
         && request.resource.data.updatedByProfileId == request.auth.uid
         && request.resource.data.updatedAt == request.time;
     }

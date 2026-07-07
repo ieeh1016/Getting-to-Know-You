@@ -741,6 +741,28 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
                 onPressed: controller.submitMeetingPlanDraft,
                 color: AlagagiColors.ink,
               ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 40,
+                child: OutlinedButton.icon(
+                  key: meetingDayCancelButtonKey,
+                  onPressed: () => confirmCancelMeetingDay(
+                    context,
+                    controller,
+                    entry.dateKey,
+                  ),
+                  icon: const Icon(Icons.event_busy_rounded, size: 16),
+                  label: const Text('만남 취소'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF8F5C4D),
+                    side: const BorderSide(color: Color(0x33B18472)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    textStyle: sans(size: 12.5, weight: FontWeight.w800),
+                  ),
+                ),
+              ),
               MeetingSaveStatus(controller: controller),
             ],
           ),
