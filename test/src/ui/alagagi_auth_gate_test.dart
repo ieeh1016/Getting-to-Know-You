@@ -23,7 +23,7 @@ void main() {
 
       expect(find.text('2026.07.05부터, 우리 기록'), findsOneWidget);
       expect(find.text('J O G E U M S S I K'), findsNothing);
-      expect(find.text('조금씩'), findsOneWidget);
+      expect(find.text('우리 둘'), findsOneWidget);
       expect(find.text('알아가기'), findsNothing);
       expect(find.text('아이디가 있으면 조용히 이어서 들어갈 수 있어요.'), findsOneWidget);
       expect(find.text('우리, 오늘도\n같이 쌓아볼까요?'), findsNothing);
@@ -67,7 +67,13 @@ void main() {
       await tester.tap(find.byKey(loginButtonKey));
       await tester.pumpAndSettle();
 
-      expect(find.text('조금씩'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(homeBrandLogoKey),
+          matching: find.text('우리 둘'),
+        ),
+        findsOneWidget,
+      );
       expect(find.text('오늘의 질문'), findsOneWidget);
       expect(find.byKey(homeQuestionCardKey), findsOneWidget);
       expect(find.text('아직 내 답을 남기지 않았어요.'), findsOneWidget);
@@ -99,7 +105,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(loginIdFieldKey), findsNothing);
-      expect(find.text('조금씩'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(homeBrandLogoKey),
+          matching: find.text('우리 둘'),
+        ),
+        findsOneWidget,
+      );
       expect(find.text('오늘의 질문'), findsOneWidget);
     });
 

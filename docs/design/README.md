@@ -57,11 +57,11 @@ The page should read as a proposal, not a marketing landing page.
 
 ## Visual Language
 
-Match the current `조금씩` visual direction:
+Match the current `우리 둘` visual direction:
 
-- warm paper background;
-- sage as the main accent;
-- restrained lavender, clay, gold, or soft neutral support colors;
+- airy sky-blue app background;
+- soft blue as the main accent;
+- restrained sage, lavender, gold, or soft neutral support colors;
 - calm Korean copy;
 - serif display headings only where the current app already uses that tone;
 - soft dividers and low-contrast surfaces;
@@ -97,7 +97,7 @@ data boundary quickly.
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>조금씩 · 기능 제안</title>
+<title>우리 둘 · 기능 제안</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   :root{

@@ -24,8 +24,14 @@ void main() {
 
     await enterSpace(tester);
 
-    expect(find.text('조금씩'), findsOneWidget);
     expect(find.byKey(homeBrandLogoKey), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(homeBrandLogoKey),
+        matching: find.text('우리 둘'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('2026.07.05부터, 우리 기록'), findsOneWidget);
     expect(find.text('J O G E U M S S I K'), findsNothing);
     expect(find.text('알아가기'), findsNothing);

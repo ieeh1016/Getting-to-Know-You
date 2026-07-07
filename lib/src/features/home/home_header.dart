@@ -65,7 +65,7 @@ class HomeHeader extends StatelessWidget {
         ),
         const SizedBox(width: 10),
         Tooltip(
-          message: '조금씩 메뉴',
+          message: '우리 둘 메뉴',
           child: Stack(
             clipBehavior: Clip.none,
             children: [
@@ -555,7 +555,7 @@ void showHomeMenuSheet({
                   rowKey: homeMenuGuideButtonKey,
                   icon: Icons.info_outline_rounded,
                   title: '처음 안내',
-                  subtitle: '조금씩 사용하는 방법 다시 보기',
+                  subtitle: '우리 둘 사용법 다시 보기',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
                     WidgetsBinding.instance.addPostFrameCallback((_) {

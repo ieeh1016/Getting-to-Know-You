@@ -2,7 +2,7 @@
 
 ## 목적
 
-이 문서는 `조금씩`의 shared data vocabulary를 정의한다.
+이 문서는 `우리 둘`의 shared data vocabulary를 정의한다.
 feature spec은 사용자가 무엇을 할 수 있는지 설명한다. 이 문서는 그 behavior를 어떤 domain object가 표현하는지, object가 Firestore와 어떻게 연결되는지, 어떤 사용자가 각 record를 바꿀 수 있는지 설명한다.
 
 다음 변경에서는 이 문서를 함께 확인한다.

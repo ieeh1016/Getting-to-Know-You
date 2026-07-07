@@ -1,4 +1,4 @@
-# 조금씩 Product Spec Index
+# 우리 둘 Product Spec Index
 
 > 기준 문서: 이 index와 [`docs/spec/`](spec/) 아래의 feature spec.
 > 이전 monolithic spec은 migration context 확인용으로만 [`docs/spec/legacy_full_spec.md`](spec/legacy_full_spec.md)에 보관한다.

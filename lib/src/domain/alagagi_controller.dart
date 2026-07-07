@@ -611,7 +611,7 @@ class RelationshipMetadata {
 
 class SpacePersonalization {
   const SpacePersonalization({
-    this.appTitle = '조금씩',
+    this.appTitle = '우리 둘',
     this.homeLine = '오늘도 우리를 조금 남겨요',
     this.inviteLine = '하루에 하나씩, 우리 이야기를 쌓아요',
     this.accentEmoji = '🌿',
@@ -642,7 +642,7 @@ SpacePersonalization _normalizeBrandPersonalization(
 ) {
   const defaults = SpacePersonalization();
   final appTitle = personalization.appTitle.trim();
-  if (appTitle.isEmpty || appTitle == '알아가기') {
+  if (appTitle.isEmpty || appTitle == '알아가기' || appTitle == '조금씩') {
     return personalization.copyWith(appTitle: defaults.appTitle);
   }
   return personalization;

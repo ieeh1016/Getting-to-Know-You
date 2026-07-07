@@ -87,30 +87,32 @@ void main() {
       },
     );
 
-    test('session controller normalizes the old default app title', () {
-      final controller = AlagagiController.forSession(
-        const AlagagiSession(
-          spaceId: 'main',
-          me: AppProfile(
-            id: 'youngwooUid',
-            nickname: '영우',
-            avatar: '🌿',
-            isMe: true,
+    test('session controller normalizes legacy default app titles', () {
+      for (final legacyTitle in ['알아가기', '조금씩']) {
+        final controller = AlagagiController.forSession(
+          AlagagiSession(
+            spaceId: 'main',
+            me: const AppProfile(
+              id: 'youngwooUid',
+              nickname: '영우',
+              avatar: '🌿',
+              isMe: true,
+            ),
+            partner: const AppProfile(
+              id: 'minyoungUid',
+              nickname: '민영',
+              avatar: '🪻',
+              isMe: false,
+            ),
+            data: AlagagiSpaceData(
+              personalization: SpacePersonalization(appTitle: legacyTitle),
+            ),
           ),
-          partner: AppProfile(
-            id: 'minyoungUid',
-            nickname: '민영',
-            avatar: '🪻',
-            isMe: false,
-          ),
-          data: AlagagiSpaceData(
-            personalization: SpacePersonalization(appTitle: '알아가기'),
-          ),
-        ),
-      );
+        );
 
-      expect(controller.state.personalization.appTitle, '조금씩');
-      expect(controller.state.personalizationDraft.appTitle, '조금씩');
+        expect(controller.state.personalization.appTitle, '우리 둘');
+        expect(controller.state.personalizationDraft.appTitle, '우리 둘');
+      }
     });
 
     test(

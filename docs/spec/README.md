@@ -1,6 +1,6 @@
 # Modular Product Spec
 
-`조금씩`은 modular SPEC 구조를 사용한다.
+`우리 둘`은 modular SPEC 구조를 사용한다.
 
 ## 문서 역할
 

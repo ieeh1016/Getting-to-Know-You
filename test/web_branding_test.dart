@@ -4,16 +4,16 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('web metadata uses the Jogeumssik brand', () {
+  test('web metadata uses the couple brand', () {
     final indexHtml = File('web/index.html').readAsStringSync();
     final manifest =
         jsonDecode(File('web/manifest.json').readAsStringSync())
             as Map<String, Object?>;
 
-    expect(indexHtml, contains('<title>조금씩</title>'));
+    expect(indexHtml, contains('<title>우리 둘</title>'));
     expect(
       indexHtml,
-      contains('<meta name="apple-mobile-web-app-title" content="조금씩">'),
+      contains('<meta name="apple-mobile-web-app-title" content="우리 둘">'),
     );
     expect(
       indexHtml,
@@ -26,12 +26,13 @@ void main() {
       ),
     );
     expect(indexHtml, contains('둘만의 질문, 데이트, 장소와 작은 마음'));
+    expect(indexHtml, isNot(contains('<title>조금씩</title>')));
     expect(indexHtml, isNot(contains('<title>알아가기</title>')));
 
-    expect(manifest['name'], '조금씩');
-    expect(manifest['short_name'], '조금씩');
-    expect(manifest['theme_color'], '#5F7156');
-    expect(manifest['background_color'], '#F6F3ED');
+    expect(manifest['name'], '우리 둘');
+    expect(manifest['short_name'], '우리 둘');
+    expect(manifest['theme_color'], '#86B9D6');
+    expect(manifest['background_color'], '#EAF7FD');
     expect(manifest['description'], contains('2026년 7월 5일부터'));
   });
 

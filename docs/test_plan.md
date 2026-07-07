@@ -99,7 +99,7 @@
 ## Widget Tests
 
 - Firebase-enabled app이 signed-out 상태에서 로그인 화면을 보여준다.
-- Firebase login 화면은 `조금씩`, `천천히 알아가는 기록`, `아이디가 있으면 조용히 이어서 들어갈 수 있어요.` 톤을 보여주고 로그인 전 `우리, 천천히 알아가 볼래요?`, `두 사람만 로그인할 수 있어요.` 문구를 노출하지 않는다.
+- Firebase login 화면은 `우리 둘`, `2026.07.05부터, 우리 기록`, `아이디가 있으면 조용히 이어서 들어갈 수 있어요.` 톤을 보여주고 로그인 전 `우리, 천천히 알아가 볼래요?`, `두 사람만 로그인할 수 있어요.` 문구를 노출하지 않는다.
 - Firebase login 비밀번호 입력칸은 label만 보여주고 hint/placeholder를 노출하지 않는다.
 - 아이디/비밀번호를 입력하고 로그인하면 fake session을 로드해 홈으로 이동한다.
 - 기존 auth session이 있으면 로그인 화면을 건너뛰고 홈으로 이동한다.
@@ -116,9 +116,9 @@
 - Firebase mode에서 실제 위시가 없으면 위시리스트는 비어 있고 직접 담기 CTA만 보인다.
 - Firebase mode에서 밸런스 선택 전에는 샘플 상대 선택이 보이지 않는다.
 - 로컬 데모 모드는 초대 화면과 닉네임 진입을 유지한다.
-- 초대 화면과 홈 header는 사용자-facing 앱 이름을 `조금씩`으로 보여주고 기존 `알아가기` 브랜드를 노출하지 않는다.
+- 초대 화면과 홈 header는 사용자-facing 앱 이름을 `우리 둘`로 보여주고 기존 `알아가기` 브랜드를 노출하지 않는다.
 - 초대/로그인/홈 브랜드는 어색한 로마자 kicker 대신 한글 보조 문구와 새싹/잎 계열 표식을 사용한다.
-- 웹 `index.html`과 `manifest.json`은 `조금씩` title/name/short_name과 세이지 계열 theme/background color를 사용한다.
+- 웹 `index.html`과 `manifest.json`은 `우리 둘` title/name/short_name과 하늘색 계열 theme/background color를 사용한다.
 - favicon/PWA icon 파일은 16/192/512 및 maskable 크기를 유지한다.
 - 홈은 오늘의 질문과 기록 요약을 보여준다.
 - 홈 질문 카드는 질문 집중형 layout으로 `Today's Question`, compact day chip, support block, full-width `답 남기기` CTA를 보여준다.
