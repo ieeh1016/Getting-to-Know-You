@@ -2056,6 +2056,42 @@ class MemoryFirstVisitGuideStore implements FirstVisitGuideStore {
   }
 }
 
+const renewalWelcomeVersion = 'couple-2026-07-05-v1';
+
+abstract class RenewalWelcomeStore {
+  bool hasSeenRenewalWelcome(String spaceId, String profileId, String version);
+
+  void markRenewalWelcomeSeen(String spaceId, String profileId, String version);
+}
+
+class MemoryRenewalWelcomeStore implements RenewalWelcomeStore {
+  final Set<String> _seenKeys = {};
+
+  @override
+  bool hasSeenRenewalWelcome(String spaceId, String profileId, String version) {
+    return _seenKeys.contains(_key(spaceId, profileId, version));
+  }
+
+  @override
+  void markRenewalWelcomeSeen(
+    String spaceId,
+    String profileId,
+    String version,
+  ) {
+    _seenKeys.add(_key(spaceId, profileId, version));
+  }
+
+  static String _key(String spaceId, String profileId, String version) {
+    return 'jogeumssik:renewalWelcomeSeen:$version:$spaceId:$profileId';
+  }
+}
+
+bool _isMinyoungProfile(AppProfile profile) {
+  final id = profile.id.toLowerCase();
+  final nickname = profile.nickname.trim().toLowerCase();
+  return id.contains('minyoung') || nickname == '민영';
+}
+
 @immutable
 class AlagagiState {
   const AlagagiState({
@@ -2195,6 +2231,7 @@ class AlagagiState {
     this.activeAnswerQuestionId,
     this.selectedArchiveDateKey,
     this.firstVisitGuideVisible = false,
+    this.renewalWelcomeVisible = false,
   });
 
   final AppProfile me;
@@ -2333,6 +2370,7 @@ class AlagagiState {
   final String? activeAnswerQuestionId;
   final String? selectedArchiveDateKey;
   final bool firstVisitGuideVisible;
+  final bool renewalWelcomeVisible;
 
   AlagagiState copyWith({
     AppProfile? me,
@@ -2518,6 +2556,7 @@ class AlagagiState {
     bool clearActiveAnswerQuestion = false,
     String? selectedArchiveDateKey,
     bool? firstVisitGuideVisible,
+    bool? renewalWelcomeVisible,
   }) {
     return AlagagiState(
       me: me ?? this.me,
@@ -2792,6 +2831,8 @@ class AlagagiState {
           selectedArchiveDateKey ?? this.selectedArchiveDateKey,
       firstVisitGuideVisible:
           firstVisitGuideVisible ?? this.firstVisitGuideVisible,
+      renewalWelcomeVisible:
+          renewalWelcomeVisible ?? this.renewalWelcomeVisible,
     );
   }
 }
@@ -2803,9 +2844,11 @@ class AlagagiController extends ChangeNotifier {
     AlagagiDataRepository? repository,
     MusicNoteSeenStore? musicNoteSeenStore,
     FirstVisitGuideStore? firstVisitGuideStore,
+    RenewalWelcomeStore? renewalWelcomeStore,
   }) : _repository = repository,
        _musicNoteSeenStore = musicNoteSeenStore ?? MemoryMusicNoteSeenStore(),
        _firstVisitGuideStore = firstVisitGuideStore,
+       _renewalWelcomeStore = renewalWelcomeStore,
        _todayDateKeyOverride = null,
        _spaceId = null,
        _usesDemoData = true,
@@ -2835,10 +2878,12 @@ class AlagagiController extends ChangeNotifier {
     AlagagiDataRepository? repository,
     MusicNoteSeenStore? musicNoteSeenStore,
     FirstVisitGuideStore? firstVisitGuideStore,
+    RenewalWelcomeStore? renewalWelcomeStore,
     String? todayDateKey,
   }) : _repository = repository,
        _musicNoteSeenStore = musicNoteSeenStore ?? MemoryMusicNoteSeenStore(),
        _firstVisitGuideStore = firstVisitGuideStore,
+       _renewalWelcomeStore = renewalWelcomeStore,
        _todayDateKeyOverride = todayDateKey,
        _spaceId = session.spaceId,
        _usesDemoData = false,
@@ -2872,12 +2917,14 @@ class AlagagiController extends ChangeNotifier {
     _applySessionData(session.data);
     _persistDailyQuestionProgressIfChanged(session.data.dailyProgress);
     _initializeFirstVisitGuide();
+    _initializeRenewalWelcome();
   }
 
   AlagagiState _state;
   final AlagagiDataRepository? _repository;
   final MusicNoteSeenStore _musicNoteSeenStore;
   final FirstVisitGuideStore? _firstVisitGuideStore;
+  final RenewalWelcomeStore? _renewalWelcomeStore;
   final String? _todayDateKeyOverride;
   final String? _spaceId;
   final bool _usesDemoData;
@@ -5997,6 +6044,15 @@ class AlagagiController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void completeRenewalWelcome() {
+    _markRenewalWelcomeSeen();
+    if (!_state.renewalWelcomeVisible) {
+      return;
+    }
+    _state = _state.copyWith(renewalWelcomeVisible: false);
+    notifyListeners();
+  }
+
   void _initializeFirstVisitGuide() {
     final store = _firstVisitGuideStore;
     final spaceId = _spaceId;
@@ -6009,6 +6065,22 @@ class AlagagiController extends ChangeNotifier {
     _state = _state.copyWith(firstVisitGuideVisible: true);
   }
 
+  void _initializeRenewalWelcome() {
+    final store = _renewalWelcomeStore;
+    final spaceId = _spaceId;
+    if (store == null || spaceId == null || !_isMinyoungProfile(_state.me)) {
+      return;
+    }
+    if (store.hasSeenRenewalWelcome(
+      spaceId,
+      _state.me.id,
+      renewalWelcomeVersion,
+    )) {
+      return;
+    }
+    _state = _state.copyWith(renewalWelcomeVisible: true);
+  }
+
   void _markFirstVisitGuideSeen() {
     final store = _firstVisitGuideStore;
     final spaceId = _spaceId;
@@ -6016,6 +6088,15 @@ class AlagagiController extends ChangeNotifier {
       return;
     }
     store.markFirstVisitGuideSeen(spaceId, _state.me.id);
+  }
+
+  void _markRenewalWelcomeSeen() {
+    final store = _renewalWelcomeStore;
+    final spaceId = _spaceId;
+    if (store == null || spaceId == null) {
+      return;
+    }
+    store.markRenewalWelcomeSeen(spaceId, _state.me.id, renewalWelcomeVersion);
   }
 
   void activateHomeProgressSummaryAction() {

@@ -7,6 +7,7 @@ import '../data/first_visit_guide_store.dart';
 import '../data/firebase_alagagi_repositories.dart';
 import '../data/music_note_seen_store.dart';
 import '../data/push_notifications.dart';
+import '../data/renewal_welcome_store.dart';
 import '../domain/alagagi_controller.dart';
 import '../features/answer/answer_screen.dart';
 import '../features/archive/archive_screen.dart';
@@ -15,6 +16,7 @@ import '../features/balance/balance_screen.dart';
 import '../features/home/first_visit_guide_overlay.dart';
 import '../features/home/first_visit_guide_book_sheet.dart';
 import '../features/home/home_screen.dart';
+import '../features/home/renewal_welcome_overlay.dart';
 import '../features/improvements/improvement_board_screen.dart';
 import '../features/memory/memory_cards_screen.dart';
 import '../features/meeting/meeting_plan_screen.dart';
@@ -51,6 +53,7 @@ class AlagagiApp extends StatelessWidget {
     this.dataRepository,
     this.musicNoteSeenStore,
     this.firstVisitGuideStore,
+    this.renewalWelcomeStore,
     this.pushNotificationService,
     this.onOpenExternalLink,
   });
@@ -60,6 +63,7 @@ class AlagagiApp extends StatelessWidget {
   final AlagagiDataRepository? dataRepository;
   final MusicNoteSeenStore? musicNoteSeenStore;
   final FirstVisitGuideStore? firstVisitGuideStore;
+  final RenewalWelcomeStore? renewalWelcomeStore;
   final AlagagiPushNotificationService? pushNotificationService;
   final ValueChanged<String>? onOpenExternalLink;
 
@@ -80,12 +84,14 @@ class AlagagiApp extends StatelessWidget {
         dataRepository: data,
         musicNoteSeenStore: musicNoteSeenStore,
         firstVisitGuideStore: firstVisitGuideStore,
+        renewalWelcomeStore: renewalWelcomeStore,
         pushNotificationService: pushNotifications,
         onOpenExternalLink: onOpenExternalLink,
       );
     } else {
       home = AlagagiRoot(
         musicNoteSeenStore: musicNoteSeenStore,
+        renewalWelcomeStore: renewalWelcomeStore,
         onOpenExternalLink: onOpenExternalLink,
       );
     }
@@ -119,6 +125,7 @@ class AlagagiRoot extends StatefulWidget {
     this.onSignOut,
     this.musicNoteSeenStore,
     this.firstVisitGuideStore,
+    this.renewalWelcomeStore,
     this.pushNotificationState,
     this.onEnablePushNotifications,
     this.onDisablePushNotifications,
@@ -132,6 +139,7 @@ class AlagagiRoot extends StatefulWidget {
   final VoidCallback? onSignOut;
   final MusicNoteSeenStore? musicNoteSeenStore;
   final FirstVisitGuideStore? firstVisitGuideStore;
+  final RenewalWelcomeStore? renewalWelcomeStore;
   final PushNotificationSetupState? pushNotificationState;
   final Future<void> Function()? onEnablePushNotifications;
   final Future<void> Function()? onDisablePushNotifications;
@@ -159,6 +167,7 @@ class _AlagagiRootState extends State<AlagagiRoot> {
           musicNoteSeenStore:
               widget.musicNoteSeenStore ?? createDefaultMusicNoteSeenStore(),
           firstVisitGuideStore: widget.firstVisitGuideStore,
+          renewalWelcomeStore: widget.renewalWelcomeStore,
         );
     _observedRoute = _controller.state.route;
     _controller.addListener(_handleRouteChange);
@@ -191,7 +200,10 @@ class _AlagagiRootState extends State<AlagagiRoot> {
           child: Stack(
             children: [
               Positioned.fill(child: _buildRoute()),
-              if (_controller.state.firstVisitGuideVisible &&
+              if (_controller.state.renewalWelcomeVisible &&
+                  _controller.state.route == AlagagiRoute.home)
+                RenewalWelcomeOverlay(controller: _controller)
+              else if (_controller.state.firstVisitGuideVisible &&
                   _controller.state.route == AlagagiRoute.home)
                 FirstVisitGuideOverlay(
                   controller: _controller,
@@ -337,6 +349,7 @@ class AlagagiAuthGate extends StatelessWidget {
     required this.dataRepository,
     this.musicNoteSeenStore,
     this.firstVisitGuideStore,
+    this.renewalWelcomeStore,
     this.pushNotificationService,
     this.onOpenExternalLink,
   });
@@ -345,6 +358,7 @@ class AlagagiAuthGate extends StatelessWidget {
   final AlagagiDataRepository dataRepository;
   final MusicNoteSeenStore? musicNoteSeenStore;
   final FirstVisitGuideStore? firstVisitGuideStore;
+  final RenewalWelcomeStore? renewalWelcomeStore;
   final AlagagiPushNotificationService? pushNotificationService;
   final ValueChanged<String>? onOpenExternalLink;
 
@@ -372,6 +386,7 @@ class AlagagiAuthGate extends StatelessWidget {
           dataRepository: dataRepository,
           musicNoteSeenStore: musicNoteSeenStore,
           firstVisitGuideStore: firstVisitGuideStore,
+          renewalWelcomeStore: renewalWelcomeStore,
           pushNotificationService: pushNotificationService,
           onOpenExternalLink: onOpenExternalLink,
         );
@@ -388,6 +403,7 @@ class _SessionGate extends StatefulWidget {
     required this.dataRepository,
     this.musicNoteSeenStore,
     this.firstVisitGuideStore,
+    this.renewalWelcomeStore,
     this.pushNotificationService,
     this.onOpenExternalLink,
   });
@@ -397,6 +413,7 @@ class _SessionGate extends StatefulWidget {
   final AlagagiDataRepository dataRepository;
   final MusicNoteSeenStore? musicNoteSeenStore;
   final FirstVisitGuideStore? firstVisitGuideStore;
+  final RenewalWelcomeStore? renewalWelcomeStore;
   final AlagagiPushNotificationService? pushNotificationService;
   final ValueChanged<String>? onOpenExternalLink;
 
@@ -458,6 +475,8 @@ class _SessionGateState extends State<_SessionGate> {
           widget.musicNoteSeenStore ?? createDefaultMusicNoteSeenStore(),
       firstVisitGuideStore:
           widget.firstVisitGuideStore ?? createDefaultFirstVisitGuideStore(),
+      renewalWelcomeStore:
+          widget.renewalWelcomeStore ?? createDefaultRenewalWelcomeStore(),
     );
   }
 

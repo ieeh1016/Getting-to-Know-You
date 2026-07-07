@@ -4143,6 +4143,115 @@ void main() {
     },
   );
 
+  testWidgets('renewal welcome appears once for Minyoung profile', (
+    tester,
+  ) async {
+    final guideStore = MemoryFirstVisitGuideStore()
+      ..markFirstVisitGuideSeen('main', 'minyoungUid');
+    final welcomeStore = MemoryRenewalWelcomeStore();
+    const session = AlagagiSession(
+      spaceId: 'main',
+      me: AppProfile(
+        id: 'minyoungUid',
+        nickname: '민영',
+        avatar: '🪻',
+        isMe: true,
+      ),
+      partner: AppProfile(
+        id: 'youngwooUid',
+        nickname: '영우',
+        avatar: '🌿',
+        isMe: false,
+      ),
+      data: AlagagiSpaceData(),
+    );
+    final controller = AlagagiController.forSession(
+      session,
+      firstVisitGuideStore: guideStore,
+      renewalWelcomeStore: welcomeStore,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(renewalWelcomeSheetKey), findsOneWidget);
+    expect(find.byKey(firstVisitGuideSheetKey), findsNothing);
+    expect(find.text('민영이 안뇽!'), findsOneWidget);
+    expect(find.textContaining('이걸 리뉴얼 할 날을 무지 기다렸어 ㅎㅎ'), findsOneWidget);
+    expect(find.textContaining('우리의 시간들을 여기에 잘 기록하고 보존하자!!'), findsOneWidget);
+
+    await tester.tap(find.byKey(renewalWelcomeStartButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(renewalWelcomeSheetKey), findsNothing);
+    expect(
+      welcomeStore.hasSeenRenewalWelcome(
+        'main',
+        'minyoungUid',
+        renewalWelcomeVersion,
+      ),
+      isTrue,
+    );
+
+    final returningController = AlagagiController.forSession(
+      session,
+      firstVisitGuideStore: guideStore,
+      renewalWelcomeStore: welcomeStore,
+    );
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: returningController)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(renewalWelcomeSheetKey), findsNothing);
+  });
+
+  testWidgets('renewal welcome stays hidden for Youngwoo profile', (
+    tester,
+  ) async {
+    final guideStore = MemoryFirstVisitGuideStore()
+      ..markFirstVisitGuideSeen('main', 'youngwooUid');
+    final welcomeStore = MemoryRenewalWelcomeStore();
+    const session = AlagagiSession(
+      spaceId: 'main',
+      me: AppProfile(
+        id: 'youngwooUid',
+        nickname: '영우',
+        avatar: '🌿',
+        isMe: true,
+      ),
+      partner: AppProfile(
+        id: 'minyoungUid',
+        nickname: '민영',
+        avatar: '🪻',
+        isMe: false,
+      ),
+      data: AlagagiSpaceData(),
+    );
+    final controller = AlagagiController.forSession(
+      session,
+      firstVisitGuideStore: guideStore,
+      renewalWelcomeStore: welcomeStore,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(renewalWelcomeSheetKey), findsNothing);
+    expect(
+      welcomeStore.hasSeenRenewalWelcome(
+        'main',
+        'youngwooUid',
+        renewalWelcomeVersion,
+      ),
+      isFalse,
+    );
+  });
+
   testWidgets('first visit tour and my help reopen the guide book', (
     tester,
   ) async {
