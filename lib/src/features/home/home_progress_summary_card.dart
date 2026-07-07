@@ -26,14 +26,18 @@ class HomeProgressSummaryCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '가볍게 확인만',
-                style: sans(size: 11, color: AlagagiColors.muted),
+                '우리 상태판',
+                style: sans(
+                  size: 11,
+                  weight: FontWeight.w800,
+                  color: AlagagiColors.rose,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           for (var index = 0; index < summary.items.length; index++) ...[
-            if (index > 0) const Divider(height: 1, color: AlagagiColors.line),
+            if (index > 0) const SizedBox(height: 8),
             _HomeProgressSummaryRow(item: summary.items[index]),
           ],
           if (summary.primaryAction != null) ...[
@@ -60,11 +64,15 @@ class _HomeSummaryCardContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AlagagiColors.paper,
+        gradient: const LinearGradient(
+          colors: [AlagagiColors.paper, AlagagiColors.warm],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         border: Border.all(color: AlagagiColors.line),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(24),
       ),
-      padding: const EdgeInsets.fromLTRB(17, 16, 17, 14),
+      padding: const EdgeInsets.fromLTRB(17, 17, 17, 15),
       child: child,
     );
   }
@@ -78,16 +86,21 @@ class _HomeProgressSummaryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _summaryToneColor(item.tone);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 11),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.72),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
       child: Row(
         children: [
           Container(
-            width: 34,
-            height: 34,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
               color: _summaryToneFill(item.tone),
+              borderRadius: BorderRadius.circular(13),
               border: Border.all(color: AlagagiColors.line),
             ),
             alignment: Alignment.center,
@@ -118,11 +131,7 @@ class _HomeProgressSummaryRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-          ),
+          Icon(Icons.chevron_right_rounded, size: 18, color: color),
         ],
       ),
     );

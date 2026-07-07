@@ -58,11 +58,11 @@ class HomeScreen extends StatelessWidget {
               showCuriosityMenuSheet(context, controller),
         ),
         const SizedBox(height: 22),
+        HomeProgressSummaryCard(controller: controller),
+        const SizedBox(height: 22),
         const AlagagiSectionLabel('오늘의 질문'),
         const SizedBox(height: 12),
         _QuestionCard(controller: controller),
-        const SizedBox(height: 16),
-        HomeProgressSummaryCard(controller: controller),
         const SizedBox(height: 22),
         const AlagagiSectionLabel('서로의 기억'),
         const SizedBox(height: 12),
@@ -103,24 +103,36 @@ class _QuestionCard extends StatelessWidget {
       key: homeQuestionCardKey,
       radius: 22,
       padding: const EdgeInsets.fromLTRB(22, 22, 22, 21),
+      highlightedBorder: AlagagiColors.roseSoft,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Today\'s Question',
-                  style: sans(
-                    size: 10.5,
-                    color: AlagagiColors.sageDeep,
-                    letterSpacing: 1.2,
-                    weight: FontWeight.w700,
+          Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AlagagiColors.ink, AlagagiColors.sageDeep],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Today\'s Question',
+                    style: sans(
+                      size: 10.5,
+                      color: AlagagiColors.paper,
+                      letterSpacing: 1.2,
+                      weight: FontWeight.w800,
+                    ),
                   ),
                 ),
-              ),
-              _DayChip(label: 'DAY ${question.day}'),
-            ],
+                _DayChip(label: 'DAY ${question.day}'),
+              ],
+            ),
           ),
           const SizedBox(height: 18),
           Text(

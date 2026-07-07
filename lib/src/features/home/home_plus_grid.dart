@@ -10,29 +10,60 @@ class HomePlusGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _PlusTile(
-          icon: Icons.swap_horiz_rounded,
-          title: '우리 선택',
-          body: '다음 데이트 힌트가 되는 선택',
-          onTap: () => controller.goTo(AlagagiRoute.balance),
-        ),
-        const SizedBox(height: 10),
-        _PlusTile(
-          icon: Icons.person_outline_rounded,
-          title: '서로 노트',
-          body: '편한 만큼 마음과 취향 남기기',
-          onTap: () => controller.goTo(AlagagiRoute.profileCard),
-        ),
-        const SizedBox(height: 10),
-        _PlusTile(
-          icon: Icons.bookmark_border_rounded,
-          title: '언젠가, 같이',
-          body: '같이 해보고 싶은 것 담기',
-          onTap: () => controller.goTo(AlagagiRoute.wishlist),
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final tileWidth = (constraints.maxWidth - 10) / 2;
+        return Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            SizedBox(
+              width: tileWidth,
+              child: _PlusTile(
+                icon: Icons.swap_horiz_rounded,
+                title: '우리 선택',
+                body: '다음 데이트 힌트',
+                tone: AlagagiColors.sageSoft,
+                iconColor: AlagagiColors.sageDeep,
+                onTap: () => controller.goTo(AlagagiRoute.balance),
+              ),
+            ),
+            SizedBox(
+              width: tileWidth,
+              child: _PlusTile(
+                icon: Icons.person_outline_rounded,
+                title: '서로 노트',
+                body: '마음과 취향',
+                tone: AlagagiColors.lavenderSoft,
+                iconColor: AlagagiColors.lavender,
+                onTap: () => controller.goTo(AlagagiRoute.profileCard),
+              ),
+            ),
+            SizedBox(
+              width: tileWidth,
+              child: _PlusTile(
+                icon: Icons.bookmark_border_rounded,
+                title: '언젠가, 같이',
+                body: '하고 싶은 것',
+                tone: AlagagiColors.goldSoft,
+                iconColor: AlagagiColors.gold,
+                onTap: () => controller.goTo(AlagagiRoute.wishlist),
+              ),
+            ),
+            SizedBox(
+              width: tileWidth,
+              child: _PlusTile(
+                icon: Icons.map_outlined,
+                title: '장소 보드',
+                body: '가보고 싶은 곳',
+                tone: AlagagiColors.blueSoft,
+                iconColor: AlagagiColors.blue,
+                onTap: () => controller.goTo(AlagagiRoute.places),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -42,12 +73,16 @@ class _PlusTile extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.body,
+    required this.tone,
+    required this.iconColor,
     required this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String body;
+  final Color tone;
+  final Color iconColor;
   final VoidCallback onTap;
 
   @override
@@ -59,44 +94,44 @@ class _PlusTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: Container(
+          height: 140,
           decoration: BoxDecoration(
             border: Border.all(color: AlagagiColors.line),
             borderRadius: BorderRadius.circular(18),
           ),
-          padding: const EdgeInsets.all(16),
-          child: Row(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: AlagagiColors.sageSoft,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                alignment: Alignment.center,
-                child: Icon(icon, size: 22, color: AlagagiColors.sageDeep),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: serif(context, size: 17, weight: FontWeight.w700),
+              Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: tone,
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      body,
-                      style: sans(size: 12.5, color: AlagagiColors.muted),
-                    ),
-                  ],
-                ),
+                    alignment: Alignment.center,
+                    child: Icon(icon, size: 21, color: iconColor),
+                  ),
+                  const Spacer(),
+                  Icon(Icons.arrow_outward_rounded, size: 17, color: iconColor),
+                ],
               ),
-              const Icon(
-                Icons.arrow_forward_rounded,
-                size: 17,
-                color: AlagagiColors.sageDeep,
+              const Spacer(),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: serif(context, size: 17, weight: FontWeight.w800),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                body,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: sans(size: 12.2, color: AlagagiColors.muted),
               ),
             ],
           ),

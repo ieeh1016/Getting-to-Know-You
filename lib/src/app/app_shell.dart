@@ -238,10 +238,17 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        constraints: const BoxConstraints(minHeight: 42),
+        decoration: BoxDecoration(
+          color: selected ? AlagagiColors.sageSoft : Colors.transparent,
+          border: selected ? Border.all(color: AlagagiColors.line) : null,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 5),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -272,23 +279,13 @@ class _NavItem extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               label,
               style: sans(
                 size: 10,
                 weight: selected ? FontWeight.w700 : FontWeight.w400,
-                color: selected ? AlagagiColors.ink : AlagagiColors.muted,
-              ),
-            ),
-            const SizedBox(height: 4),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              width: selected ? 16 : 0,
-              height: 4,
-              decoration: BoxDecoration(
-                color: selected ? AlagagiColors.sageDeep : Colors.transparent,
-                borderRadius: BorderRadius.circular(999),
+                color: selected ? AlagagiColors.sageDeep : AlagagiColors.muted,
               ),
             ),
           ],

@@ -104,53 +104,268 @@ class HomeProgressStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final nextDate = controller.nextMeetingDayEntry;
+    final nextDateKey = nextDate?.dateKey;
+    final planCount = nextDateKey == null
+        ? 0
+        : controller.meetingPlanItemCountFor(nextDateKey);
+    final myAnswer = controller.todayMyAnswer;
+    final partnerAnswer = controller.todayPartnerAnswer;
+    final dayCount = controller.relationshipDayCount;
+
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AlagagiColors.roseSoft, AlagagiColors.goldSoft],
+          colors: [
+            Color(0xFF34322D),
+            AlagagiColors.sageDeep,
+            AlagagiColors.clay,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border.all(color: AlagagiColors.line),
-        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x332F2E2A)),
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x23302F2A),
+            blurRadius: 26,
+            offset: Offset(0, 16),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Row(
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
         children: [
-          Expanded(
+          const Positioned(right: 22, top: 20, child: _HeroStripe(width: 74)),
+          const Positioned(right: 38, top: 34, child: _HeroStripe(width: 44)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        controller.relationshipStartedLabel,
+                        style: sans(
+                          size: 11,
+                          weight: FontWeight.w800,
+                          color: const Color(0xFFEDE8DA),
+                          letterSpacing: 1.1,
+                        ),
+                      ),
+                    ),
+                    _HeroProfilePill(
+                      meAvatar: controller.state.me.avatar,
+                      partnerAvatar: controller.state.partner.avatar,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 26),
                 Text(
-                  '${controller.relationshipStartedLabel} · ${controller.relationshipDayLabel}',
+                  '우리의 시간',
                   style: sans(
-                    size: 11,
+                    size: 12,
                     weight: FontWeight.w800,
-                    color: AlagagiColors.rose,
-                    letterSpacing: 1,
+                    color: const Color(0xFFD7D0BD),
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 5),
                 Text(
-                  controller.state.personalization.homeLine,
+                  dayCount == null
+                      ? controller.relationshipDayLabel
+                      : '$dayCount일째',
                   style: serif(
                     context,
-                    size: 16,
-                    weight: FontWeight.w700,
-                    color: AlagagiColors.ink,
+                    size: 42,
+                    weight: FontWeight.w800,
+                    color: AlagagiColors.paper,
+                    height: 1.05,
                   ),
+                ),
+                const SizedBox(height: 9),
+                Text(
+                  controller.state.personalization.homeLine,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: sans(
+                    size: 13,
+                    color: const Color(0xFFF0ECE2),
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _HeroSignalTile(
+                        label: '오늘 질문',
+                        value: 'DAY ${controller.todayQuestion.day}',
+                        detail: _questionSignalText(myAnswer, partnerAnswer),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _HeroSignalTile(
+                        label: '다음 데이트',
+                        value: _dateSignalText(nextDateKey),
+                        detail: planCount == 0 ? '계획 채우기' : '계획 $planCount개',
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _HeroSignalTile(
+                        label: '우리 기록',
+                        value: '${controller.insight.questionCount}개',
+                        detail: '주고받은 질문',
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ),
-          AlagagiAvatarStack(
-            meAvatar: controller.state.me.avatar,
-            partnerAvatar: controller.state.partner.avatar,
           ),
         ],
       ),
     );
   }
+}
+
+class _HeroStripe extends StatelessWidget {
+  const _HeroStripe({required this.width});
+
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: 3,
+      decoration: BoxDecoration(
+        color: const Color(0x55FFFEFA),
+        borderRadius: BorderRadius.circular(999),
+      ),
+    );
+  }
+}
+
+class _HeroProfilePill extends StatelessWidget {
+  const _HeroProfilePill({required this.meAvatar, required this.partnerAvatar});
+
+  final String meAvatar;
+  final String partnerAvatar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0x26FFFEFA),
+        border: Border.all(color: const Color(0x35FFFEFA)),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      padding: const EdgeInsets.fromLTRB(8, 5, 9, 5),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(meAvatar, style: const TextStyle(fontSize: 13)),
+          const SizedBox(width: 2),
+          Text(partnerAvatar, style: const TextStyle(fontSize: 13)),
+          const SizedBox(width: 6),
+          Text(
+            '우리 둘',
+            style: sans(
+              size: 10.5,
+              weight: FontWeight.w800,
+              color: AlagagiColors.paper,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroSignalTile extends StatelessWidget {
+  const _HeroSignalTile({
+    required this.label,
+    required this.value,
+    required this.detail,
+  });
+
+  final String label;
+  final String value;
+  final String detail;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 76,
+      decoration: BoxDecoration(
+        color: const Color(0x22FFFEFA),
+        border: Border.all(color: const Color(0x2EFFFEFA)),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 9),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: sans(
+              size: 10.2,
+              weight: FontWeight.w700,
+              color: const Color(0xFFD7D0BD),
+            ),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: serif(
+              context,
+              size: 17,
+              weight: FontWeight.w800,
+              color: AlagagiColors.paper,
+              height: 1.1,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            detail,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: sans(size: 10.5, color: const Color(0xFFEDE8DA)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _questionSignalText(Answer? myAnswer, Answer? partnerAnswer) {
+  if (myAnswer == null || myAnswer.skipped) {
+    return '내 답 기다림';
+  }
+  if (partnerAnswer == null) {
+    return '상대 답 기다림';
+  }
+  return '함께 열림';
+}
+
+String _dateSignalText(String? dateKey) {
+  if (dateKey == null) {
+    return '정하는 중';
+  }
+  final date = DateTime.tryParse(dateKey);
+  if (date == null) {
+    return dateKey;
+  }
+  return '${date.month}.${date.day}';
 }
 
 void showHomeMenuSheet({

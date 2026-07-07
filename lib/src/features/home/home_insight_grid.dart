@@ -11,30 +11,74 @@ class HomeInsightGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final insight = controller.insight;
+    final daysTogether =
+        controller.relationshipDayCount ?? insight.daysTogether;
 
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _InsightBox(
-                title: '함께 답한 질문',
-                value: '${insight.matchCount}',
-                suffix: '개',
-                highlighted: true,
+    return Container(
+      decoration: BoxDecoration(
+        color: AlagagiColors.ink,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '우리 기록 보드',
+                  style: serif(
+                    context,
+                    size: 18,
+                    weight: FontWeight.w800,
+                    color: AlagagiColors.paper,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: _InsightBox(
-                title: '주고받은 질문',
-                value: '${insight.questionCount}',
-                suffix: '개',
+              Text(
+                controller.relationshipStartedLabel,
+                style: sans(
+                  size: 10.8,
+                  weight: FontWeight.w800,
+                  color: const Color(0xFFD7D0BD),
+                ),
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _InsightBox(
+                  title: '함께한 날',
+                  value: '$daysTogether',
+                  suffix: '일',
+                  tone: AlagagiColors.goldSoft,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _InsightBox(
+                  title: '함께 답한 질문',
+                  value: '${insight.matchCount}',
+                  suffix: '개',
+                  tone: AlagagiColors.sageSoft,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _InsightBox(
+                  title: '주고받은 질문',
+                  value: '${insight.questionCount}',
+                  suffix: '개',
+                  tone: AlagagiColors.lavenderSoft,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -44,35 +88,37 @@ class _InsightBox extends StatelessWidget {
     required this.title,
     required this.value,
     required this.suffix,
-    this.highlighted = false,
+    required this.tone,
   });
 
   final String title;
   final String value;
   final String suffix;
-  final bool highlighted;
+  final Color tone;
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: 116,
       decoration: BoxDecoration(
-        color: highlighted ? null : AlagagiColors.paper,
-        gradient: highlighted
-            ? const LinearGradient(
-                colors: [AlagagiColors.softSage, AlagagiColors.sagePanel],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              )
-            : null,
-        border: highlighted ? null : Border.all(color: AlagagiColors.line),
-        borderRadius: BorderRadius.circular(18),
+        color: tone,
+        borderRadius: BorderRadius.circular(16),
       ),
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.fromLTRB(10, 11, 9, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: sans(size: 11, color: AlagagiColors.muted)),
-          const SizedBox(height: 8),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: sans(
+              size: 10.5,
+              weight: FontWeight.w700,
+              color: AlagagiColors.muted,
+            ),
+          ),
+          const Spacer(),
           Text.rich(
             TextSpan(
               children: [
@@ -90,9 +136,9 @@ class _InsightBox extends StatelessWidget {
             ),
             style: serif(
               context,
-              size: 30,
+              size: 24,
               weight: FontWeight.w800,
-              color: highlighted ? AlagagiColors.sageDeep : AlagagiColors.ink,
+              color: AlagagiColors.ink,
             ),
           ),
         ],
