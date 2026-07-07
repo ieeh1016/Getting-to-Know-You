@@ -186,8 +186,8 @@ class MyScreen extends StatelessWidget {
                     description: myMusicNotes.isEmpty
                         ? '요즘 듣는 한 곡을 남겨볼 수 있어요.'
                         : '최근 남긴 곡을 다시 수정할 수 있어요.',
-                    tone: const Color(0xFFF6F0DF),
-                    iconColor: const Color(0xFF8D7847),
+                    tone: const Color(0xFFEAF7FD),
+                    iconColor: const Color(0xFF315F7A),
                     onTap: () {
                       if (myMusicNotes.isEmpty) {
                         controller.startMusicDraft();
@@ -295,7 +295,7 @@ class _MyCommandDeck extends StatelessWidget {
                       style: sans(
                         size: 10.2,
                         weight: FontWeight.w900,
-                        color: const Color(0xFFEFD797),
+                        color: const Color(0xFFBEE4F7),
                         letterSpacing: 1.7,
                       ),
                     ),
@@ -342,7 +342,7 @@ class _MyCommandDeck extends StatelessWidget {
                 child: _MyCommandMetric(
                   label: '질문 답',
                   value: '$answeredCount',
-                  color: const Color(0xFFEFD797),
+                  color: const Color(0xFFBEE4F7),
                 ),
               ),
               const SizedBox(width: 8),
@@ -468,11 +468,11 @@ class _MyCommandAction extends StatelessWidget {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFD797).withValues(alpha: 0.18),
+                  color: const Color(0xFFBEE4F7).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 alignment: Alignment.center,
-                child: Icon(icon, size: 19, color: const Color(0xFFEFD797)),
+                child: Icon(icon, size: 19, color: const Color(0xFFBEE4F7)),
               ),
               const SizedBox(width: 11),
               Expanded(
@@ -506,7 +506,7 @@ class _MyCommandAction extends StatelessWidget {
               const Icon(
                 Icons.arrow_forward_rounded,
                 size: 18,
-                color: Color(0xFFEFD797),
+                color: Color(0xFFBEE4F7),
               ),
             ],
           ),

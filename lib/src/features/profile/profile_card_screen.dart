@@ -488,7 +488,7 @@ class _ProfileSummaryCard extends StatelessWidget {
                   ? const Color(0x24FFFFFF)
                   : const Color(0xFFE6E9DF),
               valueColor: AlwaysStoppedAnimation<Color>(
-                dark ? const Color(0xFFF4ECD9) : AlagagiColors.lavender,
+                dark ? const Color(0xFFE6F6FF) : AlagagiColors.lavender,
               ),
             ),
           ),
@@ -533,7 +533,7 @@ class _ProfileSummaryCard extends StatelessWidget {
                   const Icon(
                     Icons.mark_chat_read_outlined,
                     size: 18,
-                    color: Color(0xFFF4ECD9),
+                    color: Color(0xFFBEE4F7),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -683,7 +683,7 @@ class _ProfileCustomCardEntry extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: customCount > 0
-                    ? const Color(0xFFF4ECD9)
+                    ? const Color(0xFFEAF7FD)
                     : const Color(0x1FFFFFFF),
                 borderRadius: BorderRadius.circular(999),
               ),
@@ -693,7 +693,7 @@ class _ProfileCustomCardEntry extends StatelessWidget {
                 style: sans(
                   size: 11.5,
                   color: customCount > 0
-                      ? const Color(0xFF8B6E31)
+                      ? const Color(0xFF315F7A)
                       : const Color(0xFFD9D7CF),
                   weight: FontWeight.w700,
                 ),
@@ -905,7 +905,7 @@ class _ProfileCustomCardPanelState extends State<_ProfileCustomCardPanel> {
                 const SizedBox(height: 14),
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF6F2E7),
+                    color: const Color(0xFFEAF7FD),
                     borderRadius: BorderRadius.circular(17),
                   ),
                   padding: const EdgeInsets.all(12),
@@ -913,7 +913,7 @@ class _ProfileCustomCardPanelState extends State<_ProfileCustomCardPanel> {
                     '저장하면 상대의 카드 화면에 새 카드로 올라가고, 새로 도착한 것에도 표시됩니다.',
                     style: sans(
                       size: 11.8,
-                      color: const Color(0xFF816A39),
+                      color: const Color(0xFF315F7A),
                       height: 1.52,
                       weight: FontWeight.w700,
                     ),
@@ -1671,14 +1671,14 @@ class _ProfileSlotCard extends StatelessWidget {
         ? const Color(0xFFF8F8F4)
         : skipped
         ? const Color(0xFFECEAE2)
-        : const Color(0xFFF4ECD9);
+        : const Color(0xFFEAF7FD);
     final badgeColor = slot.custom
         ? const Color(0xFF7D688F)
         : skipped
         ? const Color(0xFF8A8175)
         : filled
         ? AlagagiColors.muted
-        : const Color(0xFF8B6E31);
+        : const Color(0xFF315F7A);
     void openFull() => showReadableDetailSheet(
       context,
       label: '서로 노트',

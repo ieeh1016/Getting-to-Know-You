@@ -114,7 +114,7 @@ class AlagagiFeatureHero extends StatelessWidget {
                   style: sans(
                     size: 10.2,
                     weight: FontWeight.w900,
-                    color: const Color(0xFFFFF4DF),
+                    color: const Color(0xFFE6F6FF),
                     letterSpacing: 1.5,
                   ),
                 ),
@@ -131,7 +131,7 @@ class AlagagiFeatureHero extends StatelessWidget {
                   ),
                 ),
                 alignment: Alignment.center,
-                child: Icon(icon, size: 21, color: const Color(0xFFEFD797)),
+                child: Icon(icon, size: 21, color: const Color(0xFFBEE4F7)),
               ),
             ],
           ),
@@ -196,7 +196,7 @@ class _AlagagiFeatureHeroStat extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(stat.icon, size: 14, color: const Color(0xFFEFD797)),
+            Icon(stat.icon, size: 14, color: const Color(0xFFBEE4F7)),
             const Spacer(),
             Text(
               stat.value,
@@ -407,8 +407,8 @@ class AlagagiEmptyStateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFBF7EF),
-        border: Border.all(color: const Color(0x33B99856)),
+        color: const Color(0xFFF3FBFF),
+        border: Border.all(color: const Color(0x5586B9D6)),
         borderRadius: BorderRadius.circular(20),
       ),
       padding: const EdgeInsets.fromLTRB(18, 17, 18, 17),
@@ -425,7 +425,7 @@ class AlagagiEmptyStateCard extends StatelessWidget {
             child: const Icon(
               Icons.auto_awesome_rounded,
               size: 17,
-              color: AlagagiColors.gold,
+              color: AlagagiColors.sky,
             ),
           ),
           const SizedBox(width: 12),
@@ -434,7 +434,7 @@ class AlagagiEmptyStateCard extends StatelessWidget {
               text,
               style: sans(
                 size: 12.8,
-                color: const Color(0xFF706A5F),
+                color: const Color(0xFF4F6370),
                 height: 1.55,
                 weight: FontWeight.w700,
               ),
@@ -504,9 +504,9 @@ class AlagagiKeywordChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: leaf ? AlagagiColors.creamPanel : AlagagiColors.paper,
+        color: leaf ? AlagagiColors.skySoft : AlagagiColors.paper,
         border: Border.all(
-          color: leaf ? const Color(0x33B99856) : AlagagiColors.line,
+          color: leaf ? const Color(0x5586B9D6) : AlagagiColors.line,
         ),
         borderRadius: BorderRadius.circular(20),
       ),
@@ -531,8 +531,8 @@ class AlagagiSmallBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: dark
             ? Colors.white.withValues(alpha: 0.14)
-            : const Color(0xFFF4ECD9),
-        border: dark ? null : Border.all(color: const Color(0x22B99856)),
+            : AlagagiColors.skyPanel,
+        border: dark ? null : Border.all(color: const Color(0x6686B9D6)),
         borderRadius: BorderRadius.circular(20),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
@@ -541,7 +541,7 @@ class AlagagiSmallBadge extends StatelessWidget {
         style: sans(
           size: 10.5,
           weight: FontWeight.w800,
-          color: dark ? Colors.white : const Color(0xFF7A6227),
+          color: dark ? Colors.white : const Color(0xFF315F7A),
         ),
       ),
     );
@@ -564,9 +564,9 @@ class AlagagiQuietMetric extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: muted ? const Color(0xFFF8F8F4) : const Color(0xFFF4ECD9),
+        color: muted ? const Color(0xFFF8F8F4) : AlagagiColors.skyPanel,
         border: Border.all(
-          color: muted ? AlagagiColors.line : const Color(0x22B99856),
+          color: muted ? AlagagiColors.line : const Color(0x6686B9D6),
         ),
         borderRadius: BorderRadius.circular(14),
       ),
@@ -582,7 +582,7 @@ class AlagagiQuietMetric extends StatelessWidget {
               context,
               size: 19,
               weight: FontWeight.w800,
-              color: muted ? AlagagiColors.muted : const Color(0xFF7A6227),
+              color: muted ? AlagagiColors.muted : const Color(0xFF315F7A),
             ),
           ),
         ],
@@ -600,8 +600,8 @@ class AlagagiSimilarityBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF4ECD9),
-        border: Border.all(color: const Color(0x22B99856)),
+        color: AlagagiColors.skyPanel,
+        border: Border.all(color: const Color(0x6686B9D6)),
         borderRadius: BorderRadius.circular(20),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),

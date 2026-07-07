@@ -83,7 +83,7 @@ class _PlaceBoardScreenState extends State<PlaceBoardScreen> {
           gradient: const [
             Color(0xFF2F2E2A),
             Color(0xFF5F7156),
-            Color(0xFFB99856),
+            Color(0xFF86B9D6),
           ],
           stats: [
             AlagagiHeroStat(
@@ -336,7 +336,7 @@ class _PlaceRouteBoard extends StatelessWidget {
                 child: const Icon(
                   Icons.explore_rounded,
                   size: 21,
-                  color: Color(0xFFEFD797),
+                  color: Color(0xFFBEE4F7),
                 ),
               ),
               const SizedBox(width: 12),
@@ -349,7 +349,7 @@ class _PlaceRouteBoard extends StatelessWidget {
                       style: sans(
                         size: 10.2,
                         weight: FontWeight.w900,
-                        color: const Color(0xFFEFD797),
+                        color: const Color(0xFFBEE4F7),
                         letterSpacing: 1.6,
                       ),
                     ),
@@ -379,7 +379,7 @@ class _PlaceRouteBoard extends StatelessWidget {
                 child: _PlaceRouteMetric(
                   label: '담은 곳',
                   value: '$totalCount',
-                  color: const Color(0xFFEFD797),
+                  color: const Color(0xFFBEE4F7),
                 ),
               ),
               const SizedBox(width: 8),
@@ -473,7 +473,7 @@ class _PlaceBoardFocusSummary extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AlagagiColors.creamPanel,
-        border: Border.all(color: const Color(0x33B99856)),
+        border: Border.all(color: const Color(0x6686B9D6)),
         borderRadius: BorderRadius.circular(24),
       ),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 15),

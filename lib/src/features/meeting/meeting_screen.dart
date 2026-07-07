@@ -148,7 +148,7 @@ class _MeetingHeroCard extends StatelessWidget {
                   style: sans(
                     size: 10.5,
                     weight: FontWeight.w900,
-                    color: const Color(0xFFFFF3DC),
+                    color: const Color(0xFFE6F6FF),
                     letterSpacing: 1.8,
                   ),
                 ),
@@ -239,7 +239,7 @@ class _MeetingHeroMetric extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 9),
       child: Row(
         children: [
-          Icon(icon, size: 14, color: const Color(0xFFEFD797)),
+          Icon(icon, size: 14, color: const Color(0xFFBEE4F7)),
           const SizedBox(width: 6),
           Expanded(
             child: Tooltip(
@@ -400,10 +400,10 @@ class _MeetingCalendar extends StatelessWidget {
             spacing: 10,
             runSpacing: 8,
             children: const [
-              _LegendDot(color: Color(0xFFE1C77A), label: '만나는 날'),
+              _LegendDot(color: AlagagiColors.sky, label: '만나는 날'),
               _LegendDot(color: AlagagiColors.sageDeep, label: '서로 가능'),
               _LegendDot(color: AlagagiColors.sage, label: '내 입력'),
-              _LegendDot(color: Color(0xFFC8AD6D), label: '내 상세 일정'),
+              _LegendDot(color: Color(0xFF5B9DBF), label: '내 상세 일정'),
               _LegendDot(color: Color(0xFFB18472), label: '상대 표시'),
             ],
           ),
@@ -498,9 +498,9 @@ class _MeetingDateCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const meetingDayFill = Color(0xFFFFF5D2);
-    const meetingDayBorder = Color(0xFFD9B34F);
-    const meetingDayForeground = Color(0xFF6F5518);
+    const meetingDayFill = AlagagiColors.skyPanel;
+    const meetingDayBorder = AlagagiColors.sky;
+    const meetingDayForeground = Color(0xFF315F7A);
     final background = selected
         ? AlagagiColors.ink
         : meetingDay
@@ -508,7 +508,7 @@ class _MeetingDateCell extends StatelessWidget {
         : mutual
         ? const Color(0xFFEEF2E8)
         : busy || hasMyDetails
-        ? const Color(0xFFF4EEDC)
+        ? const Color(0xFFEAF7FD)
         : hasMyEntry
         ? const Color(0xFFF5F8EF)
         : Colors.white;
@@ -519,7 +519,7 @@ class _MeetingDateCell extends StatelessWidget {
         : mutual
         ? AlagagiColors.sageDeep
         : busy || hasMyDetails
-        ? const Color(0xFF8A6F2D)
+        ? const Color(0xFF4F7F9A)
         : hasMyEntry
         ? AlagagiColors.sageDeep
         : const Color(0xFF4D4B45);
@@ -545,7 +545,7 @@ class _MeetingDateCell extends StatelessWidget {
         ),
       if (hasMyDetails)
         _TinyDot(
-          color: selected ? const Color(0xFFE1C77A) : const Color(0xFFC8AD6D),
+          color: selected ? const Color(0xFFBEE4F7) : const Color(0xFF5B9DBF),
         ),
       if (hasPartner)
         _TinyDot(
@@ -592,8 +592,8 @@ class _MeetingDateCell extends StatelessWidget {
                         height: 3.5,
                         decoration: BoxDecoration(
                           color: selected
-                              ? const Color(0xFFE1C77A)
-                              : const Color(0xFFD9B34F),
+                              ? const Color(0xFFBEE4F7)
+                              : AlagagiColors.sky,
                           borderRadius: BorderRadius.circular(999),
                           boxShadow: const [
                             BoxShadow(
@@ -877,13 +877,13 @@ class _MeetingDateStatusPanel extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: alreadyMeetingDay
-            ? const Color(0xFFFFF7E4)
+            ? const Color(0xFFEAF7FD)
             : mutual
             ? AlagagiColors.sageSoft
             : const Color(0xFFF8F8F4),
         border: Border.all(
           color: alreadyMeetingDay
-              ? const Color(0x33D9B34F)
+              ? const Color(0x6686B9D6)
               : const Color(0x338A9A7E),
         ),
         borderRadius: BorderRadius.circular(18),
@@ -895,7 +895,7 @@ class _MeetingDateStatusPanel extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: alreadyMeetingDay ? const Color(0xFFE1C77A) : Colors.white,
+              color: alreadyMeetingDay ? const Color(0xFFBEE4F7) : Colors.white,
               borderRadius: BorderRadius.circular(14),
             ),
             alignment: Alignment.center,

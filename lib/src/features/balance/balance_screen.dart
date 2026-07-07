@@ -245,7 +245,7 @@ class _BalanceTodayCard extends StatelessWidget {
             child: LinearProgressIndicator(
               minHeight: 7,
               value: progress.clamp(0.0, 1.0).toDouble(),
-              color: const Color(0xFFD9C58B),
+              color: const Color(0xFFBEE4F7),
               backgroundColor: const Color(0x33FFFFFF),
             ),
           ),
@@ -1184,7 +1184,7 @@ class _BalanceResultChoice extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: highlighted ? const Color(0x22D9C58B) : const Color(0x14FFFFFF),
+        color: highlighted ? const Color(0x335B9DBF) : const Color(0x14FFFFFF),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0x18FFFFFF)),
       ),
@@ -1393,12 +1393,12 @@ class _BalanceResultBoxTile extends StatelessWidget {
     final statusColor = revealed
         ? const Color(0xFF2F2F2B)
         : ready
-        ? const Color(0xFFF8EFD9)
+        ? const Color(0xFFEAF7FD)
         : const Color(0xFFF8F8F4);
     final statusTextColor = revealed
         ? Colors.white
         : ready
-        ? const Color(0xFF8C7333)
+        ? const Color(0xFF315F7A)
         : AlagagiColors.muted;
     final copy = !ready
         ? '$partnerName님 선택을 기다리는 중이에요. 내 선택은 조용히 저장돼 있어요.'

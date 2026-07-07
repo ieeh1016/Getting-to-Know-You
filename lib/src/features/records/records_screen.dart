@@ -140,7 +140,7 @@ class _RecordsJournalPanel extends StatelessWidget {
                             style: sans(
                               size: 10.2,
                               weight: FontWeight.w900,
-                              color: const Color(0xFFEFD797),
+                              color: const Color(0xFFBEE4F7),
                               letterSpacing: 1.7,
                             ),
                           ),
@@ -196,7 +196,7 @@ class _RecordsJournalPanel extends StatelessWidget {
                               style: sans(
                                 size: 11,
                                 weight: FontWeight.w900,
-                                color: const Color(0xFFEFD797),
+                                color: const Color(0xFFBEE4F7),
                                 letterSpacing: 1.2,
                               ),
                             ),
@@ -288,7 +288,7 @@ class _RecordsMiniMetric extends StatelessWidget {
             style: sans(
               size: 12,
               weight: FontWeight.w900,
-              color: const Color(0xFFEFD797),
+              color: const Color(0xFFBEE4F7),
             ),
           ),
         ],

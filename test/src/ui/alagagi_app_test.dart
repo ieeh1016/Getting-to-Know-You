@@ -2816,7 +2816,7 @@ void main() {
         selectedDateKey,
       );
 
-      expect(fixedDayDecoration.color, const Color(0xFFFFF5D2));
+      expect(fixedDayDecoration.color, AlagagiColors.skyPanel);
       expect(fixedDayDecoration.color, isNot(AlagagiColors.ink));
       expect(selectedDayDecoration.color, AlagagiColors.ink);
       expect(

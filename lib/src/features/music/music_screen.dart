@@ -149,7 +149,7 @@ class _MusicListeningDeck extends StatelessWidget {
                             style: sans(
                               size: 10.2,
                               weight: FontWeight.w900,
-                              color: const Color(0xFFEFD797),
+                              color: const Color(0xFFBEE4F7),
                               letterSpacing: 1.7,
                             ),
                           ),
@@ -201,7 +201,7 @@ class _MusicListeningDeck extends StatelessWidget {
                       child: _MusicDeckMetric(
                         label: '남긴 곡',
                         value: '$totalCount',
-                        color: const Color(0xFFEFD797),
+                        color: const Color(0xFFBEE4F7),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -479,7 +479,7 @@ class _MusicHeroCard extends StatelessWidget {
               _MusicCover(color: AlagagiColors.sage, darkBorder: true),
               _OverlapCover(color: AlagagiColors.lavender),
               _OverlapCover(color: Color(0xFFB18472)),
-              _OverlapCover(color: Color(0xFFC8AD6D)),
+              _OverlapCover(color: Color(0xFF5B9DBF)),
             ],
           ),
         ],
@@ -1100,7 +1100,7 @@ class _MusicCommentPreview extends StatelessWidget {
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 7),
             decoration: BoxDecoration(
-              color: const Color(0xFFF6F2E8),
+              color: const Color(0xFFEFF8FD),
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
@@ -1108,7 +1108,7 @@ class _MusicCommentPreview extends StatelessWidget {
               style: sans(
                 size: 10.8,
                 weight: FontWeight.w900,
-                color: const Color(0xFF8E7437),
+                color: const Color(0xFF315F7A),
               ),
             ),
           ),
