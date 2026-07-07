@@ -21,12 +21,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('천천히 알아가는 기록'), findsOneWidget);
+      expect(find.text('2026.07.05부터, 우리 기록'), findsOneWidget);
       expect(find.text('J O G E U M S S I K'), findsNothing);
       expect(find.text('조금씩'), findsOneWidget);
       expect(find.text('알아가기'), findsNothing);
       expect(find.text('아이디가 있으면 조용히 이어서 들어갈 수 있어요.'), findsOneWidget);
-      expect(find.text('우리, 천천히\n알아가 볼래요?'), findsNothing);
+      expect(find.text('우리, 오늘도\n같이 쌓아볼까요?'), findsNothing);
       expect(find.text('두 사람만 로그인할 수 있어요.'), findsNothing);
       expect(find.byKey(loginIdFieldKey), findsOneWidget);
       expect(find.byKey(loginPasswordFieldKey), findsOneWidget);
@@ -298,9 +298,9 @@ void main() {
       await tester.pumpAndSettle();
       await tester.drag(find.byType(Scrollable), const Offset(0, -700));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('취향 매치'));
+      await tester.ensureVisible(find.text('우리 선택'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('취향 매치'));
+      await tester.tap(find.text('우리 선택'));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('조용한 바다'));
       await tester.pumpAndSettle();

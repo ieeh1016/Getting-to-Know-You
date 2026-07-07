@@ -3,9 +3,9 @@
     "short_name": "조금씩",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#F4F3EF",
-    "theme_color": "#6F7F63",
-    "description": "하루 한 질문과 작은 기록으로 천천히 서로를 알아가는 비공개 웹앱.",
+    "background_color": "#F6F3ED",
+    "theme_color": "#5F7156",
+    "description": "2026년 7월 5일부터 둘만의 질문, 데이트, 장소와 작은 마음을 쌓는 비공개 커플 웹앱.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

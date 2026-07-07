@@ -41,7 +41,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
       bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
         AlagagiTopBar(
-          title: '취향 매치',
+          title: '우리 선택',
           trailing: progressLabel,
           onBack: () => controller.goTo(AlagagiRoute.home),
         ),

@@ -1058,6 +1058,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           .toList(),
       dailyProgress: _dailyProgressFromData(progressSnapshot.data()),
       personalization: _personalizationFromData(spaceSnapshot.data()),
+      relationship: _relationshipFromData(spaceSnapshot.data()),
     );
   }
 
@@ -1543,6 +1544,26 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       'inviteLine': personalization.inviteLine,
       'accentEmoji': personalization.accentEmoji,
     };
+  }
+
+  RelationshipMetadata _relationshipFromData(Map<String, dynamic>? data) {
+    if (data == null) {
+      return const RelationshipMetadata();
+    }
+    final raw = data['relationship'];
+    if (raw is Map<String, dynamic>) {
+      return RelationshipMetadata(
+        startedDateKey:
+            _readString(raw, 'startedDateKey') ??
+            _readString(raw, 'relationshipStartedDateKey') ??
+            kRelationshipStartedDateKey,
+      );
+    }
+    return RelationshipMetadata(
+      startedDateKey:
+          _readString(data, 'relationshipStartedDateKey') ??
+          kRelationshipStartedDateKey,
+    );
   }
 
   MemoryCardType _memoryCardTypeFromData(String? value) {

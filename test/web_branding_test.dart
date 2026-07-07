@@ -25,14 +25,14 @@ void main() {
         '<link rel="apple-touch-icon" sizes="180x180" href="icons/Icon-180.png">',
       ),
     );
-    expect(indexHtml, contains('천천히 서로를 알아가는 비공개 웹앱'));
+    expect(indexHtml, contains('둘만의 질문, 데이트, 장소와 작은 마음'));
     expect(indexHtml, isNot(contains('<title>알아가기</title>')));
 
     expect(manifest['name'], '조금씩');
     expect(manifest['short_name'], '조금씩');
-    expect(manifest['theme_color'], '#6F7F63');
-    expect(manifest['background_color'], '#F4F3EF');
-    expect(manifest['description'], contains('천천히 서로를 알아가는'));
+    expect(manifest['theme_color'], '#5F7156');
+    expect(manifest['background_color'], '#F6F3ED');
+    expect(manifest['description'], contains('2026년 7월 5일부터'));
   });
 
   test('web icon assets keep required png sizes', () {

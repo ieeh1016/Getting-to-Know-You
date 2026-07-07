@@ -21,7 +21,7 @@ class MeetingPlanScreen extends StatelessWidget {
     return AlagagiScreenScroll(
       bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
-        AlagagiTopBar(title: '만남', trailing: ''),
+        AlagagiTopBar(title: '계획', trailing: ''),
         const SizedBox(height: 4),
         Text(
           '정해진 날만 모아서 뭐하고 어디 갈지 정리해요',
@@ -424,13 +424,13 @@ class _MeetingPlanEmptyState extends StatelessWidget {
           Text(
             hasPastMeetings
                 ? '지난 만남은 따로 모아두고, 다음 만나는 날이 생기면 여기에 바로 보여줄게요.'
-                : '약속 탭에서 서로 가능한 날짜를 만나는 날로 정하면 여기에 계획 공간이 열려요.',
+                : '데이트 탭에서 서로 가능한 날짜를 만나는 날로 정하면 여기에 계획 공간이 열려요.',
             textAlign: TextAlign.center,
             style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.55),
           ),
           const SizedBox(height: 16),
           AlagagiPrimaryButton(
-            label: '약속에서 날짜 정하기',
+            label: '데이트에서 날짜 정하기',
             onPressed: () => controller.goTo(AlagagiRoute.meetings),
             color: AlagagiColors.sageDeep,
           ),
@@ -736,7 +736,7 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
               ],
               const SizedBox(height: 12),
               AlagagiPrimaryButton(
-                label: '만남 계획 저장',
+                label: '계획 저장',
                 buttonKey: meetingPlanSaveButtonKey,
                 onPressed: controller.submitMeetingPlanDraft,
                 color: AlagagiColors.ink,

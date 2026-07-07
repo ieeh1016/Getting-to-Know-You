@@ -277,6 +277,7 @@ class AlagagiSpaceData {
     this.memoryCardResponses = const [],
     this.dailyProgress,
     this.personalization = const SpacePersonalization(),
+    this.relationship = const RelationshipMetadata(),
   });
 
   final List<Answer> answers;
@@ -297,6 +298,7 @@ class AlagagiSpaceData {
   final List<MemoryCardResponse> memoryCardResponses;
   final DailyQuestionProgress? dailyProgress;
   final SpacePersonalization personalization;
+  final RelationshipMetadata relationship;
 }
 
 class DiagnosticEvent {
@@ -591,11 +593,27 @@ class DailyQuestionProgress {
   }
 }
 
+const kRelationshipStartedDateKey = '2026-07-05';
+
+class RelationshipMetadata {
+  const RelationshipMetadata({
+    this.startedDateKey = kRelationshipStartedDateKey,
+  });
+
+  final String startedDateKey;
+
+  RelationshipMetadata copyWith({String? startedDateKey}) {
+    return RelationshipMetadata(
+      startedDateKey: startedDateKey ?? this.startedDateKey,
+    );
+  }
+}
+
 class SpacePersonalization {
   const SpacePersonalization({
     this.appTitle = '조금씩',
-    this.homeLine = '오늘도 한 가지를 알아가요',
-    this.inviteLine = '하루에 하나씩, 조용히 알아가요',
+    this.homeLine = '오늘도 우리를 조금 남겨요',
+    this.inviteLine = '하루에 하나씩, 우리 이야기를 쌓아요',
     this.accentEmoji = '🌿',
   });
 
@@ -1919,9 +1937,9 @@ extension UnreadActivityFeatureMeta on UnreadActivityFeature {
 
   String get label {
     return switch (this) {
-      UnreadActivityFeature.profileCard => '소개 카드',
+      UnreadActivityFeature.profileCard => '서로 노트',
       UnreadActivityFeature.wishlist => '언젠가, 같이',
-      UnreadActivityFeature.meetings => '약속',
+      UnreadActivityFeature.meetings => '데이트',
       UnreadActivityFeature.places => '장소',
       UnreadActivityFeature.curiosity => '궁금함',
       UnreadActivityFeature.stocks => '주식 이야기',
@@ -2797,6 +2815,7 @@ class AlagagiController extends ChangeNotifier {
          currentQuestionId: 'q12',
          openedDateKey: '2026-06-08',
        ),
+       _relationship = const RelationshipMetadata(),
        questions = seedQuestions,
        balanceQuestions = seedBalanceQuestions,
        _state = const AlagagiState(
@@ -2828,6 +2847,7 @@ class AlagagiController extends ChangeNotifier {
          session.data.dailyProgress,
          todayDateKey: todayDateKey,
        ),
+       _relationship = session.data.relationship,
        _todayQuestion = _questionForProgress(
          questionCatalogV1,
          _resolveDailyQuestionProgress(
@@ -2864,6 +2884,7 @@ class AlagagiController extends ChangeNotifier {
 
   DailyQuestion _todayQuestion;
   DailyQuestionProgress _dailyProgress;
+  RelationshipMetadata _relationship;
   final List<DailyQuestion> questions;
   final List<BalanceQuestion> balanceQuestions;
 
@@ -2896,7 +2917,7 @@ class AlagagiController extends ChangeNotifier {
   ScheduleEntry? _lastFailedScheduleEntry;
   String _lastFailedScheduleEntrySuccessFeedback = '일정을 저장했어요.';
   MeetingPlan? _lastFailedMeetingPlan;
-  String _lastFailedMeetingPlanSuccessFeedback = '만남 계획을 저장했어요.';
+  String _lastFailedMeetingPlanSuccessFeedback = '계획을 저장했어요.';
   SharedPlace? _lastFailedSharedPlace;
   bool _lastFailedSharedPlaceWasMeetingLinks = false;
   CuriosityCard? _lastFailedCuriosityCard;
@@ -2928,6 +2949,7 @@ class AlagagiController extends ChangeNotifier {
       todayDateKey: todayDateKey,
     );
     _todayQuestion = _questionForProgress(questions, _dailyProgress);
+    _relationship = session.data.relationship;
     final personalization = _normalizeBrandPersonalization(
       session.data.personalization,
     );
@@ -2962,6 +2984,47 @@ class AlagagiController extends ChangeNotifier {
   DailyQuestion get todayQuestion => _todayQuestion;
 
   DailyQuestionProgress get dailyProgress => _dailyProgress;
+
+  RelationshipMetadata get relationship => _relationship;
+
+  int? get relationshipDayCount {
+    final startedDate = DateTime.tryParse(_relationship.startedDateKey);
+    final todayDate = DateTime.tryParse(_currentDateKey());
+    if (startedDate == null || todayDate == null) {
+      return null;
+    }
+    final normalizedStartedDate = DateTime(
+      startedDate.year,
+      startedDate.month,
+      startedDate.day,
+    );
+    final normalizedTodayDate = DateTime(
+      todayDate.year,
+      todayDate.month,
+      todayDate.day,
+    );
+    final days = normalizedTodayDate.difference(normalizedStartedDate).inDays;
+    if (days < 0) {
+      return null;
+    }
+    return days + 1;
+  }
+
+  String get relationshipStartedLabel {
+    final startedDateKey = _relationship.startedDateKey.trim();
+    if (startedDateKey.isEmpty) {
+      return '우리 기록';
+    }
+    return '${startedDateKey.replaceAll('-', '.')}부터';
+  }
+
+  String get relationshipDayLabel {
+    final dayCount = relationshipDayCount;
+    if (dayCount == null) {
+      return '우리 기록';
+    }
+    return '함께한 지 $dayCount일째';
+  }
 
   DailyQuestion get activeAnswerQuestion {
     final activeQuestionId = _state.activeAnswerQuestionId;
@@ -3080,7 +3143,7 @@ class AlagagiController extends ChangeNotifier {
         activities,
         feature: UnreadActivityFeature.profileCard,
         id: 'profile-${slot.id}',
-        title: '소개 카드에 새 답이 있어요',
+        title: '서로 노트에 새 답이 있어요',
         description: '$partnerName님이 "${slot.label}"에 답했어요.',
         updatedAt: slot.updatedAt,
         actorProfileId: slot.updatedByProfileId ?? _state.partner.id,
@@ -3150,7 +3213,7 @@ class AlagagiController extends ChangeNotifier {
         activities,
         feature: UnreadActivityFeature.meetings,
         id: 'meeting-${entry.id}',
-        title: '약속 일정이 업데이트됐어요',
+        title: '데이트 일정이 업데이트됐어요',
         description:
             '$partnerName님이 ${_compactDateLabel(entry.dateKey)} 일정을 남겼어요.',
         updatedAt: entry.updatedAt,
@@ -3162,7 +3225,7 @@ class AlagagiController extends ChangeNotifier {
         activities,
         feature: UnreadActivityFeature.meetings,
         id: 'meeting-plan-${plan.dateKey}',
-        title: '만남 계획이 업데이트됐어요',
+        title: '계획이 업데이트됐어요',
         description:
             '$partnerName님이 ${_compactDateLabel(plan.dateKey)} 계획을 정리했어요.',
         updatedAt: plan.updatedAt,
@@ -3784,7 +3847,7 @@ class AlagagiController extends ChangeNotifier {
       ),
       ProfileCardData(
         profile: _state.me,
-        subtitle: '편한 만큼 채워두는 내 소개 카드',
+        subtitle: '편한 만큼 채워두는 내 서로 노트',
         slots: _profileSlotCatalog(),
       ),
     ];
@@ -3864,7 +3927,8 @@ class AlagagiController extends ChangeNotifier {
     );
 
     return RelationshipInsight(
-      daysTogether: questionCount == 0 ? 0 : questionCount,
+      daysTogether:
+          relationshipDayCount ?? (questionCount == 0 ? 0 : questionCount),
       questionCount: questionCount,
       matchCount: bothAnsweredCount,
       longestAnswerLength: longestAnswerLength,
@@ -4341,7 +4405,7 @@ class AlagagiController extends ChangeNotifier {
 
   void _persistMeetingPlan(
     MeetingPlan plan, {
-    String successFeedback = '만남 계획을 저장했어요.',
+    String successFeedback = '계획을 저장했어요.',
   }) {
     final repository = _repository;
     final spaceId = _spaceId;
@@ -7096,7 +7160,7 @@ class AlagagiController extends ChangeNotifier {
       label: trimmedTitle,
       icon: 'custom',
       category: normalizedCategory,
-      inputHint: '직접 추가한 소개 카드',
+      inputHint: '직접 추가한 서로 노트',
       value: trimmedValue,
       custom: true,
       updatedAt: now,
@@ -9032,7 +9096,7 @@ class AlagagiController extends ChangeNotifier {
       clearMeetingSaveFeedback: true,
     );
     notifyListeners();
-    _persistMeetingPlan(plan, successFeedback: '만남 계획을 저장했어요.');
+    _persistMeetingPlan(plan, successFeedback: '계획을 저장했어요.');
   }
 
   void submitMeetingDayDraft() {

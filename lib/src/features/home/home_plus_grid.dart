@@ -14,15 +14,15 @@ class HomePlusGrid extends StatelessWidget {
       children: [
         _PlusTile(
           icon: Icons.swap_horiz_rounded,
-          title: '취향 매치',
-          body: '둘 중 하나로 남기는 취향 힌트',
+          title: '우리 선택',
+          body: '다음 데이트 힌트가 되는 선택',
           onTap: () => controller.goTo(AlagagiRoute.balance),
         ),
         const SizedBox(height: 10),
         _PlusTile(
           icon: Icons.person_outline_rounded,
-          title: '소개 카드',
-          body: '편한 만큼 내 취향 남기기',
+          title: '서로 노트',
+          body: '편한 만큼 마음과 취향 남기기',
           onTap: () => controller.goTo(AlagagiRoute.profileCard),
         ),
         const SizedBox(height: 10),
@@ -70,7 +70,7 @@ class _PlusTile extends StatelessWidget {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0F2EB),
+                  color: AlagagiColors.sageSoft,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 alignment: Alignment.center,

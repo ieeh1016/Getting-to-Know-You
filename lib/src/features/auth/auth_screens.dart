@@ -7,7 +7,7 @@ import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
 const _brandName = '조금씩';
-const _brandKicker = '천천히 알아가는 기록';
+const _brandKicker = '2026.07.05부터, 우리 기록';
 
 class LoadingScreen extends StatelessWidget {
   const LoadingScreen({super.key});
@@ -310,7 +310,7 @@ class _InviteScreenState extends State<InviteScreen> {
               ),
               const SizedBox(height: 14),
               Text(
-                '우리, 천천히\n알아가 볼래요?',
+                '우리, 오늘도\n같이 쌓아볼까요?',
                 textAlign: TextAlign.center,
                 style: serif(
                   context,
@@ -332,9 +332,9 @@ class _InviteScreenState extends State<InviteScreen> {
                         color: AlagagiColors.sageDeep,
                       ),
                     ),
-                    const TextSpan(text: '님이 대화 공간을 열어두었어요.\n'),
+                    const TextSpan(text: '님이 우리 기록 공간을 열어두었어요.\n'),
                     const TextSpan(
-                      text: '하루에 질문 하나, 서로의 이야기를 나누는\n작고 조용한 공간이에요.',
+                      text: '질문, 데이트, 장소와 작은 마음을\n둘만 조용히 이어가는 공간이에요.',
                     ),
                   ],
                 ),
@@ -354,13 +354,13 @@ class _InviteScreenState extends State<InviteScreen> {
               ),
               const SizedBox(height: 12),
               AlagagiPrimaryButton(
-                label: '대화 공간으로 들어가기',
+                label: '우리 공간으로 들어가기',
                 onPressed: () =>
                     widget.controller.enterSpace(_nicknameController.text),
               ),
               const SizedBox(height: 14),
               Text(
-                '가입 절차 없이 바로 시작해요 · 언제든 그만둘 수 있어요',
+                '둘만 조용히 이어가요 · 필요한 만큼 남겨요',
                 textAlign: TextAlign.center,
                 style: sans(size: 11, color: AlagagiColors.muted, height: 1.6),
               ),
@@ -397,8 +397,8 @@ class _InviteNotes extends StatelessWidget {
         children: [
           _NoteRow(
             icon: Icons.wb_sunny_outlined,
-            title: '하루에 딱 하나',
-            body: '부담 없이, 답하고 싶을 때만 답해요.',
+            title: '우리 하루 한 조각',
+            body: '짧은 질문도, 긴 기록도 편한 만큼 남겨요.',
           ),
           _NoteDivider(),
           _NoteRow(
@@ -408,9 +408,9 @@ class _InviteNotes extends StatelessWidget {
           ),
           _NoteDivider(),
           _NoteRow(
-            icon: Icons.eco_outlined,
-            title: '천천히 적어두기',
-            body: '답이 없어도 괜찮고, 서두르지 않아도 돼요.',
+            icon: Icons.favorite_border_rounded,
+            title: '같이 쌓아두기',
+            body: '데이트와 장소, 서로의 마음을 한곳에 모아요.',
           ),
         ],
       ),

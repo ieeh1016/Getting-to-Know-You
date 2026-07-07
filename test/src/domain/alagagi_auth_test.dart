@@ -113,6 +113,45 @@ void main() {
       expect(controller.state.personalizationDraft.appTitle, '조금씩');
     });
 
+    test(
+      'session controller keeps relationship start separate from question progress',
+      () {
+        final controller = AlagagiController.forSession(
+          const AlagagiSession(
+            spaceId: 'main',
+            me: AppProfile(
+              id: 'youngwooUid',
+              nickname: '영우',
+              avatar: '🌿',
+              isMe: true,
+            ),
+            partner: AppProfile(
+              id: 'minyoungUid',
+              nickname: '민영',
+              avatar: '🪻',
+              isMe: false,
+            ),
+            data: AlagagiSpaceData(
+              dailyProgress: DailyQuestionProgress(
+                startedDateKey: '2026-06-08',
+                currentQuestionId: 'q003',
+                openedDateKey: '2026-07-07',
+              ),
+              relationship: RelationshipMetadata(startedDateKey: '2026-07-05'),
+            ),
+          ),
+          todayDateKey: '2026-07-07',
+        );
+
+        expect(controller.dailyProgress.startedDateKey, '2026-06-08');
+        expect(controller.relationship.startedDateKey, '2026-07-05');
+        expect(controller.relationshipStartedLabel, '2026.07.05부터');
+        expect(controller.relationshipDayCount, 3);
+        expect(controller.relationshipDayLabel, '함께한 지 3일째');
+        expect(controller.insight.daysTogether, 3);
+      },
+    );
+
     test('session controller uses real Firestore-style session data', () {
       final controller = AlagagiController.forSession(
         const AlagagiSession(
@@ -1748,7 +1787,7 @@ void main() {
                   label: '내가 만든 질문',
                   icon: 'custom',
                   category: '직접',
-                  inputHint: '직접 추가한 소개 카드',
+                  inputHint: '직접 추가한 서로 노트',
                   value: '이 질문이 더 편해서 직접 남겼어요.',
                   custom: true,
                   updatedAt: DateTime.parse('2026-06-09T10:00:00.000Z'),

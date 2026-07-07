@@ -41,7 +41,7 @@ const kPushNotificationsEnabled = bool.fromEnvironment(
 );
 
 const _brandName = '조금씩';
-const _brandKicker = '천천히 알아가는 기록';
+const _brandKicker = '2026.07.05부터, 우리 기록';
 
 class AlagagiApp extends StatelessWidget {
   const AlagagiApp({

@@ -46,16 +46,16 @@ class AlagagiBrandLeafMark extends StatelessWidget {
         decoration: const BoxDecoration(
           shape: BoxShape.circle,
           gradient: LinearGradient(
-            colors: [Color(0xFFEEF2EA), Color(0xFFFCFCFA)],
+            colors: [AlagagiColors.roseSoft, AlagagiColors.goldSoft],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
         alignment: Alignment.center,
         child: Icon(
-          Icons.eco_outlined,
+          Icons.favorite_border_rounded,
           size: iconSize,
-          color: AlagagiColors.sageDeep,
+          color: AlagagiColors.rose,
         ),
       ),
     );
@@ -90,7 +90,7 @@ class AlagagiAvatarStack extends StatelessWidget {
             left: 26,
             child: _AlagagiSmallAvatar(
               avatar: partnerAvatar,
-              color: const Color(0xFFD8CCE2),
+              color: AlagagiColors.lavenderSoft,
             ),
           ),
         ],
@@ -126,7 +126,7 @@ class AlagagiPrimaryButton extends StatelessWidget {
     super.key,
     required this.label,
     required this.onPressed,
-    this.color = AlagagiColors.ink,
+    this.color = AlagagiColors.sageDeep,
     this.buttonKey,
   });
 
@@ -229,9 +229,9 @@ class AlagagiFilterPill extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: selected ? AlagagiColors.ink : Colors.white,
+          color: selected ? AlagagiColors.sageDeep : Colors.white,
           border: Border.all(
-            color: selected ? AlagagiColors.ink : AlagagiColors.line,
+            color: selected ? AlagagiColors.sageDeep : AlagagiColors.line,
           ),
           borderRadius: BorderRadius.circular(20),
         ),
@@ -240,6 +240,7 @@ class AlagagiFilterPill extends StatelessWidget {
           label,
           style: sans(
             size: 12.5,
+            weight: selected ? FontWeight.w700 : FontWeight.w500,
             color: selected ? AlagagiColors.appBackground : AlagagiColors.muted,
           ),
         ),
@@ -378,9 +379,9 @@ class AlagagiSegmentButton extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: selected ? AlagagiColors.ink : Colors.white,
+          color: selected ? AlagagiColors.sageDeep : Colors.white,
           border: Border.all(
-            color: selected ? AlagagiColors.ink : AlagagiColors.line,
+            color: selected ? AlagagiColors.sageDeep : AlagagiColors.line,
           ),
           borderRadius: BorderRadius.circular(14),
         ),
@@ -390,6 +391,7 @@ class AlagagiSegmentButton extends StatelessWidget {
           label,
           style: sans(
             size: 12.5,
+            weight: selected ? FontWeight.w700 : FontWeight.w500,
             color: selected ? AlagagiColors.appBackground : AlagagiColors.muted,
           ),
         ),

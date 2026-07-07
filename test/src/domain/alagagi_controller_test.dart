@@ -269,7 +269,7 @@ void main() {
       expect(controller.selectedMeetingPlanDateKey, '2026-06-11');
       expect(plan, isNotNull);
       expect(plan!.items, ['저녁 먹기', '전시 보기', '브런치 카페']);
-      expect(controller.state.meetingSaveFeedback, '만남 계획을 저장했어요.');
+      expect(controller.state.meetingSaveFeedback, '계획을 저장했어요.');
     });
 
     test('meeting plan reorder keeps the edited item selected', () {

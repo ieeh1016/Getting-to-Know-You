@@ -57,7 +57,7 @@ Future<void> confirmCancelMeetingDay(
     builder: (context) => AlertDialog(
       title: Text('만남을 취소할까요?', style: serif(context, size: 20)),
       content: Text(
-        '${meetingDateLabel(dateKey)} 만남이 만남 탭에서 빠져요.',
+        '${meetingDateLabel(dateKey)} 만남이 계획 탭에서 빠져요.',
         style: sans(size: 13, height: 1.45, color: AlagagiColors.muted),
       ),
       actions: [

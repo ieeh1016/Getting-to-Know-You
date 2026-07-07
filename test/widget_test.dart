@@ -7,6 +7,6 @@ void main() {
     await app.main();
     await tester.pump();
 
-    expect(find.text('우리, 천천히\n알아가 볼래요?'), findsOneWidget);
+    expect(find.text('우리, 오늘도\n같이 쌓아볼까요?'), findsOneWidget);
   });
 }

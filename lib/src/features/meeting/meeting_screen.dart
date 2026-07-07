@@ -104,7 +104,7 @@ class _MeetingHeroCard extends StatelessWidget {
               '시간은 편할 때 다시 적어도 괜찮아요.'
             else
               '$meetingTimeLabel에 만나기로 했어요.',
-            if (meetingPlanCount > 0) '만남 탭에 그날 계획이 정리돼 있어요.',
+            if (meetingPlanCount > 0) '계획 탭에 그날 계획이 정리돼 있어요.',
           ].join(' ')
         : '상대에게 보여도 괜찮은 일정과 만날 수 있는 여유만 남겨요.';
     return AlagagiPaperCard(

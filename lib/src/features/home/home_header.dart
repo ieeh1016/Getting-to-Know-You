@@ -106,7 +106,12 @@ class HomeProgressStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AlagagiColors.ink,
+        gradient: const LinearGradient(
+          colors: [AlagagiColors.roseSoft, AlagagiColors.goldSoft],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(18),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -117,10 +122,11 @@ class HomeProgressStrip extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'DAY ${controller.todayQuestion.day} · 서로의 ${controller.todayQuestion.number}번째 질문',
+                  '${controller.relationshipStartedLabel} · ${controller.relationshipDayLabel}',
                   style: sans(
                     size: 11,
-                    color: const Color(0xFFB8B6AD),
+                    weight: FontWeight.w800,
+                    color: AlagagiColors.rose,
                     letterSpacing: 1,
                   ),
                 ),
@@ -131,7 +137,7 @@ class HomeProgressStrip extends StatelessWidget {
                     context,
                     size: 16,
                     weight: FontWeight.w700,
-                    color: AlagagiColors.appBackground,
+                    color: AlagagiColors.ink,
                   ),
                 ),
               ],
@@ -196,12 +202,12 @@ void showHomeMenuSheet({
                 ),
                 const SizedBox(height: 17),
                 Text(
-                  '기능 모아보기',
+                  '우리 메뉴',
                   style: serif(context, size: 21, weight: FontWeight.w800),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '오늘 질문을 방해하지 않는 선에서, 가끔 꺼내볼 기능을 한곳에 모았어요.',
+                  '둘이 자주 꺼내볼 기록과 계획을 한곳에 모았어요.',
                   style: sans(
                     size: 12.3,
                     color: AlagagiColors.muted,
@@ -290,8 +296,8 @@ void showHomeMenuSheet({
                 _HomeMenuRow(
                   rowKey: homeMenuBalanceButtonKey,
                   icon: Icons.swap_horiz_rounded,
-                  title: '취향 매치',
-                  subtitle: '둘 중 하나를 고르고 서로의 취향 보기',
+                  title: '우리 선택',
+                  subtitle: '다음 데이트 힌트가 되는 선택 남기기',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
                     controller.goTo(AlagagiRoute.balance);
@@ -301,8 +307,8 @@ void showHomeMenuSheet({
                 _HomeMenuRow(
                   rowKey: homeMenuProfileCardButtonKey,
                   icon: Icons.badge_outlined,
-                  title: '소개 카드',
-                  subtitle: '취향과 대화 방식을 편한 만큼 채우기',
+                  title: '서로 노트',
+                  subtitle: '취향과 마음을 편한 만큼 채우기',
                   badgeCount: controller.unreadCountForFeature(
                     UnreadActivityFeature.profileCard,
                   ),

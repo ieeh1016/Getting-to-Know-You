@@ -120,7 +120,7 @@ void showFirstVisitGuideBook(BuildContext context) {
                         SizedBox(height: 8),
                         _GuideBookFeatureRow(
                           icon: Icons.badge_outlined,
-                          title: '소개 카드',
+                          title: '서로 노트',
                           body: '취향과 대화 방식을 편한 질문부터 채워요.',
                           where: '메뉴',
                         ),
@@ -134,7 +134,7 @@ void showFirstVisitGuideBook(BuildContext context) {
                         SizedBox(height: 8),
                         _GuideBookFeatureRow(
                           icon: Icons.tune_rounded,
-                          title: '취향 매치',
+                          title: '우리 선택',
                           body: '둘 중 하나를 고르고 서로의 취향을 가볍게 봐요.',
                           where: '메뉴',
                         ),

@@ -91,7 +91,7 @@ class MyScreen extends StatelessWidget {
                 Expanded(
                   child: _MyStatCard(
                     value: '${myProfileCard.filledCount}',
-                    label: '채운\n소개 카드',
+                    label: '채운\n서로 노트',
                   ),
                 ),
                 const SizedBox(width: 9),
@@ -126,7 +126,7 @@ class MyScreen extends StatelessWidget {
                   child: _MyNextTile(
                     buttonKey: myProfileCardActionButtonKey,
                     icon: Icons.badge_outlined,
-                    label: '소개 카드 한 칸 채우기',
+                    label: '서로 노트 한 칸 채우기',
                     state:
                         '${myProfileCard.filledCount} / ${myProfileCard.totalCount}',
                     description: '대화할 때 편한 방식을 적어볼 수 있어요.',
