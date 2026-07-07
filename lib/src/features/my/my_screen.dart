@@ -97,6 +97,14 @@ class MyScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _MyProfileSummaryCard(controller: controller),
+            const SizedBox(height: 16),
+            _MyCommandDeck(
+              controller: controller,
+              answeredCount: answeredItems.length,
+              profileFilledCount: myProfileCard.filledCount,
+              musicCount: myMusicNotes.length,
+              needsTodayAnswer: needsTodayAnswer,
+            ),
             if (pushNotificationState != null &&
                 onEnablePushNotifications != null &&
                 onDisablePushNotifications != null) ...[
@@ -239,6 +247,271 @@ class MyScreen extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _MyCommandDeck extends StatelessWidget {
+  const _MyCommandDeck({
+    required this.controller,
+    required this.answeredCount,
+    required this.profileFilledCount,
+    required this.musicCount,
+    required this.needsTodayAnswer,
+  });
+
+  final AlagagiController controller;
+  final int answeredCount;
+  final int profileFilledCount;
+  final int musicCount;
+  final bool needsTodayAnswer;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AlagagiColors.midnight,
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1F2F2E2A),
+            blurRadius: 24,
+            offset: Offset(0, 13),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'PERSONAL CONSOLE',
+                      style: sans(
+                        size: 10.2,
+                        weight: FontWeight.w900,
+                        color: const Color(0xFFEFD797),
+                        letterSpacing: 1.7,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Text(
+                      '내 공간 작업대',
+                      style: serif(
+                        context,
+                        size: 21,
+                        weight: FontWeight.w800,
+                        color: Colors.white,
+                        height: 1.25,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.11),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
+                child: Text(
+                  controller.relationshipDayLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: sans(
+                    size: 11,
+                    weight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          Row(
+            children: [
+              Expanded(
+                child: _MyCommandMetric(
+                  label: '질문 답',
+                  value: '$answeredCount',
+                  color: const Color(0xFFEFD797),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _MyCommandMetric(
+                  label: '노트 칸',
+                  value: '$profileFilledCount',
+                  color: const Color(0xFFB9A8C9),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _MyCommandMetric(
+                  label: '음악',
+                  value: '$musicCount',
+                  color: const Color(0xFFE0A89D),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _MyCommandAction(
+            icon: needsTodayAnswer
+                ? Icons.edit_note_rounded
+                : Icons.menu_book_rounded,
+            title: needsTodayAnswer ? '오늘 답 이어가기' : '질문 기록 열기',
+            body: needsTodayAnswer
+                ? 'DAY ${controller.todayQuestion.day}이 비어 있어요.'
+                : '지나온 답을 다시 볼 수 있어요.',
+            onTap: needsTodayAnswer
+                ? controller.activateHomeProgressSummaryAction
+                : () => controller.goTo(AlagagiRoute.archive),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MyCommandMetric extends StatelessWidget {
+  const _MyCommandMetric({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 68,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.13)),
+        borderRadius: BorderRadius.circular(17),
+      ),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 9),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: sans(
+              size: 10.5,
+              color: Colors.white.withValues(alpha: 0.63),
+              weight: FontWeight.w800,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: serif(
+              context,
+              size: 24,
+              weight: FontWeight.w800,
+              color: color,
+              height: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MyCommandAction extends StatelessWidget {
+  const _MyCommandAction({
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.white.withValues(alpha: 0.13)),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          padding: const EdgeInsets.fromLTRB(13, 12, 12, 12),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFD797).withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                alignment: Alignment.center,
+                child: Icon(icon, size: 19, color: const Color(0xFFEFD797)),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: sans(
+                        size: 13.4,
+                        weight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      body,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: sans(
+                        size: 11.4,
+                        color: Colors.white.withValues(alpha: 0.66),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 9),
+              const Icon(
+                Icons.arrow_forward_rounded,
+                size: 18,
+                color: Color(0xFFEFD797),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -423,7 +696,7 @@ class _MyProfileSummaryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${controller.state.partner.nickname}과 알아가는 비공개 공간에 들어와 있어요.',
+                      '${controller.state.partner.nickname}과 함께 쓰는 둘만의 전용 공간에 들어와 있어요.',
                       style: sans(
                         size: 12.5,
                         color: AlagagiColors.muted,

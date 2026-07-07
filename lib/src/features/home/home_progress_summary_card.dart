@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
+import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
 class HomeProgressSummaryCard extends StatelessWidget {
@@ -17,28 +18,51 @@ class HomeProgressSummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '오늘의 작은 흐름',
-                  style: serif(context, size: 16, weight: FontWeight.w800),
+          Container(
+            decoration: BoxDecoration(
+              color: AlagagiColors.midnight,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            padding: const EdgeInsets.fromLTRB(15, 14, 14, 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.route_rounded,
+                    size: 18,
+                    color: Color(0xFFEFD797),
+                  ),
                 ),
-              ),
-              Text(
-                '우리 상태판',
-                style: sans(
-                  size: 11,
-                  weight: FontWeight.w800,
-                  color: AlagagiColors.rose,
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Text(
+                    '오늘의 작은 흐름',
+                    style: serif(
+                      context,
+                      size: 17,
+                      weight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                AlagagiSmallBadge(label: '우리 상태판', dark: true),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           for (var index = 0; index < summary.items.length; index++) ...[
             if (index > 0) const SizedBox(height: 8),
-            _HomeProgressSummaryRow(item: summary.items[index]),
+            _HomeProgressSummaryRow(
+              item: summary.items[index],
+              isLast: index == summary.items.length - 1,
+            ),
           ],
           if (summary.primaryAction != null) ...[
             const SizedBox(height: 10),
@@ -65,23 +89,31 @@ class _HomeSummaryCardContainer extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AlagagiColors.paper, AlagagiColors.warm],
+          colors: [AlagagiColors.creamPanel, AlagagiColors.paper],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border.all(color: AlagagiColors.line),
-        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0x33B99856)),
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0F2F2E2A),
+            blurRadius: 20,
+            offset: Offset(0, 10),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.fromLTRB(17, 17, 17, 15),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 15),
       child: child,
     );
   }
 }
 
 class _HomeProgressSummaryRow extends StatelessWidget {
-  const _HomeProgressSummaryRow({required this.item});
+  const _HomeProgressSummaryRow({required this.item, required this.isLast});
 
   final HomeProgressSummaryItem item;
+  final bool isLast;
 
   @override
   Widget build(BuildContext context) {
@@ -92,19 +124,34 @@ class _HomeProgressSummaryRow extends StatelessWidget {
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(16),
       ),
-      padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
+      padding: const EdgeInsets.fromLTRB(11, 11, 12, 11),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: _summaryToneFill(item.tone),
-              borderRadius: BorderRadius.circular(13),
-              border: Border.all(color: AlagagiColors.line),
-            ),
-            alignment: Alignment.center,
-            child: Icon(_summaryIcon(item.id), size: 17, color: color),
+          Column(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: _summaryToneFill(item.tone),
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(color: AlagagiColors.line),
+                ),
+                alignment: Alignment.center,
+                child: Icon(_summaryIcon(item.id), size: 17, color: color),
+              ),
+              if (!isLast)
+                Container(
+                  width: 2,
+                  height: 18,
+                  margin: const EdgeInsets.only(top: 6),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(width: 10),
           Expanded(

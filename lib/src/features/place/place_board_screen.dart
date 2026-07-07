@@ -104,6 +104,12 @@ class _PlaceBoardScreenState extends State<PlaceBoardScreen> {
           ],
         ),
         const SizedBox(height: 14),
+        _PlaceRouteBoard(
+          totalCount: places.length,
+          mutualCount: mutualCount,
+          filteredCount: filteredPlaces.length,
+        ),
+        const SizedBox(height: 14),
         if (_mode == _PlaceBoardMode.map)
           _PlaceMapPreview(
             controller: controller,
@@ -281,6 +287,176 @@ class _PlaceModeButton extends StatelessWidget {
   }
 }
 
+class _PlaceRouteBoard extends StatelessWidget {
+  const _PlaceRouteBoard({
+    required this.totalCount,
+    required this.mutualCount,
+    required this.filteredCount,
+  });
+
+  final int totalCount;
+  final int mutualCount;
+  final int filteredCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2E332B), Color(0xFF5F7156)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1F2F2E2A),
+            blurRadius: 24,
+            offset: Offset(0, 13),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.13),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.13),
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.explore_rounded,
+                  size: 21,
+                  color: Color(0xFFEFD797),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'DATE ROUTE BOARD',
+                      style: sans(
+                        size: 10.2,
+                        weight: FontWeight.w900,
+                        color: const Color(0xFFEFD797),
+                        letterSpacing: 1.6,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      totalCount == 0
+                          ? '첫 데이트 후보를 비워뒀어요'
+                          : '$totalCount곳의 후보가 모였어요',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: serif(
+                        context,
+                        size: 19,
+                        weight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          Row(
+            children: [
+              Expanded(
+                child: _PlaceRouteMetric(
+                  label: '담은 곳',
+                  value: '$totalCount',
+                  color: const Color(0xFFEFD797),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _PlaceRouteMetric(
+                  label: '서로 관심',
+                  value: '$mutualCount',
+                  color: const Color(0xFFD8A49A),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _PlaceRouteMetric(
+                  label: '현재 보기',
+                  value: '$filteredCount',
+                  color: const Color(0xFFCFE0C8),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlaceRouteMetric extends StatelessWidget {
+  const _PlaceRouteMetric({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 70,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.13)),
+        borderRadius: BorderRadius.circular(17),
+      ),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 9),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: sans(
+              size: 10.5,
+              color: Colors.white.withValues(alpha: 0.64),
+              weight: FontWeight.w800,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: serif(
+              context,
+              size: 24,
+              weight: FontWeight.w800,
+              color: color,
+              height: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PlaceBoardFocusSummary extends StatelessWidget {
   const _PlaceBoardFocusSummary({
     required this.totalCount,
@@ -294,25 +470,75 @@ class _PlaceBoardFocusSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AlagagiPaperCard(
-      radius: 18,
-      padding: const EdgeInsets.all(14),
-      child: Row(
+    return Container(
+      decoration: BoxDecoration(
+        color: AlagagiColors.creamPanel,
+        border: Border.all(color: const Color(0x33B99856)),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: AlagagiQuietMetric(label: '전체 장소', value: '$totalCount'),
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AlagagiColors.goldSoft,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.view_agenda_outlined,
+                  size: 19,
+                  color: AlagagiColors.gold,
+                ),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '보드 중심 보기',
+                      style: serif(context, size: 17, weight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '지도보다 후보 카드와 관심 상태를 먼저 볼 수 있어요.',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: sans(size: 11.6, color: AlagagiColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: AlagagiQuietMetric(
-              label: '서로 관심',
-              value: '$mutualCount',
-              muted: mutualCount == 0,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: AlagagiQuietMetric(label: '현재 보기', value: '$filteredCount'),
+          const SizedBox(height: 13),
+          Row(
+            children: [
+              Expanded(
+                child: AlagagiQuietMetric(label: '전체 장소', value: '$totalCount'),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: AlagagiQuietMetric(
+                  label: '서로 관심',
+                  value: '$mutualCount',
+                  muted: mutualCount == 0,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: AlagagiQuietMetric(
+                  label: '현재 보기',
+                  value: '$filteredCount',
+                ),
+              ),
+            ],
           ),
         ],
       ),

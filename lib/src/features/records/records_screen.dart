@@ -51,62 +51,10 @@ class RecordsScreen extends StatelessWidget {
         const SizedBox(height: 16),
         QuestionViewSwitch(controller: controller),
         const SizedBox(height: 18),
-        Container(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AlagagiColors.softSage, AlagagiColors.sagePanel],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(24),
-          ),
-          padding: const EdgeInsets.all(26),
-          child: Column(
-            children: [
-              AlagagiAvatarStack(
-                meAvatar: controller.state.me.avatar,
-                partnerAvatar: controller.state.partner.avatar,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                '함께 답한 질문',
-                style: sans(
-                  size: 11,
-                  weight: FontWeight.w800,
-                  color: const Color(0xFF5A6650),
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 5),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(text: '${insight.matchCount}'),
-                    TextSpan(
-                      text: '개',
-                      style: serif(
-                        context,
-                        size: 18,
-                        weight: FontWeight.w700,
-                        color: const Color(0xFF5A6650),
-                      ),
-                    ),
-                  ],
-                ),
-                style: serif(
-                  context,
-                  size: 46,
-                  weight: FontWeight.w800,
-                  color: AlagagiColors.sageDeep,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                isEmpty ? '기록은 답이 쌓이면 자연스럽게 만들어져요.' : '답변 속 공통점이 조금씩 보여요',
-                style: sans(size: 12, color: const Color(0xFF5A6650)),
-              ),
-            ],
-          ),
+        _RecordsJournalPanel(
+          controller: controller,
+          insight: insight,
+          isEmpty: isEmpty,
         ),
         const SizedBox(height: 24),
         const AlagagiSectionLabel('겹치는 키워드'),
@@ -139,6 +87,234 @@ class RecordsScreen extends StatelessWidget {
       ],
     );
   }
+}
+
+class _RecordsJournalPanel extends StatelessWidget {
+  const _RecordsJournalPanel({
+    required this.controller,
+    required this.insight,
+    required this.isEmpty,
+  });
+
+  final AlagagiController controller;
+  final RelationshipInsight insight;
+  final bool isEmpty;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AlagagiColors.midnight,
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1F2F2E2A),
+            blurRadius: 26,
+            offset: Offset(0, 14),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Positioned.fill(child: CustomPaint(painter: _RecordsGridPainter())),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 17),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AlagagiAvatarStack(
+                      meAvatar: controller.state.me.avatar,
+                      partnerAvatar: controller.state.partner.avatar,
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'COUPLE JOURNAL',
+                            style: sans(
+                              size: 10.2,
+                              weight: FontWeight.w900,
+                              color: const Color(0xFFEFD797),
+                              letterSpacing: 1.7,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '대화가 쌓인 자리',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: serif(
+                              context,
+                              size: 21,
+                              weight: FontWeight.w800,
+                              color: Colors.white,
+                              height: 1.25,
+                            ),
+                          ),
+                          const SizedBox(height: 7),
+                          Text(
+                            isEmpty
+                                ? '기록은 답이 쌓이면 자연스럽게 만들어져요.'
+                                : '답변 속 공통점이 조금씩 보여요',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: sans(
+                              size: 12.2,
+                              color: Colors.white.withValues(alpha: 0.68),
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 17),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.12),
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(15, 14, 15, 14),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '함께 답한 질문',
+                              style: sans(
+                                size: 11,
+                                weight: FontWeight.w900,
+                                color: const Color(0xFFEFD797),
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text.rich(
+                              TextSpan(
+                                children: [
+                                  TextSpan(text: '${insight.matchCount}'),
+                                  TextSpan(
+                                    text: '개',
+                                    style: serif(
+                                      context,
+                                      size: 18,
+                                      weight: FontWeight.w700,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.72,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              style: serif(
+                                context,
+                                size: 43,
+                                weight: FontWeight.w800,
+                                color: Colors.white,
+                                height: 1,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          _RecordsMiniMetric(
+                            label: '기록된 날',
+                            value: '${insight.daysTogether}일',
+                          ),
+                          const SizedBox(height: 8),
+                          _RecordsMiniMetric(
+                            label: '주고받은 질문',
+                            value: '${insight.questionCount}개',
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecordsMiniMetric extends StatelessWidget {
+  const _RecordsMiniMetric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minWidth: 94),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: sans(size: 10, color: Colors.white.withValues(alpha: 0.58)),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: sans(
+              size: 12,
+              weight: FontWeight.w900,
+              color: const Color(0xFFEFD797),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecordsGridPainter extends CustomPainter {
+  const _RecordsGridPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.05)
+      ..strokeWidth = 1;
+    for (var x = 18.0; x < size.width; x += 42) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (var y = 22.0; y < size.height; y += 42) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _RecordsGridPainter oldDelegate) => false;
 }
 
 class _StatsGrid extends StatelessWidget {

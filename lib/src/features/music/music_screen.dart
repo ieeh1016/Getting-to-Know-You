@@ -75,6 +75,8 @@ class MusicScreen extends StatelessWidget {
               _MusicAddInlineButton(controller: controller),
           ],
         ),
+        const SizedBox(height: 12),
+        _MusicListeningDeck(controller: controller),
         if (totalCount > 0) ...[
           const SizedBox(height: 12),
           _MusicLibrarySummaryCard(controller: controller),
@@ -98,6 +100,231 @@ class MusicScreen extends StatelessWidget {
       ],
     );
   }
+}
+
+class _MusicListeningDeck extends StatelessWidget {
+  const _MusicListeningDeck({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final totalCount = controller.musicNotes.length;
+    final unlistenedCount = controller.unlistenedMusicNoteCount;
+    final mutualCount = controller.mutualListenedMusicNoteCount;
+    final latest = controller.musicNotes.isEmpty
+        ? null
+        : controller.musicNotes.first;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF262723),
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1F2F2E2A),
+            blurRadius: 26,
+            offset: Offset(0, 14),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Positioned.fill(child: CustomPaint(painter: _MusicWavePainter())),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'LISTENING ROOM',
+                            style: sans(
+                              size: 10.2,
+                              weight: FontWeight.w900,
+                              color: const Color(0xFFEFD797),
+                              letterSpacing: 1.7,
+                            ),
+                          ),
+                          const SizedBox(height: 7),
+                          Text(
+                            '둘의 플레이리스트',
+                            style: serif(
+                              context,
+                              size: 22,
+                              weight: FontWeight.w800,
+                              color: Colors.white,
+                              height: 1.25,
+                            ),
+                          ),
+                          const SizedBox(height: 7),
+                          Text(
+                            latest == null
+                                ? '처음 남기는 한 곡이 둘의 분위기를 만들어요.'
+                                : '최근에는 ${latest.title}이 둘의 큐에 올라와 있어요.',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: sans(
+                              size: 12.2,
+                              color: Colors.white.withValues(alpha: 0.68),
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Row(
+                      children: const [
+                        _MusicCover(
+                          color: AlagagiColors.sage,
+                          size: 52,
+                          darkBorder: true,
+                        ),
+                        _DeckOverlapCover(color: AlagagiColors.lavender),
+                        _DeckOverlapCover(color: Color(0xFFB18472)),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _MusicDeckMetric(
+                        label: '남긴 곡',
+                        value: '$totalCount',
+                        color: const Color(0xFFEFD797),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _MusicDeckMetric(
+                        label: '아직 큐',
+                        value: '$unlistenedCount',
+                        color: const Color(0xFFBFD0B8),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _MusicDeckMetric(
+                        label: '같이 들음',
+                        value: '$mutualCount',
+                        color: const Color(0xFFE0A89D),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DeckOverlapCover extends StatelessWidget {
+  const _DeckOverlapCover({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.translate(
+      offset: const Offset(-12, 0),
+      child: _MusicCover(color: color, size: 52, darkBorder: true),
+    );
+  }
+}
+
+class _MusicDeckMetric extends StatelessWidget {
+  const _MusicDeckMetric({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 72,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.09),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        borderRadius: BorderRadius.circular(17),
+      ),
+      padding: const EdgeInsets.fromLTRB(11, 10, 11, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: sans(
+              size: 10.6,
+              color: Colors.white.withValues(alpha: 0.63),
+              weight: FontWeight.w800,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: serif(
+              context,
+              size: 25,
+              weight: FontWeight.w800,
+              color: color,
+              height: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MusicWavePainter extends CustomPainter {
+  const _MusicWavePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..color = Colors.white.withValues(alpha: 0.08);
+    for (var index = 0; index < 7; index++) {
+      final path = Path();
+      final y = 34.0 + (index * 24);
+      path.moveTo(-20, y);
+      path.cubicTo(
+        size.width * 0.28,
+        y - 24,
+        size.width * 0.58,
+        y + 24,
+        size.width + 20,
+        y - 4,
+      );
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _MusicWavePainter oldDelegate) => false;
 }
 
 class _MusicLibrarySummaryCard extends StatelessWidget {
@@ -1775,16 +2002,21 @@ class _MusicCommentEditPanelState extends State<_MusicCommentEditPanel> {
 }
 
 class _MusicCover extends StatelessWidget {
-  const _MusicCover({required this.color, this.darkBorder = false});
+  const _MusicCover({
+    required this.color,
+    this.darkBorder = false,
+    this.size = 50,
+  });
 
   final Color color;
   final bool darkBorder;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 50,
-      height: 50,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [color, Color.alphaBlend(Colors.white54, color)],
@@ -1795,11 +2027,11 @@ class _MusicCover extends StatelessWidget {
           color: darkBorder ? const Color(0xFF2F2F2B) : AlagagiColors.line,
           width: darkBorder ? 2 : 1,
         ),
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(size * 0.3),
       ),
       child: Icon(
         Icons.music_note_rounded,
-        size: 22,
+        size: size * 0.44,
         color: darkBorder ? Colors.white : AlagagiColors.sageDeep,
       ),
     );
