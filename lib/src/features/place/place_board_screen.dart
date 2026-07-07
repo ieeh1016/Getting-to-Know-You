@@ -75,6 +75,35 @@ class _PlaceBoardScreenState extends State<PlaceBoardScreen> {
           onChanged: (mode) => setState(() => _mode = mode),
         ),
         const SizedBox(height: 14),
+        AlagagiFeatureHero(
+          eyebrow: 'DATE MAP',
+          title: '우리 장소 보드',
+          subtitle: '언젠가 같이 갈 곳과 서로 관심 있는 장소를 데이트 후보로 모아둬요.',
+          icon: Icons.map_rounded,
+          gradient: const [
+            Color(0xFF2F2E2A),
+            Color(0xFF5F7156),
+            Color(0xFFB99856),
+          ],
+          stats: [
+            AlagagiHeroStat(
+              icon: Icons.place_rounded,
+              label: '담은 장소',
+              value: '${places.length}곳',
+            ),
+            AlagagiHeroStat(
+              icon: Icons.favorite_rounded,
+              label: '서로 관심',
+              value: '$mutualCount곳',
+            ),
+            AlagagiHeroStat(
+              icon: Icons.filter_alt_rounded,
+              label: '현재 보기',
+              value: '${filteredPlaces.length}곳',
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
         if (_mode == _PlaceBoardMode.map)
           _PlaceMapPreview(
             controller: controller,

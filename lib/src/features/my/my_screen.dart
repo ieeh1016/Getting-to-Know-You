@@ -61,6 +61,36 @@ class MyScreen extends StatelessWidget {
       bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
         const AlagagiTopBar(title: '마이', trailing: ''),
+        const SizedBox(height: 16),
+        AlagagiFeatureHero(
+          eyebrow: 'OUR SPACE',
+          title: '우리 공간 설정',
+          subtitle:
+              '${controller.relationshipDayLabel}, 내가 남긴 기록과 다음 행동을 한곳에서 정리해요.',
+          icon: Icons.tune_rounded,
+          gradient: const [
+            Color(0xFF2F2E2A),
+            Color(0xFF9F8AB6),
+            Color(0xFFB18472),
+          ],
+          stats: [
+            AlagagiHeroStat(
+              icon: Icons.question_answer_rounded,
+              label: '질문 답',
+              value: '${answeredItems.length}개',
+            ),
+            AlagagiHeroStat(
+              icon: Icons.badge_rounded,
+              label: '서로 노트',
+              value: '${myProfileCard.filledCount}칸',
+            ),
+            AlagagiHeroStat(
+              icon: Icons.music_note_rounded,
+              label: '음악 노트',
+              value: '${myMusicNotes.length}곡',
+            ),
+          ],
+        ),
         const SizedBox(height: 18),
         Column(
           key: myDashboardKey,

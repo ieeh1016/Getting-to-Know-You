@@ -9,9 +9,208 @@ class AlagagiSectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: sans(size: 11, color: AlagagiColors.muted, letterSpacing: 3),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 18,
+          height: 2,
+          decoration: BoxDecoration(
+            color: AlagagiColors.rose,
+            borderRadius: BorderRadius.circular(999),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: sans(
+              size: 10.8,
+              color: const Color(0xFF6F6A60),
+              weight: FontWeight.w900,
+              letterSpacing: 2.2,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class AlagagiHeroStat {
+  const AlagagiHeroStat({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+}
+
+class AlagagiFeatureHero extends StatelessWidget {
+  const AlagagiFeatureHero({
+    super.key,
+    required this.eyebrow,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    this.stats = const [],
+    this.gradient = const [AlagagiColors.midnight, AlagagiColors.moss],
+  });
+
+  final String eyebrow;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final List<AlagagiHeroStat> stats;
+  final List<Color> gradient;
+
+  @override
+  Widget build(BuildContext context) {
+    final visibleStats = stats.take(3).toList();
+    return Container(
+      decoration: BoxDecoration(
+        color: gradient.first,
+        borderRadius: BorderRadius.circular(26),
+        gradient: LinearGradient(
+          colors: gradient,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1F2F2E2A),
+            blurRadius: 24,
+            offset: Offset(0, 14),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.14),
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 11,
+                  vertical: 6,
+                ),
+                child: Text(
+                  eyebrow,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: sans(
+                    size: 10.2,
+                    weight: FontWeight.w900,
+                    color: const Color(0xFFFFF4DF),
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Icon(icon, size: 21, color: const Color(0xFFEFD797)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Text(
+            title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: serif(
+              context,
+              size: 24,
+              weight: FontWeight.w800,
+              height: 1.32,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 9),
+          Text(
+            subtitle,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: sans(
+              size: 12.5,
+              color: Colors.white.withValues(alpha: 0.72),
+              height: 1.55,
+            ),
+          ),
+          if (visibleStats.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                for (var index = 0; index < visibleStats.length; index++) ...[
+                  if (index > 0) const SizedBox(width: 8),
+                  Expanded(child: _AlagagiFeatureHeroStat(visibleStats[index])),
+                ],
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AlagagiFeatureHeroStat extends StatelessWidget {
+  const _AlagagiFeatureHeroStat(this.stat);
+
+  final AlagagiHeroStat stat;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: '${stat.label} ${stat.value}',
+      child: Container(
+        height: 58,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.13),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.13)),
+        ),
+        padding: const EdgeInsets.fromLTRB(9, 8, 9, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(stat.icon, size: 14, color: const Color(0xFFEFD797)),
+            const Spacer(),
+            Text(
+              stat.value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: sans(
+                size: 12.2,
+                weight: FontWeight.w900,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -177,12 +376,21 @@ class AlagagiPaperCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: dashed ? Colors.transparent : AlagagiColors.paper,
+        color: dashed ? Colors.transparent : AlagagiColors.pearl,
         border: Border.all(
           color: highlightedBorder ?? AlagagiColors.line,
           width: dashed ? 1.5 : 1,
         ),
         borderRadius: BorderRadius.circular(radius),
+        boxShadow: dashed
+            ? null
+            : const [
+                BoxShadow(
+                  color: Color(0x0F2F2E2A),
+                  blurRadius: 18,
+                  offset: Offset(0, 8),
+                ),
+              ],
       ),
       padding: padding,
       child: child,
@@ -197,14 +405,42 @@ class AlagagiEmptyStateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AlagagiPaperCard(
-      radius: 18,
-      padding: const EdgeInsets.all(18),
-      dashed: true,
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: sans(size: 13, color: AlagagiColors.muted, height: 1.6),
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFBF7EF),
+        border: Border.all(color: const Color(0x33B99856)),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      padding: const EdgeInsets.fromLTRB(18, 17, 18, 17),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(13),
+            ),
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.auto_awesome_rounded,
+              size: 17,
+              color: AlagagiColors.gold,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: sans(
+                size: 12.8,
+                color: const Color(0xFF706A5F),
+                height: 1.55,
+                weight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -229,11 +465,20 @@ class AlagagiFilterPill extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: selected ? AlagagiColors.sageDeep : Colors.white,
+          color: selected ? AlagagiColors.midnight : Colors.white,
           border: Border.all(
-            color: selected ? AlagagiColors.sageDeep : AlagagiColors.line,
+            color: selected ? AlagagiColors.midnight : AlagagiColors.line,
           ),
           borderRadius: BorderRadius.circular(20),
+          boxShadow: selected
+              ? const [
+                  BoxShadow(
+                    color: Color(0x172F2E2A),
+                    blurRadius: 10,
+                    offset: Offset(0, 5),
+                  ),
+                ]
+              : null,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Text(
@@ -259,8 +504,10 @@ class AlagagiKeywordChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AlagagiColors.paper,
-        border: leaf ? Border.all(color: AlagagiColors.line) : null,
+        color: leaf ? AlagagiColors.creamPanel : AlagagiColors.paper,
+        border: Border.all(
+          color: leaf ? const Color(0x33B99856) : AlagagiColors.line,
+        ),
         borderRadius: BorderRadius.circular(20),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -284,7 +531,8 @@ class AlagagiSmallBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: dark
             ? Colors.white.withValues(alpha: 0.14)
-            : const Color(0xFFF0F2EB),
+            : const Color(0xFFF4ECD9),
+        border: dark ? null : Border.all(color: const Color(0x22B99856)),
         borderRadius: BorderRadius.circular(20),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
@@ -292,7 +540,8 @@ class AlagagiSmallBadge extends StatelessWidget {
         label,
         style: sans(
           size: 10.5,
-          color: dark ? Colors.white : AlagagiColors.sageDeep,
+          weight: FontWeight.w800,
+          color: dark ? Colors.white : const Color(0xFF7A6227),
         ),
       ),
     );
@@ -315,7 +564,10 @@ class AlagagiQuietMetric extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: muted ? const Color(0xFFF8F8F4) : const Color(0xFFF1F4EC),
+        color: muted ? const Color(0xFFF8F8F4) : const Color(0xFFF4ECD9),
+        border: Border.all(
+          color: muted ? AlagagiColors.line : const Color(0x22B99856),
+        ),
         borderRadius: BorderRadius.circular(14),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
@@ -330,7 +582,7 @@ class AlagagiQuietMetric extends StatelessWidget {
               context,
               size: 19,
               weight: FontWeight.w800,
-              color: muted ? AlagagiColors.muted : AlagagiColors.sageDeep,
+              color: muted ? AlagagiColors.muted : const Color(0xFF7A6227),
             ),
           ),
         ],
@@ -348,7 +600,8 @@ class AlagagiSimilarityBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFEEF1E8),
+        color: const Color(0xFFF4ECD9),
+        border: Border.all(color: const Color(0x22B99856)),
         borderRadius: BorderRadius.circular(20),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),

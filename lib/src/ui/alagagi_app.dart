@@ -273,7 +273,18 @@ class _PhoneShell extends StatelessWidget {
           width: double.infinity,
           height: double.infinity,
           margin: EdgeInsets.zero,
-          decoration: const BoxDecoration(color: AlagagiColors.appBackground),
+          decoration: const BoxDecoration(
+            color: AlagagiColors.appBackground,
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFFFBF7EF),
+                AlagagiColors.appBackground,
+                Color(0xFFEAE6DA),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
           child: SafeArea(child: child),
         ),
       );
@@ -292,6 +303,15 @@ class _PhoneShell extends StatelessWidget {
           margin: const EdgeInsets.symmetric(vertical: 24),
           decoration: BoxDecoration(
             color: AlagagiColors.appBackground,
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFFFBF7EF),
+                AlagagiColors.appBackground,
+                Color(0xFFEAE6DA),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
             borderRadius: BorderRadius.circular(40),
             border: Border.all(color: Colors.white, width: 8),
             boxShadow: const [

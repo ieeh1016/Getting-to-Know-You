@@ -20,6 +20,11 @@ class AlagagiColors {
   static const goldSoft = Color(0xFFF4ECD9);
   static const blue = Color(0xFF718EA1);
   static const blueSoft = Color(0xFFE7EEF1);
+  static const midnight = Color(0xFF2B2A25);
+  static const moss = Color(0xFF55654F);
+  static const blush = Color(0xFFD8A49A);
+  static const pearl = Color(0xFFFFFCF4);
+  static const creamPanel = Color(0xFFFBF7EE);
   static const warm = Color(0xFFF8F7F2);
   static const softSage = sageSoft;
   static const sagePanel = Color(0xFFD9E2CF);

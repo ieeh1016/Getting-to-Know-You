@@ -18,11 +18,35 @@ class RecordsScreen extends StatelessWidget {
     return AlagagiScreenScroll(
       bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
-        Text('질문', style: serif(context, size: 23, weight: FontWeight.w800)),
-        const SizedBox(height: 4),
-        Text(
-          '답변에서 보이는 작은 공통점',
-          style: sans(size: 12.5, color: AlagagiColors.muted),
+        AlagagiFeatureHero(
+          eyebrow: 'OUR CONVERSATION',
+          title: '우리 대화 기록',
+          subtitle: isEmpty
+              ? '답이 쌓이면 공통점과 발자취가 자연스럽게 보여요.'
+              : '답변에서 보이는 작은 공통점과 함께한 흐름을 모았어요.',
+          icon: Icons.timeline_rounded,
+          gradient: const [
+            Color(0xFF2F2E2A),
+            Color(0xFF718EA1),
+            Color(0xFF9F8AB6),
+          ],
+          stats: [
+            AlagagiHeroStat(
+              icon: Icons.calendar_month_rounded,
+              label: '기록된 날',
+              value: '${insight.daysTogether}일',
+            ),
+            AlagagiHeroStat(
+              icon: Icons.question_answer_rounded,
+              label: '질문',
+              value: '${insight.questionCount}개',
+            ),
+            AlagagiHeroStat(
+              icon: Icons.auto_awesome_rounded,
+              label: '닮은 답',
+              value: '${insight.matchCount}번',
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         QuestionViewSwitch(controller: controller),

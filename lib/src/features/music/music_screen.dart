@@ -25,11 +25,33 @@ class MusicScreen extends StatelessWidget {
     return AlagagiScreenScroll(
       bottomNavigation: AlagagiBottomNav(controller: controller),
       children: [
-        Text('음악 노트', style: serif(context, size: 23, weight: FontWeight.w800)),
-        const SizedBox(height: 4),
-        Text(
-          '각자의 요즘을 한 곡씩 조용히 남겨요',
-          style: sans(size: 12.5, color: AlagagiColors.muted),
+        AlagagiFeatureHero(
+          eyebrow: 'OUR PLAYLIST',
+          title: '음악 노트',
+          subtitle: '각자의 요즘을 한 곡씩 남기고, 둘 다 들은 순간을 작은 플레이리스트로 쌓아요.',
+          icon: Icons.graphic_eq_rounded,
+          gradient: const [
+            AlagagiColors.midnight,
+            Color(0xFF718EA1),
+            Color(0xFFB78378),
+          ],
+          stats: [
+            AlagagiHeroStat(
+              icon: Icons.library_music_rounded,
+              label: '전체 노트',
+              value: '$totalCount곡',
+            ),
+            AlagagiHeroStat(
+              icon: Icons.headphones_rounded,
+              label: '아직 들을 곡',
+              value: '${controller.unlistenedMusicNoteCount}곡',
+            ),
+            AlagagiHeroStat(
+              icon: Icons.favorite_rounded,
+              label: '둘 다 들음',
+              value: '${controller.mutualListenedMusicNoteCount}곡',
+            ),
+          ],
         ),
         if (totalCount == 0) ...[
           const SizedBox(height: 18),
