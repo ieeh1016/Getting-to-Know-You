@@ -88,6 +88,11 @@ class _KakaoMapPanelState extends State<KakaoMapPanel> {
         ..style.margin = '0'
         ..style.padding = '0'
         ..style.overflow = 'hidden';
+      element.style.setProperty('background-color', '#F7FCFF');
+      element.style.setProperty('color-scheme', 'light');
+      element.style.setProperty('filter', 'none');
+      element.style.setProperty('mix-blend-mode', 'normal');
+      element.style.setProperty('opacity', '1');
       return element;
     });
   }

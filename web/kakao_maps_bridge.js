@@ -159,6 +159,14 @@
     });
   }
 
+  function applyLightMapSurface(element) {
+    element.style.backgroundColor = '#F7FCFF';
+    element.style.colorScheme = 'light';
+    element.style.filter = 'none';
+    element.style.mixBlendMode = 'normal';
+    element.style.opacity = '1';
+  }
+
   function clearMarkers(instance) {
     if (!instance || !instance.markers) {
       return;
@@ -234,6 +242,7 @@
           'MAP_CONTAINER_MISSING'
         );
       }
+      applyLightMapSurface(element);
       containMapScroll(element);
 
       try {
@@ -250,6 +259,9 @@
             center,
             level,
           });
+          if (kakao.maps.MapTypeId && kakao.maps.MapTypeId.ROADMAP) {
+            map.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
+          }
           map.addControl(
             new kakao.maps.ZoomControl(),
             kakao.maps.ControlPosition.RIGHT
