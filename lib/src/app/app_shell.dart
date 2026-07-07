@@ -72,8 +72,15 @@ class AlagagiBottomNav extends StatelessWidget {
     return Container(
       key: bottomNavigationKey,
       decoration: BoxDecoration(
-        color: AlagagiColors.paper.withValues(alpha: 0.94),
-        border: const Border(top: BorderSide(color: AlagagiColors.line)),
+        color: const Color(0xF2F5FCFF),
+        border: const Border(top: BorderSide(color: Color(0x6686B9D6))),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x18315F7A),
+            blurRadius: 18,
+            offset: Offset(0, -8),
+          ),
+        ],
       ),
       padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
       child: Row(
@@ -244,8 +251,8 @@ class _NavItem extends StatelessWidget {
         duration: const Duration(milliseconds: 160),
         constraints: const BoxConstraints(minHeight: 42),
         decoration: BoxDecoration(
-          color: selected ? AlagagiColors.sageSoft : Colors.transparent,
-          border: selected ? Border.all(color: AlagagiColors.line) : null,
+          color: selected ? AlagagiColors.skyPanel : Colors.transparent,
+          border: selected ? Border.all(color: const Color(0x6686B9D6)) : null,
           borderRadius: BorderRadius.circular(16),
         ),
         padding: const EdgeInsets.symmetric(vertical: 5),
@@ -258,7 +265,9 @@ class _NavItem extends StatelessWidget {
                 Icon(
                   icon,
                   size: 19,
-                  color: selected ? AlagagiColors.ink : AlagagiColors.muted,
+                  color: selected
+                      ? const Color(0xFF315F7A)
+                      : const Color(0xFF6F8794),
                 ),
                 if (showBadge)
                   Positioned(
@@ -269,9 +278,9 @@ class _NavItem extends StatelessWidget {
                       height: 7,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFFB18472),
+                        color: const Color(0xFF5B9DBF),
                         border: Border.all(
-                          color: AlagagiColors.paper,
+                          color: const Color(0xFFF5FCFF),
                           width: 1.2,
                         ),
                       ),
@@ -285,7 +294,9 @@ class _NavItem extends StatelessWidget {
               style: sans(
                 size: 10,
                 weight: selected ? FontWeight.w700 : FontWeight.w400,
-                color: selected ? AlagagiColors.sageDeep : AlagagiColors.muted,
+                color: selected
+                    ? const Color(0xFF315F7A)
+                    : const Color(0xFF6F8794),
               ),
             ),
           ],

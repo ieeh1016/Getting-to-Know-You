@@ -133,8 +133,8 @@ class HomeProgressStrip extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          const Positioned(right: 22, top: 20, child: _HeroStripe(width: 74)),
-          const Positioned(right: 38, top: 34, child: _HeroStripe(width: 44)),
+          const Positioned(right: 24, top: 70, child: _HeroStripe(width: 58)),
+          const Positioned(right: 42, top: 84, child: _HeroStripe(width: 32)),
           Padding(
             padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
             child: Column(
@@ -264,10 +264,11 @@ class _HeroProfilePill extends StatelessWidget {
     return Semantics(
       label: '$meAvatar $partnerAvatar $appTitle',
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 126),
+        height: 36,
+        constraints: const BoxConstraints(minWidth: 126, maxWidth: 142),
         decoration: BoxDecoration(
-          color: const Color(0x33FFFEFA),
-          border: Border.all(color: const Color(0x45FFFEFA)),
+          color: const Color(0x2EFFFEFA),
+          border: Border.all(color: const Color(0x66FFFEFA)),
           borderRadius: BorderRadius.circular(999),
           boxShadow: const [
             BoxShadow(
@@ -277,13 +278,13 @@ class _HeroProfilePill extends StatelessWidget {
             ),
           ],
         ),
-        padding: const EdgeInsets.fromLTRB(6, 5, 10, 5),
+        padding: const EdgeInsets.fromLTRB(5, 4, 11, 4),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
-              width: 46,
-              height: 26,
+              width: 58,
+              height: 28,
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -299,22 +300,22 @@ class _HeroProfilePill extends StatelessWidget {
                     fill: const Color(0xFFEAF7FD),
                     textColor: AlagagiColors.moss,
                   ),
-                  Positioned.fill(
-                    child: Center(
-                      child: Container(
-                        width: 17,
-                        height: 17,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEFF8FD),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0x88FFFEFA)),
-                        ),
-                        alignment: Alignment.center,
-                        child: const Icon(
-                          Icons.favorite_rounded,
-                          size: 10,
-                          color: Color(0xFF6BAACB),
-                        ),
+                  Positioned(
+                    left: 21,
+                    top: 7,
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5FCFF),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0x99FFFEFA)),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.favorite_rounded,
+                        size: 9,
+                        color: Color(0xFF6BAACB),
                       ),
                     ),
                   ),
@@ -328,7 +329,7 @@ class _HeroProfilePill extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: sans(
-                  size: 10.8,
+                  size: 11,
                   weight: FontWeight.w900,
                   color: AlagagiColors.paper,
                 ),
@@ -368,14 +369,27 @@ class _HeroAvatarToken extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: Text(
-          avatar,
+          _avatarGlyph(avatar),
           maxLines: 1,
           overflow: TextOverflow.clip,
-          style: sans(size: 12, weight: FontWeight.w900, color: textColor),
+          style: sans(
+            size: 11.5,
+            weight: FontWeight.w900,
+            color: textColor,
+            height: 1,
+          ),
         ),
       ),
     );
   }
+}
+
+String _avatarGlyph(String avatar) {
+  final runes = avatar.runes;
+  if (runes.isEmpty) {
+    return '';
+  }
+  return String.fromCharCodes(runes.take(1));
 }
 
 class _HeroSignalTile extends StatelessWidget {
