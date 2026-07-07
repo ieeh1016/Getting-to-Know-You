@@ -710,7 +710,7 @@ class _HomeMenuRow extends StatelessWidget {
         child: Container(
           constraints: const BoxConstraints(minHeight: 64),
           decoration: BoxDecoration(
-            color: enabled ? const Color(0xFFF8F8F4) : const Color(0xFFF1F0EB),
+            color: enabled ? const Color(0xFFF5FCFF) : const Color(0xFFEFF8FD),
             border: Border.all(color: AlagagiColors.line),
             borderRadius: BorderRadius.circular(17),
           ),

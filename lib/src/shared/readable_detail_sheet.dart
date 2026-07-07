@@ -64,7 +64,7 @@ void showReadableDetailSheet(
                     width: double.infinity,
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [Color(0xFFF7FAF2), AlagagiColors.paper],
+                        colors: [Color(0xFFEFF8FD), AlagagiColors.paper],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -211,7 +211,7 @@ class AlagagiOpenReadableIconButton extends StatelessWidget {
         width: 31,
         height: 31,
         decoration: BoxDecoration(
-          color: const Color(0xFFF1F4ED),
+          color: const Color(0xFFEFF8FD),
           border: Border.all(color: const Color(0x336F7F63)),
           borderRadius: BorderRadius.circular(999),
         ),
@@ -334,7 +334,7 @@ class _ReadableDetailBodyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFEFA),
+        color: const Color(0xFFF7FCFF),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(21),
         boxShadow: const [

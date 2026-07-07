@@ -85,7 +85,7 @@ class FirstVisitGuideOverlay extends StatelessWidget {
                                   horizontal: 10,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFEEF2EA),
+                                  color: const Color(0xFFEAF7FD),
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Text(
@@ -215,7 +215,7 @@ class _FirstVisitPathRow extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(minHeight: 62),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
+        color: const Color(0xFFF5FCFF),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(18),
       ),

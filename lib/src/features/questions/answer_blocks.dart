@@ -21,7 +21,7 @@ class QuestionSupportBlock extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
+        color: const Color(0xFFF5FCFF),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(17),
       ),
@@ -94,7 +94,7 @@ class AnswerCommentBox extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFEFA),
+        color: const Color(0xFFF7FCFF),
         border: Border.all(
           color: showEditor ? const Color(0x5C6F7F63) : AlagagiColors.line,
         ),
@@ -120,7 +120,7 @@ class AnswerCommentBox extends StatelessWidget {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0F2EB),
+                  color: const Color(0xFFEAF7FD),
                   border: Border.all(color: AlagagiColors.line),
                   shape: BoxShape.circle,
                 ),
@@ -232,7 +232,7 @@ class AnswerCommentBox extends StatelessWidget {
             const SizedBox(height: 12),
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFF8F8F4),
+                color: const Color(0xFFF5FCFF),
                 border: Border.all(color: const Color(0x336F7F63)),
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -519,7 +519,7 @@ class _EditedBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
+        color: const Color(0xFFF5FCFF),
         borderRadius: BorderRadius.circular(999),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -562,7 +562,7 @@ class AnswerPreviewBlock extends StatelessWidget {
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F8F4),
+          color: const Color(0xFFF5FCFF),
           border: Border.all(color: AlagagiColors.line),
           borderRadius: BorderRadius.circular(17),
         ),
@@ -828,7 +828,7 @@ class _AnswerCommentReplyPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
+        color: const Color(0xFFF5FCFF),
         border: Border.all(color: const Color(0x336F7F63)),
         borderRadius: BorderRadius.circular(14),
       ),
@@ -907,7 +907,7 @@ class _AnswerCommentReplyEditor extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
+        color: const Color(0xFFF5FCFF),
         border: Border.all(color: const Color(0x336F7F63)),
         borderRadius: BorderRadius.circular(16),
       ),

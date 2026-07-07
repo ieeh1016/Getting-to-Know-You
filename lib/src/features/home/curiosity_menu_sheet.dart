@@ -98,7 +98,7 @@ class _CuriositySheetContent extends StatelessWidget {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEEF2EA),
+                      color: const Color(0xFFEAF7FD),
                       border: Border.all(color: const Color(0x336F7F63)),
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -174,7 +174,7 @@ class _CuriosityBadge extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(minHeight: 26),
       decoration: BoxDecoration(
-        color: const Color(0xFFEEF2EA),
+        color: const Color(0xFFEAF7FD),
         borderRadius: BorderRadius.circular(999),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -291,7 +291,7 @@ class _SentCuriosityPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final partnerName = controller.state.partner.nickname;
     return _CuriosityPanel(
-      backgroundColor: const Color(0xFFF8F8F4),
+      backgroundColor: const Color(0xFFF5FCFF),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -346,7 +346,7 @@ class _CuriosityComposePanel extends StatelessWidget {
         isSaving && (targetId == null || targetId.startsWith('curiosity_'));
     if (pendingSent != null) {
       return _CuriosityPanel(
-        backgroundColor: const Color(0xFFFFFEFA),
+        backgroundColor: const Color(0xFFF7FCFF),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -386,7 +386,7 @@ class _CuriosityComposePanel extends StatelessWidget {
       );
     }
     return _CuriosityPanel(
-      backgroundColor: const Color(0xFFFFFEFA),
+      backgroundColor: const Color(0xFFF7FCFF),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -442,7 +442,7 @@ class _CuriosityHistoryPanel extends StatelessWidget {
         .length;
 
     return _CuriosityPanel(
-      backgroundColor: const Color(0xFFF8F8F4),
+      backgroundColor: const Color(0xFFF5FCFF),
       child: Column(
         key: curiosityHistoryPanelKey,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -454,7 +454,7 @@ class _CuriosityHistoryPanel extends StatelessWidget {
                 width: 30,
                 height: 30,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEEF2EA),
+                  color: const Color(0xFFEAF7FD),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.center,
@@ -548,7 +548,7 @@ class _CuriosityMetricChip extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFE4E2D9)),
+        border: Border.all(color: const Color(0xFFCFE6F1)),
         borderRadius: BorderRadius.circular(999),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
@@ -659,7 +659,7 @@ class _CuriosityHistoryRow extends StatelessWidget {
 class _CuriosityPanel extends StatelessWidget {
   const _CuriosityPanel({
     required this.child,
-    this.backgroundColor = const Color(0xFFFFFEFA),
+    this.backgroundColor = const Color(0xFFF7FCFF),
   });
 
   final Widget child;
@@ -690,7 +690,7 @@ class _CuriosityReadBlock extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFFEEF2EA),
+        color: const Color(0xFFEAF7FD),
         borderRadius: BorderRadius.circular(14),
       ),
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 11),

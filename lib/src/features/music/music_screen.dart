@@ -656,7 +656,7 @@ class _MusicSaveStatus extends StatelessWidget {
       padding: const EdgeInsets.only(top: 10),
       child: Container(
         decoration: BoxDecoration(
-          color: failed ? const Color(0xFFFFF7ED) : const Color(0xFFF5F7F1),
+          color: failed ? const Color(0xFFFFF7ED) : const Color(0xFFF3FBFF),
           border: Border.all(
             color: failed ? const Color(0xFFEBC9A2) : AlagagiColors.line,
           ),
@@ -746,7 +746,7 @@ class _MusicMoodInputState extends State<_MusicMoodInput> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
+        color: const Color(0xFFF5FCFF),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(15),
       ),
@@ -793,7 +793,7 @@ class _MusicTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
+        color: const Color(0xFFF5FCFF),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(15),
       ),
@@ -1146,8 +1146,8 @@ class _MusicListenedButton extends StatelessWidget {
           onPressed: onPressed,
           style: OutlinedButton.styleFrom(
             backgroundColor: listened
-                ? const Color(0xFFF1F4EC)
-                : const Color(0xFFF8F8F4),
+                ? const Color(0xFFEFF8FD)
+                : const Color(0xFFF5FCFF),
             foregroundColor: listened
                 ? AlagagiColors.sageDeep
                 : AlagagiColors.muted,
@@ -1387,7 +1387,7 @@ class _MusicDetailHeader extends StatelessWidget {
       width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFF7FAF2), AlagagiColors.paper],
+          colors: [Color(0xFFEFF8FD), AlagagiColors.paper],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -1472,7 +1472,7 @@ class _MusicDetailBodyCard extends StatelessWidget {
     final link = note.link.trim();
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFDFCF8),
+        color: const Color(0xFFF7FCFF),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(18),
       ),
@@ -1493,7 +1493,7 @@ class _MusicDetailBodyCard extends StatelessWidget {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color(0xFFF6F7F2),
+                color: const Color(0xFFF3FBFF),
                 borderRadius: BorderRadius.circular(13),
               ),
               padding: const EdgeInsets.all(11),
@@ -1549,7 +1549,7 @@ class _MusicCommentEmptyState extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAF6),
+        color: const Color(0xFFF7FCFF),
         border: Border.all(color: const Color(0x338A9A7E)),
         borderRadius: BorderRadius.circular(17),
       ),
@@ -1598,7 +1598,7 @@ class _MusicCommentTile extends StatelessWidget {
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            color: isMine ? const Color(0xFFF0EDF5) : const Color(0xFFEFF2EA),
+            color: isMine ? const Color(0xFFF0EDF5) : const Color(0xFFEFF8FD),
             shape: BoxShape.circle,
           ),
           alignment: Alignment.center,
@@ -1739,7 +1739,7 @@ class _MusicCommentComposerState extends State<_MusicCommentComposer> {
     return Container(
       margin: const EdgeInsets.only(top: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAF7),
+        color: const Color(0xFFF7FCFF),
         border: Border.all(color: const Color(0x338A9A7E)),
         borderRadius: BorderRadius.circular(17),
       ),

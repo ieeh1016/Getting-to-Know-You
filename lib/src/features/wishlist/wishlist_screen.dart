@@ -82,7 +82,7 @@ class _WishlistHero extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AlagagiColors.paper, Color(0xFFF3F5EE)],
+          colors: [AlagagiColors.paper, Color(0xFFEFF8FD)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -551,7 +551,7 @@ class _WishlistSaveStatus extends StatelessWidget {
       padding: const EdgeInsets.only(top: 10),
       child: Container(
         decoration: BoxDecoration(
-          color: failed ? const Color(0xFFFFF7ED) : const Color(0xFFF5F7F1),
+          color: failed ? const Color(0xFFFFF7ED) : const Color(0xFFF3FBFF),
           border: Border.all(
             color: failed ? const Color(0xFFEBC9A2) : AlagagiColors.line,
           ),
@@ -671,7 +671,7 @@ class _WishCard extends StatelessWidget {
             color: wish.isMutual ? null : AlagagiColors.paper,
             gradient: wish.isMutual
                 ? const LinearGradient(
-                    colors: [Color(0xFFEEF1E8), Color(0xFFE6ECDC)],
+                    colors: [Color(0xFFEAF7FD), Color(0xFFDFF2FB)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   )
@@ -690,7 +690,7 @@ class _WishCard extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF0F2EB),
+                      color: const Color(0xFFEAF7FD),
                       borderRadius: BorderRadius.circular(13),
                     ),
                     alignment: Alignment.center,

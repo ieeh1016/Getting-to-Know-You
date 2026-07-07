@@ -786,7 +786,7 @@ class AlagagiQuietMetric extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: muted ? const Color(0xFFF8F8F4) : AlagagiColors.skyPanel,
+        color: muted ? const Color(0xFFF5FCFF) : AlagagiColors.skyPanel,
         border: Border.all(
           color: muted ? AlagagiColors.line : const Color(0x6686B9D6),
         ),
@@ -917,7 +917,7 @@ class AlagagiFullTextCue extends StatelessWidget {
       child: Container(
         constraints: const BoxConstraints(minHeight: 30),
         decoration: BoxDecoration(
-          color: const Color(0xFFF1F4ED),
+          color: const Color(0xFFEFF8FD),
           border: Border.all(color: const Color(0x336F7F63)),
           borderRadius: BorderRadius.circular(999),
         ),
@@ -1018,7 +1018,7 @@ class AlagagiTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
+        color: const Color(0xFFF5FCFF),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(15),
       ),

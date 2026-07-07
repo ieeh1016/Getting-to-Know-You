@@ -393,7 +393,7 @@ class _ProfileSummaryCard extends StatelessWidget {
         gradient: dark
             ? null
             : const LinearGradient(
-                colors: [AlagagiColors.paper, Color(0xFFF3F5EE)],
+                colors: [AlagagiColors.paper, Color(0xFFEFF8FD)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -486,7 +486,7 @@ class _ProfileSummaryCard extends StatelessWidget {
               minHeight: 8,
               backgroundColor: dark
                   ? const Color(0x24FFFFFF)
-                  : const Color(0xFFE6E9DF),
+                  : const Color(0xFFDFF2FB),
               valueColor: AlwaysStoppedAnimation<Color>(
                 dark ? const Color(0xFFE6F6FF) : AlagagiColors.lavender,
               ),
@@ -799,7 +799,7 @@ class _ProfileCustomCardPanelState extends State<_ProfileCustomCardPanel> {
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [AlagagiColors.paper, Color(0xFFEEF2E8)],
+                colors: [AlagagiColors.paper, Color(0xFFEAF7FD)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -1004,7 +1004,7 @@ class _ProfileCustomCategoryChip extends StatelessWidget {
         height: 32,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: selected ? AlagagiColors.softSage : const Color(0xFFF8F8F4),
+          color: selected ? AlagagiColors.softSage : const Color(0xFFF5FCFF),
           border: Border.all(
             color: selected ? const Color(0x338A9A7E) : AlagagiColors.line,
           ),
@@ -1128,7 +1128,7 @@ class _ProfileRecommendCard extends StatelessWidget {
     }
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFEEF2E8),
+        color: const Color(0xFFEAF7FD),
         border: Border.all(color: const Color(0x338A9A7E)),
         borderRadius: BorderRadius.circular(22),
       ),
@@ -1280,7 +1280,7 @@ class _ProfileEditorPanelState extends State<_ProfileEditorPanel> {
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFFFAFAF5), Color(0xFFEEF2E8)],
+                colors: [Color(0xFFF7FCFF), Color(0xFFEAF7FD)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -1332,7 +1332,7 @@ class _ProfileEditorPanelState extends State<_ProfileEditorPanel> {
                     height: 31,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF8F8F4),
+                      color: const Color(0xFFF5FCFF),
                       border: Border.all(color: AlagagiColors.line),
                       borderRadius: BorderRadius.circular(999),
                     ),
@@ -1578,7 +1578,7 @@ class _ProfileHiddenSlotsPanel extends StatelessWidget {
     return Container(
       key: profileHiddenSlotsPanelKey,
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAF5),
+        color: const Color(0xFFF7FCFF),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(20),
       ),
@@ -1668,9 +1668,9 @@ class _ProfileSlotCard extends StatelessWidget {
     final badgeBackground = slot.custom
         ? const Color(0xFFF0EDF4)
         : filled
-        ? const Color(0xFFF8F8F4)
+        ? const Color(0xFFF5FCFF)
         : skipped
-        ? const Color(0xFFECEAE2)
+        ? const Color(0xFFEAF7FD)
         : const Color(0xFFEAF7FD);
     final badgeColor = slot.custom
         ? const Color(0xFF7D688F)
@@ -1701,7 +1701,7 @@ class _ProfileSlotCard extends StatelessWidget {
           color: accent
               ? const Color(0xFFFBFDF8)
               : skipped
-              ? const Color(0xFFF8F8F4)
+              ? const Color(0xFFF5FCFF)
               : AlagagiColors.paper,
           border: Border.all(
             color: selected
@@ -1938,7 +1938,7 @@ class _ProfileReadCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: featured
                         ? const Color(0xFFF0EDF4)
-                        : const Color(0xFFF8F8F4),
+                        : const Color(0xFFF5FCFF),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -2050,7 +2050,7 @@ class _TodaySlotCardState extends State<_TodaySlotCard> {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFEEF1E8),
+              color: const Color(0xFFEAF7FD),
               borderRadius: BorderRadius.circular(20),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

@@ -459,7 +459,7 @@ class _MeetingMonthButton extends StatelessWidget {
           minimumSize: const Size(36, 36),
           padding: EdgeInsets.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          backgroundColor: const Color(0xFFF8F8F4),
+          backgroundColor: const Color(0xFFF5FCFF),
           foregroundColor: AlagagiColors.sageDeep,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(13),
@@ -506,11 +506,11 @@ class _MeetingDateCell extends StatelessWidget {
         : meetingDay
         ? meetingDayFill
         : mutual
-        ? const Color(0xFFEEF2E8)
+        ? const Color(0xFFEAF7FD)
         : busy || hasMyDetails
         ? const Color(0xFFEAF7FD)
         : hasMyEntry
-        ? const Color(0xFFF5F8EF)
+        ? const Color(0xFFF3FBFF)
         : Colors.white;
     final foreground = selected
         ? Colors.white
@@ -880,7 +880,7 @@ class _MeetingDateStatusPanel extends StatelessWidget {
             ? const Color(0xFFEAF7FD)
             : mutual
             ? AlagagiColors.sageSoft
-            : const Color(0xFFF8F8F4),
+            : const Color(0xFFF5FCFF),
         border: Border.all(
           color: alreadyMeetingDay
               ? const Color(0x6686B9D6)
@@ -941,7 +941,7 @@ class _MeetingDayPanel extends StatelessWidget {
         : '${sharedSlots.map(meetingTimeSlotLabel).join(', ')}에 서로 괜찮아요.';
     return Container(
       decoration: BoxDecoration(
-        color: alreadyMeetingDay ? AlagagiColors.ink : const Color(0xFFF3F6EE),
+        color: alreadyMeetingDay ? AlagagiColors.ink : const Color(0xFFEAF7FD),
         border: Border.all(
           color: alreadyMeetingDay
               ? AlagagiColors.ink
@@ -1332,7 +1332,7 @@ class _MeetingPersonRow extends StatelessWidget {
     final meetingNote = entry?.meetingNote.trim() ?? '';
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
+        color: const Color(0xFFF5FCFF),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(16),
       ),
@@ -1429,7 +1429,7 @@ class _MeetingTimeBlockRow extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 7),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
+        color: const Color(0xFFF5FCFF),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(14),
       ),

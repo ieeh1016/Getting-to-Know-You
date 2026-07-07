@@ -232,7 +232,7 @@ class _MemoryHero extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AlagagiColors.paper, Color(0xFFF1F4ED)],
+          colors: [AlagagiColors.paper, Color(0xFFEFF8FD)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -760,7 +760,7 @@ class _MemoryResponseBlock extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F2),
+        color: const Color(0xFFF3FBFF),
         borderRadius: BorderRadius.circular(14),
       ),
       padding: const EdgeInsets.all(13),
@@ -870,7 +870,7 @@ class _MemoryTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
+        color: const Color(0xFFF5FCFF),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(15),
       ),

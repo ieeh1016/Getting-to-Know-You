@@ -542,7 +542,7 @@ class _MyPushNotificationCard extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: enabled
-                  ? const Color(0xFFEEF2EA)
+                  ? const Color(0xFFEAF7FD)
                   : const Color(0xFFF3F0EA),
               borderRadius: BorderRadius.circular(14),
             ),
@@ -742,7 +742,7 @@ class _MyStatusChip extends StatelessWidget {
       height: 30,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFEEF2EA),
+        color: const Color(0xFFEAF7FD),
         border: Border.all(color: const Color(0x338A9A7E)),
         borderRadius: BorderRadius.circular(999),
       ),
@@ -858,7 +858,7 @@ class _MyPrimaryNextCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [AlagagiColors.paper, Color(0xFFEEF2EA)],
+              colors: [AlagagiColors.paper, Color(0xFFEAF7FD)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -1192,7 +1192,7 @@ class _MyHelpCard extends StatelessWidget {
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEEF2EA),
+                        color: const Color(0xFFEAF7FD),
                         borderRadius: BorderRadius.circular(13),
                       ),
                       child: const Icon(
@@ -1231,7 +1231,7 @@ class _MyHelpCard extends StatelessWidget {
                       width: 26,
                       height: 26,
                       decoration: const BoxDecoration(
-                        color: Color(0xFFEEF2EA),
+                        color: Color(0xFFEAF7FD),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(

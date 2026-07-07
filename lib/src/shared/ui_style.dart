@@ -3,19 +3,19 @@ import 'package:flutter/material.dart';
 class AlagagiColors {
   static const outerBackground = Color(0xFFD9EEF8);
   static const appBackground = Color(0xFFEAF7FD);
-  static const paper = Color(0xFFFFFEFA);
+  static const paper = Color(0xFFF7FCFF);
   static const ink = Color(0xFF2F2E2A);
-  static const muted = Color(0xFF8C877D);
-  static const line = Color(0xFFE7E4DC);
+  static const muted = Color(0xFF6F8794);
+  static const line = Color(0xFFCFE6F1);
   static const sage = Color(0xFF819174);
   static const sageDeep = Color(0xFF5F7156);
-  static const sageSoft = Color(0xFFEDF2E8);
+  static const sageSoft = Color(0xFFEAF7FD);
   static const lavender = Color(0xFF9F8AB6);
   static const lavenderSoft = Color(0xFFF0EDF4);
   static const rose = Color(0xFFB78378);
   static const roseSoft = Color(0xFFF5E8E4);
   static const clay = Color(0xFFB18472);
-  static const claySoft = Color(0xFFF4E9E4);
+  static const claySoft = Color(0xFFEFF8FD);
   static const gold = Color(0xFF4F95B8);
   static const goldSoft = Color(0xFFDFF2FB);
   static const blue = Color(0xFF718EA1);
@@ -30,7 +30,7 @@ class AlagagiColors {
   static const creamPanel = Color(0xFFEFF8FD);
   static const warm = Color(0xFFF5FCFF);
   static const softSage = sageSoft;
-  static const sagePanel = Color(0xFFD9E2CF);
+  static const sagePanel = Color(0xFFDDF0F9);
 }
 
 const alagagiSansFonts = [

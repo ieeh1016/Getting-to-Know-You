@@ -209,7 +209,7 @@ class _PlaceBoardModeToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFCFCFA),
+        color: const Color(0xFFF7FCFF),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(17),
       ),
@@ -648,7 +648,7 @@ class _PlaceMapPreviewState extends State<_PlaceMapPreview> {
       builder: (context, constraints) {
         final mapFrame = Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFE9EEE8),
+            color: const Color(0xFFEAF7FD),
             border: Border.all(color: AlagagiColors.line),
             borderRadius: BorderRadius.circular(24),
           ),
@@ -1112,7 +1112,7 @@ class _KakaoPlaceSearchPanelState extends State<_KakaoPlaceSearchPanel> {
     final selectedPlaceId = widget.controller.state.placeDraftProviderPlaceId;
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
+        color: const Color(0xFFF5FCFF),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(17),
       ),
@@ -1229,7 +1229,7 @@ class _KakaoSearchHelpCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF4E9E4),
+        color: const Color(0xFFEFF8FD),
         border: Border.all(color: const Color(0x33B18472)),
         borderRadius: BorderRadius.circular(15),
       ),
@@ -1435,7 +1435,7 @@ class _SelectedPlacePreview extends StatelessWidget {
         name.isNotEmpty && latitude != null && longitude != null;
     return Container(
       decoration: BoxDecoration(
-        color: hasSelection ? AlagagiColors.paper : const Color(0xFFF8F8F4),
+        color: hasSelection ? AlagagiColors.paper : const Color(0xFFF5FCFF),
         border: Border.all(
           color: hasSelection ? const Color(0x668A9A7E) : AlagagiColors.line,
         ),
@@ -1537,7 +1537,7 @@ class _SelectedPlaceMiniMap extends StatelessWidget {
     return Container(
       height: _selectedPlaceMiniMapHeight,
       decoration: BoxDecoration(
-        color: const Color(0xFFE9EEE8),
+        color: const Color(0xFFEAF7FD),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(16),
       ),
@@ -1590,7 +1590,7 @@ class _PlaceDraftErrorCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF4E9E4),
+        color: const Color(0xFFEFF8FD),
         border: Border.all(color: const Color(0x33B18472)),
         borderRadius: BorderRadius.circular(15),
       ),
@@ -1639,7 +1639,7 @@ class _SelectedPlaceField extends StatelessWidget {
     return Container(
       key: fieldKey,
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
+        color: const Color(0xFFF5FCFF),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(15),
       ),
@@ -1697,7 +1697,7 @@ class _PlaceTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
+        color: const Color(0xFFF5FCFF),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(15),
       ),
@@ -1758,7 +1758,7 @@ class _PlaceCard extends StatelessWidget {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0F2EB),
+                  color: const Color(0xFFEAF7FD),
                   borderRadius: BorderRadius.circular(15),
                 ),
                 alignment: Alignment.center,

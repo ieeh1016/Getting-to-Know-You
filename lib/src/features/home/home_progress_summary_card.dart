@@ -194,7 +194,7 @@ Color _summaryToneFill(HomeProgressSummaryTone tone) {
   return switch (tone) {
     HomeProgressSummaryTone.ready => AlagagiColors.sagePanel,
     HomeProgressSummaryTone.waiting => const Color(0xFFF5F1E9),
-    HomeProgressSummaryTone.calm => const Color(0xFFF8F8F4),
+    HomeProgressSummaryTone.calm => const Color(0xFFF5FCFF),
   };
 }
 

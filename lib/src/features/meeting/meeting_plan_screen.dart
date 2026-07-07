@@ -237,7 +237,7 @@ class _PastMeetingCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0F2EB),
+                  color: const Color(0xFFEAF7FD),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 alignment: Alignment.center,
@@ -351,7 +351,7 @@ class _PastMeetingMiniListState extends State<_PastMeetingMiniList> {
         : widget.items.take(widget.collapsedLimit).toList();
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
+        color: const Color(0xFFF5FCFF),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(16),
       ),
@@ -719,7 +719,7 @@ class _MeetingPlanDateCard extends StatelessWidget {
           onTap: onTap,
           child: Container(
             decoration: BoxDecoration(
-              color: selected ? AlagagiColors.ink : const Color(0xFFFFFEFA),
+              color: selected ? AlagagiColors.ink : const Color(0xFFF7FCFF),
               border: Border.all(
                 color: selected ? AlagagiColors.ink : const Color(0xFFE7E1D5),
               ),
@@ -979,7 +979,7 @@ class _MeetingPlanTaskList extends StatelessWidget {
     if (items.isEmpty) {
       return Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F8F4),
+          color: const Color(0xFFF5FCFF),
           border: Border.all(color: AlagagiColors.line),
           borderRadius: BorderRadius.circular(16),
         ),
@@ -1255,7 +1255,7 @@ class _MeetingPlanTaskComposer extends StatelessWidget {
       children: [
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF8F8F4),
+            color: const Color(0xFFF5FCFF),
             border: Border.all(color: AlagagiColors.line),
             borderRadius: BorderRadius.circular(18),
           ),
@@ -1481,7 +1481,7 @@ class _MeetingPlanPlaceRow extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: linked
                       ? const Color(0xFFEAF7FD)
-                      : const Color(0xFFF0F2EB),
+                      : const Color(0xFFEAF7FD),
                   borderRadius: BorderRadius.circular(15),
                 ),
                 alignment: Alignment.center,
@@ -1702,7 +1702,7 @@ class _MeetingPlanPlaceReservationEditorState
         widget.controller.isPlaceSaveTarget(widget.place.id);
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
+        color: const Color(0xFFF5FCFF),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(14),
       ),

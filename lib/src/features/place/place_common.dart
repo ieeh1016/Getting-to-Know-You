@@ -47,7 +47,7 @@ class PlaceSaveStatus extends StatelessWidget {
       padding: const EdgeInsets.only(top: 10),
       child: Container(
         decoration: BoxDecoration(
-          color: failed ? const Color(0xFFFFF7F3) : const Color(0xFFF7F8F3),
+          color: failed ? const Color(0xFFFFF7F3) : const Color(0xFFF3FBFF),
           border: Border.all(
             color: failed ? const Color(0x33B18472) : const Color(0x338A9A7E),
           ),

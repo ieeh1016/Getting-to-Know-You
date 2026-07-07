@@ -26,7 +26,7 @@ class UnreadActivityPanel extends StatelessWidget {
       child: Container(
         key: unreadActivityPanelKey,
         decoration: BoxDecoration(
-          color: const Color(0xFFFAFAF5),
+          color: const Color(0xFFF7FCFF),
           border: Border.all(color: const Color(0x338A9A7E)),
           borderRadius: BorderRadius.circular(20),
         ),

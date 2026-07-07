@@ -31,7 +31,7 @@ class HomeMemoryCard extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0F2EB),
+                  color: const Color(0xFFEAF7FD),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 alignment: Alignment.center,
@@ -147,7 +147,7 @@ class _MemoryCountTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F2),
+        color: const Color(0xFFF3FBFF),
         borderRadius: BorderRadius.circular(14),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),

@@ -198,7 +198,7 @@ class _GuideBookFeatureRow extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: const Color(0xFFEEF2EA),
+              color: const Color(0xFFEAF7FD),
               borderRadius: BorderRadius.circular(13),
             ),
             child: Icon(icon, size: 19, color: AlagagiColors.sageDeep),
@@ -234,7 +234,7 @@ class _GuideBookFeatureRow extends StatelessWidget {
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F8F4),
+              color: const Color(0xFFF5FCFF),
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(

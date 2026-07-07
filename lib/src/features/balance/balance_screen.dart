@@ -557,8 +557,8 @@ class _BalanceDeckOption extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 178),
           decoration: BoxDecoration(
             color: selectedByMe
-                ? const Color(0xFFEEF3E8)
-                : const Color(0xFFF8F8F4),
+                ? const Color(0xFFEAF7FD)
+                : const Color(0xFFF5FCFF),
             border: Border.all(
               color: selectedByMe ? AlagagiColors.sageDeep : AlagagiColors.line,
               width: selectedByMe ? 1.5 : 1,
@@ -672,7 +672,7 @@ class _BalanceReasonCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: hasReason
                       ? AlagagiColors.softSage
-                      : const Color(0xFFF8F8F4),
+                      : const Color(0xFFF5FCFF),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.center,
@@ -868,7 +868,7 @@ class _BalanceReasonFieldState extends State<_BalanceReasonField> {
             hintText: '예: 요즘 조용한 곳이 더 끌려요',
             hintStyle: sans(size: 12, color: const Color(0xFFAAA69A)),
             filled: true,
-            fillColor: const Color(0xFFF8F8F4),
+            fillColor: const Color(0xFFF5FCFF),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 13,
@@ -959,7 +959,7 @@ class _BalanceRevealCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: hasPartnerChoice
                       ? AlagagiColors.softSage
-                      : const Color(0xFFF8F8F4),
+                      : const Color(0xFFF5FCFF),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.center,
@@ -1394,7 +1394,7 @@ class _BalanceResultBoxTile extends StatelessWidget {
         ? const Color(0xFF2F2F2B)
         : ready
         ? const Color(0xFFEAF7FD)
-        : const Color(0xFFF8F8F4);
+        : const Color(0xFFF5FCFF);
     final statusTextColor = revealed
         ? Colors.white
         : ready
@@ -1779,7 +1779,7 @@ class _BalanceRecordTile extends StatelessWidget {
                 height: 24,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8F8F4),
+                  color: const Color(0xFFF5FCFF),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 9),
@@ -1827,7 +1827,7 @@ class _BalanceRecordValue extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F4),
+        color: const Color(0xFFF5FCFF),
         borderRadius: BorderRadius.circular(999),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
