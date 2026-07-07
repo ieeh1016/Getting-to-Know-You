@@ -37,7 +37,7 @@ class PlaceBoardScreen extends StatefulWidget {
 }
 
 class _PlaceBoardScreenState extends State<PlaceBoardScreen> {
-  bool _mapOverlayVisible = true;
+  bool _mapOverlayVisible = false;
   _PlaceBoardFilter _filter = _PlaceBoardFilter.all;
   _PlaceBoardMode _mode = _PlaceBoardMode.map;
 
@@ -73,41 +73,6 @@ class _PlaceBoardScreenState extends State<PlaceBoardScreen> {
         _PlaceBoardModeToggle(
           selected: _mode,
           onChanged: (mode) => setState(() => _mode = mode),
-        ),
-        const SizedBox(height: 14),
-        AlagagiFeatureHero(
-          eyebrow: 'DATE MAP',
-          title: '우리 장소 보드',
-          subtitle: '언젠가 같이 갈 곳과 서로 관심 있는 장소를 데이트 후보로 모아둬요.',
-          icon: Icons.map_rounded,
-          gradient: const [
-            Color(0xFF2F2E2A),
-            Color(0xFF5F7156),
-            Color(0xFF86B9D6),
-          ],
-          stats: [
-            AlagagiHeroStat(
-              icon: Icons.place_rounded,
-              label: '담은 장소',
-              value: '${places.length}곳',
-            ),
-            AlagagiHeroStat(
-              icon: Icons.favorite_rounded,
-              label: '서로 관심',
-              value: '$mutualCount곳',
-            ),
-            AlagagiHeroStat(
-              icon: Icons.filter_alt_rounded,
-              label: '현재 보기',
-              value: '${filteredPlaces.length}곳',
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        _PlaceRouteBoard(
-          totalCount: places.length,
-          mutualCount: mutualCount,
-          filteredCount: filteredPlaces.length,
         ),
         const SizedBox(height: 14),
         if (_mode == _PlaceBoardMode.map)
@@ -282,176 +247,6 @@ class _PlaceModeButton extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _PlaceRouteBoard extends StatelessWidget {
-  const _PlaceRouteBoard({
-    required this.totalCount,
-    required this.mutualCount,
-    required this.filteredCount,
-  });
-
-  final int totalCount;
-  final int mutualCount;
-  final int filteredCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2E332B), Color(0xFF5F7156)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x1F2F2E2A),
-            blurRadius: 24,
-            offset: Offset(0, 13),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.13),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.13),
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: const Icon(
-                  Icons.explore_rounded,
-                  size: 21,
-                  color: Color(0xFFBEE4F7),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'DATE ROUTE BOARD',
-                      style: sans(
-                        size: 10.2,
-                        weight: FontWeight.w900,
-                        color: const Color(0xFFBEE4F7),
-                        letterSpacing: 1.6,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      totalCount == 0
-                          ? '첫 데이트 후보를 비워뒀어요'
-                          : '$totalCount곳의 후보가 모였어요',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: serif(
-                        context,
-                        size: 19,
-                        weight: FontWeight.w800,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
-          Row(
-            children: [
-              Expanded(
-                child: _PlaceRouteMetric(
-                  label: '담은 곳',
-                  value: '$totalCount',
-                  color: const Color(0xFFBEE4F7),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _PlaceRouteMetric(
-                  label: '서로 관심',
-                  value: '$mutualCount',
-                  color: const Color(0xFFD8A49A),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _PlaceRouteMetric(
-                  label: '현재 보기',
-                  value: '$filteredCount',
-                  color: const Color(0xFFCFE0C8),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PlaceRouteMetric extends StatelessWidget {
-  const _PlaceRouteMetric({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  final String label;
-  final String value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 70,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.13)),
-        borderRadius: BorderRadius.circular(17),
-      ),
-      padding: const EdgeInsets.fromLTRB(10, 10, 10, 9),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: sans(
-              size: 10.5,
-              color: Colors.white.withValues(alpha: 0.64),
-              weight: FontWeight.w800,
-            ),
-          ),
-          const Spacer(),
-          Text(
-            value,
-            style: serif(
-              context,
-              size: 24,
-              weight: FontWeight.w800,
-              color: color,
-              height: 1,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -648,8 +443,8 @@ class _PlaceMapPreviewState extends State<_PlaceMapPreview> {
       builder: (context, constraints) {
         final mapFrame = Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFEAF7FD),
-            border: Border.all(color: AlagagiColors.line),
+            color: AlagagiColors.paper,
+            border: Border.all(color: const Color(0x6686B9D6)),
             borderRadius: BorderRadius.circular(24),
           ),
           clipBehavior: Clip.antiAlias,
@@ -679,7 +474,7 @@ class _PlaceMapPreviewState extends State<_PlaceMapPreview> {
                   right: 16,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: AlagagiColors.paper.withValues(alpha: 0.93),
+                      color: AlagagiColors.paper.withValues(alpha: 0.84),
                       border: Border.all(color: AlagagiColors.line),
                       borderRadius: BorderRadius.circular(18),
                     ),
@@ -745,7 +540,7 @@ class _PlaceMapPreviewState extends State<_PlaceMapPreview> {
                   bottom: 16,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: AlagagiColors.paper.withValues(alpha: 0.94),
+                      color: AlagagiColors.paper.withValues(alpha: 0.86),
                       border: Border.all(color: AlagagiColors.line),
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -1537,8 +1332,8 @@ class _SelectedPlaceMiniMap extends StatelessWidget {
     return Container(
       height: _selectedPlaceMiniMapHeight,
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF7FD),
-        border: Border.all(color: AlagagiColors.line),
+        color: AlagagiColors.paper,
+        border: Border.all(color: const Color(0x6686B9D6)),
         borderRadius: BorderRadius.circular(16),
       ),
       clipBehavior: Clip.antiAlias,
@@ -1996,8 +1791,11 @@ class _MapSummaryPill extends StatelessWidget {
 class _QuietMapPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
+    final backgroundPaint = Paint()..color = AlagagiColors.paper;
+    canvas.drawRect(Offset.zero & size, backgroundPaint);
+
     final gridPaint = Paint()
-      ..color = const Color(0x66CDD6C2)
+      ..color = const Color(0x80CFE6F1)
       ..strokeWidth = 1;
     for (var x = 0.0; x < size.width; x += 54) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
@@ -2006,7 +1804,7 @@ class _QuietMapPainter extends CustomPainter {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
     final roadPaint = Paint()
-      ..color = const Color(0xBFFFFFFA)
+      ..color = Colors.white.withValues(alpha: 0.88)
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 18;
