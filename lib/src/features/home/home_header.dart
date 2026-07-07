@@ -156,6 +156,7 @@ class HomeProgressStrip extends StatelessWidget {
                     _HeroProfilePill(
                       meAvatar: controller.state.me.avatar,
                       partnerAvatar: controller.state.partner.avatar,
+                      appTitle: controller.state.personalization.appTitle,
                     ),
                   ],
                 ),
@@ -248,36 +249,130 @@ class _HeroStripe extends StatelessWidget {
 }
 
 class _HeroProfilePill extends StatelessWidget {
-  const _HeroProfilePill({required this.meAvatar, required this.partnerAvatar});
+  const _HeroProfilePill({
+    required this.meAvatar,
+    required this.partnerAvatar,
+    required this.appTitle,
+  });
 
   final String meAvatar;
   final String partnerAvatar;
+  final String appTitle;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0x26FFFEFA),
-        border: Border.all(color: const Color(0x35FFFEFA)),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      padding: const EdgeInsets.fromLTRB(8, 5, 9, 5),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(meAvatar, style: const TextStyle(fontSize: 13)),
-          const SizedBox(width: 2),
-          Text(partnerAvatar, style: const TextStyle(fontSize: 13)),
-          const SizedBox(width: 6),
-          Text(
-            '우리 둘',
-            style: sans(
-              size: 10.5,
-              weight: FontWeight.w800,
-              color: AlagagiColors.paper,
+    return Semantics(
+      label: '$meAvatar $partnerAvatar $appTitle',
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 126),
+        decoration: BoxDecoration(
+          color: const Color(0x33FFFEFA),
+          border: Border.all(color: const Color(0x45FFFEFA)),
+          borderRadius: BorderRadius.circular(999),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1A1D3B4E),
+              blurRadius: 18,
+              offset: Offset(0, 9),
             ),
-          ),
-        ],
+          ],
+        ),
+        padding: const EdgeInsets.fromLTRB(6, 5, 10, 5),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 46,
+              height: 26,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  _HeroAvatarToken(
+                    avatar: meAvatar,
+                    alignment: Alignment.centerLeft,
+                    fill: AlagagiColors.paper,
+                    textColor: const Color(0xFF315F7A),
+                  ),
+                  _HeroAvatarToken(
+                    avatar: partnerAvatar,
+                    alignment: Alignment.centerRight,
+                    fill: const Color(0xFFEAF7FD),
+                    textColor: AlagagiColors.moss,
+                  ),
+                  Positioned.fill(
+                    child: Center(
+                      child: Container(
+                        width: 17,
+                        height: 17,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF8FD),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0x88FFFEFA)),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Icon(
+                          Icons.favorite_rounded,
+                          size: 10,
+                          color: Color(0xFF6BAACB),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 7),
+            Flexible(
+              child: Text(
+                appTitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: sans(
+                  size: 10.8,
+                  weight: FontWeight.w900,
+                  color: AlagagiColors.paper,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroAvatarToken extends StatelessWidget {
+  const _HeroAvatarToken({
+    required this.avatar,
+    required this.alignment,
+    required this.fill,
+    required this.textColor,
+  });
+
+  final String avatar;
+  final Alignment alignment;
+  final Color fill;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: alignment,
+      child: Container(
+        width: 26,
+        height: 26,
+        decoration: BoxDecoration(
+          color: fill,
+          shape: BoxShape.circle,
+          border: Border.all(color: const Color(0xCCFFFEFA), width: 1.4),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          avatar,
+          maxLines: 1,
+          overflow: TextOverflow.clip,
+          style: sans(size: 12, weight: FontWeight.w900, color: textColor),
+        ),
       ),
     );
   }

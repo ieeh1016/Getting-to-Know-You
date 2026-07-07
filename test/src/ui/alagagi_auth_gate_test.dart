@@ -205,7 +205,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(data.loadedUsers.length, 2);
-      expect(find.text('다시 불러온 조금씩'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(homeBrandLogoKey),
+          matching: find.text('다시 불러온 조금씩'),
+        ),
+        findsOneWidget,
+      );
       expect(find.text('서버에서 새로 온 문구'), findsOneWidget);
     });
 
