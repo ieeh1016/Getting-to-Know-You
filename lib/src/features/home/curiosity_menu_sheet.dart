@@ -734,21 +734,26 @@ class _CuriosityTextField extends StatefulWidget {
 }
 
 class _CuriosityTextFieldState extends State<_CuriosityTextField> {
-  late final TextEditingController _controller;
+  late final ImeSafeTextEditingController _controller;
   late final FocusNode _focusNode;
+  late final VoidCallback _detachFocusDispatch;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.value);
+    _controller = ImeSafeTextEditingController(
+      text: widget.value,
+      onCommittedChanged: widget.onChanged,
+    );
     _focusNode = FocusNode();
+    _detachFocusDispatch = dispatchTextOnFocusLost(_controller, _focusNode);
   }
 
   @override
   void didUpdateWidget(covariant _CuriosityTextField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    syncTextEditingControllerText(
-      _controller,
+    _controller.onCommittedChanged = widget.onChanged;
+    _controller.syncText(
       widget.value,
       focusNode: _focusNode,
       force: oldWidget.fieldKey != widget.fieldKey || widget.value.isEmpty,
@@ -757,6 +762,7 @@ class _CuriosityTextFieldState extends State<_CuriosityTextField> {
 
   @override
   void dispose() {
+    _detachFocusDispatch();
     _focusNode.dispose();
     _controller.dispose();
     super.dispose();
@@ -771,7 +777,6 @@ class _CuriosityTextFieldState extends State<_CuriosityTextField> {
       minLines: widget.maxLines,
       maxLines: widget.maxLines,
       maxLength: widget.fieldKey == curiosityQuestionFieldKey ? 80 : 160,
-      onChanged: widget.onChanged,
       style: sans(size: 13, height: 1.45),
       decoration: InputDecoration(
         hintText: widget.hintText,

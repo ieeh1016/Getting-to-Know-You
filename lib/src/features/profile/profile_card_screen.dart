@@ -721,10 +721,21 @@ class _ProfileCustomCardPanel extends StatefulWidget {
 class _ProfileCustomCardPanelState extends State<_ProfileCustomCardPanel> {
   static const categories = ['직접', '취향', '하루', '대화', '함께'];
 
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _bodyController = TextEditingController();
+  late final ImeSafeTextEditingController _titleController;
+  late final ImeSafeTextEditingController _bodyController;
   String _selectedCategory = '직접';
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = ImeSafeTextEditingController(
+      onCommittedChanged: (_) => _clearErrorAndRefresh(),
+    );
+    _bodyController = ImeSafeTextEditingController(
+      onCommittedChanged: (_) => _clearErrorAndRefresh(),
+    );
+  }
 
   @override
   void dispose() {
@@ -741,6 +752,12 @@ class _ProfileCustomCardPanelState extends State<_ProfileCustomCardPanel> {
     );
     if (error != null) {
       setState(() => _error = error);
+    }
+  }
+
+  void _clearErrorAndRefresh() {
+    if (mounted) {
+      setState(() => _error = null);
     }
   }
 
@@ -852,7 +869,6 @@ class _ProfileCustomCardPanelState extends State<_ProfileCustomCardPanel> {
                   key: profileCustomTitleFieldKey,
                   controller: _titleController,
                   maxLength: 32,
-                  onChanged: (_) => setState(() => _error = null),
                   decoration: InputDecoration(
                     counterText: '',
                     hintText: '예: 요즘 내가 자주 하는 생각',
@@ -873,7 +889,6 @@ class _ProfileCustomCardPanelState extends State<_ProfileCustomCardPanel> {
                   maxLength: 120,
                   minLines: 4,
                   maxLines: 6,
-                  onChanged: (_) => setState(() => _error = null),
                   decoration: InputDecoration(
                     counterText: '',
                     hintText: '내가 공유하고 싶은 답변을 편하게 적어주세요',
@@ -1232,34 +1247,41 @@ class _ProfileEditorPanel extends StatefulWidget {
 }
 
 class _ProfileEditorPanelState extends State<_ProfileEditorPanel> {
-  late final TextEditingController _controller;
+  late final ImeSafeTextEditingController _controller;
   late final FocusNode _focusNode;
+  late final VoidCallback _detachFocusDispatch;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.draft);
+    _controller = ImeSafeTextEditingController(
+      text: widget.draft,
+      onCommittedChanged: _updateDraft,
+    );
     _focusNode = FocusNode();
+    _detachFocusDispatch = dispatchTextOnFocusLost(_controller, _focusNode);
   }
 
   @override
   void didUpdateWidget(covariant _ProfileEditorPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _controller.onCommittedChanged = _updateDraft;
     if (oldWidget.slot.id != widget.slot.id) {
-      syncTextEditingControllerText(
-        _controller,
-        widget.draft,
-        focusNode: _focusNode,
-        force: true,
-      );
+      _controller.syncText(widget.draft, focusNode: _focusNode, force: true);
     }
   }
 
   @override
   void dispose() {
+    _detachFocusDispatch();
     _focusNode.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  void _updateDraft(String value) {
+    setState(() {});
+    widget.onChanged(value);
   }
 
   @override
@@ -1371,10 +1393,6 @@ class _ProfileEditorPanelState extends State<_ProfileEditorPanel> {
                 maxLength: 120,
                 minLines: 4,
                 maxLines: 6,
-                onChanged: (value) {
-                  setState(() {});
-                  widget.onChanged(value);
-                },
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   counterText: '',

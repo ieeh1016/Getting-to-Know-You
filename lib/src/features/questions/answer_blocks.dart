@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
 import '../../shared/readable_detail_sheet.dart';
+import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
@@ -247,25 +248,18 @@ class AnswerCommentBox extends StatelessWidget {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: TextFormField(
-                      key: answerCommentFieldKey,
+                    child: _ImeSafeCommentTextField(
+                      fieldKey: answerCommentFieldKey,
+                      syncKey: '$questionId:$answerOwnerProfileId',
                       initialValue: inputValue,
-                      maxLength: 120,
-                      minLines: 1,
-                      maxLines: 3,
+                      hintText: existingComment == null
+                          ? '이 답에 짧게 남겨볼까요?'
+                          : '댓글을 다듬어볼까요?',
                       onChanged: (value) => controller.updateAnswerCommentDraft(
                         questionId: questionId,
                         answerOwnerProfileId: answerOwnerProfileId,
                         value: value,
                       ),
-                      decoration: InputDecoration(
-                        counterText: '',
-                        border: InputBorder.none,
-                        hintText: existingComment == null
-                            ? '이 답에 짧게 남겨볼까요?'
-                            : '댓글을 다듬어볼까요?',
-                      ),
-                      style: sans(size: 13, height: 1.5),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -922,25 +916,19 @@ class _AnswerCommentReplyEditor extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: TextFormField(
-              key: answerCommentReplyFieldKey,
+            child: _ImeSafeCommentTextField(
+              fieldKey: answerCommentReplyFieldKey,
+              syncKey:
+                  '${comment.questionId}:${comment.answerOwnerProfileId}:${comment.commenterProfileId}',
               initialValue: inputValue,
-              maxLength: 120,
-              minLines: 1,
-              maxLines: 3,
               enabled: !isSaving,
+              hintText: '이 댓글에 짧게 답장해볼까요?',
               onChanged: (value) => controller.updateAnswerCommentReplyDraft(
                 questionId: comment.questionId,
                 answerOwnerProfileId: comment.answerOwnerProfileId,
                 commenterProfileId: comment.commenterProfileId,
                 value: value,
               ),
-              decoration: const InputDecoration(
-                counterText: '',
-                border: InputBorder.none,
-                hintText: '이 댓글에 짧게 답장해볼까요?',
-              ),
-              style: sans(size: 13, height: 1.5),
             ),
           ),
           const SizedBox(height: 8),
@@ -997,6 +985,86 @@ class _AnswerCommentReplyEditor extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ImeSafeCommentTextField extends StatefulWidget {
+  const _ImeSafeCommentTextField({
+    required this.fieldKey,
+    required this.syncKey,
+    required this.initialValue,
+    required this.hintText,
+    required this.onChanged,
+    this.enabled = true,
+  });
+
+  final Key fieldKey;
+  final String syncKey;
+  final String initialValue;
+  final String hintText;
+  final ValueChanged<String> onChanged;
+  final bool enabled;
+
+  @override
+  State<_ImeSafeCommentTextField> createState() =>
+      _ImeSafeCommentTextFieldState();
+}
+
+class _ImeSafeCommentTextFieldState extends State<_ImeSafeCommentTextField> {
+  late final ImeSafeTextEditingController _controller;
+  late final FocusNode _focusNode;
+  late final VoidCallback _detachFocusDispatch;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = ImeSafeTextEditingController(
+      text: widget.initialValue,
+      onCommittedChanged: widget.onChanged,
+    );
+    _focusNode = FocusNode();
+    _detachFocusDispatch = dispatchTextOnFocusLost(_controller, _focusNode);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ImeSafeCommentTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _controller.onCommittedChanged = widget.onChanged;
+    final targetChanged = oldWidget.syncKey != widget.syncKey;
+    if (targetChanged || oldWidget.initialValue != widget.initialValue) {
+      _controller.syncText(
+        widget.initialValue,
+        focusNode: _focusNode,
+        force: targetChanged || widget.initialValue.isEmpty,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _detachFocusDispatch();
+    _focusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      key: widget.fieldKey,
+      controller: _controller,
+      focusNode: _focusNode,
+      maxLength: 120,
+      minLines: 1,
+      maxLines: 3,
+      enabled: widget.enabled,
+      decoration: InputDecoration(
+        counterText: '',
+        border: InputBorder.none,
+        hintText: widget.hintText,
+      ),
+      style: sans(size: 13, height: 1.5),
     );
   }
 }

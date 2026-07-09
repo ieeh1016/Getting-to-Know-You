@@ -1637,8 +1637,9 @@ class _MeetingPlanPlaceReservationEditor extends StatefulWidget {
 
 class _MeetingPlanPlaceReservationEditorState
     extends State<_MeetingPlanPlaceReservationEditor> {
-  late final TextEditingController _controller;
+  late final ImeSafeTextEditingController _controller;
   late final FocusNode _focusNode;
+  late final VoidCallback _detachFocusDispatch;
   late String _savedValue;
   String? _pendingValue;
 
@@ -1646,13 +1647,18 @@ class _MeetingPlanPlaceReservationEditorState
   void initState() {
     super.initState();
     _savedValue = widget.initialValue;
-    _controller = TextEditingController(text: widget.initialValue);
+    _controller = ImeSafeTextEditingController(
+      text: widget.initialValue,
+      onCommittedChanged: (_) => setState(() {}),
+    );
     _focusNode = FocusNode();
+    _detachFocusDispatch = dispatchTextOnFocusLost(_controller, _focusNode);
   }
 
   @override
   void didUpdateWidget(covariant _MeetingPlanPlaceReservationEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _controller.onCommittedChanged = (_) => setState(() {});
     final status = widget.controller.state.placeSaveStatus;
     final isTarget = widget.controller.isPlaceSaveTarget(widget.place.id);
     if (_pendingValue != null && isTarget && status == SaveStatus.saved) {
@@ -1666,8 +1672,7 @@ class _MeetingPlanPlaceReservationEditorState
     if (oldWidget.initialValue != widget.initialValue &&
         _pendingValue == null) {
       _savedValue = widget.initialValue;
-      syncTextEditingControllerText(
-        _controller,
+      _controller.syncText(
         widget.initialValue,
         focusNode: _focusNode,
         force:
@@ -1680,6 +1685,7 @@ class _MeetingPlanPlaceReservationEditorState
 
   @override
   void dispose() {
+    _detachFocusDispatch();
     _focusNode.dispose();
     _controller.dispose();
     super.dispose();
@@ -1732,7 +1738,6 @@ class _MeetingPlanPlaceReservationEditorState
               maxLines: 2,
               enabled: !busy,
               textInputAction: TextInputAction.done,
-              onChanged: (_) => setState(() {}),
               onFieldSubmitted: (_) => _save(),
               decoration: const InputDecoration(
                 hintText: '예약 시간 입력',

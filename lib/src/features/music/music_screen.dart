@@ -714,32 +714,32 @@ class _MusicMoodInput extends StatefulWidget {
 }
 
 class _MusicMoodInputState extends State<_MusicMoodInput> {
-  late final TextEditingController _controller;
+  late final ImeSafeTextEditingController _controller;
   late final FocusNode _focusNode;
+  late final VoidCallback _detachFocusDispatch;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(
+    _controller = ImeSafeTextEditingController(
       text: widget.controller.state.musicDraftMood,
+      onCommittedChanged: widget.controller.setMusicDraftMood,
     );
     _focusNode = FocusNode();
+    _detachFocusDispatch = dispatchTextOnFocusLost(_controller, _focusNode);
   }
 
   @override
   void didUpdateWidget(covariant _MusicMoodInput oldWidget) {
     super.didUpdateWidget(oldWidget);
     final mood = widget.controller.state.musicDraftMood;
-    syncTextEditingControllerText(
-      _controller,
-      mood,
-      focusNode: _focusNode,
-      force: mood.isEmpty,
-    );
+    _controller.onCommittedChanged = widget.controller.setMusicDraftMood;
+    _controller.syncText(mood, focusNode: _focusNode, force: mood.isEmpty);
   }
 
   @override
   void dispose() {
+    _detachFocusDispatch();
     _focusNode.dispose();
     _controller.dispose();
     super.dispose();
@@ -759,7 +759,6 @@ class _MusicMoodInputState extends State<_MusicMoodInput> {
         controller: _controller,
         focusNode: _focusNode,
         maxLength: 16,
-        onChanged: widget.controller.setMusicDraftMood,
         decoration: const InputDecoration(
           labelText: '직접 입력',
           hintText: '예: 드라이브, 운동, 위로',
@@ -772,7 +771,7 @@ class _MusicMoodInputState extends State<_MusicMoodInput> {
   }
 }
 
-class _MusicTextField extends StatelessWidget {
+class _MusicTextField extends StatefulWidget {
   const _MusicTextField({
     required this.fieldKey,
     required this.label,
@@ -794,6 +793,48 @@ class _MusicTextField extends StatelessWidget {
   final int maxLines;
 
   @override
+  State<_MusicTextField> createState() => _MusicTextFieldState();
+}
+
+class _MusicTextFieldState extends State<_MusicTextField> {
+  late final ImeSafeTextEditingController _controller;
+  late final FocusNode _focusNode;
+  late final VoidCallback _detachFocusDispatch;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = ImeSafeTextEditingController(
+      text: widget.initialValue,
+      onCommittedChanged: widget.onChanged,
+    );
+    _focusNode = FocusNode();
+    _detachFocusDispatch = dispatchTextOnFocusLost(_controller, _focusNode);
+  }
+
+  @override
+  void didUpdateWidget(covariant _MusicTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _controller.onCommittedChanged = widget.onChanged;
+    final fieldChanged = oldWidget.fieldKey != widget.fieldKey;
+    if (fieldChanged || oldWidget.initialValue != widget.initialValue) {
+      _controller.syncText(
+        widget.initialValue,
+        focusNode: _focusNode,
+        force: fieldChanged || widget.initialValue.isEmpty,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _detachFocusDispatch();
+    _focusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -803,15 +844,15 @@ class _MusicTextField extends StatelessWidget {
       ),
       padding: const EdgeInsets.fromLTRB(14, 7, 14, 7),
       child: TextFormField(
-        key: fieldKey,
-        initialValue: initialValue,
-        maxLength: maxLength,
-        minLines: minLines,
-        maxLines: maxLines,
-        onChanged: onChanged,
+        key: widget.fieldKey,
+        controller: _controller,
+        focusNode: _focusNode,
+        maxLength: widget.maxLength,
+        minLines: widget.minLines,
+        maxLines: widget.maxLines,
         decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
+          labelText: widget.label,
+          hintText: widget.hint,
           counterText: '',
           border: InputBorder.none,
         ),
@@ -1706,24 +1747,27 @@ class _MusicCommentComposer extends StatefulWidget {
 }
 
 class _MusicCommentComposerState extends State<_MusicCommentComposer> {
-  late final TextEditingController _textController;
+  late final ImeSafeTextEditingController _textController;
   late final FocusNode _focusNode;
+  late final VoidCallback _detachFocusDispatch;
 
   @override
   void initState() {
     super.initState();
-    _textController = TextEditingController(
+    _textController = ImeSafeTextEditingController(
       text: widget.controller.musicCommentDraftForNote(widget.noteId),
+      onCommittedChanged: _updateDraft,
     );
     _focusNode = FocusNode();
+    _detachFocusDispatch = dispatchTextOnFocusLost(_textController, _focusNode);
   }
 
   @override
   void didUpdateWidget(covariant _MusicCommentComposer oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _textController.onCommittedChanged = _updateDraft;
     final draft = widget.controller.musicCommentDraftForNote(widget.noteId);
-    syncTextEditingControllerText(
-      _textController,
+    _textController.syncText(
       draft,
       focusNode: _focusNode,
       force: oldWidget.noteId != widget.noteId || draft.isEmpty,
@@ -1732,9 +1776,17 @@ class _MusicCommentComposerState extends State<_MusicCommentComposer> {
 
   @override
   void dispose() {
+    _detachFocusDispatch();
     _focusNode.dispose();
     _textController.dispose();
     super.dispose();
+  }
+
+  void _updateDraft(String value) {
+    widget.controller.updateMusicCommentDraft(widget.noteId, value);
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -1779,10 +1831,6 @@ class _MusicCommentComposerState extends State<_MusicCommentComposer> {
             minLines: 2,
             maxLines: 4,
             maxLength: 180,
-            onChanged: (value) {
-              widget.controller.updateMusicCommentDraft(widget.noteId, value);
-              setState(() {});
-            },
             decoration: InputDecoration(
               hintText: '이 곡을 듣고 떠오른 말을 짧게 남겨요.',
               counterText: '',
@@ -1880,28 +1928,31 @@ class _MusicCommentEditPanel extends StatefulWidget {
 }
 
 class _MusicCommentEditPanelState extends State<_MusicCommentEditPanel> {
-  late final TextEditingController _textController;
+  late final ImeSafeTextEditingController _textController;
   late final FocusNode _focusNode;
+  late final VoidCallback _detachFocusDispatch;
 
   @override
   void initState() {
     super.initState();
-    _textController = TextEditingController(
+    _textController = ImeSafeTextEditingController(
       text: widget.controller.musicCommentEditDraftForComment(
         widget.comment.id,
       ),
+      onCommittedChanged: _updateDraft,
     );
     _focusNode = FocusNode();
+    _detachFocusDispatch = dispatchTextOnFocusLost(_textController, _focusNode);
   }
 
   @override
   void didUpdateWidget(covariant _MusicCommentEditPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _textController.onCommittedChanged = _updateDraft;
     final draft = widget.controller.musicCommentEditDraftForComment(
       widget.comment.id,
     );
-    syncTextEditingControllerText(
-      _textController,
+    _textController.syncText(
       draft,
       focusNode: _focusNode,
       force: oldWidget.comment.id != widget.comment.id || draft.isEmpty,
@@ -1910,9 +1961,17 @@ class _MusicCommentEditPanelState extends State<_MusicCommentEditPanel> {
 
   @override
   void dispose() {
+    _detachFocusDispatch();
     _focusNode.dispose();
     _textController.dispose();
     super.dispose();
+  }
+
+  void _updateDraft(String value) {
+    widget.controller.updateMusicCommentEditDraft(widget.comment.id, value);
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -1938,13 +1997,6 @@ class _MusicCommentEditPanelState extends State<_MusicCommentEditPanel> {
             minLines: 2,
             maxLines: 4,
             maxLength: 180,
-            onChanged: (value) {
-              widget.controller.updateMusicCommentEditDraft(
-                widget.comment.id,
-                value,
-              );
-              setState(() {});
-            },
             decoration: InputDecoration(
               counterText: '',
               filled: true,

@@ -403,17 +403,23 @@ class _WishDraftCard extends StatefulWidget {
 }
 
 class _WishDraftCardState extends State<_WishDraftCard> {
-  late final TextEditingController _titleController;
+  late final ImeSafeTextEditingController _titleController;
   late final FocusNode _titleFocusNode;
+  late final VoidCallback _detachTitleFocusDispatch;
   String? _lastEditingId;
 
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(
+    _titleController = ImeSafeTextEditingController(
       text: widget.controller.state.wishDraftTitle,
+      onCommittedChanged: widget.controller.updateWishDraftTitle,
     );
     _titleFocusNode = FocusNode();
+    _detachTitleFocusDispatch = dispatchTextOnFocusLost(
+      _titleController,
+      _titleFocusNode,
+    );
     _lastEditingId = widget.controller.state.editingWishId;
   }
 
@@ -421,10 +427,11 @@ class _WishDraftCardState extends State<_WishDraftCard> {
   void didUpdateWidget(covariant _WishDraftCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     final state = widget.controller.state;
+    _titleController.onCommittedChanged =
+        widget.controller.updateWishDraftTitle;
     final editingTargetChanged = _lastEditingId != state.editingWishId;
     if (editingTargetChanged || _titleController.text != state.wishDraftTitle) {
-      syncTextEditingControllerText(
-        _titleController,
+      _titleController.syncText(
         state.wishDraftTitle,
         focusNode: _titleFocusNode,
         force: editingTargetChanged || state.wishDraftTitle.isEmpty,
@@ -435,6 +442,7 @@ class _WishDraftCardState extends State<_WishDraftCard> {
 
   @override
   void dispose() {
+    _detachTitleFocusDispatch();
     _titleFocusNode.dispose();
     _titleController.dispose();
     super.dispose();
@@ -473,7 +481,6 @@ class _WishDraftCardState extends State<_WishDraftCard> {
               controller: _titleController,
               focusNode: _titleFocusNode,
               maxLength: 60,
-              onChanged: controller.updateWishDraftTitle,
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 counterText: '',

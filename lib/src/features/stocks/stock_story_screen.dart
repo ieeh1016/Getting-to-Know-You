@@ -4,6 +4,7 @@ import '../../app/app_shell.dart';
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
 import '../../shared/readable_detail_sheet.dart';
+import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
@@ -911,7 +912,7 @@ class _StockReplyOpenButton extends StatelessWidget {
   }
 }
 
-class _StockStoryReplyComposer extends StatelessWidget {
+class _StockStoryReplyComposer extends StatefulWidget {
   const _StockStoryReplyComposer({
     required this.controller,
     required this.story,
@@ -921,7 +922,68 @@ class _StockStoryReplyComposer extends StatelessWidget {
   final StockStory story;
 
   @override
+  State<_StockStoryReplyComposer> createState() =>
+      _StockStoryReplyComposerState();
+}
+
+class _StockStoryReplyComposerState extends State<_StockStoryReplyComposer> {
+  late final ImeSafeTextEditingController _replyController;
+  late final FocusNode _replyFocusNode;
+  late final VoidCallback _detachReplyFocusDispatch;
+
+  @override
+  void initState() {
+    super.initState();
+    _replyController = ImeSafeTextEditingController(
+      text: widget.controller.stockStoryReplyDraftFor(widget.story.id),
+      onCommittedChanged: _updateDraft,
+    );
+    _replyFocusNode = FocusNode();
+    _detachReplyFocusDispatch = dispatchTextOnFocusLost(
+      _replyController,
+      _replyFocusNode,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _StockStoryReplyComposer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _replyController.onCommittedChanged = _updateDraft;
+    final storyChanged = oldWidget.story.id != widget.story.id;
+    final draft = widget.controller.stockStoryReplyDraftFor(widget.story.id);
+    if (storyChanged || oldWidget.story.reply != widget.story.reply) {
+      _replyController.syncText(
+        draft,
+        focusNode: _replyFocusNode,
+        force: storyChanged || draft.isEmpty,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _detachReplyFocusDispatch();
+    _replyFocusNode.dispose();
+    _replyController.dispose();
+    super.dispose();
+  }
+
+  void _updateDraft(String value) {
+    widget.controller.updateStockStoryReplyDraft(
+      storyId: widget.story.id,
+      value: value,
+    );
+  }
+
+  void _submit() {
+    _replyController.dispatchCurrentText();
+    widget.controller.submitStockStoryReply(widget.story.id);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
+    final story = widget.story;
     final selectedTone = controller.stockStoryReplyToneFor(story.id);
     return Container(
       decoration: BoxDecoration(
@@ -959,13 +1021,11 @@ class _StockStoryReplyComposer extends StatelessWidget {
           const SizedBox(height: 9),
           TextField(
             key: stockStoryReplyFieldKey(story.id),
+            controller: _replyController,
+            focusNode: _replyFocusNode,
             minLines: 2,
             maxLines: 3,
             maxLength: 160,
-            onChanged: (value) => controller.updateStockStoryReplyDraft(
-              storyId: story.id,
-              value: value,
-            ),
             decoration: InputDecoration(
               hintText: '숫자 하나나 확인할 점만 남겨도 괜찮아요.',
               hintStyle: sans(size: 12.2, color: AlagagiColors.muted),
@@ -988,7 +1048,7 @@ class _StockStoryReplyComposer extends StatelessWidget {
           AlagagiPrimaryButton(
             label: '관점 남기기',
             buttonKey: stockStoryReplySubmitButtonKey(story.id),
-            onPressed: () => controller.submitStockStoryReply(story.id),
+            onPressed: _submit,
             color: AlagagiColors.sageDeep,
           ),
         ],
@@ -1599,7 +1659,7 @@ class _StockHoldingReplyBlock extends StatelessWidget {
   }
 }
 
-class _StockHoldingReplyComposer extends StatelessWidget {
+class _StockHoldingReplyComposer extends StatefulWidget {
   const _StockHoldingReplyComposer({
     required this.controller,
     required this.holding,
@@ -1609,7 +1669,71 @@ class _StockHoldingReplyComposer extends StatelessWidget {
   final StockHolding holding;
 
   @override
+  State<_StockHoldingReplyComposer> createState() =>
+      _StockHoldingReplyComposerState();
+}
+
+class _StockHoldingReplyComposerState
+    extends State<_StockHoldingReplyComposer> {
+  late final ImeSafeTextEditingController _replyController;
+  late final FocusNode _replyFocusNode;
+  late final VoidCallback _detachReplyFocusDispatch;
+
+  @override
+  void initState() {
+    super.initState();
+    _replyController = ImeSafeTextEditingController(
+      text: widget.controller.stockHoldingReplyDraftFor(widget.holding.id),
+      onCommittedChanged: _updateDraft,
+    );
+    _replyFocusNode = FocusNode();
+    _detachReplyFocusDispatch = dispatchTextOnFocusLost(
+      _replyController,
+      _replyFocusNode,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _StockHoldingReplyComposer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _replyController.onCommittedChanged = _updateDraft;
+    final holdingChanged = oldWidget.holding.id != widget.holding.id;
+    final draft = widget.controller.stockHoldingReplyDraftFor(
+      widget.holding.id,
+    );
+    if (holdingChanged || oldWidget.holding.reply != widget.holding.reply) {
+      _replyController.syncText(
+        draft,
+        focusNode: _replyFocusNode,
+        force: holdingChanged || draft.isEmpty,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _detachReplyFocusDispatch();
+    _replyFocusNode.dispose();
+    _replyController.dispose();
+    super.dispose();
+  }
+
+  void _updateDraft(String value) {
+    widget.controller.updateStockHoldingReplyDraft(
+      holdingId: widget.holding.id,
+      value: value,
+    );
+  }
+
+  void _submit() {
+    _replyController.dispatchCurrentText();
+    widget.controller.submitStockHoldingReply(widget.holding.id);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
+    final holding = widget.holding;
     final selectedTone = controller.stockHoldingReplyToneFor(holding.id);
     return Container(
       decoration: BoxDecoration(
@@ -1647,13 +1771,11 @@ class _StockHoldingReplyComposer extends StatelessWidget {
           const SizedBox(height: 9),
           TextField(
             key: stockHoldingReplyFieldKey(holding.id),
+            controller: _replyController,
+            focusNode: _replyFocusNode,
             minLines: 2,
             maxLines: 3,
             maxLength: 160,
-            onChanged: (value) => controller.updateStockHoldingReplyDraft(
-              holdingId: holding.id,
-              value: value,
-            ),
             decoration: InputDecoration(
               hintText: '같이 볼 숫자나 걱정되는 점만 남겨도 괜찮아요.',
               hintStyle: sans(size: 12.2, color: AlagagiColors.muted),
@@ -1676,7 +1798,7 @@ class _StockHoldingReplyComposer extends StatelessWidget {
           AlagagiPrimaryButton(
             label: '관점 남기기',
             buttonKey: stockHoldingReplySubmitButtonKey(holding.id),
-            onPressed: () => controller.submitStockHoldingReply(holding.id),
+            onPressed: _submit,
             color: AlagagiColors.sageDeep,
           ),
         ],

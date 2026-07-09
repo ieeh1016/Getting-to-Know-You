@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/app_shell.dart';
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
+import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 import '../questions/question_formatters.dart';
@@ -17,20 +18,53 @@ class AnswerScreen extends StatefulWidget {
 }
 
 class _AnswerScreenState extends State<AnswerScreen> {
-  late final TextEditingController _answerController;
+  late final ImeSafeTextEditingController _answerController;
+  late final FocusNode _answerFocusNode;
+  late final VoidCallback _detachFocusDispatch;
+  late String _lastQuestionId;
 
   @override
   void initState() {
     super.initState();
-    _answerController = TextEditingController(
+    _answerController = ImeSafeTextEditingController(
       text: widget.controller.state.draftAnswer,
+      onCommittedChanged: widget.controller.updateDraftAnswer,
     );
+    _answerFocusNode = FocusNode();
+    _detachFocusDispatch = dispatchTextOnFocusLost(
+      _answerController,
+      _answerFocusNode,
+    );
+    _lastQuestionId = widget.controller.activeAnswerQuestion.id;
+  }
+
+  @override
+  void didUpdateWidget(covariant AnswerScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _answerController.onCommittedChanged = widget.controller.updateDraftAnswer;
+    final questionId = widget.controller.activeAnswerQuestion.id;
+    final questionChanged = _lastQuestionId != questionId;
+    if (questionChanged) {
+      _answerController.syncText(
+        widget.controller.state.draftAnswer,
+        focusNode: _answerFocusNode,
+        force: true,
+      );
+      _lastQuestionId = questionId;
+    }
   }
 
   @override
   void dispose() {
+    _detachFocusDispatch();
+    _answerFocusNode.dispose();
     _answerController.dispose();
     super.dispose();
+  }
+
+  void _submitAnswer() {
+    _answerController.dispatchCurrentText();
+    widget.controller.submitActiveAnswer();
   }
 
   @override
@@ -106,10 +140,10 @@ class _AnswerScreenState extends State<AnswerScreen> {
               child: TextField(
                 key: answerFieldKey,
                 controller: _answerController,
+                focusNode: _answerFocusNode,
                 minLines: 5,
                 maxLines: 7,
                 maxLength: 300,
-                onChanged: widget.controller.updateDraftAnswer,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                   counterText: '',
@@ -193,9 +227,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                       : hasTodayPartnerAnswer
                       ? '답 남기고 ${state.partner.nickname}님 답 열어보기'
                       : '답 남기기',
-                  onPressed: isSaving
-                      ? null
-                      : widget.controller.submitActiveAnswer,
+                  onPressed: isSaving ? null : _submitAnswer,
                   color: AlagagiColors.sageDeep,
                 ),
               ],

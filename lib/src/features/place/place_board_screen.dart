@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/app_shell.dart';
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
+import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 import '../../ui/kakao_map_panel.dart';
@@ -1467,7 +1468,7 @@ class _SelectedPlaceField extends StatelessWidget {
   }
 }
 
-class _PlaceTextField extends StatelessWidget {
+class _PlaceTextField extends StatefulWidget {
   const _PlaceTextField({
     required this.fieldKey,
     required this.label,
@@ -1489,6 +1490,48 @@ class _PlaceTextField extends StatelessWidget {
   final int maxLines;
 
   @override
+  State<_PlaceTextField> createState() => _PlaceTextFieldState();
+}
+
+class _PlaceTextFieldState extends State<_PlaceTextField> {
+  late final ImeSafeTextEditingController _controller;
+  late final FocusNode _focusNode;
+  late final VoidCallback _detachFocusDispatch;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = ImeSafeTextEditingController(
+      text: widget.initialValue,
+      onCommittedChanged: widget.onChanged,
+    );
+    _focusNode = FocusNode();
+    _detachFocusDispatch = dispatchTextOnFocusLost(_controller, _focusNode);
+  }
+
+  @override
+  void didUpdateWidget(covariant _PlaceTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _controller.onCommittedChanged = widget.onChanged;
+    final fieldChanged = oldWidget.fieldKey != widget.fieldKey;
+    if (fieldChanged || oldWidget.initialValue != widget.initialValue) {
+      _controller.syncText(
+        widget.initialValue,
+        focusNode: _focusNode,
+        force: fieldChanged || widget.initialValue.isEmpty,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _detachFocusDispatch();
+    _focusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -1498,15 +1541,15 @@ class _PlaceTextField extends StatelessWidget {
       ),
       padding: const EdgeInsets.fromLTRB(14, 7, 14, 7),
       child: TextFormField(
-        key: fieldKey,
-        initialValue: initialValue,
-        maxLength: maxLength,
-        minLines: minLines,
-        maxLines: maxLines,
-        onChanged: onChanged,
+        key: widget.fieldKey,
+        controller: _controller,
+        focusNode: _focusNode,
+        maxLength: widget.maxLength,
+        minLines: widget.minLines,
+        maxLines: widget.maxLines,
         decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
+          labelText: widget.label,
+          hintText: widget.hint,
           counterText: '',
           border: InputBorder.none,
         ),

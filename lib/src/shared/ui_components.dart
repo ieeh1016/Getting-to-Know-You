@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'text_editing_sync.dart';
 import 'ui_style.dart';
 
 class AlagagiSectionLabel extends StatelessWidget {
@@ -994,7 +995,7 @@ class AlagagiInlineTextAction extends StatelessWidget {
   }
 }
 
-class AlagagiTextField extends StatelessWidget {
+class AlagagiTextField extends StatefulWidget {
   const AlagagiTextField({
     super.key,
     required this.fieldKey,
@@ -1015,6 +1016,48 @@ class AlagagiTextField extends StatelessWidget {
   final int maxLines;
 
   @override
+  State<AlagagiTextField> createState() => _AlagagiTextFieldState();
+}
+
+class _AlagagiTextFieldState extends State<AlagagiTextField> {
+  late final ImeSafeTextEditingController _controller;
+  late final FocusNode _focusNode;
+  late final VoidCallback _detachFocusDispatch;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = ImeSafeTextEditingController(
+      text: widget.initialValue,
+      onCommittedChanged: widget.onChanged,
+    );
+    _focusNode = FocusNode();
+    _detachFocusDispatch = dispatchTextOnFocusLost(_controller, _focusNode);
+  }
+
+  @override
+  void didUpdateWidget(covariant AlagagiTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _controller.onCommittedChanged = widget.onChanged;
+    final fieldChanged = oldWidget.fieldKey != widget.fieldKey;
+    if (fieldChanged || oldWidget.initialValue != widget.initialValue) {
+      _controller.syncText(
+        widget.initialValue,
+        focusNode: _focusNode,
+        force: fieldChanged || widget.initialValue.isEmpty,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _detachFocusDispatch();
+    _focusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -1024,15 +1067,15 @@ class AlagagiTextField extends StatelessWidget {
       ),
       padding: const EdgeInsets.fromLTRB(14, 7, 14, 7),
       child: TextFormField(
-        key: fieldKey,
-        initialValue: initialValue,
-        maxLength: maxLength,
-        minLines: maxLines,
-        maxLines: maxLines,
-        onChanged: onChanged,
+        key: widget.fieldKey,
+        controller: _controller,
+        focusNode: _focusNode,
+        maxLength: widget.maxLength,
+        minLines: widget.maxLines,
+        maxLines: widget.maxLines,
         decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
+          labelText: widget.label,
+          hintText: widget.hint,
           counterText: '',
           border: InputBorder.none,
         ),

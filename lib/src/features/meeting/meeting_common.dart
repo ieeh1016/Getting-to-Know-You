@@ -184,23 +184,28 @@ class MeetingTextField extends StatefulWidget {
 }
 
 class _MeetingTextFieldState extends State<MeetingTextField> {
-  late final TextEditingController _controller;
+  late final ImeSafeTextEditingController _controller;
   late final FocusNode _focusNode;
+  late final VoidCallback _detachFocusDispatch;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.initialValue);
+    _controller = ImeSafeTextEditingController(
+      text: widget.initialValue,
+      onCommittedChanged: widget.onChanged,
+    );
     _focusNode = FocusNode();
+    _detachFocusDispatch = dispatchTextOnFocusLost(_controller, _focusNode);
   }
 
   @override
   void didUpdateWidget(covariant MeetingTextField oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _controller.onCommittedChanged = widget.onChanged;
     final fieldChanged = oldWidget.fieldKey != widget.fieldKey;
     if (fieldChanged || oldWidget.initialValue != widget.initialValue) {
-      syncTextEditingControllerText(
-        _controller,
+      _controller.syncText(
         widget.initialValue,
         focusNode: _focusNode,
         force: fieldChanged || widget.initialValue.isEmpty,
@@ -210,6 +215,7 @@ class _MeetingTextFieldState extends State<MeetingTextField> {
 
   @override
   void dispose() {
+    _detachFocusDispatch();
     _focusNode.dispose();
     _controller.dispose();
     super.dispose();
@@ -232,7 +238,6 @@ class _MeetingTextFieldState extends State<MeetingTextField> {
         maxLines: widget.maxLines,
         focusNode: _focusNode,
         keyboardType: widget.keyboardType,
-        onChanged: widget.onChanged,
         decoration: InputDecoration(
           labelText: widget.label,
           hintText: widget.hint,

@@ -784,8 +784,9 @@ class _BalanceReasonField extends StatefulWidget {
 }
 
 class _BalanceReasonFieldState extends State<_BalanceReasonField> {
-  late final TextEditingController _controller;
+  late final ImeSafeTextEditingController _controller;
   late final FocusNode _focusNode;
+  late final VoidCallback _detachFocusDispatch;
   Timer? _saveDebounce;
   late String _lastSavedValue;
   bool _hasPendingSave = false;
@@ -793,19 +794,23 @@ class _BalanceReasonFieldState extends State<_BalanceReasonField> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.initialValue);
+    _controller = ImeSafeTextEditingController(
+      text: widget.initialValue,
+      onCommittedChanged: _scheduleSave,
+    );
     _focusNode = FocusNode();
+    _detachFocusDispatch = dispatchTextOnFocusLost(_controller, _focusNode);
     _lastSavedValue = widget.initialValue.trim();
   }
 
   @override
   void didUpdateWidget(covariant _BalanceReasonField oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _controller.onCommittedChanged = _scheduleSave;
     if ((oldWidget.syncKey != widget.syncKey ||
             oldWidget.initialValue != widget.initialValue) &&
         _controller.text != widget.initialValue) {
-      final synced = syncTextEditingControllerText(
-        _controller,
+      final synced = _controller.syncText(
         widget.initialValue,
         focusNode: _focusNode,
         force:
@@ -822,6 +827,7 @@ class _BalanceReasonFieldState extends State<_BalanceReasonField> {
   @override
   void dispose() {
     _saveDebounce?.cancel();
+    _detachFocusDispatch();
     _focusNode.dispose();
     _controller.dispose();
     super.dispose();
@@ -878,9 +884,9 @@ class _BalanceReasonFieldState extends State<_BalanceReasonField> {
           maxLines: 2,
           maxLength: 80,
           textInputAction: TextInputAction.done,
-          onChanged: _scheduleSave,
           onSubmitted: (_) {
             _saveDebounce?.cancel();
+            _controller.dispatchCurrentText();
             _flushSave();
           },
           decoration: InputDecoration(
