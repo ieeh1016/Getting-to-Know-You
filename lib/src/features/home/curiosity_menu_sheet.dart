@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
+import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
@@ -734,26 +735,29 @@ class _CuriosityTextField extends StatefulWidget {
 
 class _CuriosityTextFieldState extends State<_CuriosityTextField> {
   late final TextEditingController _controller;
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.value);
+    _focusNode = FocusNode();
   }
 
   @override
   void didUpdateWidget(covariant _CuriosityTextField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.value != _controller.text) {
-      _controller.text = widget.value;
-      _controller.selection = TextSelection.collapsed(
-        offset: _controller.text.length,
-      );
-    }
+    syncTextEditingControllerText(
+      _controller,
+      widget.value,
+      focusNode: _focusNode,
+      force: oldWidget.fieldKey != widget.fieldKey || widget.value.isEmpty,
+    );
   }
 
   @override
   void dispose() {
+    _focusNode.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -763,6 +767,7 @@ class _CuriosityTextFieldState extends State<_CuriosityTextField> {
     return TextField(
       key: widget.fieldKey,
       controller: _controller,
+      focusNode: _focusNode,
       minLines: widget.maxLines,
       maxLines: widget.maxLines,
       maxLength: widget.fieldKey == curiosityQuestionFieldKey ? 80 : 160,

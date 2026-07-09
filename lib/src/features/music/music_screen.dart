@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/app_shell.dart';
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
+import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
@@ -714,6 +715,7 @@ class _MusicMoodInput extends StatefulWidget {
 
 class _MusicMoodInputState extends State<_MusicMoodInput> {
   late final TextEditingController _controller;
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
@@ -721,23 +723,24 @@ class _MusicMoodInputState extends State<_MusicMoodInput> {
     _controller = TextEditingController(
       text: widget.controller.state.musicDraftMood,
     );
+    _focusNode = FocusNode();
   }
 
   @override
   void didUpdateWidget(covariant _MusicMoodInput oldWidget) {
     super.didUpdateWidget(oldWidget);
     final mood = widget.controller.state.musicDraftMood;
-    if (_controller.text == mood) {
-      return;
-    }
-    _controller.value = TextEditingValue(
-      text: mood,
-      selection: TextSelection.collapsed(offset: mood.length),
+    syncTextEditingControllerText(
+      _controller,
+      mood,
+      focusNode: _focusNode,
+      force: mood.isEmpty,
     );
   }
 
   @override
   void dispose() {
+    _focusNode.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -754,6 +757,7 @@ class _MusicMoodInputState extends State<_MusicMoodInput> {
       child: TextFormField(
         key: musicMoodFieldKey,
         controller: _controller,
+        focusNode: _focusNode,
         maxLength: 16,
         onChanged: widget.controller.setMusicDraftMood,
         decoration: const InputDecoration(
@@ -1703,6 +1707,7 @@ class _MusicCommentComposer extends StatefulWidget {
 
 class _MusicCommentComposerState extends State<_MusicCommentComposer> {
   late final TextEditingController _textController;
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
@@ -1710,23 +1715,24 @@ class _MusicCommentComposerState extends State<_MusicCommentComposer> {
     _textController = TextEditingController(
       text: widget.controller.musicCommentDraftForNote(widget.noteId),
     );
+    _focusNode = FocusNode();
   }
 
   @override
   void didUpdateWidget(covariant _MusicCommentComposer oldWidget) {
     super.didUpdateWidget(oldWidget);
     final draft = widget.controller.musicCommentDraftForNote(widget.noteId);
-    if (_textController.text == draft) {
-      return;
-    }
-    _textController.value = TextEditingValue(
-      text: draft,
-      selection: TextSelection.collapsed(offset: draft.length),
+    syncTextEditingControllerText(
+      _textController,
+      draft,
+      focusNode: _focusNode,
+      force: oldWidget.noteId != widget.noteId || draft.isEmpty,
     );
   }
 
   @override
   void dispose() {
+    _focusNode.dispose();
     _textController.dispose();
     super.dispose();
   }
@@ -1769,6 +1775,7 @@ class _MusicCommentComposerState extends State<_MusicCommentComposer> {
           TextField(
             key: musicCommentFieldKey(widget.noteId),
             controller: _textController,
+            focusNode: _focusNode,
             minLines: 2,
             maxLines: 4,
             maxLength: 180,
@@ -1874,6 +1881,7 @@ class _MusicCommentEditPanel extends StatefulWidget {
 
 class _MusicCommentEditPanelState extends State<_MusicCommentEditPanel> {
   late final TextEditingController _textController;
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
@@ -1883,6 +1891,7 @@ class _MusicCommentEditPanelState extends State<_MusicCommentEditPanel> {
         widget.comment.id,
       ),
     );
+    _focusNode = FocusNode();
   }
 
   @override
@@ -1891,17 +1900,17 @@ class _MusicCommentEditPanelState extends State<_MusicCommentEditPanel> {
     final draft = widget.controller.musicCommentEditDraftForComment(
       widget.comment.id,
     );
-    if (_textController.text == draft) {
-      return;
-    }
-    _textController.value = TextEditingValue(
-      text: draft,
-      selection: TextSelection.collapsed(offset: draft.length),
+    syncTextEditingControllerText(
+      _textController,
+      draft,
+      focusNode: _focusNode,
+      force: oldWidget.comment.id != widget.comment.id || draft.isEmpty,
     );
   }
 
   @override
   void dispose() {
+    _focusNode.dispose();
     _textController.dispose();
     super.dispose();
   }
@@ -1925,6 +1934,7 @@ class _MusicCommentEditPanelState extends State<_MusicCommentEditPanel> {
           TextField(
             key: musicCommentEditFieldKey(widget.comment.id),
             controller: _textController,
+            focusNode: _focusNode,
             minLines: 2,
             maxLines: 4,
             maxLength: 180,

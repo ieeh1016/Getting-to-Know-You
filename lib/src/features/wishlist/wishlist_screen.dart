@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/app_shell.dart';
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
+import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
@@ -403,6 +404,7 @@ class _WishDraftCard extends StatefulWidget {
 
 class _WishDraftCardState extends State<_WishDraftCard> {
   late final TextEditingController _titleController;
+  late final FocusNode _titleFocusNode;
   String? _lastEditingId;
 
   @override
@@ -411,6 +413,7 @@ class _WishDraftCardState extends State<_WishDraftCard> {
     _titleController = TextEditingController(
       text: widget.controller.state.wishDraftTitle,
     );
+    _titleFocusNode = FocusNode();
     _lastEditingId = widget.controller.state.editingWishId;
   }
 
@@ -418,11 +421,13 @@ class _WishDraftCardState extends State<_WishDraftCard> {
   void didUpdateWidget(covariant _WishDraftCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     final state = widget.controller.state;
-    if (_lastEditingId != state.editingWishId ||
-        _titleController.text != state.wishDraftTitle) {
-      _titleController.value = TextEditingValue(
-        text: state.wishDraftTitle,
-        selection: TextSelection.collapsed(offset: state.wishDraftTitle.length),
+    final editingTargetChanged = _lastEditingId != state.editingWishId;
+    if (editingTargetChanged || _titleController.text != state.wishDraftTitle) {
+      syncTextEditingControllerText(
+        _titleController,
+        state.wishDraftTitle,
+        focusNode: _titleFocusNode,
+        force: editingTargetChanged || state.wishDraftTitle.isEmpty,
       );
       _lastEditingId = state.editingWishId;
     }
@@ -430,6 +435,7 @@ class _WishDraftCardState extends State<_WishDraftCard> {
 
   @override
   void dispose() {
+    _titleFocusNode.dispose();
     _titleController.dispose();
     super.dispose();
   }
@@ -465,6 +471,7 @@ class _WishDraftCardState extends State<_WishDraftCard> {
             child: TextField(
               key: wishTitleFieldKey,
               controller: _titleController,
+              focusNode: _titleFocusNode,
               maxLength: 60,
               onChanged: controller.updateWishDraftTitle,
               decoration: const InputDecoration(

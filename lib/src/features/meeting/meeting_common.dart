@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
+import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_style.dart';
 
 String dateKeyForUi(DateTime date) {
@@ -184,27 +185,32 @@ class MeetingTextField extends StatefulWidget {
 
 class _MeetingTextFieldState extends State<MeetingTextField> {
   late final TextEditingController _controller;
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialValue);
+    _focusNode = FocusNode();
   }
 
   @override
   void didUpdateWidget(covariant MeetingTextField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.initialValue != widget.initialValue &&
-        _controller.text != widget.initialValue) {
-      _controller.text = widget.initialValue;
-      _controller.selection = TextSelection.collapsed(
-        offset: widget.initialValue.length,
+    final fieldChanged = oldWidget.fieldKey != widget.fieldKey;
+    if (fieldChanged || oldWidget.initialValue != widget.initialValue) {
+      syncTextEditingControllerText(
+        _controller,
+        widget.initialValue,
+        focusNode: _focusNode,
+        force: fieldChanged || widget.initialValue.isEmpty,
       );
     }
   }
 
   @override
   void dispose() {
+    _focusNode.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -224,6 +230,7 @@ class _MeetingTextFieldState extends State<MeetingTextField> {
         maxLength: widget.maxLength,
         minLines: widget.minLines,
         maxLines: widget.maxLines,
+        focusNode: _focusNode,
         keyboardType: widget.keyboardType,
         onChanged: widget.onChanged,
         decoration: InputDecoration(

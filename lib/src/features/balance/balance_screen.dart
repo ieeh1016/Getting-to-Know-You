@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../app/app_shell.dart';
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
+import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
@@ -755,7 +756,11 @@ class _BalanceReasonCard extends StatelessWidget {
               style: sans(size: 12, color: AlagagiColors.muted, height: 1.55),
             ),
             const SizedBox(height: 12),
-            _BalanceReasonField(initialValue: initialReason, onSave: onSave),
+            _BalanceReasonField(
+              syncKey: question.id,
+              initialValue: initialReason,
+              onSave: onSave,
+            ),
           ],
         ],
       ),
@@ -764,8 +769,13 @@ class _BalanceReasonCard extends StatelessWidget {
 }
 
 class _BalanceReasonField extends StatefulWidget {
-  const _BalanceReasonField({required this.initialValue, required this.onSave});
+  const _BalanceReasonField({
+    required this.syncKey,
+    required this.initialValue,
+    required this.onSave,
+  });
 
+  final String syncKey;
   final String initialValue;
   final ValueChanged<String> onSave;
 
@@ -775,6 +785,7 @@ class _BalanceReasonField extends StatefulWidget {
 
 class _BalanceReasonFieldState extends State<_BalanceReasonField> {
   late final TextEditingController _controller;
+  late final FocusNode _focusNode;
   Timer? _saveDebounce;
   late String _lastSavedValue;
   bool _hasPendingSave = false;
@@ -783,27 +794,35 @@ class _BalanceReasonFieldState extends State<_BalanceReasonField> {
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialValue);
+    _focusNode = FocusNode();
     _lastSavedValue = widget.initialValue.trim();
   }
 
   @override
   void didUpdateWidget(covariant _BalanceReasonField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.initialValue != widget.initialValue &&
+    if ((oldWidget.syncKey != widget.syncKey ||
+            oldWidget.initialValue != widget.initialValue) &&
         _controller.text != widget.initialValue) {
-      _saveDebounce?.cancel();
-      _controller.text = widget.initialValue;
-      _controller.selection = TextSelection.collapsed(
-        offset: widget.initialValue.length,
+      final synced = syncTextEditingControllerText(
+        _controller,
+        widget.initialValue,
+        focusNode: _focusNode,
+        force:
+            oldWidget.syncKey != widget.syncKey || widget.initialValue.isEmpty,
       );
-      _lastSavedValue = widget.initialValue.trim();
-      _hasPendingSave = false;
+      if (synced) {
+        _saveDebounce?.cancel();
+        _lastSavedValue = widget.initialValue.trim();
+        _hasPendingSave = false;
+      }
     }
   }
 
   @override
   void dispose() {
     _saveDebounce?.cancel();
+    _focusNode.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -854,6 +873,7 @@ class _BalanceReasonFieldState extends State<_BalanceReasonField> {
         TextField(
           key: balanceReasonFieldKey,
           controller: _controller,
+          focusNode: _focusNode,
           minLines: 1,
           maxLines: 2,
           maxLength: 80,

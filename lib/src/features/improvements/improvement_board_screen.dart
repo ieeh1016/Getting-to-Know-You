@@ -4,6 +4,7 @@ import '../../app/app_shell.dart';
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
 import '../../shared/readable_detail_sheet.dart';
+import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
@@ -624,11 +625,13 @@ class _ImprovementOwnerActions extends StatefulWidget {
 
 class _ImprovementOwnerActionsState extends State<_ImprovementOwnerActions> {
   late final TextEditingController _noteController;
+  late final FocusNode _noteFocusNode;
 
   @override
   void initState() {
     super.initState();
     _noteController = TextEditingController(text: widget.post.ownerNote);
+    _noteFocusNode = FocusNode();
   }
 
   @override
@@ -636,17 +639,20 @@ class _ImprovementOwnerActionsState extends State<_ImprovementOwnerActions> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.post.id != widget.post.id ||
         oldWidget.post.ownerNote != widget.post.ownerNote) {
-      _noteController.value = TextEditingValue(
-        text: widget.post.ownerNote,
-        selection: TextSelection.collapsed(
-          offset: widget.post.ownerNote.length,
-        ),
+      syncTextEditingControllerText(
+        _noteController,
+        widget.post.ownerNote,
+        focusNode: _noteFocusNode,
+        force:
+            oldWidget.post.id != widget.post.id ||
+            widget.post.ownerNote.isEmpty,
       );
     }
   }
 
   @override
   void dispose() {
+    _noteFocusNode.dispose();
     _noteController.dispose();
     super.dispose();
   }
@@ -676,6 +682,7 @@ class _ImprovementOwnerActionsState extends State<_ImprovementOwnerActions> {
             child: TextFormField(
               key: improvementOwnerNoteFieldKey(post.id),
               controller: _noteController,
+              focusNode: _noteFocusNode,
               maxLength: 160,
               minLines: 1,
               maxLines: 3,

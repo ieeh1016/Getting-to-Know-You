@@ -4,6 +4,7 @@ import '../../app/app_shell.dart';
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
 import '../../shared/readable_detail_sheet.dart';
+import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
@@ -1232,26 +1233,31 @@ class _ProfileEditorPanel extends StatefulWidget {
 
 class _ProfileEditorPanelState extends State<_ProfileEditorPanel> {
   late final TextEditingController _controller;
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.draft);
+    _focusNode = FocusNode();
   }
 
   @override
   void didUpdateWidget(covariant _ProfileEditorPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.slot.id != widget.slot.id) {
-      _controller.text = widget.draft;
-      _controller.selection = TextSelection.collapsed(
-        offset: _controller.text.length,
+      syncTextEditingControllerText(
+        _controller,
+        widget.draft,
+        focusNode: _focusNode,
+        force: true,
       );
     }
   }
 
   @override
   void dispose() {
+    _focusNode.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -1361,6 +1367,7 @@ class _ProfileEditorPanelState extends State<_ProfileEditorPanel> {
               child: TextFormField(
                 key: profileSlotFieldKey(widget.slot.id),
                 controller: _controller,
+                focusNode: _focusNode,
                 maxLength: 120,
                 minLines: 4,
                 maxLines: 6,

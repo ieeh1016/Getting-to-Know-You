@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/app_shell.dart';
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
+import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 import '../place/place_common.dart';
@@ -1637,6 +1638,7 @@ class _MeetingPlanPlaceReservationEditor extends StatefulWidget {
 class _MeetingPlanPlaceReservationEditorState
     extends State<_MeetingPlanPlaceReservationEditor> {
   late final TextEditingController _controller;
+  late final FocusNode _focusNode;
   late String _savedValue;
   String? _pendingValue;
 
@@ -1645,6 +1647,7 @@ class _MeetingPlanPlaceReservationEditorState
     super.initState();
     _savedValue = widget.initialValue;
     _controller = TextEditingController(text: widget.initialValue);
+    _focusNode = FocusNode();
   }
 
   @override
@@ -1663,17 +1666,21 @@ class _MeetingPlanPlaceReservationEditorState
     if (oldWidget.initialValue != widget.initialValue &&
         _pendingValue == null) {
       _savedValue = widget.initialValue;
-      if (_controller.text != widget.initialValue) {
-        _controller.text = widget.initialValue;
-        _controller.selection = TextSelection.collapsed(
-          offset: widget.initialValue.length,
-        );
-      }
+      syncTextEditingControllerText(
+        _controller,
+        widget.initialValue,
+        focusNode: _focusNode,
+        force:
+            oldWidget.place.id != widget.place.id ||
+            oldWidget.selectedDateKey != widget.selectedDateKey ||
+            widget.initialValue.isEmpty,
+      );
     }
   }
 
   @override
   void dispose() {
+    _focusNode.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -1719,6 +1726,7 @@ class _MeetingPlanPlaceReservationEditorState
             child: TextFormField(
               key: meetingPlanPlaceReservationFieldKey(widget.place.id),
               controller: _controller,
+              focusNode: _focusNode,
               maxLength: 30,
               minLines: 1,
               maxLines: 2,
