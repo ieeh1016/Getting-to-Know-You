@@ -217,6 +217,7 @@ const answerFieldKey = Key('answer-field');
 const answerRetryButtonKey = Key('answer-retry-button');
 const editAnswerButtonKey = Key('edit-answer-button');
 const answerCommentFieldKey = Key('answer-comment-field');
+const answerCommentStartButtonKey = Key('answer-comment-start-button');
 const answerCommentEditButtonKey = Key('answer-comment-edit-button');
 const answerCommentCancelButtonKey = Key('answer-comment-cancel-button');
 const answerCommentSubmitButtonKey = Key('answer-comment-submit-button');

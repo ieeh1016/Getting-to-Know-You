@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../app/test_keys.dart';
@@ -79,7 +81,7 @@ class AnswerCommentBox extends StatelessWidget {
       questionId,
       answerOwnerProfileId,
     );
-    final showEditor = !readOnly && (hasDraft || existingComment == null);
+    final showEditor = !readOnly && hasDraft;
     final showEditButton = !readOnly && existingComment != null && !hasDraft;
     if (readOnly && existingComment == null) {
       return const SizedBox.shrink();
@@ -92,269 +94,436 @@ class AnswerCommentBox extends StatelessWidget {
         isSaveTarget && controller.state.commentSaveStatus == SaveStatus.saving;
     final inputLength = inputValue.length;
 
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7FCFF),
-        border: Border.all(
-          color: showEditor ? const Color(0x5C6F7F63) : AlagagiColors.line,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: showEditor
-            ? const [
-                BoxShadow(
-                  color: Color(0x14000000),
-                  blurRadius: 22,
-                  offset: Offset(0, 10),
-                ),
-              ]
-            : null,
-      ),
-      padding: const EdgeInsets.fromLTRB(14, 13, 14, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+    final content = showEditor
+        ? _AnswerCommentEditorShelf(
+            controller: controller,
+            questionId: questionId,
+            answerOwnerProfileId: answerOwnerProfileId,
+            existingComment: existingComment,
+            inputValue: inputValue,
+            inputLength: inputLength,
+            isSaving: isSaving,
+          )
+        : existingComment == null
+        ? _CollapsedAnswerCommentComposer(
+            onPressed: () => controller.updateAnswerCommentDraft(
+              questionId: questionId,
+              answerOwnerProfileId: answerOwnerProfileId,
+              value: '',
+            ),
+          )
+        : _SavedAnswerCommentShelf(
+            controller: controller,
+            comment: existingComment,
+            showEditButton: showEditButton,
+            readOnly: readOnly,
+          );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        content,
+        if (isSaveTarget) ...[
+          const SizedBox(height: 8),
+          _CommentSaveStatus(
+            controller: controller,
+            questionId: questionId,
+            answerOwnerProfileId: answerOwnerProfileId,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _CollapsedAnswerCommentComposer extends StatelessWidget {
+  const _CollapsedAnswerCommentComposer({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return _CommentShelfFrame(
+      child: InkWell(
+        key: answerCommentStartButtonKey,
+        borderRadius: BorderRadius.circular(14),
+        onTap: onPressed,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 1),
+          child: Row(
             children: [
+              _CommentAvatar(label: '나', color: AlagagiColors.gold),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  '이 답에 댓글 남기기',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: sans(size: 12.5, color: AlagagiColors.muted),
+                ),
+              ),
+              const SizedBox(width: 9),
               Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEAF7FD),
-                  border: Border.all(color: AlagagiColors.line),
+                width: 30,
+                height: 30,
+                decoration: const BoxDecoration(
+                  color: AlagagiColors.sageDeep,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
                 child: const Icon(
-                  Icons.chat_bubble_outline_rounded,
-                  size: 14,
-                  color: AlagagiColors.sageDeep,
+                  Icons.arrow_forward_rounded,
+                  size: 16,
+                  color: Colors.white,
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      showEditor
-                          ? existingComment == null
-                                ? '댓글 남기기'
-                                : '댓글 다듬기'
-                          : '내 댓글',
-                      style: serif(
-                        context,
-                        size: 13,
-                        weight: FontWeight.w800,
-                        color: AlagagiColors.sageDeep,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      showEditor ? '저장 전까지는 내 화면에서만 바뀌어요' : '상대 답에 남긴 짧은 코멘트',
-                      style: sans(size: 10.5, color: AlagagiColors.muted),
-                    ),
-                  ],
-                ),
-              ),
-              if (showEditButton)
-                _CommentIconButton(
-                  key: answerCommentEditButtonKey,
-                  tooltip: '댓글 수정',
-                  icon: Icons.edit_outlined,
-                  onPressed: () => controller.updateAnswerCommentDraft(
-                    questionId: questionId,
-                    answerOwnerProfileId: answerOwnerProfileId,
-                    value: existingComment.body,
-                  ),
-                ),
             ],
           ),
-          if (existingComment != null && !showEditor) ...[
-            const SizedBox(height: 10),
-            Padding(
-              padding: const EdgeInsets.only(left: 36),
-              child: Builder(
-                builder: (context) {
-                  final showReadableCue = showsReadableCue(
-                    existingComment.body,
-                  );
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => showReadableDetailSheet(
-                          context,
-                          label: '내 댓글',
-                          title: '상대 답에 남긴 댓글',
-                          body: existingComment.body,
-                          actionLabel: readOnly ? null : '수정하기',
-                          onAction: readOnly
-                              ? null
-                              : () => controller.updateAnswerCommentDraft(
-                                  questionId: questionId,
-                                  answerOwnerProfileId: answerOwnerProfileId,
-                                  value: existingComment.body,
-                                ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              existingComment.body,
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                              style: sans(
-                                size: 13,
-                                color: AlagagiColors.ink,
-                                height: 1.55,
-                              ),
-                            ),
-                            if (showReadableCue) ...[
-                              const SizedBox(height: 5),
-                              const AlagagiFullTextCue(),
-                            ],
-                          ],
-                        ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SavedAnswerCommentShelf extends StatelessWidget {
+  const _SavedAnswerCommentShelf({
+    required this.controller,
+    required this.comment,
+    required this.showEditButton,
+    required this.readOnly,
+  });
+
+  final AlagagiController controller;
+  final AnswerComment comment;
+  final bool showEditButton;
+  final bool readOnly;
+
+  @override
+  Widget build(BuildContext context) {
+    final showReadableCue = showsReadableCue(comment.body);
+    return _CommentShelfFrame(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _CommentAvatar(
+            label: _profileShortLabel(controller, comment.commenterProfileId),
+            color: AlagagiColors.gold,
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => showReadableDetailSheet(
+                context,
+                label: '내 댓글',
+                title: '상대 답에 남긴 댓글',
+                body: comment.body,
+                actionLabel: readOnly ? null : '수정하기',
+                onAction: readOnly
+                    ? null
+                    : () => controller.updateAnswerCommentDraft(
+                        questionId: comment.questionId,
+                        answerOwnerProfileId: comment.answerOwnerProfileId,
+                        value: comment.body,
                       ),
-                      if (existingComment.edited) ...[
-                        const SizedBox(height: 8),
-                        const _EditedBadge(),
-                      ],
-                    ],
-                  );
-                },
               ),
-            ),
-          ],
-          if (showEditor) ...[
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5FCFF),
-                border: Border.all(color: const Color(0x336F7F63)),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              padding: const EdgeInsets.all(12),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: AlagagiColors.line),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: _ImeSafeCommentTextField(
-                      fieldKey: answerCommentFieldKey,
-                      syncKey: '$questionId:$answerOwnerProfileId',
-                      initialValue: inputValue,
-                      hintText: existingComment == null
-                          ? '이 답에 짧게 남겨볼까요?'
-                          : '댓글을 다듬어볼까요?',
-                      onChanged: (value) => controller.updateAnswerCommentDraft(
-                        questionId: questionId,
-                        answerOwnerProfileId: answerOwnerProfileId,
-                        value: value,
-                      ),
+                  _CommentShelfTitle(
+                    title: '내 댓글',
+                    trailing: comment.edited ? '수정됨' : comment.createdLabel,
+                    color: AlagagiColors.sageDeep,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    comment.body,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: sans(
+                      size: 12.5,
+                      color: const Color(0xFF435864),
+                      height: 1.56,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '짧고 편한 말투로 남겨요',
-                          style: sans(size: 10.5, color: AlagagiColors.muted),
-                        ),
-                      ),
-                      Text(
-                        '$inputLength / 120',
-                        style: sans(size: 10.5, color: AlagagiColors.muted),
-                      ),
-                    ],
-                  ),
-                  if (controller.state.commentError != null) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.info_outline_rounded,
-                          size: 14,
-                          color: Color(0xFFB18472),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            controller.state.commentError!,
-                            style: sans(
-                              size: 11,
-                              color: const Color(0xFFB18472),
-                              height: 1.4,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  if (showReadableCue) ...[
+                    const SizedBox(height: 5),
+                    const AlagagiFullTextCue(),
                   ],
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      if (existingComment != null) ...[
-                        SizedBox(
-                          width: 88,
-                          child: _CommentSecondaryButton(
-                            key: answerCommentCancelButtonKey,
-                            label: '취소',
-                            onPressed: isSaving
-                                ? null
-                                : () => controller.cancelAnswerCommentDraft(
-                                    questionId: questionId,
-                                    answerOwnerProfileId: answerOwnerProfileId,
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(width: 9),
-                      ],
-                      Expanded(
-                        flex: existingComment == null ? 1 : 2,
-                        child: _CommentPrimaryButton(
-                          key: answerCommentSubmitButtonKey,
-                          label: isSaving
-                              ? '저장 중'
-                              : existingComment == null
-                              ? '댓글 남기기'
-                              : '수정 저장',
-                          onPressed: isSaving
-                              ? null
-                              : () => controller.submitAnswerComment(
-                                  questionId: questionId,
-                                  answerOwnerProfileId: answerOwnerProfileId,
-                                ),
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
             ),
-          ],
-          if (isSaveTarget) ...[
-            const SizedBox(height: 10),
-            _CommentSaveStatus(
-              controller: controller,
-              questionId: questionId,
-              answerOwnerProfileId: answerOwnerProfileId,
+          ),
+          if (showEditButton) ...[
+            const SizedBox(width: 6),
+            _CommentIconButton(
+              key: answerCommentEditButtonKey,
+              tooltip: '댓글 수정',
+              icon: Icons.edit_outlined,
+              onPressed: () => controller.updateAnswerCommentDraft(
+                questionId: comment.questionId,
+                answerOwnerProfileId: comment.answerOwnerProfileId,
+                value: comment.body,
+              ),
             ),
           ],
         ],
       ),
     );
   }
+}
+
+class _AnswerCommentEditorShelf extends StatelessWidget {
+  const _AnswerCommentEditorShelf({
+    required this.controller,
+    required this.questionId,
+    required this.answerOwnerProfileId,
+    required this.existingComment,
+    required this.inputValue,
+    required this.inputLength,
+    required this.isSaving,
+  });
+
+  final AlagagiController controller;
+  final String questionId;
+  final String answerOwnerProfileId;
+  final AnswerComment? existingComment;
+  final String inputValue;
+  final int inputLength;
+  final bool isSaving;
+
+  @override
+  Widget build(BuildContext context) {
+    return _CommentShelfFrame(
+      borderColor: const Color(0x5C6F7F63),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  existingComment == null ? '내 댓글' : '내 댓글 수정',
+                  style: sans(
+                    size: 12,
+                    color: AlagagiColors.sageDeep,
+                    weight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Text(
+                '$inputLength / 120',
+                style: sans(size: 10.5, color: AlagagiColors.muted),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: AlagagiColors.line),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: _ImeSafeCommentTextField(
+              fieldKey: answerCommentFieldKey,
+              syncKey: '$questionId:$answerOwnerProfileId',
+              initialValue: inputValue,
+              hintText: existingComment == null
+                  ? '이 답에 짧게 남겨볼까요?'
+                  : '댓글을 다듬어볼까요?',
+              onChanged: (value) => controller.updateAnswerCommentDraft(
+                questionId: questionId,
+                answerOwnerProfileId: answerOwnerProfileId,
+                value: value,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '저장 전까지는 내 화면에서만 바뀌어요',
+            style: sans(size: 10.5, color: AlagagiColors.muted),
+          ),
+          if (controller.state.commentError != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.info_outline_rounded,
+                  size: 14,
+                  color: Color(0xFFB18472),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    controller.state.commentError!,
+                    style: sans(
+                      size: 11,
+                      color: const Color(0xFFB18472),
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              SizedBox(
+                width: 84,
+                child: _CommentSecondaryButton(
+                  key: answerCommentCancelButtonKey,
+                  label: '취소',
+                  onPressed: isSaving
+                      ? null
+                      : () => controller.cancelAnswerCommentDraft(
+                          questionId: questionId,
+                          answerOwnerProfileId: answerOwnerProfileId,
+                        ),
+                ),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: _CommentPrimaryButton(
+                  key: answerCommentSubmitButtonKey,
+                  label: isSaving
+                      ? '저장 중'
+                      : existingComment == null
+                      ? '저장'
+                      : '수정 저장',
+                  onPressed: isSaving
+                      ? null
+                      : () => controller.submitAnswerComment(
+                          questionId: questionId,
+                          answerOwnerProfileId: answerOwnerProfileId,
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CommentShelfFrame extends StatelessWidget {
+  const _CommentShelfFrame({
+    required this.child,
+    this.borderColor = AlagagiColors.line,
+  });
+
+  final Widget child;
+  final Color borderColor;
+
+  @override
+  Widget build(BuildContext context) {
+    const backgroundColor = Colors.white;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned(
+          left: 21,
+          top: -5,
+          child: Transform.rotate(
+            angle: math.pi / 4,
+            child: Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                border: Border(
+                  left: BorderSide(color: borderColor),
+                  top: BorderSide(color: borderColor),
+                ),
+              ),
+            ),
+          ),
+        ),
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            border: Border.all(color: borderColor),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.fromLTRB(11, 10, 11, 10),
+          child: child,
+        ),
+      ],
+    );
+  }
+}
+
+class _CommentAvatar extends StatelessWidget {
+  const _CommentAvatar({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 25,
+      height: 25,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .14),
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        label,
+        style: sans(size: 10, color: color, weight: FontWeight.w800),
+      ),
+    );
+  }
+}
+
+class _CommentShelfTitle extends StatelessWidget {
+  const _CommentShelfTitle({
+    required this.title,
+    required this.trailing,
+    required this.color,
+  });
+
+  final String title;
+  final String trailing;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: sans(size: 11.5, color: color, weight: FontWeight.w800),
+          ),
+        ),
+        if (trailing.isNotEmpty) ...[
+          const SizedBox(width: 8),
+          Text(trailing, style: sans(size: 10.5, color: AlagagiColors.muted)),
+        ],
+      ],
+    );
+  }
+}
+
+String _profileShortLabel(AlagagiController controller, String profileId) {
+  final nickname = profileId == controller.state.me.id
+      ? controller.state.me.nickname
+      : profileId == controller.state.partner.id
+      ? controller.state.partner.nickname
+      : '';
+  final trimmed = nickname.trim();
+  if (trimmed.isEmpty) {
+    return '?';
+  }
+  return String.fromCharCode(trimmed.runes.first);
 }
 
 class _CommentSaveStatus extends StatelessWidget {
@@ -529,6 +698,7 @@ class AnswerPreviewBlock extends StatelessWidget {
     required this.body,
     this.accentColor = AlagagiColors.sageDeep,
     this.action,
+    this.footer,
     this.expanded = false,
     this.onToggle,
     this.onOpenFull,
@@ -538,6 +708,7 @@ class AnswerPreviewBlock extends StatelessWidget {
   final String body;
   final Color accentColor;
   final Widget? action;
+  final Widget? footer;
   final bool expanded;
   final VoidCallback? onToggle;
   final VoidCallback? onOpenFull;
@@ -550,66 +721,72 @@ class AnswerPreviewBlock extends StatelessWidget {
         ? '${body.substring(0, alagagiReadablePreviewLength).trimRight()}...'
         : body;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onOpenFull,
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF5FCFF),
-          border: Border.all(color: AlagagiColors.line),
-          borderRadius: BorderRadius.circular(17),
-        ),
-        padding: const EdgeInsets.all(15),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5FCFF),
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(17),
+      ),
+      padding: const EdgeInsets.all(15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onOpenFull,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    label,
-                    style: serif(
-                      context,
-                      size: 13,
-                      weight: FontWeight.w800,
-                      color: accentColor,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        label,
+                        style: serif(
+                          context,
+                          size: 13,
+                          weight: FontWeight.w800,
+                          color: accentColor,
+                        ),
+                      ),
                     ),
+                    ?action,
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  visibleBody,
+                  style: sans(
+                    size: 13.5,
+                    color: const Color(0xFF4A4A46),
+                    height: 1.62,
                   ),
                 ),
-                ?action,
+                if ((isLong && onToggle != null) ||
+                    (showReadableCue && onOpenFull != null)) ...[
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 14,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      if (isLong && onToggle != null)
+                        AlagagiInlineTextAction(
+                          label: expanded ? '접기' : '더 보기',
+                          onPressed: onToggle,
+                        ),
+                      if (showReadableCue && onOpenFull != null)
+                        const AlagagiFullTextCue(),
+                    ],
+                  ),
+                ],
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              visibleBody,
-              style: sans(
-                size: 13.5,
-                color: const Color(0xFF4A4A46),
-                height: 1.62,
-              ),
-            ),
-            if ((isLong && onToggle != null) ||
-                (showReadableCue && onOpenFull != null)) ...[
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 14,
-                runSpacing: 6,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  if (isLong && onToggle != null)
-                    AlagagiInlineTextAction(
-                      label: expanded ? '접기' : '더 보기',
-                      onPressed: onToggle,
-                    ),
-                  if (showReadableCue && onOpenFull != null)
-                    const AlagagiFullTextCue(),
-                ],
-              ),
-            ],
-          ],
-        ),
+          ),
+          if (footer != null) ...[const SizedBox(height: 13), footer!],
+        ],
       ),
     );
   }
@@ -733,74 +910,89 @@ class ReceivedAnswerCommentBlock extends StatelessWidget {
     final isSaving =
         isSaveTarget && controller.state.commentSaveStatus == SaveStatus.saving;
 
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        border: Border.all(color: AlagagiColors.line),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
+    return _CommentShelfFrame(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onOpenFull,
+          _CommentAvatar(
+            label: _profileShortLabel(controller, comment.commenterProfileId),
+            color: AlagagiColors.lavender,
+          ),
+          const SizedBox(width: 9),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: sans(size: 11, color: AlagagiColors.muted)),
-                const SizedBox(height: 4),
-                Text(
-                  comment.body,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: sans(size: 13, height: 1.5),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onOpenFull,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _CommentShelfTitle(
+                        title: label,
+                        trailing: comment.edited ? '수정됨' : comment.createdLabel,
+                        color: AlagagiColors.lavender,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        comment.body,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: sans(
+                          size: 12.5,
+                          color: const Color(0xFF435864),
+                          height: 1.56,
+                        ),
+                      ),
+                      if (showReadableCue && onOpenFull != null) ...[
+                        const SizedBox(height: 5),
+                        const AlagagiFullTextCue(),
+                      ],
+                    ],
+                  ),
                 ),
-                if (showReadableCue && onOpenFull != null) ...[
-                  const SizedBox(height: 5),
-                  const AlagagiFullTextCue(),
+                if (canReply) ...[
+                  const SizedBox(height: 10),
+                  if (showReplyEditor)
+                    _AnswerCommentReplyEditor(
+                      controller: controller,
+                      comment: comment,
+                      inputValue: replyInputValue,
+                      inputLength: replyLength,
+                      isSaving: isSaving,
+                    )
+                  else if (comment.hasReply)
+                    _AnswerCommentReplyPreview(
+                      controller: controller,
+                      comment: comment,
+                      isSaving: isSaving,
+                    )
+                  else
+                    AlagagiInlineTextAction(
+                      label: '답장하기',
+                      onPressed: isSaving
+                          ? null
+                          : () => controller.updateAnswerCommentReplyDraft(
+                              questionId: comment.questionId,
+                              answerOwnerProfileId:
+                                  comment.answerOwnerProfileId,
+                              commenterProfileId: comment.commenterProfileId,
+                              value: '',
+                            ),
+                    ),
+                  if (isSaveTarget) ...[
+                    const SizedBox(height: 8),
+                    _CommentSaveStatus(
+                      controller: controller,
+                      questionId: comment.questionId,
+                      answerOwnerProfileId: comment.answerOwnerProfileId,
+                    ),
+                  ],
                 ],
               ],
             ),
           ),
-          if (canReply) ...[
-            const SizedBox(height: 11),
-            if (showReplyEditor)
-              _AnswerCommentReplyEditor(
-                controller: controller,
-                comment: comment,
-                inputValue: replyInputValue,
-                inputLength: replyLength,
-                isSaving: isSaving,
-              )
-            else if (comment.hasReply)
-              _AnswerCommentReplyPreview(
-                controller: controller,
-                comment: comment,
-                isSaving: isSaving,
-              )
-            else
-              AlagagiInlineTextAction(
-                label: '답장하기',
-                onPressed: isSaving
-                    ? null
-                    : () => controller.updateAnswerCommentReplyDraft(
-                        questionId: comment.questionId,
-                        answerOwnerProfileId: comment.answerOwnerProfileId,
-                        commenterProfileId: comment.commenterProfileId,
-                        value: '',
-                      ),
-              ),
-            if (isSaveTarget) ...[
-              const SizedBox(height: 8),
-              _CommentSaveStatus(
-                controller: controller,
-                questionId: comment.questionId,
-                answerOwnerProfileId: comment.answerOwnerProfileId,
-              ),
-            ],
-          ],
         ],
       ),
     );

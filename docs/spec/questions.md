@@ -10,6 +10,8 @@ Daily question은 앱의 핵심 slow-conversation loop다. records와 archive는
 - user는 자신의 answer를 write, save, edit, retry할 수 있다.
 - partner answer는 user의 answer가 저장될 때까지 locked 상태를 유지한다.
 - answer comment는 열린 partner answer에 남기는 짧은 explicit-save note다.
+- answer comment UI는 answer와 같은 위계의 별도 card가 아니라 answer 아래에 붙은 작은 comment shelf로 보여준다.
+- comment composer는 기본적으로 한 줄 entry로 접혀 있고, user가 댓글 남기기를 명시적으로 시작하면 editor가 열린다.
 - archive는 all, both answered, similar-answer filter를 지원한다.
 - record screen은 score나 percentage 없이 shared-answer summary와 matched keyword를 보여줄 수 있다.
 

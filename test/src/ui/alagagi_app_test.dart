@@ -1061,7 +1061,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.byKey(answerCommentFieldKey));
+    await tester.ensureVisible(find.byKey(answerCommentStartButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(answerCommentStartButtonKey));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(answerCommentFieldKey), '이 답 좋다.');
     await tester.tap(find.byKey(answerCommentSubmitButtonKey));
@@ -4353,7 +4355,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.ensureVisible(find.byKey(answerCommentFieldKey));
+      await tester.ensureVisible(find.byKey(answerCommentStartButtonKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(answerCommentStartButtonKey));
       await tester.pumpAndSettle();
       await tester.enterText(find.byKey(answerCommentFieldKey), '이 답 좋다.');
       await tester.tap(find.byKey(answerCommentSubmitButtonKey));

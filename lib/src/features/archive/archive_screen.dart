@@ -434,6 +434,13 @@ class _SelectedQuestionDetail extends StatelessWidget {
             myAnswer.profileId,
             controller.state.partner.id,
           );
+    final sentComment = partnerAnswer == null
+        ? null
+        : controller.commentForAnswer(
+            question.id,
+            partnerAnswer.profileId,
+            controller.state.me.id,
+          );
     return AlagagiPaperCard(
       radius: 22,
       padding: const EdgeInsets.all(19),
@@ -490,6 +497,19 @@ class _SelectedQuestionDetail extends StatelessWidget {
                 myAnswer.questionId,
                 myAnswer.profileId,
               ),
+              footer: receivedComment == null
+                  ? null
+                  : ReceivedAnswerCommentBlock(
+                      controller: controller,
+                      comment: receivedComment,
+                      label: '${controller.state.partner.nickname}님의 댓글',
+                      onOpenFull: () => showReadableDetailSheet(
+                        context,
+                        label: '${controller.state.partner.nickname}님의 댓글',
+                        title: '내 답에 남겨진 댓글',
+                        body: receivedComment.body,
+                      ),
+                    ),
             )
           else if (myAnswer != null && myAnswer.skipped)
             const QuestionSupportBlock(
@@ -501,20 +521,6 @@ class _SelectedQuestionDetail extends StatelessWidget {
               day.canLateAnswer ? '아직 내 답이 없어요.' : statusLabel,
               style: sans(size: 12.5, color: AlagagiColors.muted),
             ),
-          if (receivedComment != null) ...[
-            const SizedBox(height: 10),
-            ReceivedAnswerCommentBlock(
-              controller: controller,
-              comment: receivedComment,
-              label: '${controller.state.partner.nickname}님의 댓글',
-              onOpenFull: () => showReadableDetailSheet(
-                context,
-                label: '${controller.state.partner.nickname}님의 댓글',
-                title: '내 답에 남겨진 댓글',
-                body: receivedComment.body,
-              ),
-            ),
-          ],
           if (partnerAnswer != null) ...[
             const SizedBox(height: 12),
             AnswerPreviewBlock(
@@ -539,13 +545,14 @@ class _SelectedQuestionDetail extends StatelessWidget {
                 partnerAnswer.questionId,
                 partnerAnswer.profileId,
               ),
-            ),
-            const SizedBox(height: 10),
-            AnswerCommentBox(
-              controller: controller,
-              questionId: partnerAnswer.questionId,
-              answerOwnerProfileId: partnerAnswer.profileId,
-              readOnly: true,
+              footer: sentComment == null
+                  ? null
+                  : AnswerCommentBox(
+                      controller: controller,
+                      questionId: partnerAnswer.questionId,
+                      answerOwnerProfileId: partnerAnswer.profileId,
+                      readOnly: true,
+                    ),
             ),
           ] else if (myAnswer != null && !myAnswer.skipped) ...[
             const SizedBox(height: 12),
@@ -660,6 +667,13 @@ class _ArchiveCard extends StatelessWidget {
             item.myAnswer!.questionId,
             item.myAnswer!.profileId,
             controller.state.partner.id,
+          );
+    final sentComment = item.partnerAnswer == null
+        ? null
+        : controller.commentForAnswer(
+            item.partnerAnswer!.questionId,
+            item.partnerAnswer!.profileId,
+            controller.state.me.id,
           );
     return AlagagiPaperCard(
       radius: 20,
@@ -811,13 +825,15 @@ class _ArchiveCard extends StatelessWidget {
                 item.partnerAnswer!.profileId,
               ),
             ),
-            const SizedBox(height: 10),
-            AnswerCommentBox(
-              controller: controller,
-              questionId: item.partnerAnswer!.questionId,
-              answerOwnerProfileId: item.partnerAnswer!.profileId,
-              readOnly: true,
-            ),
+            if (sentComment != null) ...[
+              const SizedBox(height: 10),
+              AnswerCommentBox(
+                controller: controller,
+                questionId: item.partnerAnswer!.questionId,
+                answerOwnerProfileId: item.partnerAnswer!.profileId,
+                readOnly: true,
+              ),
+            ],
           ],
           if (item.matchedKeywords.isNotEmpty) ...[
             const SizedBox(height: 12),

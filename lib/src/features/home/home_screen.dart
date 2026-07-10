@@ -207,21 +207,20 @@ class _QuestionCard extends StatelessWidget {
                 myAnswer.questionId,
                 myAnswer.profileId,
               ),
+              footer: receivedComment == null
+                  ? null
+                  : ReceivedAnswerCommentBlock(
+                      controller: controller,
+                      comment: receivedComment,
+                      label: '${controller.state.partner.nickname}님의 댓글',
+                      onOpenFull: () => showReadableDetailSheet(
+                        context,
+                        label: '${controller.state.partner.nickname}님의 댓글',
+                        title: '내 답에 남겨진 댓글',
+                        body: receivedComment.body,
+                      ),
+                    ),
             ),
-            if (receivedComment != null) ...[
-              const SizedBox(height: 10),
-              ReceivedAnswerCommentBlock(
-                controller: controller,
-                comment: receivedComment,
-                label: '${controller.state.partner.nickname}님의 댓글',
-                onOpenFull: () => showReadableDetailSheet(
-                  context,
-                  label: '${controller.state.partner.nickname}님의 댓글',
-                  title: '내 답에 남겨진 댓글',
-                  body: receivedComment.body,
-                ),
-              ),
-            ],
             const SizedBox(height: 16),
             if (partnerAnswer == null)
               QuestionSupportBlock(
@@ -254,12 +253,11 @@ class _QuestionCard extends StatelessWidget {
                       partnerAnswer.questionId,
                       partnerAnswer.profileId,
                     ),
-                  ),
-                  const SizedBox(height: 14),
-                  AnswerCommentBox(
-                    controller: controller,
-                    questionId: partnerAnswer.questionId,
-                    answerOwnerProfileId: partnerAnswer.profileId,
+                    footer: AnswerCommentBox(
+                      controller: controller,
+                      questionId: partnerAnswer.questionId,
+                      answerOwnerProfileId: partnerAnswer.profileId,
+                    ),
                   ),
                 ],
               ),
