@@ -8,9 +8,9 @@
 
 - 하단 navigation tab을 추가하지 않는다.
 - Home에는 `서로의 기억` 주요 카드를 보여준다.
-  - 최근 공유 카드 1개 또는 empty state를 보여준다.
+  - 최근 공유 카드 1개 또는 empty state를 홈 카드의 주 콘텐츠로 보여준다.
   - 영우의 공간, 민영이의 공간 카드 수를 요약한다.
-  - `기억 보기`, `카드 만들기` action을 제공한다.
+  - `기억 열어보기`를 주 action으로 제공하고, `카드 만들기`는 보조 plus action으로 제공한다.
 - Home menu의 `기능 모아보기`에도 `서로의 기억` 항목을 제공한다.
 - 기억 카드 화면은 bottom-tab root가 아닌 sub-screen이며 back action을 가진다.
 

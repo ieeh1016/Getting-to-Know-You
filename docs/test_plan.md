@@ -178,7 +178,7 @@
 - 홈은 `Today's Question` 아래에 작은 `궁금함` 상태 카드를 보여주고, 카드를 누르면 실제 질문/답장 bottom sheet를 연다.
 - 홈 header menu는 `기능 모아보기`로 동작하며 `궁금함 한 장`, `서로의 기억`, `주식 이야기`, `건의함`, `취향 매치`, `소개 카드`, `언젠가, 같이`, `처음 안내`를 한곳에서 열 수 있다.
 - `[MEMORY-001]` 홈은 하단 tab을 추가하지 않고 `서로의 기억` 주요 카드와 menu entry에서 기억 카드 화면을 연다.
-- `[MEMORY-001]` `서로의 기억` 홈 카드는 영우의 공간/민영이의 공간 count, 최근 공유 카드 preview, `기억 보기`/`카드 만들기` action을 보여준다.
+- `[MEMORY-001]` `서로의 기억` 홈 카드는 최근 공유 카드 preview를 주 콘텐츠로, 영우의 공간/민영이의 공간 count를 하단 요약으로, `기억 열어보기` 주 action과 plus 형태의 `카드 만들기` 보조 action을 보여준다.
 - 기억 카드 화면은 작성자 기준 공간 tab, card type filter, 직접 작성 form, shared/private 공개 범위, shared card reaction/correction flow를 제공한다.
 - 홈 `궁금함` 메뉴는 받은 질문, `답장 저장하기`, 내가 보낸 질문 상태, `질문 보내기`, `나중에 보기`를 보여준다.
 - `궁금함` 질문 draft와 답장 draft 변경은 repository write를 호출하지 않고, `질문 보내기`/`답장 저장하기` submit 시에만 `curiosityCards` 문서를 저장한다.

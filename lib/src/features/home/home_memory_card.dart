@@ -17,119 +17,69 @@ class HomeMemoryCard extends StatelessWidget {
     final unreadCount = controller.unreadCountForFeature(
       UnreadActivityFeature.memoryCards,
     );
+    final meCount = controller.memoryCardCountForOwner(state.me.id);
+    final partnerCount = controller.memoryCardCountForOwner(state.partner.id);
     return AlagagiPaperCard(
       key: homeMemoryCardKey,
       radius: 22,
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+      padding: const EdgeInsets.fromLTRB(20, 19, 20, 18),
       highlightedBorder: unreadCount > 0 ? AlagagiColors.sage : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEAF7FD),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                alignment: Alignment.center,
-                child: const Icon(
-                  Icons.bookmark_added_outlined,
-                  size: 22,
-                  color: AlagagiColors.sageDeep,
-                ),
-              ),
-              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
+                      'MEMORY',
+                      style: sans(
+                        size: 10.5,
+                        color: AlagagiColors.sageDeep,
+                        weight: FontWeight.w800,
+                        letterSpacing: 1.8,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
                       '서로의 기억',
                       style: serif(context, size: 19, weight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '까먹고 싶지 않은 이야기를 직접 남겨요',
-                      style: sans(
-                        size: 12.2,
-                        color: AlagagiColors.muted,
-                        height: 1.45,
-                      ),
                     ),
                   ],
                 ),
               ),
-              if (unreadCount > 0) AlagagiSmallBadge(label: '새 $unreadCount'),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _MemoryCountTile(
-                  label: '${state.me.nickname}의 공간',
-                  count: controller.memoryCardCountForOwner(state.me.id),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _MemoryCountTile(
-                  label: '${state.partner.nickname}의 공간',
-                  count: controller.memoryCardCountForOwner(state.partner.id),
-                ),
+              if (unreadCount > 0) ...[
+                AlagagiSmallBadge(label: '새 $unreadCount'),
+                const SizedBox(width: 8),
+              ],
+              _MemoryIconButton(
+                buttonKey: homeMemoryCreateButtonKey,
+                tooltip: '새 기억 카드 만들기',
+                icon: Icons.add_rounded,
+                onPressed: () => controller.goTo(AlagagiRoute.memoryCards),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           if (latest == null)
-            Text(
-              '아직 남긴 기억 카드가 없어요. 대화 중 오래 기억하고 싶은 내용을 짧게 적어둘 수 있어요.',
-              style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
-            )
+            _EmptyMemoryPreview(controller: controller)
           else
             _LatestMemoryPreview(controller: controller, card: latest),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  key: homeMemoryOpenButtonKey,
-                  onPressed: () => controller.goTo(AlagagiRoute.memoryCards),
-                  icon: const Icon(Icons.arrow_forward_rounded, size: 16),
-                  label: const Text('기억 보기'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AlagagiColors.sageDeep,
-                    side: const BorderSide(color: Color(0x338A9A7E)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    textStyle: sans(size: 12.3, weight: FontWeight.w800),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FilledButton.icon(
-                  key: homeMemoryCreateButtonKey,
-                  onPressed: () => controller.goTo(AlagagiRoute.memoryCards),
-                  icon: const Icon(Icons.add_rounded, size: 17),
-                  label: const Text('카드 만들기'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AlagagiColors.ink,
-                    foregroundColor: AlagagiColors.appBackground,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    textStyle: sans(size: 12.3, weight: FontWeight.w800),
-                  ),
-                ),
-              ),
-            ],
+          const SizedBox(height: 13),
+          _MemorySpaceBar(
+            meLabel: '${state.me.nickname}의 공간',
+            meCount: meCount,
+            partnerLabel: '${state.partner.nickname}의 공간',
+            partnerCount: partnerCount,
+          ),
+          const SizedBox(height: 13),
+          AlagagiPrimaryButton(
+            buttonKey: homeMemoryOpenButtonKey,
+            label: latest == null ? '첫 기억 남기기' : '기억 열어보기',
+            onPressed: () => controller.goTo(AlagagiRoute.memoryCards),
+            color: AlagagiColors.sageDeep,
           ),
         ],
       ),
@@ -137,28 +87,139 @@ class HomeMemoryCard extends StatelessWidget {
   }
 }
 
-class _MemoryCountTile extends StatelessWidget {
-  const _MemoryCountTile({required this.label, required this.count});
+class _MemoryIconButton extends StatelessWidget {
+  const _MemoryIconButton({
+    required this.buttonKey,
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final Key buttonKey;
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: IconButton(
+        key: buttonKey,
+        onPressed: onPressed,
+        icon: Icon(icon, size: 18),
+        color: AlagagiColors.sageDeep,
+        constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+        padding: EdgeInsets.zero,
+        style: IconButton.styleFrom(
+          backgroundColor: Colors.white,
+          side: const BorderSide(color: Color(0x338A9A7E)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyMemoryPreview extends StatelessWidget {
+  const _EmptyMemoryPreview({required this.controller});
+
+  final AlagagiController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      padding: const EdgeInsets.all(15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '아직 남긴 기억이 없어요.',
+            style: serif(context, size: 17, weight: FontWeight.w800),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            '대화 중 오래 기억하고 싶은 말, 편하게 대해주고 싶은 포인트, 다음에 챙겨주고 싶은 취향을 한 장으로 남겨둘 수 있어요.',
+            style: sans(size: 12.5, color: AlagagiColors.muted, height: 1.6),
+          ),
+          const SizedBox(height: 13),
+          _MemoryStarterLine(
+            label: '예: 좋아하는 자리',
+            body:
+                '${controller.state.partner.nickname}님은 조용하고 오래 앉기 편한 곳을 좋아해요.',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MemoryStarterLine extends StatelessWidget {
+  const _MemoryStarterLine({required this.label, required this.body});
 
   final String label;
-  final int count;
+  final String body;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF3FBFF),
+        color: const Color(0xFFF5FCFF),
         borderRadius: BorderRadius.circular(14),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-      child: Column(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 11),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: sans(size: 10.8, color: AlagagiColors.muted)),
-          const SizedBox(height: 4),
-          Text(
-            '$count장',
-            style: serif(context, size: 19, weight: FontWeight.w800),
+          Container(
+            width: 25,
+            height: 25,
+            decoration: const BoxDecoration(
+              color: AlagagiColors.goldSoft,
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              '1',
+              style: sans(
+                size: 11,
+                color: AlagagiColors.gold,
+                weight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: sans(
+                    size: 12,
+                    color: AlagagiColors.ink,
+                    weight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  body,
+                  style: sans(
+                    size: 11.5,
+                    color: AlagagiColors.muted,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -177,38 +238,170 @@ class _LatestMemoryPreview extends StatelessWidget {
     final author = card.createdByProfileId == controller.state.me.id
         ? controller.state.me.nickname
         : controller.state.partner.nickname;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: [
-            AlagagiSmallBadge(label: card.type.label),
-            if (card.visibility == MemoryCardVisibility.private)
-              const AlagagiSmallBadge(label: '나만 보기'),
-          ],
-        ),
-        const SizedBox(height: 9),
-        Text(
-          card.title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: serif(context, size: 17, weight: FontWeight.w800),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          card.body,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: sans(size: 12.5, color: AlagagiColors.ink, height: 1.55),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          '$author · ${card.createdLabel}',
-          style: sans(size: 11.2, color: AlagagiColors.muted),
-        ),
-      ],
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      padding: const EdgeInsets.all(15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    AlagagiSmallBadge(label: card.type.label),
+                    AlagagiSmallBadge(label: card.visibility.label),
+                  ],
+                ),
+              ),
+              Text(
+                '$author · ${card.createdLabel}',
+                style: sans(size: 11, color: AlagagiColors.muted),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            card.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: serif(
+              context,
+              size: 18,
+              weight: FontWeight.w800,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            card.body,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: sans(size: 13, color: AlagagiColors.ink, height: 1.58),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: Color(0xFFCFE6F1))),
+            ),
+            padding: const EdgeInsets.only(top: 10),
+            child: Text(
+              _memoryRelationLabel(controller, card),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: sans(size: 11.5, color: AlagagiColors.muted),
+            ),
+          ),
+        ],
+      ),
     );
   }
+}
+
+class _MemorySpaceBar extends StatelessWidget {
+  const _MemorySpaceBar({
+    required this.meLabel,
+    required this.meCount,
+    required this.partnerLabel,
+    required this.partnerCount,
+  });
+
+  final String meLabel;
+  final int meCount;
+  final String partnerLabel;
+  final int partnerCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5FCFF),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: _MemorySpaceItem(
+              color: AlagagiColors.gold,
+              label: meLabel,
+              count: meCount,
+            ),
+          ),
+          Container(width: 1, height: 28, color: AlagagiColors.line),
+          Expanded(
+            child: _MemorySpaceItem(
+              color: AlagagiColors.lavender,
+              label: partnerLabel,
+              count: partnerCount,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MemorySpaceItem extends StatelessWidget {
+  const _MemorySpaceItem({
+    required this.color,
+    required this.label,
+    required this.count,
+  });
+
+  final Color color;
+  final String label;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: sans(size: 11.2, color: AlagagiColors.muted),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '$count',
+            style: sans(
+              size: 12,
+              color: AlagagiColors.ink,
+              weight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _memoryRelationLabel(AlagagiController controller, MemoryCard card) {
+  final creator = card.createdByProfileId == controller.state.me.id
+      ? '내가'
+      : '${controller.state.partner.nickname}님이';
+  final subject = card.subjectProfileId == controller.state.me.id
+      ? '나'
+      : controller.state.partner.nickname;
+  return '$creator 기억하는 $subject';
 }

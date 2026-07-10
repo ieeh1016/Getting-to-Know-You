@@ -101,6 +101,7 @@ void main() {
       await tester.ensureVisible(find.byKey(homeMemoryCardKey));
       await tester.pumpAndSettle();
       expect(find.byKey(homeMemoryCardKey), findsOneWidget);
+      expect(find.byKey(homeMemoryCreateButtonKey), findsOneWidget);
       expect(
         find.descendant(
           of: find.byKey(bottomNavigationKey),
@@ -134,6 +135,56 @@ void main() {
       );
     },
   );
+
+  testWidgets('home memory card makes the latest memory the main preview', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          memoryCards: [
+            MemoryCard(
+              id: 'memory_home_1',
+              type: MemoryCardType.likes,
+              title: '조용한 카페 자리',
+              body: '민영이는 창가보다 조금 안쪽 자리를 더 편하게 느낀다고 했어요.',
+              createdByProfileId: 'youngwooUid',
+              subjectProfileId: 'minyoungUid',
+              visibility: MemoryCardVisibility.shared,
+              createdLabel: '오늘',
+            ),
+          ],
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(homeMemoryCardKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('조용한 카페 자리'), findsOneWidget);
+    expect(find.text('기억 열어보기'), findsOneWidget);
+    expect(find.text('영우의 공간'), findsOneWidget);
+    expect(find.text('민영의 공간'), findsOneWidget);
+    expect(find.byKey(homeMemoryCreateButtonKey), findsOneWidget);
+  });
 
   testWidgets('saves a curiosity reply and a new question in the sheet', (
     tester,
