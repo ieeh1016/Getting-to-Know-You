@@ -28,10 +28,6 @@ const ACTIVITY_NOTIFICATION_COPY = {
     title: "댓글에 답장을 남겼어요",
     body: "조금씩에서 확인해요.",
   },
-  balanceSelectionSaved: {
-    title: "밸런스 질문을 골랐어요",
-    body: "서로의 선택을 확인해요.",
-  },
   profileSlotSaved: {
     title: "프로필 카드를 채웠어요",
     body: "새로 알게 된 점을 확인해요.",

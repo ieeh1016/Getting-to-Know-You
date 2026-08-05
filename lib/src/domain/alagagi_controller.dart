@@ -14,7 +14,6 @@ enum AlagagiRoute {
   places,
   stockStory,
   improvements,
-  balance,
   profileCard,
   wishlist,
   memoryCards,
@@ -261,7 +260,6 @@ class AlagagiSpaceData {
   const AlagagiSpaceData({
     this.answers = const [],
     this.answerComments = const [],
-    this.balanceSelections = const [],
     this.profileSlots = const [],
     this.wishes = const [],
     this.musicNotes = const [],
@@ -282,7 +280,6 @@ class AlagagiSpaceData {
 
   final List<Answer> answers;
   final List<AnswerComment> answerComments;
-  final List<BalanceSelection> balanceSelections;
   final List<ProfileSlotValue> profileSlots;
   final List<WishItem> wishes;
   final List<MusicNote> musicNotes;
@@ -323,22 +320,6 @@ class DiagnosticEvent {
   final DateTime? createdAt;
 }
 
-class BalanceSelection {
-  const BalanceSelection({
-    required this.questionId,
-    required this.profileId,
-    required this.optionId,
-    this.reason,
-    this.resultRevealedAt,
-  });
-
-  final String questionId;
-  final String profileId;
-  final String optionId;
-  final String? reason;
-  final DateTime? resultRevealedAt;
-}
-
 class ProfileSlotValue {
   const ProfileSlotValue({required this.profileId, required this.slot});
 
@@ -361,14 +342,6 @@ abstract class AlagagiDataRepository {
   Future<void> saveSpacePersonalization(
     String spaceId,
     SpacePersonalization personalization,
-  );
-
-  Future<void> saveBalanceSelection(String spaceId, BalanceSelection selection);
-
-  Future<void> deleteBalanceSelection(
-    String spaceId,
-    String questionId,
-    String profileId,
   );
 
   Future<void> saveProfileSlot(
@@ -722,34 +695,6 @@ class RelationshipInsight {
   final List<TimelineEvent> timeline;
 }
 
-class BalanceOption {
-  const BalanceOption({
-    required this.id,
-    required this.icon,
-    required this.label,
-  });
-
-  final String id;
-  final String icon;
-  final String label;
-}
-
-class BalanceQuestion {
-  const BalanceQuestion({
-    required this.id,
-    required this.prompt,
-    required this.left,
-    required this.right,
-    this.partnerChoiceId,
-  });
-
-  final String id;
-  final String prompt;
-  final BalanceOption left;
-  final BalanceOption right;
-  final String? partnerChoiceId;
-}
-
 class ProfileSlot {
   const ProfileSlot({
     required this.id,
@@ -854,174 +799,146 @@ class ProfileCardData {
   }
 }
 
-const profileSlotCatalogV2 = [
+const profileSlotCatalogV3 = [
   ProfileSlot(
-    id: 'song',
+    id: 'now_song',
     icon: 'music',
-    label: '요즘 노래',
+    label: '요즘 반복 재생',
     category: '취향',
-    inputHint: '요즘 자주 듣는 노래',
+    inputHint: '요즘 계속 듣는 노래',
   ),
   ProfileSlot(
-    id: 'food',
+    id: 'now_craving',
     icon: 'food',
-    label: '먹고 싶은 음식',
+    label: '요즘 당기는 음식',
     category: '취향',
-    inputHint: '요즘 먹고 싶은 음식',
+    inputHint: '자꾸 생각나는 음식',
   ),
   ProfileSlot(
-    id: 'rest',
-    icon: 'rest',
-    label: '쉬는 방식',
-    category: '하루',
-    inputHint: '쉬고 싶을 때 하는 일',
-  ),
-  ProfileSlot(
-    id: 'cafe',
-    icon: 'cafe',
-    label: '카페 취향',
-    category: '취향',
-    inputHint: '좋아하는 카페 분위기',
-  ),
-  ProfileSlot(
-    id: 'walk',
-    icon: 'walk',
-    label: '산책 취향',
-    category: '취향',
-    inputHint: '걷고 싶은 길',
-  ),
-  ProfileSlot(
-    id: 'small_taste',
+    id: 'now_favorite',
     icon: 'taste',
-    label: '요즘 꽂힌 작은 취향',
+    label: '요즘 마음에 든 것',
     category: '취향',
-    inputHint: '노래, 음식, 물건, 장소 무엇이든',
+    inputHint: '드라마, 물건, 장소 무엇이든',
   ),
   ProfileSlot(
-    id: 'object',
+    id: 'money_ok',
     icon: 'object',
-    label: '자주 손이 가는 물건',
+    label: '아깝지 않은 소비',
     category: '취향',
-    inputHint: '요즘 자주 쓰는 작은 물건',
+    inputHint: '돈을 써도 좋은 항목',
   ),
   ProfileSlot(
-    id: 'comfort',
-    icon: 'comfort',
-    label: '편해지는 순간',
-    category: '하루',
-    inputHint: '나를 편하게 하는 것',
+    id: 'small_joy',
+    icon: 'joy',
+    label: '사소하지만 좋아하는 것',
+    category: '취향',
+    inputHint: '남들은 몰라도 좋은 것',
   ),
   ProfileSlot(
-    id: 'morning_night',
+    id: 'day_rhythm',
     icon: 'time',
-    label: '아침과 밤 중 편한 쪽',
+    label: '하루 중 좋은 시간',
     category: '하루',
-    inputHint: '더 편한 시간대',
+    inputHint: '컨디션이 좋은 시간대',
   ),
   ProfileSlot(
-    id: 'focus_time',
-    icon: 'focus',
-    label: '집중이 잘 되는 시간',
-    category: '하루',
-    inputHint: '잘 몰입되는 시간',
-  ),
-  ProfileSlot(
-    id: 'weekend',
-    icon: 'weekend',
-    label: '주말의 밀도',
-    category: '하루',
-    inputHint: '꽉 찬 주말 또는 느슨한 주말',
-  ),
-  ProfileSlot(
-    id: 'recharge',
+    id: 'recharge_way',
     icon: 'recharge',
     label: '충전되는 방식',
     category: '하루',
-    inputHint: '에너지가 돌아오는 방식',
+    inputHint: '혼자 또는 같이, 쉬는 법',
   ),
   ProfileSlot(
-    id: 'promise',
-    icon: 'promise',
-    label: '약속에서 중요한 것',
+    id: 'tired_signal',
+    icon: 'tired',
+    label: '지칠 때 나오는 모습',
+    category: '하루',
+    inputHint: '피곤하면 이렇게 돼요',
+  ),
+  ProfileSlot(
+    id: 'week_shape',
+    icon: 'week',
+    label: '요즘 일주일의 밀도',
+    category: '하루',
+    inputHint: '바쁜 요일과 여유로운 요일',
+  ),
+  ProfileSlot(
+    id: 'night_routine',
+    icon: 'night',
+    label: '잠들기 전 하는 일',
+    category: '하루',
+    inputHint: '자기 전 루틴',
+  ),
+  ProfileSlot(
+    id: 'reply_pace',
+    icon: 'reply',
+    label: '편한 연락 속도',
     category: '대화',
-    inputHint: '은근히 중요하게 보는 것',
+    inputHint: '자주 또는 필요할 때',
   ),
   ProfileSlot(
-    id: 'kindness',
-    icon: 'kindness',
-    label: '기억나는 다정함',
+    id: 'call_or_text',
+    icon: 'call',
+    label: '통화와 메시지 중',
     category: '대화',
-    inputHint: '오래 남는 다정함',
+    inputHint: '더 편한 쪽',
   ),
   ProfileSlot(
-    id: 'pace',
-    icon: 'pace',
-    label: '나에게 맞는 속도',
+    id: 'busy_signal',
+    icon: 'busy',
+    label: '바쁠 때 알려주는 법',
     category: '대화',
-    inputHint: '요즘 필요한 속도',
+    inputHint: '연락이 뜸해질 때 신호',
   ),
   ProfileSlot(
-    id: 'talk_style',
-    icon: 'talk',
-    label: '대화할 때 편한 방식',
+    id: 'upset_style',
+    icon: 'upset',
+    label: '서운할 때의 나',
     category: '대화',
-    inputHint: '편하게 느끼는 대화 흐름',
+    inputHint: '기분이 상하면 이렇게 돼요',
   ),
   ProfileSlot(
-    id: 'careful_words',
+    id: 'words_i_like',
     icon: 'words',
-    label: '조심스러운 표현',
+    label: '들으면 기분 좋아지는 말',
     category: '대화',
-    inputHint: '천천히 말하고 싶은 것',
+    inputHint: '자주 듣고 싶은 말',
   ),
   ProfileSlot(
-    id: 'question_style',
-    icon: 'question',
-    label: '좋아하는 질문 방식',
-    category: '대화',
-    inputHint: '편하게 답할 수 있는 질문',
+    id: 'meet_flow',
+    icon: 'flow',
+    label: '만날 때 좋은 흐름',
+    category: '함께',
+    inputHint: '미리 정하는 편인지 그때 정하는 편인지',
   ),
   ProfileSlot(
-    id: 'wish_scene',
+    id: 'quiet_together',
+    icon: 'quiet',
+    label: '같이 있을 때 조용한 시간',
+    category: '함께',
+    inputHint: '말없이 있는 시간의 느낌',
+  ),
+  ProfileSlot(
+    id: 'next_plan',
     icon: 'scene',
-    label: '같이 해보고 싶은 장면',
+    label: '다음에 같이 하고 싶은 것',
     category: '함께',
-    inputHint: '언젠가 같이 해보고 싶은 것',
+    inputHint: '가까운 시일에 해보고 싶은 것',
   ),
   ProfileSlot(
-    id: 'neighborhood',
-    icon: 'map',
-    label: '가보고 싶은 동네',
+    id: 'comfort_place',
+    icon: 'place',
+    label: '둘이 있기 좋은 장소',
     category: '함께',
-    inputHint: '함께 걸어보고 싶은 동네',
+    inputHint: '편하게 느껴지는 공간',
   ),
   ProfileSlot(
-    id: 'shared_food',
-    icon: 'shared_food',
-    label: '같이 먹고 싶은 것',
+    id: 'care_wish',
+    icon: 'care',
+    label: '힘들 때 받고 싶은 것',
     category: '함께',
-    inputHint: '같이 먹으면 좋을 음식',
-  ),
-  ProfileSlot(
-    id: 'small_hobby',
-    icon: 'hobby',
-    label: '가볍게 해보고 싶은 취미',
-    category: '함께',
-    inputHint: '부담 없는 작은 활동',
-  ),
-  ProfileSlot(
-    id: 'rainy_day',
-    icon: 'rain',
-    label: '비 오는 날 하고 싶은 것',
-    category: '함께',
-    inputHint: '날씨가 흐릴 때 좋은 장면',
-  ),
-  ProfileSlot(
-    id: 'photo_walk',
-    icon: 'photo',
-    label: '사진 남기기 좋은 순간',
-    category: '함께',
-    inputHint: '가볍게 찍어보고 싶은 장면',
+    inputHint: '위로가 되는 방식',
   ),
 ];
 
@@ -2101,7 +2018,6 @@ class AlagagiState {
     this.archiveFilter = ArchiveFilter.all,
     this.profileCardTab = ProfileCardTab.partner,
     this.wishlistFilter = WishlistFilter.all,
-    this.activeBalanceIndex = 0,
     this.wishDraftVisible = false,
     this.wishDraftTitle = '',
     this.wishDraftKind = WishKind.activity,
@@ -2240,7 +2156,6 @@ class AlagagiState {
   final ArchiveFilter archiveFilter;
   final ProfileCardTab profileCardTab;
   final WishlistFilter wishlistFilter;
-  final int activeBalanceIndex;
   final bool wishDraftVisible;
   final String wishDraftTitle;
   final WishKind wishDraftKind;
@@ -2379,7 +2294,6 @@ class AlagagiState {
     ArchiveFilter? archiveFilter,
     ProfileCardTab? profileCardTab,
     WishlistFilter? wishlistFilter,
-    int? activeBalanceIndex,
     bool? wishDraftVisible,
     String? wishDraftTitle,
     WishKind? wishDraftKind,
@@ -2565,7 +2479,6 @@ class AlagagiState {
       archiveFilter: archiveFilter ?? this.archiveFilter,
       profileCardTab: profileCardTab ?? this.profileCardTab,
       wishlistFilter: wishlistFilter ?? this.wishlistFilter,
-      activeBalanceIndex: activeBalanceIndex ?? this.activeBalanceIndex,
       wishDraftVisible: wishDraftVisible ?? this.wishDraftVisible,
       wishDraftTitle: wishDraftTitle ?? this.wishDraftTitle,
       wishDraftKind: wishDraftKind ?? this.wishDraftKind,
@@ -2860,7 +2773,6 @@ class AlagagiController extends ChangeNotifier {
        ),
        _relationship = const RelationshipMetadata(),
        questions = seedQuestions,
-       balanceQuestions = seedBalanceQuestions,
        _state = const AlagagiState(
          me: AppProfile(id: 'me', nickname: '나', avatar: '🌿', isMe: true),
          partner: AppProfile(
@@ -2902,7 +2814,6 @@ class AlagagiController extends ChangeNotifier {
          ),
        ),
        questions = questionCatalogV1,
-       balanceQuestions = balanceQuestionCatalogV1,
        _state = AlagagiState(
          me: session.me,
          partner: session.partner,
@@ -2933,17 +2844,11 @@ class AlagagiController extends ChangeNotifier {
   DailyQuestionProgress _dailyProgress;
   RelationshipMetadata _relationship;
   final List<DailyQuestion> questions;
-  final List<BalanceQuestion> balanceQuestions;
 
   final Map<String, Answer> _myAnswersByQuestionId = {};
   final Map<String, Answer> _partnerAnswersByQuestionId = {};
   final Set<String> _persistedMyAnswerQuestionIds = {};
   final Map<String, AnswerComment> _answerCommentsByKey = {};
-  final Map<String, String> _balanceSelections = {};
-  final Map<String, String> _partnerBalanceSelections = {};
-  final Map<String, String> _balanceReasons = {};
-  final Map<String, String> _partnerBalanceReasons = {};
-  final Map<String, DateTime> _balanceResultRevealedAt = {};
   final List<ProfileCardData> _profileCards = [];
   final List<WishItem> _wishes = [];
   final List<MusicNote> _musicNotes = [];
@@ -3695,31 +3600,6 @@ class AlagagiController extends ChangeNotifier {
         }),
       );
 
-    _balanceSelections.clear();
-    _partnerBalanceSelections.clear();
-    _balanceReasons.clear();
-    _partnerBalanceReasons.clear();
-    _balanceResultRevealedAt.clear();
-    for (final selection in data.balanceSelections) {
-      if (selection.profileId == _state.me.id) {
-        _balanceSelections[selection.questionId] = selection.optionId;
-        final reason = selection.reason;
-        if (reason != null && reason.isNotEmpty) {
-          _balanceReasons[selection.questionId] = reason;
-        }
-        final resultRevealedAt = selection.resultRevealedAt;
-        if (resultRevealedAt != null) {
-          _balanceResultRevealedAt[selection.questionId] = resultRevealedAt;
-        }
-      } else if (selection.profileId == _state.partner.id) {
-        _partnerBalanceSelections[selection.questionId] = selection.optionId;
-        final reason = selection.reason;
-        if (reason != null && reason.isNotEmpty) {
-          _partnerBalanceReasons[selection.questionId] = reason;
-        }
-      }
-    }
-
     _profileCards
       ..clear()
       ..addAll(_emptyProfileCardsForSession());
@@ -3901,7 +3781,7 @@ class AlagagiController extends ChangeNotifier {
   }
 
   List<ProfileSlot> _profileSlotCatalog() {
-    return profileSlotCatalogV2;
+    return profileSlotCatalogV3;
   }
 
   List<ProfileSlot> _profileSlotsWithValues(
@@ -4041,30 +3921,6 @@ class AlagagiController extends ChangeNotifier {
             );
             notifyListeners();
           }),
-    );
-  }
-
-  void _persistBalanceSelection(BalanceSelection selection) {
-    final repository = _repository;
-    final spaceId = _spaceId;
-    if (repository == null || spaceId == null) {
-      return;
-    }
-    unawaited(
-      repository.saveBalanceSelection(spaceId, selection).catchError((_) {}),
-    );
-  }
-
-  void _deletePersistedBalanceSelection(String questionId) {
-    final repository = _repository;
-    final spaceId = _spaceId;
-    if (repository == null || spaceId == null) {
-      return;
-    }
-    unawaited(
-      repository
-          .deleteBalanceSelection(spaceId, questionId, _state.me.id)
-          .catchError((_) {}),
     );
   }
 
@@ -5331,69 +5187,6 @@ class AlagagiController extends ChangeNotifier {
     String answerOwnerProfileId,
   ) {
     return '$questionId::$answerOwnerProfileId';
-  }
-
-  BalanceQuestion get activeBalanceQuestion =>
-      balanceQuestions[_state.activeBalanceIndex];
-
-  bool get isLastBalanceQuestion =>
-      _state.activeBalanceIndex >= balanceQuestions.length - 1;
-
-  String? get activeBalanceSelection =>
-      _balanceSelections[activeBalanceQuestion.id];
-
-  String? get activePartnerBalanceSelection {
-    return partnerBalanceSelectionFor(activeBalanceQuestion);
-  }
-
-  String? get activeBalanceReason => balanceReasonFor(activeBalanceQuestion);
-
-  String? balanceSelectionFor(BalanceQuestion question) {
-    return _balanceSelections[question.id];
-  }
-
-  String? partnerBalanceSelectionFor(BalanceQuestion question) {
-    return _partnerBalanceSelections[question.id] ??
-        (_usesDemoData ? question.partnerChoiceId : null);
-  }
-
-  String? balanceReasonFor(BalanceQuestion question) {
-    return _balanceReasons[question.id];
-  }
-
-  String? partnerBalanceReasonFor(BalanceQuestion question) {
-    return _partnerBalanceReasons[question.id];
-  }
-
-  DateTime? balanceResultRevealedAtFor(BalanceQuestion question) {
-    return _balanceResultRevealedAt[question.id];
-  }
-
-  bool isBalanceResultReadyFor(BalanceQuestion question) {
-    return _balanceSelections.containsKey(question.id) &&
-        partnerBalanceSelectionFor(question) != null;
-  }
-
-  bool isBalanceResultRevealedFor(BalanceQuestion question) {
-    return isBalanceResultReadyFor(question) &&
-        _balanceResultRevealedAt.containsKey(question.id);
-  }
-
-  int get balanceCompletedCount {
-    return balanceQuestions
-        .where((question) => _balanceSelections.containsKey(question.id))
-        .length;
-  }
-
-  int get balanceResolvedCount {
-    return balanceQuestions.where((question) {
-      return _balanceSelections.containsKey(question.id) &&
-          partnerBalanceSelectionFor(question) != null;
-    }).length;
-  }
-
-  int get balanceRevealedCount {
-    return balanceQuestions.where(isBalanceResultRevealedFor).length;
   }
 
   ProfileSlot? get todayFillableProfileSlot {
@@ -7066,92 +6859,6 @@ class AlagagiController extends ChangeNotifier {
 
   void setArchiveFilter(ArchiveFilter filter) {
     _state = _state.copyWith(archiveFilter: filter);
-    notifyListeners();
-  }
-
-  void selectBalanceOption(String optionId) {
-    final question = activeBalanceQuestion;
-    if (question.left.id != optionId && question.right.id != optionId) {
-      throw ArgumentError.value(optionId, 'optionId');
-    }
-    if (_balanceSelections[question.id] == optionId) {
-      _balanceSelections.remove(question.id);
-      _balanceReasons.remove(question.id);
-      _balanceResultRevealedAt.remove(question.id);
-      _deletePersistedBalanceSelection(question.id);
-      notifyListeners();
-      return;
-    }
-    final selection = BalanceSelection(
-      questionId: question.id,
-      profileId: _state.me.id,
-      optionId: optionId,
-      reason: _balanceReasons[question.id],
-      resultRevealedAt: _balanceResultRevealedAt[question.id],
-    );
-    _balanceSelections[question.id] = optionId;
-    _persistBalanceSelection(selection);
-    notifyListeners();
-  }
-
-  void saveBalanceReason(String value) {
-    final question = activeBalanceQuestion;
-    final optionId = _balanceSelections[question.id];
-    if (optionId == null) {
-      return;
-    }
-    final reason = value.trim();
-    if (reason.length > 80) {
-      throw ArgumentError.value(value, 'value', '80자 안으로 남겨주세요.');
-    }
-    if (reason.isEmpty) {
-      _balanceReasons.remove(question.id);
-    } else {
-      _balanceReasons[question.id] = reason;
-    }
-    _persistBalanceSelection(
-      BalanceSelection(
-        questionId: question.id,
-        profileId: _state.me.id,
-        optionId: optionId,
-        reason: reason.isEmpty ? null : reason,
-        resultRevealedAt: _balanceResultRevealedAt[question.id],
-      ),
-    );
-    notifyListeners();
-  }
-
-  void revealBalanceResult(BalanceQuestion question) {
-    final optionId = _balanceSelections[question.id];
-    if (optionId == null || partnerBalanceSelectionFor(question) == null) {
-      return;
-    }
-    final resultRevealedAt = _balanceResultRevealedAt[question.id];
-    if (resultRevealedAt != null) {
-      return;
-    }
-    final revealedAt = DateTime.now();
-    _balanceResultRevealedAt[question.id] = revealedAt;
-    _persistBalanceSelection(
-      BalanceSelection(
-        questionId: question.id,
-        profileId: _state.me.id,
-        optionId: optionId,
-        reason: _balanceReasons[question.id],
-        resultRevealedAt: revealedAt,
-      ),
-    );
-    notifyListeners();
-  }
-
-  void nextBalanceQuestion() {
-    if (isLastBalanceQuestion) {
-      _state = _state.copyWith(route: AlagagiRoute.home);
-    } else {
-      _state = _state.copyWith(
-        activeBalanceIndex: _state.activeBalanceIndex + 1,
-      );
-    }
     notifyListeners();
   }
 
@@ -10654,515 +10361,464 @@ const questionCatalogV1 = [
     day: 1,
     number: 1,
     depth: QuestionDepth.light,
-    text: '하루 중 가장 좋아하는 시간은 언제예요?',
-    highlightedText: '좋아하는 시간',
+    text: '요즘 하루 중에 제일 마음이 편해지는 시간은 언제예요?',
+    highlightedText: '마음이 편해지는 시간',
   ),
   DailyQuestion(
     id: 'q002',
     day: 2,
     number: 2,
     depth: QuestionDepth.light,
-    text: '요즘 자주 듣는 노래가 있나요?',
-    highlightedText: '자주 듣는 노래',
+    text: '오늘 나를 기분 좋게 한 아주 작은 일이 있었어요?',
+    highlightedText: '기분 좋았던 일',
   ),
   DailyQuestion(
     id: 'q003',
     day: 3,
     number: 3,
     depth: QuestionDepth.light,
-    text: '쉬는 날 혼자 시간이 생기면 제일 먼저 뭘 하고 싶어요?',
-    highlightedText: '쉬는 날',
+    text: '요즘 자주 듣는 노래 하나만 알려줄래요?',
+    highlightedText: '자주 듣는 노래',
   ),
   DailyQuestion(
     id: 'q004',
     day: 4,
     number: 4,
     depth: QuestionDepth.light,
-    text: '카페를 고를 때 제일 먼저 보는 건 뭐예요?',
-    highlightedText: '카페',
+    text: '피곤할 때 나만의 회복 방법이 있어요?',
+    highlightedText: '회복 방법',
   ),
   DailyQuestion(
     id: 'q005',
     day: 5,
     number: 5,
     depth: QuestionDepth.light,
-    text: '산책한다면 어떤 분위기의 길이 좋아요?',
-    highlightedText: '산책',
+    text: '요즘 제일 자주 먹게 되는 음식은 뭐예요?',
+    highlightedText: '자주 먹는 음식',
   ),
   DailyQuestion(
     id: 'q006',
     day: 6,
     number: 6,
     depth: QuestionDepth.light,
-    text: '요즘 유난히 먹고 싶은 음식이 있어요?',
-    highlightedText: '먹고 싶은 음식',
+    text: '카페에 가면 보통 뭘 시켜요?',
+    highlightedText: '카페에서 시키는 것',
   ),
   DailyQuestion(
     id: 'q007',
     day: 7,
     number: 7,
     depth: QuestionDepth.light,
-    text: '갑자기 하루가 비면 어디에 가보고 싶어요?',
-    highlightedText: '가보고 싶은 곳',
+    text: '쉬는 날 아침은 보통 어떻게 시작해요?',
+    highlightedText: '쉬는 날 아침',
   ),
   DailyQuestion(
     id: 'q008',
     day: 8,
     number: 8,
-    depth: QuestionDepth.daily,
-    text: '오늘 하루가 괜찮았다고 느끼는 순간은 언제예요?',
-    highlightedText: '괜찮았던 순간',
+    depth: QuestionDepth.light,
+    text: '요즘 빠져 있는 게 있다면 뭐예요?',
+    highlightedText: '요즘 빠진 것',
   ),
   DailyQuestion(
     id: 'q009',
     day: 9,
     number: 9,
-    depth: QuestionDepth.daily,
-    text: '기분 전환이 필요할 때 보통 뭘 해요?',
-    highlightedText: '기분 전환',
+    depth: QuestionDepth.light,
+    text: '사진첩에서 최근에 찍은 사진은 어떤 거예요?',
+    highlightedText: '최근에 찍은 사진',
   ),
   DailyQuestion(
     id: 'q010',
     day: 10,
     number: 10,
-    depth: QuestionDepth.daily,
-    text: '최근에 나를 웃게 한 작은 일이 있었나요?',
-    highlightedText: '웃게 한 일',
+    depth: QuestionDepth.light,
+    text: '기분이 가라앉을 때 찾아보는 콘텐츠가 있어요?',
+    highlightedText: '기분 전환 콘텐츠',
   ),
   DailyQuestion(
     id: 'q011',
     day: 11,
     number: 11,
-    depth: QuestionDepth.daily,
-    text: '완벽한 주말 아침을 그려본다면 어떤 모습이에요?',
-    highlightedText: '주말 아침',
+    depth: QuestionDepth.light,
+    text: '걷기 좋다고 느끼는 날씨는 어떤 날씨예요?',
+    highlightedText: '걷기 좋은 날씨',
   ),
   DailyQuestion(
     id: 'q012',
     day: 12,
     number: 12,
-    depth: QuestionDepth.daily,
-    text: '일이 끝난 뒤 제일 편해지는 루틴은 뭐예요?',
-    highlightedText: '편해지는 루틴',
+    depth: QuestionDepth.light,
+    text: '요즘 사고 싶은 물건이 있어요?',
+    highlightedText: '사고 싶은 것',
   ),
   DailyQuestion(
     id: 'q013',
     day: 13,
     number: 13,
-    depth: QuestionDepth.daily,
-    text: '요즘 새롭게 관심이 생긴 게 있나요?',
-    highlightedText: '새로운 관심',
+    depth: QuestionDepth.light,
+    text: '하루를 마무리할 때 꼭 하는 일이 있어요?',
+    highlightedText: '하루 마무리',
   ),
   DailyQuestion(
     id: 'q014',
     day: 14,
     number: 14,
-    depth: QuestionDepth.daily,
-    text: '나를 편하게 해주는 말이나 행동은 뭐예요?',
-    highlightedText: '편안함',
+    depth: QuestionDepth.light,
+    text: '이번 주에 제일 잘한 일 하나만 꼽는다면요?',
+    highlightedText: '이번 주 잘한 일',
   ),
   DailyQuestion(
     id: 'q015',
     day: 15,
     number: 15,
-    depth: QuestionDepth.beliefs,
-    text: '어떤 사람과 있을 때 마음이 편해져요?',
-    highlightedText: '마음이 편한 사람',
+    depth: QuestionDepth.daily,
+    text: '우리가 처음 만난 날, 제일 먼저 눈에 들어온 건 뭐였어요?',
+    highlightedText: '처음 만난 날',
   ),
   DailyQuestion(
     id: 'q016',
     day: 16,
     number: 16,
-    depth: QuestionDepth.beliefs,
-    text: '약속에서 은근히 중요하게 생각하는 게 있다면요?',
-    highlightedText: '약속',
+    depth: QuestionDepth.daily,
+    text: '나랑 있을 때 제일 편했던 순간은 언제였어요?',
+    highlightedText: '편했던 순간',
   ),
   DailyQuestion(
     id: 'q017',
     day: 17,
     number: 17,
-    depth: QuestionDepth.beliefs,
-    text: '처음엔 잘 안 보이지만 친해지면 드러나는 내 모습은?',
-    highlightedText: '친해지면',
+    depth: QuestionDepth.daily,
+    text: '요즘 나한테 연락하고 싶어지는 순간은 언제예요?',
+    highlightedText: '연락하고 싶은 순간',
   ),
   DailyQuestion(
     id: 'q018',
     day: 18,
     number: 18,
-    depth: QuestionDepth.beliefs,
-    text: '마음에 드는 공간들은 어떤 공통점이 있어요?',
-    highlightedText: '공간',
+    depth: QuestionDepth.daily,
+    text: '같이 갔던 곳 중에 다시 가보고 싶은 데가 있어요?',
+    highlightedText: '다시 가고 싶은 곳',
   ),
   DailyQuestion(
     id: 'q019',
     day: 19,
     number: 19,
-    depth: QuestionDepth.beliefs,
-    text: '오래 기억에 남는 다정함은 어떤 종류예요?',
-    highlightedText: '다정함',
+    depth: QuestionDepth.daily,
+    text: '내가 웃겼던 순간이 있었어요?',
+    highlightedText: '웃겼던 순간',
   ),
   DailyQuestion(
     id: 'q020',
     day: 20,
     number: 20,
-    depth: QuestionDepth.beliefs,
-    text: '요즘 나에게 필요한 속도는 어느 정도인 것 같아요?',
-    highlightedText: '필요한 속도',
+    depth: QuestionDepth.daily,
+    text: '요즘 나를 떠올리면 같이 생각나는 게 있어요?',
+    highlightedText: '같이 떠오르는 것',
   ),
   DailyQuestion(
     id: 'q021',
     day: 21,
     number: 21,
-    depth: QuestionDepth.beliefs,
-    text: '사람들과 친해질 때 천천히 가고 싶은 부분이 있다면요?',
-    highlightedText: '서두르지 않기',
+    depth: QuestionDepth.daily,
+    text: '만나기 전에 보통 뭘 준비해요?',
+    highlightedText: '만나기 전 준비',
   ),
   DailyQuestion(
     id: 'q022',
     day: 22,
     number: 22,
-    depth: QuestionDepth.inner,
-    text: '힘든 날에는 티가 나는 편이에요, 조용해지는 편이에요?',
-    highlightedText: '힘든 날',
+    depth: QuestionDepth.daily,
+    text: '만날 코스는 미리 정하는 편이에요, 그때그때 정하는 편이에요?',
+    highlightedText: '코스 정하는 방식',
   ),
   DailyQuestion(
     id: 'q023',
     day: 23,
     number: 23,
-    depth: QuestionDepth.inner,
-    text: '마음이 놓인다고 느끼는 순간은 언제예요?',
-    highlightedText: '마음이 놓이는 순간',
+    depth: QuestionDepth.daily,
+    text: '같이 있을 때 말없이 조용한 시간도 편한 편이에요?',
+    highlightedText: '조용한 시간',
   ),
   DailyQuestion(
     id: 'q024',
     day: 24,
     number: 24,
-    depth: QuestionDepth.inner,
-    text: '고마움을 표현할 때 어떤 방식이 편해요?',
-    highlightedText: '표현 방식',
+    depth: QuestionDepth.daily,
+    text: '연락은 자주 오가는 게 좋아요, 필요할 때만 하는 게 좋아요?',
+    highlightedText: '연락 속도',
   ),
   DailyQuestion(
     id: 'q025',
     day: 25,
     number: 25,
-    depth: QuestionDepth.inner,
-    text: '요즘 나를 가장 많이 움직이게 하는 건 뭐예요?',
-    highlightedText: '움직이게 하는 것',
+    depth: QuestionDepth.daily,
+    text: '나한테 듣고 싶은 말이 있다면 뭐예요?',
+    highlightedText: '듣고 싶은 말',
   ),
   DailyQuestion(
     id: 'q026',
     day: 26,
     number: 26,
-    depth: QuestionDepth.inner,
-    text: '조금 더 친해지면 알려주고 싶은 내 모습이 있나요?',
-    highlightedText: '알려주고 싶은 모습',
+    depth: QuestionDepth.daily,
+    text: '서운한 게 생기면 바로 말하는 편이에요?',
+    highlightedText: '서운함 말하기',
   ),
   DailyQuestion(
     id: 'q027',
     day: 27,
     number: 27,
-    depth: QuestionDepth.inner,
-    text: '언젠가 같이 해보고 싶은 작은 장면이 있다면요?',
-    highlightedText: '같이 하고 싶은 장면',
+    depth: QuestionDepth.daily,
+    text: '기분이 안 좋은 날에는 옆에서 어떻게 해주면 좋아요?',
+    highlightedText: '기분이 안 좋은 날',
   ),
   DailyQuestion(
     id: 'q028',
     day: 28,
     number: 28,
-    depth: QuestionDepth.inner,
-    text: '최근 대화에서 기억에 남은 작은 장면이 있다면요?',
-    highlightedText: '기억에 남은 장면',
+    depth: QuestionDepth.daily,
+    text: '혼자 있고 싶은 날에는 어떻게 알려주면 좋을까요?',
+    highlightedText: '혼자 있고 싶은 날',
   ),
   DailyQuestion(
     id: 'q029',
     day: 29,
     number: 29,
-    depth: QuestionDepth.inner,
-    text: '요즘의 나를 색으로 표현한다면 어떤 색에 가까워요?',
-    highlightedText: '요즘의 색',
+    depth: QuestionDepth.daily,
+    text: '같이 하면 재밌을 것 같은데 아직 못 해본 게 있어요?',
+    highlightedText: '아직 못 해본 것',
   ),
   DailyQuestion(
     id: 'q030',
     day: 30,
     number: 30,
-    depth: QuestionDepth.beliefs,
-    text: '오래 머물고 싶은 대화는 어떤 분위기예요?',
-    highlightedText: '대화 분위기',
+    depth: QuestionDepth.daily,
+    text: '요즘 우리한테 잘 맞는 만남 주기는 어느 정도인 것 같아요?',
+    highlightedText: '만남 주기',
   ),
   DailyQuestion(
     id: 'q031',
     day: 31,
     number: 31,
-    depth: QuestionDepth.daily,
-    text: '요즘 하루에서 가장 조용히 좋아지는 순간은 언제예요?',
-    highlightedText: '조용한 순간',
+    depth: QuestionDepth.beliefs,
+    text: '사람이 좋아지는 순간은 보통 어떤 때예요?',
+    highlightedText: '좋아지는 순간',
   ),
   DailyQuestion(
     id: 'q032',
     day: 32,
     number: 32,
     depth: QuestionDepth.beliefs,
-    text: '누군가를 알아갈 때 천천히 확인하고 싶은 부분은 뭐예요?',
-    highlightedText: '확인하고 싶은 부분',
+    text: '나를 편하게 만들어주는 사람들의 공통점이 있어요?',
+    highlightedText: '편해지는 사람',
   ),
   DailyQuestion(
     id: 'q033',
     day: 33,
     number: 33,
-    depth: QuestionDepth.inner,
-    text: '쉽게 말하지 않지만 은근히 중요하게 여기는 게 있나요?',
-    highlightedText: '중요하게 여기는 것',
+    depth: QuestionDepth.beliefs,
+    text: '관계에서 제일 중요하게 생각하는 건 뭐예요?',
+    highlightedText: '중요하게 보는 것',
   ),
   DailyQuestion(
     id: 'q034',
     day: 34,
     number: 34,
-    depth: QuestionDepth.daily,
-    text: '날씨가 좋은 날 제일 먼저 떠오르는 일은 뭐예요?',
-    highlightedText: '좋은 날',
+    depth: QuestionDepth.beliefs,
+    text: '고마운데 표현을 잘 못하고 넘어간 적이 있어요?',
+    highlightedText: '표현하지 못한 마음',
   ),
   DailyQuestion(
     id: 'q035',
     day: 35,
     number: 35,
     depth: QuestionDepth.beliefs,
-    text: '편한 관계라고 느끼게 하는 작은 신호가 있다면요?',
-    highlightedText: '편한 관계',
+    text: '스스로 마음에 드는 성격 하나를 꼽는다면요?',
+    highlightedText: '마음에 드는 성격',
   ),
   DailyQuestion(
     id: 'q036',
     day: 36,
     number: 36,
-    depth: QuestionDepth.inner,
-    text: '요즘 나에게 가장 필요한 응원은 어떤 말이에요?',
-    highlightedText: '필요한 응원',
+    depth: QuestionDepth.beliefs,
+    text: '바꾸고 싶은 습관이 있어요?',
+    highlightedText: '바꾸고 싶은 습관',
   ),
   DailyQuestion(
     id: 'q037',
     day: 37,
     number: 37,
-    depth: QuestionDepth.daily,
-    text: '요즘 자주 가고 싶은 동네나 공간이 있나요?',
-    highlightedText: '가고 싶은 공간',
+    depth: QuestionDepth.beliefs,
+    text: '요즘 가장 신경 쓰고 있는 일은 뭐예요?',
+    highlightedText: '신경 쓰이는 일',
   ),
   DailyQuestion(
     id: 'q038',
     day: 38,
     number: 38,
     depth: QuestionDepth.beliefs,
-    text: '함께 시간을 보낼 때 중요하게 생각하는 리듬이 있어요?',
-    highlightedText: '함께하는 리듬',
+    text: '일하거나 공부할 때 나는 어떤 사람이에요?',
+    highlightedText: '일할 때의 나',
   ),
   DailyQuestion(
     id: 'q039',
     day: 39,
     number: 39,
-    depth: QuestionDepth.inner,
-    text: '처음보다 조금 더 편해졌다고 느끼는 순간은 언제예요?',
-    highlightedText: '편해진 순간',
+    depth: QuestionDepth.beliefs,
+    text: '돈을 써도 아깝지 않은 항목이 있어요?',
+    highlightedText: '아깝지 않은 소비',
   ),
   DailyQuestion(
     id: 'q040',
     day: 40,
     number: 40,
-    depth: QuestionDepth.daily,
-    text: '요즘 나를 쉬게 해주는 소리는 뭐예요?',
-    highlightedText: '쉬게 하는 소리',
+    depth: QuestionDepth.beliefs,
+    text: '어릴 때 자주 하던 놀이나 취미가 있었어요?',
+    highlightedText: '어릴 때 취미',
   ),
   DailyQuestion(
     id: 'q041',
     day: 41,
     number: 41,
     depth: QuestionDepth.beliefs,
-    text: '사소하지만 지켜주면 고마운 배려가 있나요?',
-    highlightedText: '고마운 배려',
+    text: '가족이나 친구들 사이에서 나는 어떤 역할이에요?',
+    highlightedText: '내 역할',
   ),
   DailyQuestion(
     id: 'q042',
     day: 42,
     number: 42,
-    depth: QuestionDepth.inner,
-    text: '마음이 복잡할 때 혼자 정리하는 방식은 뭐예요?',
-    highlightedText: '정리 방식',
+    depth: QuestionDepth.beliefs,
+    text: '최근에 마음이 놓였던 순간은 언제였어요?',
+    highlightedText: '마음 놓인 순간',
   ),
   DailyQuestion(
     id: 'q043',
     day: 43,
     number: 43,
-    depth: QuestionDepth.daily,
-    text: '최근에 저장해둔 사진이나 장면 중 마음에 남는 게 있나요?',
-    highlightedText: '마음에 남은 장면',
+    depth: QuestionDepth.beliefs,
+    text: '요즘 스스로에게 해주고 싶은 말이 있어요?',
+    highlightedText: '나에게 하고 싶은 말',
   ),
   DailyQuestion(
     id: 'q044',
     day: 44,
     number: 44,
     depth: QuestionDepth.beliefs,
-    text: '서로 다른 취향을 만났을 때 어떤 방식이 편해요?',
-    highlightedText: '다른 취향',
+    text: '무리하고 있다는 신호를 어떻게 알아채요?',
+    highlightedText: '무리하는 신호',
   ),
   DailyQuestion(
     id: 'q045',
     day: 45,
     number: 45,
-    depth: QuestionDepth.inner,
-    text: '내가 나답다고 느끼는 순간은 언제예요?',
-    highlightedText: '나다운 순간',
+    depth: QuestionDepth.beliefs,
+    text: '잘 쉬었다고 느끼는 하루는 어떤 하루예요?',
+    highlightedText: '잘 쉰 하루',
   ),
   DailyQuestion(
     id: 'q046',
     day: 46,
     number: 46,
-    depth: QuestionDepth.daily,
-    text: '요즘의 작은 목표가 있다면 뭐예요?',
-    highlightedText: '작은 목표',
+    depth: QuestionDepth.inner,
+    text: '앞으로 몇 달 안에 해보고 싶은 게 있어요?',
+    highlightedText: '해보고 싶은 것',
   ),
   DailyQuestion(
     id: 'q047',
     day: 47,
     number: 47,
-    depth: QuestionDepth.beliefs,
-    text: '대화가 끊겨도 어색하지 않은 순간은 어떤 느낌일까요?',
-    highlightedText: '어색하지 않은 순간',
+    depth: QuestionDepth.inner,
+    text: '같이 가보고 싶은 도시나 동네가 있어요?',
+    highlightedText: '가보고 싶은 곳',
   ),
   DailyQuestion(
     id: 'q048',
     day: 48,
     number: 48,
     depth: QuestionDepth.inner,
-    text: '아직은 낯설지만 조금 궁금한 주제가 있나요?',
-    highlightedText: '궁금한 주제',
+    text: '내가 잘 몰랐던 나의 모습이 있다면 알려줄래요?',
+    highlightedText: '잘 모르던 모습',
   ),
   DailyQuestion(
     id: 'q049',
     day: 49,
     number: 49,
-    depth: QuestionDepth.daily,
-    text: '하루 끝에 남아 있으면 좋은 기분은 어떤 기분이에요?',
-    highlightedText: '좋은 기분',
+    depth: QuestionDepth.inner,
+    text: '요즘 나에게 고마웠던 순간이 있었어요?',
+    highlightedText: '고마웠던 순간',
   ),
   DailyQuestion(
     id: 'q050',
     day: 50,
     number: 50,
-    depth: QuestionDepth.beliefs,
-    text: '가까워질수록 더 조심하고 싶은 부분이 있나요?',
-    highlightedText: '조심하고 싶은 부분',
+    depth: QuestionDepth.inner,
+    text: '나랑 있을 때 조금 더 해보고 싶은 게 있어요?',
+    highlightedText: '더 해보고 싶은 것',
   ),
   DailyQuestion(
     id: 'q051',
     day: 51,
     number: 51,
     depth: QuestionDepth.inner,
-    text: '요즘 스스로에게 자주 해주는 말이 있나요?',
-    highlightedText: '스스로에게 하는 말',
+    text: '우리가 대화할 때 좋은 점은 뭐라고 생각해요?',
+    highlightedText: '대화의 좋은 점',
   ),
   DailyQuestion(
     id: 'q052',
     day: 52,
     number: 52,
-    depth: QuestionDepth.daily,
-    text: '같이 걷는다면 어떤 속도의 산책이 좋을 것 같아요?',
-    highlightedText: '산책 속도',
+    depth: QuestionDepth.inner,
+    text: '서로 다르다고 느낀 부분이 있었어요?',
+    highlightedText: '다르다고 느낀 것',
   ),
   DailyQuestion(
     id: 'q053',
     day: 53,
     number: 53,
-    depth: QuestionDepth.beliefs,
-    text: '작은 약속을 정할 때 어떤 방식이 편해요?',
-    highlightedText: '약속 방식',
+    depth: QuestionDepth.inner,
+    text: '그 다름이 오히려 재밌게 느껴진 적도 있어요?',
+    highlightedText: '다름의 재미',
   ),
   DailyQuestion(
     id: 'q054',
     day: 54,
     number: 54,
     depth: QuestionDepth.inner,
-    text: '말보다 행동으로 더 잘 드러나는 내 마음은 어떤 쪽이에요?',
-    highlightedText: '행동으로 드러나는 마음',
+    text: '나한테 아직 못 물어본 게 있어요?',
+    highlightedText: '못 물어본 질문',
   ),
   DailyQuestion(
     id: 'q055',
     day: 55,
     number: 55,
-    depth: QuestionDepth.daily,
-    text: '요즘 발견한 괜찮은 장소나 물건이 있나요?',
-    highlightedText: '괜찮은 발견',
+    depth: QuestionDepth.inner,
+    text: '요즘 나를 보면서 안심이 되는 부분이 있어요?',
+    highlightedText: '안심되는 부분',
   ),
   DailyQuestion(
     id: 'q056',
     day: 56,
     number: 56,
-    depth: QuestionDepth.beliefs,
-    text: '오래 기억하고 싶은 하루는 어떤 요소가 있어요?',
-    highlightedText: '기억하고 싶은 하루',
+    depth: QuestionDepth.inner,
+    text: '힘든 시기를 지날 때 옆 사람에게 바라는 건 뭐예요?',
+    highlightedText: '힘들 때 바라는 것',
   ),
   DailyQuestion(
     id: 'q057',
     day: 57,
     number: 57,
     depth: QuestionDepth.inner,
-    text: '지금보다 조금 더 알게 되면 좋을 내 취향은 뭐예요?',
-    highlightedText: '더 알고 싶은 취향',
+    text: '지금 우리 속도는 어떤 것 같아요?',
+    highlightedText: '지금의 속도',
   ),
   DailyQuestion(
     id: 'q058',
     day: 58,
     number: 58,
     depth: QuestionDepth.inner,
-    text: '이 공간에서 가장 자연스럽게 남기고 싶은 이야기는 뭐예요?',
-    highlightedText: '남기고 싶은 이야기',
-  ),
-];
-
-const balanceQuestionCatalogV1 = [
-  BalanceQuestion(
-    id: 'b001',
-    prompt: '여행을 떠난다면?',
-    left: BalanceOption(id: 'sea', icon: '🌊', label: '조용한 바다'),
-    right: BalanceOption(id: 'forest', icon: '🌲', label: '푸른 숲길'),
-  ),
-  BalanceQuestion(
-    id: 'b002',
-    prompt: '쉬는 날엔?',
-    left: BalanceOption(id: 'home', icon: '🏡', label: '집에서 충전'),
-    right: BalanceOption(id: 'walk', icon: '🚶', label: '밖에서 산책'),
-  ),
-  BalanceQuestion(
-    id: 'b003',
-    prompt: '카페를 고른다면?',
-    left: BalanceOption(id: 'quiet', icon: '☕', label: '조용한 분위기'),
-    right: BalanceOption(id: 'dessert', icon: '🍰', label: '디저트 맛집'),
-  ),
-  BalanceQuestion(
-    id: 'b004',
-    prompt: '영화를 본다면?',
-    left: BalanceOption(id: 'calm', icon: '🎞️', label: '잔잔한 영화'),
-    right: BalanceOption(id: 'funny', icon: '😄', label: '많이 웃는 영화'),
-  ),
-  BalanceQuestion(
-    id: 'b005',
-    prompt: '만나기 좋은 시간은?',
-    left: BalanceOption(id: 'brunch', icon: '🥐', label: '낮 브런치'),
-    right: BalanceOption(id: 'evening', icon: '🌙', label: '저녁 산책'),
-  ),
-  BalanceQuestion(
-    id: 'b006',
-    prompt: '약속을 잡는다면?',
-    left: BalanceOption(id: 'reserved', icon: '🗓️', label: '미리 예약'),
-    right: BalanceOption(id: 'spontaneous', icon: '✨', label: '즉흥 발견'),
-  ),
-  BalanceQuestion(
-    id: 'b007',
-    prompt: '대화 분위기는?',
-    left: BalanceOption(id: 'deep', icon: '💭', label: '깊은 이야기'),
-    right: BalanceOption(id: 'light', icon: '🍃', label: '가벼운 수다'),
-  ),
-  BalanceQuestion(
-    id: 'b008',
-    prompt: '메뉴를 고른다면?',
-    left: BalanceOption(id: 'familiar', icon: '🍚', label: '익숙한 맛집'),
-    right: BalanceOption(id: 'new', icon: '🧭', label: '새로운 곳'),
+    text: '앞으로 우리가 계속 지켜갔으면 하는 게 있어요?',
+    highlightedText: '지켜가고 싶은 것',
   ),
 ];
 
@@ -11243,30 +10899,6 @@ const seedInsight = RelationshipInsight(
   ],
 );
 
-const seedBalanceQuestions = [
-  BalanceQuestion(
-    id: 'balance_1',
-    prompt: '여행을 떠난다면?',
-    left: BalanceOption(id: 'sea', icon: '🌊', label: '조용한 바다'),
-    right: BalanceOption(id: 'mountain', icon: '⛰️', label: '푸른 산'),
-    partnerChoiceId: 'mountain',
-  ),
-  BalanceQuestion(
-    id: 'balance_2',
-    prompt: '쉬는 날엔?',
-    left: BalanceOption(id: 'home', icon: '🏡', label: '집에서 충전'),
-    right: BalanceOption(id: 'outside', icon: '🚶', label: '밖에서 산책'),
-    partnerChoiceId: 'outside',
-  ),
-  BalanceQuestion(
-    id: 'balance_3',
-    prompt: '카페를 고른다면?',
-    left: BalanceOption(id: 'quiet', icon: '☕', label: '조용한 분위기'),
-    right: BalanceOption(id: 'dessert', icon: '🍰', label: '디저트 맛집'),
-    partnerChoiceId: 'quiet',
-  ),
-];
-
 const seedProfileCards = [
   ProfileCardData(
     profile: AppProfile(
@@ -11275,40 +10907,54 @@ const seedProfileCards = [
       avatar: '🪻',
       isMe: false,
     ),
-    subtitle: '알아가는 중 · 12일째',
+    subtitle: '편한 만큼 채워지는 중',
     slots: [
       ProfileSlot(
-        id: 'food',
-        icon: '🍙',
-        label: '먹고 싶은 음식',
+        id: 'now_song',
+        icon: 'music',
+        label: '요즘 반복 재생',
+        value: '요즘은 잔잔한 어쿠스틱만 계속 듣고 있어요.',
+      ),
+      ProfileSlot(
+        id: 'now_craving',
+        icon: 'food',
+        label: '요즘 당기는 음식',
         value: '매콤한 분식이나 따뜻한 국물',
       ),
-      ProfileSlot(id: 'song', icon: '🎧', label: '요즘 노래', value: '잔잔한 어쿠스틱'),
-      ProfileSlot(id: 'rest', icon: '🏡', label: '쉬는 방식'),
-      ProfileSlot(id: 'cafe', icon: '☕', label: '카페 취향', value: '조용하고 햇빛 드는 곳'),
-      ProfileSlot(id: 'walk', icon: '🚶', label: '산책 취향'),
-      ProfileSlot(id: 'comfort', icon: '🌿', label: '편해지는 순간'),
-      ProfileSlot(id: 'promise', icon: '🗓', label: '약속에서 중요한 것'),
-      ProfileSlot(id: 'kindness', icon: '🤲', label: '기억나는 다정함'),
-      ProfileSlot(id: 'pace', icon: '🕰️', label: '나에게 맞는 속도'),
-      ProfileSlot(id: 'wish_scene', icon: '🧭', label: '같이 해보고 싶은 장면'),
+      ProfileSlot(id: 'now_favorite', icon: 'taste', label: '요즘 마음에 든 것'),
+      ProfileSlot(id: 'day_rhythm', icon: 'time', label: '하루 중 좋은 시간'),
+      ProfileSlot(id: 'recharge_way', icon: 'recharge', label: '충전되는 방식'),
+      ProfileSlot(id: 'reply_pace', icon: 'reply', label: '편한 연락 속도'),
+      ProfileSlot(id: 'words_i_like', icon: 'words', label: '들으면 기분 좋아지는 말'),
+      ProfileSlot(id: 'meet_flow', icon: 'flow', label: '만날 때 좋은 흐름'),
+      ProfileSlot(id: 'next_plan', icon: 'scene', label: '다음에 같이 하고 싶은 것'),
+      ProfileSlot(id: 'care_wish', icon: 'care', label: '힘들 때 받고 싶은 것'),
     ],
   ),
   ProfileCardData(
     profile: AppProfile(id: 'me', nickname: '나', avatar: '🌿', isMe: true),
-    subtitle: '천천히 채우는 중 · 12일째',
+    subtitle: '편한 만큼 채워두는 내 서로 노트',
     slots: [
-      ProfileSlot(id: 'food', icon: '🍙', label: '먹고 싶은 음식', value: '파스타와 커피'),
-      ProfileSlot(id: 'song', icon: '🎧', label: '요즘 노래', value: '잔잔한 재즈'),
-      ProfileSlot(id: 'rest', icon: '🏡', label: '쉬는 방식'),
-      ProfileSlot(id: 'cafe', icon: '☕', label: '카페 취향'),
-      ProfileSlot(id: 'walk', icon: '🚶', label: '산책 취향'),
-      ProfileSlot(id: 'comfort', icon: '🌿', label: '편해지는 순간'),
-      ProfileSlot(id: 'promise', icon: '🗓', label: '약속에서 중요한 것'),
-      ProfileSlot(id: 'kindness', icon: '🤲', label: '기억나는 다정함'),
-      ProfileSlot(id: 'pace', icon: '🕰️', label: '나에게 맞는 속도'),
-      ProfileSlot(id: 'wish_scene', icon: '🧭', label: '같이 해보고 싶은 장면'),
-      ProfileSlot(id: 'motto', icon: '💭', label: '작은 다짐'),
+      ProfileSlot(
+        id: 'now_song',
+        icon: 'music',
+        label: '요즘 반복 재생',
+        value: '잔잔한 재즈를 자주 틀어둬요.',
+      ),
+      ProfileSlot(
+        id: 'now_craving',
+        icon: 'food',
+        label: '요즘 당기는 음식',
+        value: '파스타와 커피',
+      ),
+      ProfileSlot(id: 'now_favorite', icon: 'taste', label: '요즘 마음에 든 것'),
+      ProfileSlot(id: 'day_rhythm', icon: 'time', label: '하루 중 좋은 시간'),
+      ProfileSlot(id: 'recharge_way', icon: 'recharge', label: '충전되는 방식'),
+      ProfileSlot(id: 'reply_pace', icon: 'reply', label: '편한 연락 속도'),
+      ProfileSlot(id: 'words_i_like', icon: 'words', label: '들으면 기분 좋아지는 말'),
+      ProfileSlot(id: 'meet_flow', icon: 'flow', label: '만날 때 좋은 흐름'),
+      ProfileSlot(id: 'next_plan', icon: 'scene', label: '다음에 같이 하고 싶은 것'),
+      ProfileSlot(id: 'care_wish', icon: 'care', label: '힘들 때 받고 싶은 것'),
     ],
   ),
 ];

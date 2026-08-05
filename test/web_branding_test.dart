@@ -31,8 +31,8 @@ void main() {
 
     expect(manifest['name'], '우리 둘');
     expect(manifest['short_name'], '우리 둘');
-    expect(manifest['theme_color'], '#86B9D6');
-    expect(manifest['background_color'], '#EAF7FD');
+    expect(manifest['theme_color'], '#DDB95E');
+    expect(manifest['background_color'], '#FDF9EA');
     expect(manifest['description'], contains('2026년 7월 5일부터'));
   });
 

@@ -99,8 +99,8 @@ class _CuriositySheetContent extends StatelessWidget {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEAF7FD),
-                      border: Border.all(color: const Color(0x336F7F63)),
+                      color: const Color(0xFFFDF9EA),
+                      border: Border.all(color: const Color(0x339A7A2A)),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     alignment: Alignment.center,
@@ -175,7 +175,7 @@ class _CuriosityBadge extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(minHeight: 26),
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF7FD),
+        color: const Color(0xFFFDF9EA),
         borderRadius: BorderRadius.circular(999),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -292,7 +292,7 @@ class _SentCuriosityPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final partnerName = controller.state.partner.nickname;
     return _CuriosityPanel(
-      backgroundColor: const Color(0xFFF5FCFF),
+      backgroundColor: const Color(0xFFFFFCF5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -347,7 +347,7 @@ class _CuriosityComposePanel extends StatelessWidget {
         isSaving && (targetId == null || targetId.startsWith('curiosity_'));
     if (pendingSent != null) {
       return _CuriosityPanel(
-        backgroundColor: const Color(0xFFF7FCFF),
+        backgroundColor: const Color(0xFFFFFDF7),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -387,7 +387,7 @@ class _CuriosityComposePanel extends StatelessWidget {
       );
     }
     return _CuriosityPanel(
-      backgroundColor: const Color(0xFFF7FCFF),
+      backgroundColor: const Color(0xFFFFFDF7),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -443,7 +443,7 @@ class _CuriosityHistoryPanel extends StatelessWidget {
         .length;
 
     return _CuriosityPanel(
-      backgroundColor: const Color(0xFFF5FCFF),
+      backgroundColor: const Color(0xFFFFFCF5),
       child: Column(
         key: curiosityHistoryPanelKey,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -455,7 +455,7 @@ class _CuriosityHistoryPanel extends StatelessWidget {
                 width: 30,
                 height: 30,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEAF7FD),
+                  color: const Color(0xFFFDF9EA),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.center,
@@ -549,7 +549,7 @@ class _CuriosityMetricChip extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFCFE6F1)),
+        border: Border.all(color: const Color(0xFFEFE1BE)),
         borderRadius: BorderRadius.circular(999),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
@@ -660,7 +660,7 @@ class _CuriosityHistoryRow extends StatelessWidget {
 class _CuriosityPanel extends StatelessWidget {
   const _CuriosityPanel({
     required this.child,
-    this.backgroundColor = const Color(0xFFF7FCFF),
+    this.backgroundColor = const Color(0xFFFFFDF7),
   });
 
   final Widget child;
@@ -691,7 +691,7 @@ class _CuriosityReadBlock extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF7FD),
+        color: const Color(0xFFFDF9EA),
         borderRadius: BorderRadius.circular(14),
       ),
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 11),
@@ -862,7 +862,7 @@ class _SheetOutlineAction extends StatelessWidget {
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
           foregroundColor: AlagagiColors.sageDeep,
-          side: const BorderSide(color: Color(0x338A9A7E)),
+          side: const BorderSide(color: Color(0x33A98B3C)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(999),
           ),

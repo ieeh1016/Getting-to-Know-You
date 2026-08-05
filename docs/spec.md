@@ -29,7 +29,6 @@
 - [Home과 navigation](spec/home.md)
 - [Domain model](spec/domain_model.md)
 - [Questions와 records](spec/questions.md)
-- [Taste match](spec/taste_match.md)
 - [Meetings](spec/meetings.md)
 - [Places](spec/places.md)
 - [Music](spec/music.md)
@@ -44,8 +43,8 @@
 
 ## 전역 규칙
 
-- 이 앱은 두 사람이 천천히 서로를 알아가는 private, low-pressure 공간이다.
-- couple-app pressure, anniversary language, public social-network mechanics, score, percentage, ranking copy를 사용하지 않는다.
+- 이 앱은 만난 지 얼마 되지 않은 두 사람이 천천히 서로를 알아가는 private, low-pressure 공간이다.
+- 장기 약속 압박, anniversary language, public social-network mechanics, score, percentage, ranking copy를 사용하지 않는다.
 - core UI에서는 heart와 노골적인 romantic commitment signal을 피한다.
 - user-generated data는 explicit-save 중심이어야 한다. typing, scrolling, route changes, tab changes, map movement는 Firestore write를 만들면 안 된다.
 - 새 Firebase-backed feature는 사용자가 명시적으로 paid dependency를 승인하지 않는 한 Spark/free-plan assumption 안에 둔다.

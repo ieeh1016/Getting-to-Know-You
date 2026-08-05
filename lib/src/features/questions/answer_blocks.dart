@@ -24,7 +24,7 @@ class QuestionSupportBlock extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FCFF),
+        color: const Color(0xFFFFFCF5),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(17),
       ),
@@ -242,7 +242,7 @@ class _SavedAnswerCommentShelf extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: sans(
                       size: 12.5,
-                      color: const Color(0xFF435864),
+                      color: const Color(0xFF6B5526),
                       height: 1.56,
                     ),
                   ),
@@ -295,7 +295,7 @@ class _AnswerCommentEditorShelf extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _CommentShelfFrame(
-      borderColor: const Color(0x5C6F7F63),
+      borderColor: const Color(0x5C9A7A2A),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -682,7 +682,7 @@ class _EditedBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FCFF),
+        color: const Color(0xFFFFFCF5),
         borderRadius: BorderRadius.circular(999),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -724,7 +724,7 @@ class AnswerPreviewBlock extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FCFF),
+        color: const Color(0xFFFFFCF5),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(17),
       ),
@@ -941,7 +941,7 @@ class ReceivedAnswerCommentBlock extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: sans(
                           size: 12.5,
-                          color: const Color(0xFF435864),
+                          color: const Color(0xFF6B5526),
                           height: 1.56,
                         ),
                       ),
@@ -1014,8 +1014,8 @@ class _AnswerCommentReplyPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FCFF),
-        border: Border.all(color: const Color(0x336F7F63)),
+        color: const Color(0xFFFFFCF5),
+        border: Border.all(color: const Color(0x339A7A2A)),
         borderRadius: BorderRadius.circular(14),
       ),
       padding: const EdgeInsets.fromLTRB(11, 10, 9, 10),
@@ -1093,8 +1093,8 @@ class _AnswerCommentReplyEditor extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FCFF),
-        border: Border.all(color: const Color(0x336F7F63)),
+        color: const Color(0xFFFFFCF5),
+        border: Border.all(color: const Color(0x339A7A2A)),
         borderRadius: BorderRadius.circular(16),
       ),
       padding: const EdgeInsets.all(12),

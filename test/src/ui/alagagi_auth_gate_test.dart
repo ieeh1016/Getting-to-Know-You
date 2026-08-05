@@ -316,26 +316,6 @@ void main() {
       await tester.pumpAndSettle();
       await tester.drag(find.byType(Scrollable), const Offset(0, -700));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('우리 선택'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('우리 선택'));
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('조용한 바다'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('조용한 바다'));
-      await tester.pumpAndSettle();
-      expect(
-        find.text('민영님 선택이 생기면 결과가 열려요. 지금은 내 취향만 조용히 저장해둘게요.'),
-        findsOneWidget,
-      );
-      expect(find.textContaining('민영님은'), findsNothing);
-
-      await tester.ensureVisible(find.byKey(subScreenBackButtonKey));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(subScreenBackButtonKey));
-      await tester.pumpAndSettle();
-      await tester.drag(find.byType(Scrollable), const Offset(0, -700));
-      await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('언젠가, 같이'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('언젠가, 같이'));
@@ -580,19 +560,6 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   ) async {
     savedPersonalizations.add(personalization);
   }
-
-  @override
-  Future<void> saveBalanceSelection(
-    String spaceId,
-    BalanceSelection selection,
-  ) async {}
-
-  @override
-  Future<void> deleteBalanceSelection(
-    String spaceId,
-    String questionId,
-    String profileId,
-  ) async {}
 
   @override
   Future<void> saveProfileSlot(

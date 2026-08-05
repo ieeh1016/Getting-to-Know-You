@@ -25,7 +25,6 @@
 - Firebase mode의 빈 Firestore profile slots snapshot은 샘플 소개 카드 값이 아닌 empty state로 변환된다.
 - 질문 카탈로그는 day/depth 규칙에 맞는 질문만 선택한다.
 - 데일리 질문 카탈로그 v1은 q001-q058까지 58개 질문을 stable ID/day 순서로 제공한다.
-- 밸런스 결과는 나와 상대의 실제 선택이 모두 있을 때만 계산된다.
 - 알아간 기록 insight는 실제 답변 데이터만 기반으로 계산한다.
 - 홈/기록의 공통점 요약은 관계를 점수화하는 `%`, `점수`, `지수` 표현을 노출하지 않는다.
 - `AlagagiController` 기본 로컬 모드는 초대 화면에서 시작한다.
@@ -49,13 +48,6 @@
 - 과거 미답 질문은 late-answer 가능 상태가 된다.
 - 과거에 이미 답한 질문은 MVP에서 read-only 상태가 된다.
 - 늦게 답하기 저장은 `{questionId}_{uid}` answer key 1개만 저장한다.
-- 취향 매치 선택과 다음 취향 이동이 상태에 반영된다.
-- 취향 매치 선택 전 `다음 취향` CTA는 비활성 또는 보조 안내 상태로 보여 사용자가 선택을 먼저 하도록 한다.
-- 취향 매치 선택 직후에는 결과가 자동으로 열리지 않고, 사용자가 `결과 열어보기`를 눌러야 결과가 공개된다.
-- 취향 매치의 `내 취향 노트`는 내 선택과 내 이유만 보여주며, 상대 선택이나 같음/다름 상태를 노출하지 않는다.
-- 밸런스 마지막 질문 완료는 첫 질문으로 순환하지 않고 홈으로 돌아간다.
-- 밸런스 화면은 덱형 2열 선택 UI, 진행 dots, 결과 힌트/대기 상태를 보여준다.
-- 밸런스 결과 copy는 `궁합`, `%`, `점수`, `완벽` 같은 과한 호환성 표현을 사용하지 않는다.
 - 하루 질문 progress는 같은 space의 두 사용자에게 같은 current question을 제공한다.
 - progress가 없거나 유효하지 않으면 첫 질문으로 안전하게 fallback한다.
 - answer comment는 question/answer owner/commenter 조합당 하나만 저장된다.
@@ -66,6 +58,7 @@
 - 소개 카드 슬롯 카탈로그는 24개 내외의 다양한 주제를 제공하고 카테고리별로 분류된다.
 - 소개 카드 슬롯은 날짜와 무관하게 바로 입력 가능하고 진행률에 반영된다.
 - `[PROFILE-001]` 소개 카드 draft 입력은 repository write를 호출하지 않고 저장 버튼에서만 해당 slot 1개를 저장한다.
+- `[PROFILE-002]` 서로 노트 슬롯 카탈로그는 `취향`, `하루`, `대화`, `함께` 네 category에 걸쳐 20개 질문을 제공하고, 카탈로그에 없는 예전 slot id는 화면에 그리지 않는다.
 - 소개 카드 슬롯 catalog는 `Day 6`, `오늘 채울 칸`, `아직 비밀` 같은 날짜 unlock copy를 만들지 않는다.
 - 위시리스트 관심 표시가 `서로 관심` 필터에 반영된다.
 - `[WISH-001]` 위시 추가 draft는 제목/종류를 받아 내가 만든 wish를 저장한다.
@@ -73,9 +66,11 @@
 - 위시 추가 draft 입력은 repository write를 호출하지 않고 제출 시에만 저장한다.
 - `[MEMORY-002]` 기억 카드 draft 입력, 유형 선택, 공개 범위 선택은 repository write를 호출하지 않고 제출 시에만 `memoryCards/{cardId}` 한 문서를 저장한다.
 - `[MEMORY-002]` 기억 카드 반응과 수정 요청은 `memoryCardResponses/{cardId_responderUid}` 한 문서만 저장하고 원문 카드를 자동 수정하지 않는다.
+- `[MEMORY-003]` 기억 카드 제목은 80자, 내용은 1000자까지 저장할 수 있고 UI `maxLength`와 `firestore.rules` 한도가 같은 값을 쓴다.
+- `[MEMORY-003]` 긴 기억 카드 본문은 목록에서 6줄로 잘리고 `전체 보기` cue와 읽기 button으로 readable detail sheet를 연다. 짧은 카드에는 cue가 없다.
 - private 기억 카드는 작성자에게만 보이고 partner 목록/카운트에 노출되지 않는다.
 - `[PUSH-001]` Spark plan에서는 푸시 알림 UI와 token registration이 기본 비활성화되어 token 문서를 갱신하지 않는다.
-- 질문/밸런스 카탈로그는 사귀는 사이를 전제하는 `하트`, `애정 표현`, `데이트 계획`, `기념일`, `커플` 문구를 노출하지 않는다.
+- `[Q-CATALOG-001]` 데일리 질문 카탈로그는 `q001`–`q058` 58개를 순서대로 유지하고, 장기 약속을 압박하는 `결혼`, `평생`, `영원`, `기념일`, `헤어지` 문구를 노출하지 않는다.
 - 개인화 설정이 없으면 기본 이름/아바타/초대 문구로 fallback한다.
 - 홈 진행 요약은 summary/progress/today answers/music notes에서 `오늘 질문`, `둘 다 답한 질문`, `음악 노트` 상태를 계산한다.
 - `[HOME-MUSIC-001]` 홈 진행 요약은 localStorage의 마지막 음악 탭 확인 시간 이후 상대가 남긴 music note가 있으면 `새 음악 노트가 있어요`를 계산한다.
@@ -114,11 +109,10 @@
 - Firebase mode에서 실제 답변이 없으면 홈/질문함에 샘플 상대 답변이 보이지 않는다.
 - Firebase mode에서 실제 기록이 없으면 알아간 기록은 0/empty state를 보여준다.
 - Firebase mode에서 실제 위시가 없으면 위시리스트는 비어 있고 직접 담기 CTA만 보인다.
-- Firebase mode에서 밸런스 선택 전에는 샘플 상대 선택이 보이지 않는다.
 - 로컬 데모 모드는 초대 화면과 닉네임 진입을 유지한다.
 - 초대 화면과 홈 header는 사용자-facing 앱 이름을 `우리 둘`로 보여주고 기존 `알아가기` 브랜드를 노출하지 않는다.
 - 초대/로그인/홈 브랜드는 어색한 로마자 kicker 대신 한글 보조 문구와 새싹/잎 계열 표식을 사용한다.
-- 웹 `index.html`과 `manifest.json`은 `우리 둘` title/name/short_name과 하늘색 계열 theme/background color를 사용한다.
+- 웹 `index.html`과 `manifest.json`은 `우리 둘` title/name/short_name과 노랑 계열 theme/background color(`#DDB95E` / `#FDF9EA`)를 사용한다.
 - favicon/PWA icon 파일은 16/192/512 및 maskable 크기를 유지한다.
 - 홈은 오늘의 질문과 기록 요약을 보여준다.
 - 홈 질문 카드는 질문 집중형 layout으로 `Today's Question`, compact day chip, support block, full-width `답 남기기` CTA를 보여준다.
@@ -139,10 +133,10 @@
 - 상대가 내 답변에 남긴 댓글은 홈 오늘 질문의 내 답 아래에 읽기 전용으로 보인다.
 - 기존 내 댓글의 수정 버튼은 카드 안에서 편집 패널을 열고, 취소는 draft만 닫는다.
 - 수정 저장 실패 시 재시도 가능한 오류 문구가 보인다.
-- 답변/위시/밸런스 저장 중에는 중복 저장 버튼 입력이 방지된다.
+- 답변/위시 저장 중에는 중복 저장 버튼 입력이 방지된다.
 - `[Q-ANSWER-002]` Firebase mode에서 내 답 저장이 pending/failed 상태이면 상대 답과 댓글 UI는 잠긴 상태를 유지한다.
 - 이미 `관심 표시`한 위시를 다시 탭하면 MVP에서는 no-op이며 repository write를 만들지 않는다.
-- 아카이브/기록/밸런스/소개 카드/위시 화면 내비게이션을 검증한다.
+- 아카이브/기록/서로 노트/위시 화면 내비게이션을 검증한다.
 - 질문함은 compact 월간 캘린더 header, 월 이동 control, status legend, 선택 질문 detail을 렌더링한다.
 - 질문함 캘린더는 첫 14일/2주 window가 아니라 선택 날짜가 속한 월의 5~6주 grid를 보여준다.
 - 질문함 월간 캘린더는 adjacent month cell을 흐리게 표시하고 future/start-before/catalog-ended cell은 disabled로 보여준다.
@@ -159,7 +153,7 @@
 - 위시 화면의 add CTA는 하단 내비 바로 위에 고정되지 않고 콘텐츠 흐름 안에 배치된다.
 - 위시 화면은 하트 아이콘/하트 문구 대신 `서로 관심`, `관심 표시` 계열 표현을 사용한다.
 - 위시 카드의 저장 emoji icon은 UI primary icon으로 직접 렌더링하지 않는다.
-- 초대 노트, 홈 기능 카드, 밸런스 선택지, 소개 카드 슬롯, 위시 카드는 큰 텍스트 이모지 장식 대신 일관된 line icon을 사용한다.
+- 초대 노트, 홈 기능 카드, 서로 노트 슬롯, 위시 카드는 큰 텍스트 이모지 장식 대신 일관된 line icon을 사용한다.
 - 앱 shell은 모바일 브라우저와 중복되는 `9:41`, 배터리, 신호 점 mock status row를 렌더링하지 않는다.
 - 앱 shell은 실제 모바일 viewport에서 장식용 phone frame 없이 full-height로 렌더링하고 하단 내비가 본문을 덮지 않는다.
 - 390px 모바일 viewport에서 하단 내비 높이는 compact하게 유지되어 화면을 과하게 차지하지 않는다.
@@ -176,7 +170,7 @@
 - 하단 탭 루트 화면인 `약속`, `장소`, `마이`는 sub screen back action을 보여주지 않는다.
 - 홈은 질문 카드 아래에 조용한 진행 요약을 보여주고, 390px 모바일 viewport에서 질문 CTA보다 강하게 보이지 않는다.
 - 홈은 `Today's Question` 아래에 작은 `궁금함` 상태 카드를 보여주고, 카드를 누르면 실제 질문/답장 bottom sheet를 연다.
-- 홈 header menu는 `기능 모아보기`로 동작하며 `궁금함 한 장`, `서로의 기억`, `주식 이야기`, `건의함`, `취향 매치`, `소개 카드`, `언젠가, 같이`, `처음 안내`를 한곳에서 열 수 있다.
+- 홈 header menu는 `기능 모아보기`로 동작하며 `궁금함 한 장`, `서로의 기억`, `주식 이야기`, `건의함`, `서로 노트`, `언젠가, 같이`, `처음 안내`를 한곳에서 열 수 있다. `우리 선택` 진입점은 존재하지 않는다.
 - `[MEMORY-001]` 홈은 하단 tab을 추가하지 않고 `서로의 기억` 주요 카드와 menu entry에서 기억 카드 화면을 연다.
 - `[MEMORY-001]` `서로의 기억` 홈 카드는 최근 공유 카드 preview를 주 콘텐츠로, 영우의 공간/민영이의 공간 count를 하단 요약으로, `기억 열어보기` 주 action과 plus 형태의 `카드 만들기` 보조 action을 보여준다.
 - 기억 카드 화면은 작성자 기준 공간 tab, card type filter, 직접 작성 form, shared/private 공개 범위, shared card reaction/correction flow를 제공한다.
@@ -252,7 +246,7 @@
 - 캘린더 월 이동, 날짜 선택, 오늘 shortcut은 Firestore write를 만들지 않는다.
 - 월간 캘린더 grid 계산은 별도 calendar collection을 읽거나 쓰지 않는다.
 - 늦게 답하기 submit은 기존 answer document 1 write 이하로 저장한다.
-- 답변 submit/edit, answer comment save/edit, balance select, profile slot fill/edit, wish add/interest/done, music note add/edit, music note comment save/edit/delete, stock story add/reply는 각각 1 document write 이하.
+- 답변 submit/edit, answer comment save/edit, profile slot fill/edit, wish add/interest/done, music note add/edit, music note comment save/edit/delete, stock story add/reply는 각각 1 document write 이하.
 - 질문 캘린더는 별도 calendar collection 없이 progress 문서와 bounded answer reads로 렌더링한다.
 - Summary/current 갱신이 필요한 action만 2 writes까지 허용한다.
 - Meeting schedule submit은 공유 schedule entry 1개만 저장한다.

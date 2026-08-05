@@ -68,7 +68,6 @@ lib/src/domain/
 - `lib/src/features/place/place_board_screen.dart`: place board tab, Kakao place search, map preview/fallback UI, shared place card action.
 - `lib/src/features/stocks/stock_story_screen.dart`: stock story와 holding tab, draft form, filter, reply composer, owner edit/delete action.
 - `lib/src/features/wishlist/wishlist_screen.dart`: shared wishlist board, wish draft form, filter, mutual-interest lane, wish card.
-- `lib/src/features/balance/balance_screen.dart`: taste match deck, result privacy flow, result box, personal taste note tab.
 - `lib/src/features/profile/profile_card_screen.dart`: profile card tab, custom card creation, category filter, editor panel, hidden slot, read-only partner card view.
 - `lib/src/features/questions/question_view_switch.dart`: question-related view를 위한 shared archive/records segmented switch.
 - `lib/src/features/questions/answer_save_status.dart`: Home과 Archive에서 쓰는 shared answer save feedback과 retry status row.
@@ -83,7 +82,7 @@ lib/src/domain/
 1. shared foundation: colors, typography, common keys, buttons, sheet shells.
 2. Home panels와 sheets.
 3. bottom-tab feature screens: music, meetings, places, my.
-4. menu feature screens: profile cards, wishlist, stocks, improvements, taste match.
+4. menu feature screens: profile cards, wishlist, stocks, improvements.
 5. UI dependency가 낮아진 뒤 domain model/repository/controller split.
 
 ## 완료 기준

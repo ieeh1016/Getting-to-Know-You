@@ -53,7 +53,7 @@ class _StockStoryTabs extends StatelessWidget {
     final activeTab = controller.state.stockStoryTab;
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF7FCFF),
+        color: const Color(0xFFFFFDF7),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(18),
       ),
@@ -326,7 +326,7 @@ class _StockStoryAddButton extends StatelessWidget {
         label: const Text('이야기 남기기'),
         style: OutlinedButton.styleFrom(
           foregroundColor: AlagagiColors.sageDeep,
-          side: const BorderSide(color: Color(0x338A9A7E)),
+          side: const BorderSide(color: Color(0x33A98B3C)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(999),
           ),
@@ -375,7 +375,7 @@ class _StockSaveStatus extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Container(
         decoration: BoxDecoration(
-          color: failed ? const Color(0xFFFFF7ED) : const Color(0xFFF3FBFF),
+          color: failed ? const Color(0xFFFFF7ED) : const Color(0xFFFFFCF3),
           border: Border.all(
             color: failed ? const Color(0xFFEBC9A2) : AlagagiColors.line,
           ),
@@ -582,7 +582,7 @@ class _StockDraftDetailToggle extends StatelessWidget {
         label: Text(expanded ? '간단히 보기' : '자세히 적기'),
         style: OutlinedButton.styleFrom(
           foregroundColor: AlagagiColors.sageDeep,
-          side: const BorderSide(color: Color(0x338A9A7E)),
+          side: const BorderSide(color: Color(0x33A98B3C)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(999),
           ),
@@ -762,7 +762,7 @@ class _StockStoryMark extends StatelessWidget {
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        color: isMine ? AlagagiColors.softSage : const Color(0xFFEFF8FD),
+        color: isMine ? AlagagiColors.softSage : const Color(0xFFFDFAEF),
         borderRadius: BorderRadius.circular(16),
       ),
       alignment: Alignment.center,
@@ -789,7 +789,7 @@ class _StockStoryMiniBox extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(minHeight: 70),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FCFF),
+        color: const Color(0xFFFFFCF5),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(15),
       ),
@@ -862,7 +862,7 @@ class _StockStoryReplyBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF7FD),
+        color: const Color(0xFFFDF9EA),
         borderRadius: BorderRadius.circular(15),
       ),
       padding: const EdgeInsets.all(12),
@@ -901,7 +901,7 @@ class _StockReplyOpenButton extends StatelessWidget {
         label: Text(label),
         style: OutlinedButton.styleFrom(
           foregroundColor: AlagagiColors.sageDeep,
-          side: const BorderSide(color: Color(0x338A9A7E)),
+          side: const BorderSide(color: Color(0x33A98B3C)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(999),
           ),
@@ -987,7 +987,7 @@ class _StockStoryReplyComposerState extends State<_StockStoryReplyComposer> {
     final selectedTone = controller.stockStoryReplyToneFor(story.id);
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF7FCFF),
+        color: const Color(0xFFFFFDF7),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(17),
       ),
@@ -1031,7 +1031,7 @@ class _StockStoryReplyComposerState extends State<_StockStoryReplyComposer> {
               hintStyle: sans(size: 12.2, color: AlagagiColors.muted),
               counterText: '',
               filled: true,
-              fillColor: const Color(0xFFF5FCFF),
+              fillColor: const Color(0xFFFFFCF5),
               contentPadding: const EdgeInsets.all(12),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -1220,7 +1220,7 @@ class _StockHoldingAddButton extends StatelessWidget {
         label: const Text('보유 공유'),
         style: OutlinedButton.styleFrom(
           foregroundColor: AlagagiColors.sageDeep,
-          side: const BorderSide(color: Color(0x338A9A7E)),
+          side: const BorderSide(color: Color(0x33A98B3C)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(999),
           ),
@@ -1594,7 +1594,7 @@ class _StockHoldingCardState extends State<_StockHoldingCard> {
                     label: const Text('수정'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AlagagiColors.sageDeep,
-                      side: const BorderSide(color: Color(0x338A9A7E)),
+                      side: const BorderSide(color: Color(0x33A98B3C)),
                       visualDensity: VisualDensity.compact,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(999),
@@ -1636,7 +1636,7 @@ class _StockHoldingReplyBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF7FD),
+        color: const Color(0xFFFDF9EA),
         borderRadius: BorderRadius.circular(15),
       ),
       padding: const EdgeInsets.all(12),
@@ -1737,7 +1737,7 @@ class _StockHoldingReplyComposerState
     final selectedTone = controller.stockHoldingReplyToneFor(holding.id);
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF7FCFF),
+        color: const Color(0xFFFFFDF7),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(17),
       ),
@@ -1781,7 +1781,7 @@ class _StockHoldingReplyComposerState
               hintStyle: sans(size: 12.2, color: AlagagiColors.muted),
               counterText: '',
               filled: true,
-              fillColor: const Color(0xFFF5FCFF),
+              fillColor: const Color(0xFFFFFCF5),
               contentPadding: const EdgeInsets.all(12),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),

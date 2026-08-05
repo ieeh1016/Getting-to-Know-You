@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/app_shell.dart';
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
+import '../../shared/readable_detail_sheet.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
@@ -232,7 +233,7 @@ class _MemoryHero extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AlagagiColors.paper, Color(0xFFEFF8FD)],
+          colors: [AlagagiColors.paper, Color(0xFFFDFAEF)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -440,7 +441,7 @@ class _MemoryDraftCard extends StatelessWidget {
             controller: titleController,
             label: '제목',
             hint: '예: 조용한 카페 자리',
-            maxLength: 48,
+            maxLength: 80,
             maxLines: 1,
           ),
           const SizedBox(height: 10),
@@ -449,8 +450,9 @@ class _MemoryDraftCard extends StatelessWidget {
             controller: bodyController,
             label: '내용',
             hint: '기억하고 싶은 내용을 직접 적어두기',
-            maxLength: 240,
-            maxLines: 4,
+            maxLength: 1000,
+            minLines: 4,
+            maxLines: 10,
           ),
           if (error != null) ...[
             const SizedBox(height: 8),
@@ -541,6 +543,14 @@ class _MemoryCardTile extends StatelessWidget {
       card.id,
       responderProfileId: controller.state.partner.id,
     );
+    final longBody = showsReadableCue(card.body);
+    void openFull() => showReadableDetailSheet(
+      context,
+      label: '서로의 기억',
+      title: card.title,
+      body: card.body,
+      meta: '$author · ${card.createdLabel}',
+    );
 
     return AlagagiPaperCard(
       key: memoryCardKey(card.id),
@@ -559,15 +569,49 @@ class _MemoryCardTile extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            card.title,
-            style: serif(context, size: 18, weight: FontWeight.w800),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  card.title,
+                  style: serif(context, size: 18, weight: FontWeight.w800),
+                ),
+              ),
+              if (longBody) ...[
+                const SizedBox(width: 6),
+                AlagagiOpenReadableIconButton(
+                  key: memoryCardReadButtonKey(card.id),
+                  onPressed: openFull,
+                ),
+              ],
+            ],
           ),
           const SizedBox(height: 7),
           Text(
             card.body,
+            maxLines: longBody ? 6 : null,
+            overflow: longBody ? TextOverflow.ellipsis : null,
             style: sans(size: 13.3, height: 1.65, color: AlagagiColors.ink),
           ),
+          if (longBody) ...[
+            const SizedBox(height: 6),
+            InkWell(
+              onTap: openFull,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Text(
+                  '전체 보기',
+                  style: sans(
+                    size: 12,
+                    weight: FontWeight.w800,
+                    color: AlagagiColors.sageDeep,
+                  ),
+                ),
+              ),
+            ),
+          ],
           if (authorIsMe) ...[
             const SizedBox(height: 12),
             _MemoryOwnerActions(controller: controller, card: card),
@@ -630,7 +674,7 @@ class _MemoryOwnerActions extends StatelessWidget {
         ),
         style: OutlinedButton.styleFrom(
           foregroundColor: AlagagiColors.sageDeep,
-          side: const BorderSide(color: Color(0x338A9A7E)),
+          side: const BorderSide(color: Color(0x33A98B3C)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(999),
           ),
@@ -760,7 +804,7 @@ class _MemoryResponseBlock extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFFF3FBFF),
+        color: const Color(0xFFFFFCF3),
         borderRadius: BorderRadius.circular(14),
       ),
       padding: const EdgeInsets.all(13),
@@ -799,7 +843,7 @@ class _MemoryResponseBlock extends StatelessWidget {
                 label: const Text('카드에 반영'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AlagagiColors.sageDeep,
-                  side: const BorderSide(color: Color(0x338A9A7E)),
+                  side: const BorderSide(color: Color(0x33A98B3C)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(999),
                   ),
@@ -840,7 +884,7 @@ class _ResponseButton extends StatelessWidget {
             : AlagagiColors.sageDeep,
         backgroundColor: selected ? AlagagiColors.ink : Colors.white,
         side: BorderSide(
-          color: selected ? AlagagiColors.ink : const Color(0x338A9A7E),
+          color: selected ? AlagagiColors.ink : const Color(0x33A98B3C),
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
         textStyle: sans(size: 12, weight: FontWeight.w700),
@@ -857,6 +901,7 @@ class _MemoryTextField extends StatelessWidget {
     required this.hint,
     required this.maxLength,
     required this.maxLines,
+    this.minLines,
   });
 
   final Key fieldKey;
@@ -865,12 +910,13 @@ class _MemoryTextField extends StatelessWidget {
   final String hint;
   final int maxLength;
   final int maxLines;
+  final int? minLines;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FCFF),
+        color: const Color(0xFFFFFCF5),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(15),
       ),
@@ -879,7 +925,7 @@ class _MemoryTextField extends StatelessWidget {
         key: fieldKey,
         controller: controller,
         maxLength: maxLength,
-        minLines: maxLines,
+        minLines: minLines ?? maxLines,
         maxLines: maxLines,
         decoration: InputDecoration(
           labelText: label,

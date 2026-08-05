@@ -24,7 +24,6 @@
 - `spaces/{spaceId}/answers/{questionId_uid}`
 - `spaces/{spaceId}/answerComments/{questionId_ownerUid_commenterUid}`
 - `spaces/{spaceId}/progress/{progressId}`
-- `spaces/{spaceId}/balanceSelections/{questionId_uid}`
 - `spaces/{spaceId}/profileCards/{profileId}/slots/{slotId}`
 - `spaces/{spaceId}/wishes/{wishId}`
 - `spaces/{spaceId}/memoryCards/{cardId}`

@@ -12,7 +12,6 @@ import '../domain/alagagi_controller.dart';
 import '../features/answer/answer_screen.dart';
 import '../features/archive/archive_screen.dart';
 import '../features/auth/auth_screens.dart';
-import '../features/balance/balance_screen.dart';
 import '../features/home/first_visit_guide_overlay.dart';
 import '../features/home/first_visit_guide_book_sheet.dart';
 import '../features/home/home_screen.dart';
@@ -243,7 +242,6 @@ class _AlagagiRootState extends State<AlagagiRoot> {
       AlagagiRoute.improvements => ImprovementBoardScreen(
         controller: _controller,
       ),
-      AlagagiRoute.balance => BalanceScreen(controller: _controller),
       AlagagiRoute.profileCard => ProfileCardScreen(controller: _controller),
       AlagagiRoute.wishlist => WishlistScreen(controller: _controller),
       AlagagiRoute.memoryCards => MemoryCardsScreen(controller: _controller),
@@ -289,9 +287,9 @@ class _PhoneShell extends StatelessWidget {
             color: AlagagiColors.appBackground,
             gradient: LinearGradient(
               colors: [
-                Color(0xFFF5FCFF),
+                Color(0xFFFFFCF5),
                 AlagagiColors.appBackground,
-                Color(0xFFD4ECF8),
+                Color(0xFFF9F0D3),
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -317,9 +315,9 @@ class _PhoneShell extends StatelessWidget {
             color: AlagagiColors.appBackground,
             gradient: const LinearGradient(
               colors: [
-                Color(0xFFF5FCFF),
+                Color(0xFFFFFCF5),
                 AlagagiColors.appBackground,
-                Color(0xFFD4ECF8),
+                Color(0xFFF9F0D3),
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,

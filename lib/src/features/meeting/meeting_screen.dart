@@ -113,7 +113,7 @@ class _MeetingHeroCard extends StatelessWidget {
         color: AlagagiColors.ink,
         borderRadius: BorderRadius.circular(26),
         gradient: const LinearGradient(
-          colors: [Color(0xFF303129), Color(0xFF53624A), Color(0xFF8F7767)],
+          colors: [Color(0xFF303129), Color(0xFF605645), Color(0xFF8F7767)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -148,7 +148,7 @@ class _MeetingHeroCard extends StatelessWidget {
                   style: sans(
                     size: 10.5,
                     weight: FontWeight.w900,
-                    color: const Color(0xFFE6F6FF),
+                    color: const Color(0xFFFEF9E7),
                     letterSpacing: 1.8,
                   ),
                 ),
@@ -239,7 +239,7 @@ class _MeetingHeroMetric extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 9),
       child: Row(
         children: [
-          Icon(icon, size: 14, color: const Color(0xFFBEE4F7)),
+          Icon(icon, size: 14, color: const Color(0xFFF8EABD)),
           const SizedBox(width: 6),
           Expanded(
             child: Tooltip(
@@ -403,7 +403,7 @@ class _MeetingCalendar extends StatelessWidget {
               _LegendDot(color: AlagagiColors.sky, label: '만나는 날'),
               _LegendDot(color: AlagagiColors.sageDeep, label: '서로 가능'),
               _LegendDot(color: AlagagiColors.sage, label: '내 입력'),
-              _LegendDot(color: Color(0xFF5B9DBF), label: '내 상세 일정'),
+              _LegendDot(color: Color(0xFFC99B3C), label: '내 상세 일정'),
               _LegendDot(color: Color(0xFFB18472), label: '상대 표시'),
             ],
           ),
@@ -459,7 +459,7 @@ class _MeetingMonthButton extends StatelessWidget {
           minimumSize: const Size(36, 36),
           padding: EdgeInsets.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          backgroundColor: const Color(0xFFF5FCFF),
+          backgroundColor: const Color(0xFFFFFCF5),
           foregroundColor: AlagagiColors.sageDeep,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(13),
@@ -500,17 +500,17 @@ class _MeetingDateCell extends StatelessWidget {
   Widget build(BuildContext context) {
     const meetingDayFill = AlagagiColors.skyPanel;
     const meetingDayBorder = AlagagiColors.sky;
-    const meetingDayForeground = Color(0xFF315F7A);
+    const meetingDayForeground = Color(0xFF796935);
     final background = selected
         ? AlagagiColors.ink
         : meetingDay
         ? meetingDayFill
         : mutual
-        ? const Color(0xFFEAF7FD)
+        ? const Color(0xFFFDF9EA)
         : busy || hasMyDetails
-        ? const Color(0xFFEAF7FD)
+        ? const Color(0xFFFDF9EA)
         : hasMyEntry
-        ? const Color(0xFFF3FBFF)
+        ? const Color(0xFFFFFCF3)
         : Colors.white;
     final foreground = selected
         ? Colors.white
@@ -519,7 +519,7 @@ class _MeetingDateCell extends StatelessWidget {
         : mutual
         ? AlagagiColors.sageDeep
         : busy || hasMyDetails
-        ? const Color(0xFF4F7F9A)
+        ? const Color(0xFFB08C33)
         : hasMyEntry
         ? AlagagiColors.sageDeep
         : const Color(0xFF4D4B45);
@@ -528,9 +528,9 @@ class _MeetingDateCell extends StatelessWidget {
         : meetingDay
         ? meetingDayBorder
         : mutual
-        ? const Color(0x668A9A7E)
+        ? const Color(0x66A98B3C)
         : hasMyEntry
-        ? const Color(0x338A9A7E)
+        ? const Color(0x33A98B3C)
         : AlagagiColors.line;
     final indicators = <Widget>[
       if (mutual)
@@ -541,11 +541,11 @@ class _MeetingDateCell extends StatelessWidget {
       if (hasMyEntry)
         _TinyDot(
           key: meetingMyEntryIndicatorKey(dateKey),
-          color: selected ? const Color(0xFFB8C8A5) : AlagagiColors.sage,
+          color: selected ? const Color(0xFFCBBCA2) : AlagagiColors.sage,
         ),
       if (hasMyDetails)
         _TinyDot(
-          color: selected ? const Color(0xFFBEE4F7) : const Color(0xFF5B9DBF),
+          color: selected ? const Color(0xFFF8EABD) : const Color(0xFFC99B3C),
         ),
       if (hasPartner)
         _TinyDot(
@@ -592,7 +592,7 @@ class _MeetingDateCell extends StatelessWidget {
                         height: 3.5,
                         decoration: BoxDecoration(
                           color: selected
-                              ? const Color(0xFFBEE4F7)
+                              ? const Color(0xFFF8EABD)
                               : AlagagiColors.sky,
                           borderRadius: BorderRadius.circular(999),
                           boxShadow: const [
@@ -710,7 +710,7 @@ class _MeetingDetailCard extends StatelessWidget {
     return AlagagiPaperCard(
       radius: 24,
       padding: const EdgeInsets.all(18),
-      highlightedBorder: const Color(0x228A9A7E),
+      highlightedBorder: const Color(0x22A98B3C),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -877,14 +877,14 @@ class _MeetingDateStatusPanel extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: alreadyMeetingDay
-            ? const Color(0xFFEAF7FD)
+            ? const Color(0xFFFDF9EA)
             : mutual
             ? AlagagiColors.sageSoft
-            : const Color(0xFFF5FCFF),
+            : const Color(0xFFFFFCF5),
         border: Border.all(
           color: alreadyMeetingDay
-              ? const Color(0x6686B9D6)
-              : const Color(0x338A9A7E),
+              ? const Color(0x66DDB95E)
+              : const Color(0x33A98B3C),
         ),
         borderRadius: BorderRadius.circular(18),
       ),
@@ -895,7 +895,7 @@ class _MeetingDateStatusPanel extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: alreadyMeetingDay ? const Color(0xFFBEE4F7) : Colors.white,
+              color: alreadyMeetingDay ? const Color(0xFFF8EABD) : Colors.white,
               borderRadius: BorderRadius.circular(14),
             ),
             alignment: Alignment.center,
@@ -941,11 +941,11 @@ class _MeetingDayPanel extends StatelessWidget {
         : '${sharedSlots.map(meetingTimeSlotLabel).join(', ')}에 서로 괜찮아요.';
     return Container(
       decoration: BoxDecoration(
-        color: alreadyMeetingDay ? AlagagiColors.ink : const Color(0xFFEAF7FD),
+        color: alreadyMeetingDay ? AlagagiColors.ink : const Color(0xFFFDF9EA),
         border: Border.all(
           color: alreadyMeetingDay
               ? AlagagiColors.ink
-              : const Color(0x338A9A7E),
+              : const Color(0x33A98B3C),
         ),
         borderRadius: BorderRadius.circular(20),
       ),
@@ -1086,7 +1086,7 @@ class _MeetingTimeBlockSectionState extends State<_MeetingTimeBlockSection> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0x228A9A7E)),
+        border: Border.all(color: const Color(0x22A98B3C)),
         borderRadius: BorderRadius.circular(18),
       ),
       padding: const EdgeInsets.all(13),
@@ -1145,7 +1145,7 @@ class _MeetingTimeBlockSectionState extends State<_MeetingTimeBlockSection> {
                   label: Text(_expanded ? '접기' : '작성'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AlagagiColors.sageDeep,
-                    side: const BorderSide(color: Color(0x338A9A7E)),
+                    side: const BorderSide(color: Color(0x33A98B3C)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(999),
                     ),
@@ -1252,7 +1252,7 @@ class _MeetingTimeBlockSectionState extends State<_MeetingTimeBlockSection> {
                 label: const Text('상세 일정 추가'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AlagagiColors.sageDeep,
-                  side: const BorderSide(color: Color(0x338A9A7E)),
+                  side: const BorderSide(color: Color(0x33A98B3C)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -1332,7 +1332,7 @@ class _MeetingPersonRow extends StatelessWidget {
     final meetingNote = entry?.meetingNote.trim() ?? '';
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FCFF),
+        color: const Color(0xFFFFFCF5),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(16),
       ),
@@ -1429,7 +1429,7 @@ class _MeetingTimeBlockRow extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 7),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FCFF),
+        color: const Color(0xFFFFFCF5),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(14),
       ),
@@ -1489,7 +1489,7 @@ class _MeetingCandidateMoreButton extends StatelessWidget {
         label: Text(expanded ? '접기' : '$hiddenCount일 더 보기'),
         style: OutlinedButton.styleFrom(
           foregroundColor: AlagagiColors.sageDeep,
-          side: const BorderSide(color: Color(0x338A9A7E)),
+          side: const BorderSide(color: Color(0x33A98B3C)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(999),
           ),

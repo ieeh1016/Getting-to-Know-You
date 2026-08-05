@@ -59,9 +59,9 @@ The page should read as a proposal, not a marketing landing page.
 
 Match the current `우리 둘` visual direction:
 
-- airy sky-blue app background;
-- soft blue as the main accent;
-- restrained sage, lavender, gold, or soft neutral support colors;
+- warm butter-cream app background (`#FDF9EA`);
+- deep ochre as the main accent (`#8A6B1E`), amber (`#C1922C`) as the secondary;
+- restrained lavender, clay, or soft neutral support colors;
 - calm Korean copy;
 - serif display headings only where the current app already uses that tone;
 - soft dividers and low-contrast surfaces;
@@ -101,13 +101,13 @@ data boundary quickly.
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   :root{
-    --outer:#e9e8e2;
-    --bg:#f4f3ef;
-    --paper:#fcfcfa;
-    --text:#45443f;
-    --muted:#8f8b82;
-    --sage:#8a9a7e;
-    --line:#e8e6df;
+    --outer:#f9f1d8;
+    --bg:#fdf9ea;
+    --paper:#fffdf7;
+    --text:#3f3e39;
+    --muted:#8c8069;
+    --accent:#8a6b1e;
+    --line:#efe1be;
   }
   body{background:var(--outer);color:var(--text);font-family:system-ui,sans-serif}
   .wrap{max-width:1260px;margin:0 auto;padding:36px 18px 48px}

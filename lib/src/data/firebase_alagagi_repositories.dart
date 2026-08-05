@@ -274,55 +274,6 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
   }
 
   @override
-  Future<void> saveBalanceSelection(
-    String spaceId,
-    BalanceSelection selection,
-  ) {
-    final data = <String, Object?>{
-      'questionId': selection.questionId,
-      'profileId': selection.profileId,
-      'optionId': selection.optionId,
-      'reason': selection.reason,
-      'updatedAt': FieldValue.serverTimestamp(),
-    };
-    final resultRevealedAt = selection.resultRevealedAt;
-    if (resultRevealedAt != null) {
-      data['resultRevealedAt'] = Timestamp.fromDate(resultRevealedAt);
-    }
-    return _setWithActivityEvent(
-      spaceId,
-      _firestore
-          .collection('spaces')
-          .doc(spaceId)
-          .collection('balanceSelections')
-          .doc('${selection.questionId}_${selection.profileId}'),
-      data,
-      options: SetOptions(merge: true),
-      activityEvent: _ActivityEventDraft(
-        type: 'balanceSelectionSaved',
-        actorProfileId: selection.profileId,
-        route: 'balance',
-        feature: 'balance',
-        targetId: selection.questionId,
-      ),
-    );
-  }
-
-  @override
-  Future<void> deleteBalanceSelection(
-    String spaceId,
-    String questionId,
-    String profileId,
-  ) {
-    return _firestore
-        .collection('spaces')
-        .doc(spaceId)
-        .collection('balanceSelections')
-        .doc('${questionId}_$profileId')
-        .delete();
-  }
-
-  @override
   Future<void> saveProfileSlot(
     String spaceId,
     String profileId,
@@ -943,7 +894,6 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     final spaceSnapshot = await space.get();
     final answersSnapshot = await space.collection('answers').get();
     final commentsSnapshot = await space.collection('answerComments').get();
-    final balanceSnapshot = await space.collection('balanceSelections').get();
     final wishesSnapshot = await space.collection('wishes').get();
     final sharedMemoryCardsSnapshot = await space
         .collection('memoryCards')
@@ -1001,10 +951,6 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           .toList(),
       answerComments: commentsSnapshot.docs
           .map((doc) => _answerCommentFromData(doc.data()))
-          .nonNulls
-          .toList(),
-      balanceSelections: balanceSnapshot.docs
-          .map((doc) => _balanceSelectionFromData(doc.data()))
           .nonNulls
           .toList(),
       profileSlots: profileSlots,
@@ -1117,22 +1063,6 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       currentQuestionId: currentQuestionId,
       openedDateKey: openedDateKey,
       catalogVersion: _readString(data, 'catalogVersion') ?? 'v1',
-    );
-  }
-
-  BalanceSelection? _balanceSelectionFromData(Map<String, dynamic> data) {
-    final questionId = _readString(data, 'questionId');
-    final profileId = _readString(data, 'profileId');
-    final optionId = _readString(data, 'optionId');
-    if (questionId == null || profileId == null || optionId == null) {
-      return null;
-    }
-    return BalanceSelection(
-      questionId: questionId,
-      profileId: profileId,
-      optionId: optionId,
-      reason: _readString(data, 'reason'),
-      resultRevealedAt: _readDateTime(data, 'resultRevealedAt'),
     );
   }
 

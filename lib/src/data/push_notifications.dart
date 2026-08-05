@@ -346,7 +346,6 @@ class FirebasePushNotificationService
       'places' => AlagagiRoute.places,
       'stockStory' => AlagagiRoute.stockStory,
       'improvements' => AlagagiRoute.improvements,
-      'balance' => AlagagiRoute.balance,
       'profileCard' => AlagagiRoute.profileCard,
       'wishlist' => AlagagiRoute.wishlist,
       'memoryCards' => AlagagiRoute.memoryCards,

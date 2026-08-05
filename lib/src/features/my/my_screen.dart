@@ -186,8 +186,8 @@ class MyScreen extends StatelessWidget {
                     description: myMusicNotes.isEmpty
                         ? '요즘 듣는 한 곡을 남겨볼 수 있어요.'
                         : '최근 남긴 곡을 다시 수정할 수 있어요.',
-                    tone: const Color(0xFFEAF7FD),
-                    iconColor: const Color(0xFF315F7A),
+                    tone: const Color(0xFFFDF9EA),
+                    iconColor: const Color(0xFF796935),
                     onTap: () {
                       if (myMusicNotes.isEmpty) {
                         controller.startMusicDraft();
@@ -295,7 +295,7 @@ class _MyCommandDeck extends StatelessWidget {
                       style: sans(
                         size: 10.2,
                         weight: FontWeight.w900,
-                        color: const Color(0xFFBEE4F7),
+                        color: const Color(0xFFF8EABD),
                         letterSpacing: 1.7,
                       ),
                     ),
@@ -342,7 +342,7 @@ class _MyCommandDeck extends StatelessWidget {
                 child: _MyCommandMetric(
                   label: '질문 답',
                   value: '$answeredCount',
-                  color: const Color(0xFFBEE4F7),
+                  color: const Color(0xFFF8EABD),
                 ),
               ),
               const SizedBox(width: 8),
@@ -468,11 +468,11 @@ class _MyCommandAction extends StatelessWidget {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFBEE4F7).withValues(alpha: 0.2),
+                  color: const Color(0xFFF8EABD).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 alignment: Alignment.center,
-                child: Icon(icon, size: 19, color: const Color(0xFFBEE4F7)),
+                child: Icon(icon, size: 19, color: const Color(0xFFF8EABD)),
               ),
               const SizedBox(width: 11),
               Expanded(
@@ -506,7 +506,7 @@ class _MyCommandAction extends StatelessWidget {
               const Icon(
                 Icons.arrow_forward_rounded,
                 size: 18,
-                color: Color(0xFFBEE4F7),
+                color: Color(0xFFF8EABD),
               ),
             ],
           ),
@@ -542,7 +542,7 @@ class _MyPushNotificationCard extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: enabled
-                  ? const Color(0xFFEAF7FD)
+                  ? const Color(0xFFFDF9EA)
                   : const Color(0xFFF3F0EA),
               borderRadius: BorderRadius.circular(14),
             ),
@@ -742,8 +742,8 @@ class _MyStatusChip extends StatelessWidget {
       height: 30,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF7FD),
-        border: Border.all(color: const Color(0x338A9A7E)),
+        color: const Color(0xFFFDF9EA),
+        border: Border.all(color: const Color(0x33A98B3C)),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
@@ -858,11 +858,11 @@ class _MyPrimaryNextCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [AlagagiColors.paper, Color(0xFFEAF7FD)],
+              colors: [AlagagiColors.paper, Color(0xFFFDF9EA)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            border: Border.all(color: const Color(0x428A9A7E)),
+            border: Border.all(color: const Color(0x42A98B3C)),
             borderRadius: BorderRadius.circular(22),
             boxShadow: const [
               BoxShadow(
@@ -885,7 +885,7 @@ class _MyPrimaryNextCard extends StatelessWidget {
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.72),
-                        border: Border.all(color: const Color(0x2E6F7F63)),
+                        border: Border.all(color: const Color(0x2E9A7A2A)),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
@@ -942,7 +942,7 @@ class _MyPrimaryNextCard extends StatelessWidget {
                             child: LinearProgressIndicator(
                               value: progress.clamp(0, 1),
                               minHeight: 5,
-                              backgroundColor: const Color(0x2E8A9A7E),
+                              backgroundColor: const Color(0x2EA98B3C),
                               valueColor: const AlwaysStoppedAnimation<Color>(
                                 AlagagiColors.sage,
                               ),
@@ -1192,7 +1192,7 @@ class _MyHelpCard extends StatelessWidget {
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEAF7FD),
+                        color: const Color(0xFFFDF9EA),
                         borderRadius: BorderRadius.circular(13),
                       ),
                       child: const Icon(
@@ -1231,7 +1231,7 @@ class _MyHelpCard extends StatelessWidget {
                       width: 26,
                       height: 26,
                       decoration: const BoxDecoration(
-                        color: Color(0xFFEAF7FD),
+                        color: Color(0xFFFDF9EA),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -1288,7 +1288,7 @@ class _MyAccountCard extends StatelessWidget {
                 onPressed: onSignOut,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AlagagiColors.sageDeep,
-                  side: const BorderSide(color: Color(0x336F7F63)),
+                  side: const BorderSide(color: Color(0x339A7A2A)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),

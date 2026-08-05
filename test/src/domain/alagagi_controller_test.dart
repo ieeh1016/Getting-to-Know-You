@@ -102,16 +102,6 @@ void main() {
       expect(controller.archiveItems.every((item) => item.similar), isTrue);
     });
 
-    test('selects balance answer and advances to the next question', () {
-      final controller = AlagagiController();
-
-      controller.selectBalanceOption('sea');
-      expect(controller.activeBalanceSelection, 'sea');
-
-      controller.nextBalanceQuestion();
-      expect(controller.activeBalanceQuestion.prompt, '쉬는 날엔?');
-    });
-
     test('fills my first empty profile card slot', () {
       final controller = AlagagiController();
 
@@ -120,7 +110,7 @@ void main() {
       expect(controller.state.profileCardTab, ProfileCardTab.me);
       expect(
         controller.activeProfileCard.slots
-            .firstWhere((slot) => slot.id == 'rest')
+            .firstWhere((slot) => slot.id == 'now_favorite')
             .value,
         '천천히, 하지만 꾸준히',
       );
@@ -133,14 +123,14 @@ void main() {
 
       final slots = controller.activeProfileCard.slots;
 
-      expect(slots.length, greaterThanOrEqualTo(24));
+      expect(slots.length, greaterThanOrEqualTo(20));
       expect(
         slots.map((slot) => slot.category).toSet(),
         containsAll(['취향', '하루', '대화', '함께']),
       );
       expect(
         slots.map((slot) => slot.label),
-        containsAll(['요즘 꽂힌 작은 취향', '대화할 때 편한 방식', '비 오는 날 하고 싶은 것']),
+        containsAll(['요즘 반복 재생', '편한 연락 속도', '다음에 같이 하고 싶은 것']),
       );
       expect(slots.every((slot) => slot.inputHint.isNotEmpty), isTrue);
     });
@@ -651,28 +641,18 @@ void main() {
       );
     });
 
-    test(
-      'question and balance catalogs avoid romantic commitment language',
-      () {
-        const blockedWords = ['하트', '애정 표현', '데이트 계획', '기념일', '커플'];
-        final questionTexts = questionCatalogV1.expand(
-          (question) => [question.text, question.highlightedText],
-        );
-        final balanceTexts = balanceQuestionCatalogV1.expand(
-          (question) => [
-            question.prompt,
-            question.left.label,
-            question.right.label,
-          ],
-        );
+    test('daily question catalog avoids long-term pressure language', () {
+      const blockedWords = ['결혼', '평생', '영원', '기념일', '헤어지'];
+      final questionTexts = questionCatalogV1.expand(
+        (question) => [question.text, question.highlightedText],
+      );
 
-        for (final text in [...questionTexts, ...balanceTexts]) {
-          for (final blockedWord in blockedWords) {
-            expect(text, isNot(contains(blockedWord)));
-          }
+      for (final text in questionTexts) {
+        for (final blockedWord in blockedWords) {
+          expect(text, isNot(contains(blockedWord)));
         }
-      },
-    );
+      }
+    });
 
     test('daily question catalog provides 58 stable sequential questions', () {
       expect(questionCatalogV1, hasLength(58));
@@ -720,7 +700,7 @@ void main() {
       );
 
       expect(controller.todayQuestion.id, 'q058');
-      expect(controller.todayQuestion.text, contains('자연스럽게'));
+      expect(controller.todayQuestion.text, contains('지켜갔으면'));
       expect(controller.dailyProgress.currentQuestionId, 'q058');
     });
   });

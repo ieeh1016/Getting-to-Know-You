@@ -32,11 +32,11 @@ class RenewalWelcomeOverlay extends StatelessWidget {
                   key: renewalWelcomeSheetKey,
                   decoration: BoxDecoration(
                     color: AlagagiColors.paper,
-                    border: Border.all(color: const Color(0x6686B9D6)),
+                    border: Border.all(color: const Color(0x66DDB95E)),
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: const [
                       BoxShadow(
-                        color: Color(0x2686B9D6),
+                        color: Color(0x26DDB95E),
                         blurRadius: 44,
                         offset: Offset(0, 18),
                       ),
@@ -98,7 +98,7 @@ class RenewalWelcomeOverlay extends StatelessWidget {
                           Container(
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [Color(0xFFF7FCFF), Color(0xFFDDF0F9)],
+                                colors: [Color(0xFFFFFDF7), Color(0xFFFAF3DC)],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
@@ -179,8 +179,8 @@ class _WelcomeMark extends StatelessWidget {
       width: 58,
       height: 58,
       decoration: BoxDecoration(
-        color: const Color(0xFFDFF2FB),
-        border: Border.all(color: const Color(0x6686B9D6)),
+        color: const Color(0xFFFCF5DE),
+        border: Border.all(color: const Color(0x66DDB95E)),
         shape: BoxShape.circle,
       ),
       alignment: Alignment.center,
@@ -229,7 +229,7 @@ class _WelcomeMiniCard extends StatelessWidget {
     return Container(
       height: 70,
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FCFF),
+        color: const Color(0xFFFFFCF5),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(18),
       ),

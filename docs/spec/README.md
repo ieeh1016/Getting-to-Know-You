@@ -39,7 +39,6 @@
 | Home, navigation, first visit | [`home.md`](home.md) |
 | Shared domain model과 ownership | [`domain_model.md`](domain_model.md) |
 | Daily questions, answers, archive, records | [`questions.md`](questions.md) |
-| Taste match | [`taste_match.md`](taste_match.md) |
 | Schedule coordination과 fixed meeting plans | [`meetings.md`](meetings.md) |
 | Kakao map place board | [`places.md`](places.md) |
 | Music notes | [`music.md`](music.md) |

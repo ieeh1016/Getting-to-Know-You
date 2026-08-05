@@ -122,7 +122,6 @@ service cloud.firestore {
           'answerSkipped',
           'answerCommentSaved',
           'answerCommentReplySaved',
-          'balanceSelectionSaved',
           'profileSlotSaved',
           'wishSaved',
           'memoryCardSaved',
@@ -155,7 +154,6 @@ service cloud.firestore {
           'places',
           'stockStory',
           'improvements',
-          'balance',
           'profileCard',
           'wishlist',
           'memoryCards'
@@ -164,7 +162,6 @@ service cloud.firestore {
           'activity',
           'answers',
           'comments',
-          'balance',
           'profileCard',
           'wishlist',
           'memoryCards',
@@ -404,10 +401,10 @@ service cloud.firestore {
         && request.resource.data.type in ['likes', 'dislikes', 'current', 'together', 'care']
         && request.resource.data.title is string
         && request.resource.data.title.size() >= 2
-        && request.resource.data.title.size() <= 48
+        && request.resource.data.title.size() <= 80
         && request.resource.data.body is string
         && request.resource.data.body.size() > 0
-        && request.resource.data.body.size() <= 240
+        && request.resource.data.body.size() <= 1000
         && request.resource.data.createdByProfileId is string
         && request.resource.data.subjectProfileId is string
         && request.resource.data.createdByProfileId != request.resource.data.subjectProfileId
@@ -1277,27 +1274,6 @@ service cloud.firestore {
         allow create: if isSpaceMember(spaceId)
           && validActivityEvent(spaceId, eventId);
         allow update, delete: if false;
-      }
-
-      match /balanceSelections/{selectionId} {
-        allow read: if isSpaceMember(spaceId);
-        allow create, update: if isSpaceMember(spaceId)
-          && request.resource.data.profileId == request.auth.uid
-          && request.resource.data.questionId is string
-          && request.resource.data.optionId is string
-          && (
-            request.resource.data.reason == null
-            || (
-              request.resource.data.reason is string
-              && request.resource.data.reason.size() <= 80
-            )
-          )
-          && (
-            request.resource.data.resultRevealedAt == null
-            || request.resource.data.resultRevealedAt is timestamp
-          );
-        allow delete: if isSpaceMember(spaceId)
-          && resource.data.profileId == request.auth.uid;
       }
 
       match /profileCards/{profileId}/slots/{slotId} {

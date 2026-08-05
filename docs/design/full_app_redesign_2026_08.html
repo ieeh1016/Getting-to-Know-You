@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우리 둘 · 전체 디자인 개편 시안</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --outer:#f9f1d8;
+    --bg:#fdf9ea;
+    --paper:#fffdf7;
+    --ink:#2f2e2a;
+    --text:#3f3e39;
+    --muted:#8c8069;
+    --line:#efe1be;
+    --sky:#ddb95e;
+    --sky-deep:#c1922c;
+    --sky-panel:#faf3dc;
+    --sage:#9c8952;
+    --sage-deep:#8a6b1e;
+    --lav:#9f8ab6;
+    --lav-soft:#f0edf4;
+  }
+  body{
+    min-height:100vh;
+    background:var(--outer);
+    color:var(--ink);
+    font-family:'Noto Sans KR',sans-serif;
+    font-weight:300;
+    padding:36px 18px 56px;
+  }
+  .wrap{max-width:1300px;margin:0 auto}
+
+  .page-title{text-align:center;margin-bottom:30px}
+  .page-title .eyebrow{
+    margin-bottom:8px;color:var(--sage-deep);
+    font-size:11px;font-weight:700;letter-spacing:3px;
+  }
+  .page-title h1{font-family:'Nanum Myeongjo',serif;font-size:30px;line-height:1.35;font-weight:800}
+  .page-title p{max-width:720px;margin:10px auto 0;color:var(--muted);font-size:14px;line-height:1.75}
+
+  .diagnosis{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+    max-width:1120px;margin:0 auto 34px;
+  }
+  .diag-card{
+    background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:18px 18px 19px;
+  }
+  .diag-card h3{font-family:'Nanum Myeongjo',serif;font-size:16px;font-weight:800;margin-bottom:8px}
+  .diag-card p{color:var(--muted);font-size:12.8px;line-height:1.8}
+  .diag-card .num{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:24px;height:24px;margin-bottom:10px;border-radius:8px;
+    background:var(--sky-panel);color:var(--sky-deep);font-size:11px;font-weight:700;
+  }
+
+  .section-label{
+    max-width:1120px;margin:0 auto 14px;padding-left:2px;
+    font-size:12px;font-weight:700;letter-spacing:2px;color:var(--sage-deep);
+  }
+
+  .stage{
+    display:grid;grid-template-columns:repeat(3,minmax(300px,390px));
+    gap:24px;justify-content:center;align-items:start;margin-bottom:38px;
+  }
+  .caption{margin:0 0 12px 2px}
+  .caption .tag{
+    display:inline-flex;align-items:center;height:24px;padding:0 9px;
+    border:1px solid rgba(138,107,30,.22);border-radius:999px;
+    background:rgba(255,253,247,.74);color:var(--sage-deep);
+    font-size:10.5px;font-weight:700;letter-spacing:1px;
+  }
+  .caption .tag.pick{background:var(--sage-deep);border-color:var(--sage-deep);color:#fff}
+  .caption h2{margin-top:8px;font-family:'Nanum Myeongjo',serif;font-size:19px;font-weight:800}
+  .caption p{margin-top:5px;color:var(--muted);font-size:12.5px;line-height:1.7}
+
+  .phone{
+    width:390px;max-width:100%;min-height:812px;
+    background:var(--bg);border:1px solid var(--line);border-radius:30px;
+    overflow:hidden;box-shadow:0 18px 44px rgba(44,43,37,.10);
+  }
+  .screen{padding:22px 20px 100px;position:relative;min-height:812px}
+
+  /* shared app pieces */
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .brand{display:flex;align-items:center;gap:9px}
+  .brand .mark{
+    width:34px;height:34px;border-radius:12px;background:var(--sky-panel);
+    display:flex;align-items:center;justify-content:center;color:var(--sky-deep);font-size:14px;
+  }
+  .brand .title{font-family:'Nanum Myeongjo',serif;font-size:17px;font-weight:800}
+  .brand .sub{color:var(--muted);font-size:10.5px;margin-top:2px}
+  .icon-btn{
+    width:34px;height:34px;border-radius:12px;border:1px solid var(--line);
+    background:var(--paper);display:flex;align-items:center;justify-content:center;
+    color:var(--muted);font-size:13px;
+  }
+
+  .card{
+    background:var(--paper);border:1px solid var(--line);border-radius:22px;
+    padding:17px;margin-bottom:12px;
+  }
+  .card .eyebrow{
+    color:var(--sage-deep);font-size:10px;font-weight:700;letter-spacing:1.6px;margin-bottom:9px;
+  }
+  .q-text{font-family:'Nanum Myeongjo',serif;font-size:18px;line-height:1.5;font-weight:800}
+  .q-meta{margin-top:10px;color:var(--muted);font-size:11.5px}
+  .cta{
+    margin-top:13px;height:44px;border-radius:15px;background:var(--ink);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;
+  }
+  .cta.ghost{background:transparent;border:1px solid var(--line);color:var(--muted)}
+
+  .pill{
+    display:inline-flex;align-items:center;height:23px;padding:0 9px;border-radius:999px;
+    background:var(--sky-panel);color:var(--sky-deep);font-size:10.5px;font-weight:600;margin-right:5px;
+  }
+  .pill.soft{background:var(--lav-soft);color:var(--lav)}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .tile{
+    background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:14px 13px;
+  }
+  .tile .ic{
+    width:28px;height:28px;border-radius:10px;background:var(--sky-panel);
+    display:flex;align-items:center;justify-content:center;color:var(--sky-deep);font-size:12px;margin-bottom:9px;
+  }
+  .tile .t{font-size:13px;font-weight:600}
+  .tile .d{color:var(--muted);font-size:11px;margin-top:3px}
+
+  .body-text{color:var(--text);font-size:12.8px;line-height:1.75}
+  .clamp{
+    display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .more{margin-top:7px;color:var(--sage-deep);font-size:11.5px;font-weight:700}
+
+  .navbar{
+    position:absolute;left:0;right:0;bottom:0;height:74px;
+    background:rgba(255,253,247,.94);border-top:1px solid var(--line);
+    display:grid;grid-template-columns:repeat(5,1fr);align-items:center;
+  }
+  .navbar div{text-align:center;color:var(--muted);font-size:10.5px}
+  .navbar div.on{color:var(--sky-deep);font-weight:700}
+  .navbar .dot{
+    width:5px;height:5px;border-radius:999px;background:var(--sky-deep);
+    margin:0 auto 5px;opacity:0;
+  }
+  .navbar div.on .dot{opacity:1}
+
+  /* option B: section band */
+  .band{
+    margin:0 -20px 12px;padding:16px 20px 4px;background:var(--sky-panel);
+    border-top:1px solid rgba(239,225,190,.9);border-bottom:1px solid rgba(239,225,190,.9);
+  }
+  .band-title{font-size:11.5px;font-weight:700;color:var(--sky-deep);letter-spacing:1.2px;margin-bottom:10px}
+
+  /* option C: line only */
+  .line-card{
+    background:transparent;border:0;border-bottom:1px solid var(--line);
+    border-radius:0;padding:16px 2px 17px;margin-bottom:0;
+  }
+
+  .proposal-note{
+    max-width:1120px;margin:8px auto 0;background:var(--paper);
+    border:1px solid var(--line);border-radius:24px;padding:26px 28px 28px;
+  }
+  .proposal-note h2{font-family:'Nanum Myeongjo',serif;font-size:20px;font-weight:800;margin-bottom:6px}
+  .proposal-note > p.lead{color:var(--muted);font-size:13px;line-height:1.8;margin-bottom:18px}
+  .note-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .note-block h3{
+    font-size:12px;font-weight:700;letter-spacing:1.4px;color:var(--sage-deep);margin-bottom:9px;
+  }
+  .note-block ul{list-style:none}
+  .note-block li{
+    position:relative;padding-left:14px;color:var(--text);font-size:12.8px;line-height:1.85;margin-bottom:5px;
+  }
+  .note-block li::before{
+    content:'';position:absolute;left:0;top:9px;width:5px;height:5px;border-radius:999px;background:var(--sky);
+  }
+  .warn{
+    margin-top:18px;padding:14px 16px;border:1px solid rgba(159,138,182,.32);
+    border-radius:16px;background:var(--lav-soft);color:var(--text);font-size:12.6px;line-height:1.8;
+  }
+
+  @media (max-width:1180px){
+    .stage{grid-template-columns:minmax(300px,390px);}
+    .diagnosis{grid-template-columns:1fr}
+    .note-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page-title">
+    <div class="eyebrow">FULL APP REDESIGN · 2026.08</div>
+    <h1>우리 둘 · 전체 디자인 개편 시안</h1>
+    <p>
+      기능 정리(우리 선택 제거)와 콘텐츠 개편(서로 노트 질문 세트, 데일리 질문, 기억 카드 1000자),
+      그리고 노랑 계열 테마 전환에 맞춰 화면 전체의 카드 문법과 위계를 다시 맞추는 제안입니다.
+      세 방향을 같은 홈 화면으로 비교합니다.
+    </p>
+  </header>
+
+  <section class="diagnosis" aria-label="현재 진단">
+    <article class="diag-card">
+      <div class="num">1</div>
+      <h3>카드 문법이 화면마다 다름</h3>
+      <p>
+        홈, 서로 노트, 기억 카드, 음악 노트가 서로 다른 radius·padding·뱃지 규칙을 씁니다.
+        같은 앱인데 화면을 옮길 때마다 다른 제품처럼 읽힙니다.
+      </p>
+    </article>
+    <article class="diag-card">
+      <div class="num">2</div>
+      <h3>테마를 노랑 계열로 교체</h3>
+      <p>
+        기존 하늘색 한 톤은 배경·카드·뱃지가 모두 같은 계열이라 위계가 평평했습니다.
+        버터 크림 배경과 오커 accent로 옮겨 강조를 색이 아니라 면과 여백으로 만듭니다.
+      </p>
+    </article>
+    <article class="diag-card">
+      <div class="num">3</div>
+      <h3>이번 개편이 만든 빈자리</h3>
+      <p>
+        우리 선택이 빠지면서 홈 plus grid가 한 칸 비고, 기억 카드 본문이 1000자까지 길어지면서
+        카드 높이 편차가 커집니다. 두 가지를 같이 정리해야 합니다.
+      </p>
+    </article>
+  </section>
+
+  <div class="section-label">방향 비교 · 홈 화면 390px</div>
+
+  <section class="stage" aria-label="디자인 방향 비교">
+
+    <!-- A -->
+    <div>
+      <div class="caption">
+        <span class="tag pick">A · 권장</span>
+        <h2>종이 카드 정리</h2>
+        <p>현재 톤을 유지하되 카드 규칙(radius 22, padding 17, eyebrow 1줄)을 하나로 통일합니다. 변경 범위가 가장 작고 되돌리기 쉽습니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <div class="brand">
+              <div class="mark">둘</div>
+              <div>
+                <div class="title">우리 둘</div>
+                <div class="sub">2026.07.05부터, 우리 기록</div>
+              </div>
+            </div>
+            <div class="icon-btn">≡</div>
+          </div>
+
+          <div class="card">
+            <div class="eyebrow">오늘의 질문 · DAY 32</div>
+            <div class="q-text">나를 편하게 만들어주는<br>사람들의 공통점이 있어요?</div>
+            <div class="q-meta">아직 내 답을 남기지 않았어요.</div>
+            <div class="cta">오늘 답 남기기</div>
+          </div>
+
+          <div class="card">
+            <div class="eyebrow">서로의 기억</div>
+            <div style="font-family:'Nanum Myeongjo',serif;font-size:15.5px;font-weight:800;margin-bottom:6px">
+              조용한 카페 자리
+            </div>
+            <p class="body-text clamp">
+              창가 두 번째 자리를 좋아한다고 했어요. 사람이 많으면 금방 지치는 편이라
+              조용한 쪽을 먼저 찾는다고 했고, 그 말을 들은 뒤로는 자리를 먼저 보게 됐어요.
+              다음에 같이 갈 때는 그 자리부터 확인해보려고 합니다.
+            </p>
+            <div class="more">전체 보기</div>
+          </div>
+
+          <div class="grid2">
+            <div class="tile">
+              <div class="ic">✎</div>
+              <div class="t">서로 노트</div>
+              <div class="d">새 질문 20개</div>
+            </div>
+            <div class="tile">
+              <div class="ic">☐</div>
+              <div class="t">언젠가, 같이</div>
+              <div class="d">하고 싶은 것</div>
+            </div>
+            <div class="tile">
+              <div class="ic">♪</div>
+              <div class="t">음악 노트</div>
+              <div class="d">들려주고 싶은 곡</div>
+            </div>
+            <div class="tile">
+              <div class="ic">◎</div>
+              <div class="t">장소 보드</div>
+              <div class="d">가고 싶은 곳</div>
+            </div>
+          </div>
+
+          <div class="navbar">
+            <div class="on"><div class="dot"></div>홈</div>
+            <div><div class="dot"></div>질문</div>
+            <div><div class="dot"></div>만남</div>
+            <div><div class="dot"></div>음악</div>
+            <div><div class="dot"></div>나</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- B -->
+    <div>
+      <div class="caption">
+        <span class="tag">B</span>
+        <h2>섹션 밴드</h2>
+        <p>배경에 옅은 밴드를 깔아 “오늘 / 쌓인 기록 / 모아보기”를 시각적으로 나눕니다. 위계는 또렷해지지만 스크롤이 무거워집니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <div class="brand">
+              <div class="mark">둘</div>
+              <div>
+                <div class="title">우리 둘</div>
+                <div class="sub">2026.07.05부터, 우리 기록</div>
+              </div>
+            </div>
+            <div class="icon-btn">≡</div>
+          </div>
+
+          <div class="band">
+            <div class="band-title">오늘</div>
+            <div class="card">
+              <div class="eyebrow">오늘의 질문 · DAY 32</div>
+              <div class="q-text">나를 편하게 만들어주는<br>사람들의 공통점이 있어요?</div>
+              <div class="q-meta">아직 내 답을 남기지 않았어요.</div>
+              <div class="cta">오늘 답 남기기</div>
+            </div>
+          </div>
+
+          <div class="band">
+            <div class="band-title">쌓인 기록</div>
+            <div class="card">
+              <div class="eyebrow">서로의 기억</div>
+              <div style="font-family:'Nanum Myeongjo',serif;font-size:15.5px;font-weight:800;margin-bottom:6px">
+                조용한 카페 자리
+              </div>
+              <p class="body-text clamp">
+                창가 두 번째 자리를 좋아한다고 했어요. 사람이 많으면 금방 지치는 편이라
+                조용한 쪽을 먼저 찾는다고 했고, 그 말을 들은 뒤로는 자리를 먼저 보게 됐어요.
+              </p>
+              <div class="more">전체 보기</div>
+            </div>
+          </div>
+
+          <div class="band-title" style="margin-top:14px">모아보기</div>
+          <div class="grid2">
+            <div class="tile"><div class="ic">✎</div><div class="t">서로 노트</div><div class="d">새 질문 20개</div></div>
+            <div class="tile"><div class="ic">☐</div><div class="t">언젠가, 같이</div><div class="d">하고 싶은 것</div></div>
+            <div class="tile"><div class="ic">♪</div><div class="t">음악 노트</div><div class="d">들려주고 싶은 곡</div></div>
+            <div class="tile"><div class="ic">◎</div><div class="t">장소 보드</div><div class="d">가고 싶은 곳</div></div>
+          </div>
+
+          <div class="navbar">
+            <div class="on"><div class="dot"></div>홈</div>
+            <div><div class="dot"></div>질문</div>
+            <div><div class="dot"></div>만남</div>
+            <div><div class="dot"></div>음악</div>
+            <div><div class="dot"></div>나</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C -->
+    <div>
+      <div class="caption">
+        <span class="tag">C</span>
+        <h2>라인 중심 미니멀</h2>
+        <p>카드 면과 그림자를 걷어내고 얇은 구분선과 여백만 남깁니다. 조용하지만 탭 가능한 영역이 흐려져 모바일에서 실수가 늘 수 있습니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <div class="brand">
+              <div class="mark">둘</div>
+              <div>
+                <div class="title">우리 둘</div>
+                <div class="sub">2026.07.05부터, 우리 기록</div>
+              </div>
+            </div>
+            <div class="icon-btn">≡</div>
+          </div>
+
+          <div class="line-card">
+            <div class="eyebrow">오늘의 질문 · DAY 32</div>
+            <div class="q-text">나를 편하게 만들어주는<br>사람들의 공통점이 있어요?</div>
+            <div class="q-meta">아직 내 답을 남기지 않았어요.</div>
+            <div class="cta ghost">오늘 답 남기기</div>
+          </div>
+
+          <div class="line-card">
+            <div class="eyebrow">서로의 기억</div>
+            <div style="font-family:'Nanum Myeongjo',serif;font-size:15.5px;font-weight:800;margin-bottom:6px">
+              조용한 카페 자리
+            </div>
+            <p class="body-text clamp">
+              창가 두 번째 자리를 좋아한다고 했어요. 사람이 많으면 금방 지치는 편이라
+              조용한 쪽을 먼저 찾는다고 했고, 그 말을 들은 뒤로는 자리를 먼저 보게 됐어요.
+            </p>
+            <div class="more">전체 보기</div>
+          </div>
+
+          <div class="line-card" style="border-bottom:0">
+            <div class="eyebrow">모아보기</div>
+            <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:4px">
+              <span class="pill">서로 노트</span>
+              <span class="pill">언젠가, 같이</span>
+              <span class="pill soft">음악 노트</span>
+              <span class="pill soft">장소 보드</span>
+            </div>
+          </div>
+
+          <div class="navbar">
+            <div class="on"><div class="dot"></div>홈</div>
+            <div><div class="dot"></div>질문</div>
+            <div><div class="dot"></div>만남</div>
+            <div><div class="dot"></div>음악</div>
+            <div><div class="dot"></div>나</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <div class="section-label">이번 개편으로 바뀐 두 화면 (방향 A 기준)</div>
+
+  <section class="stage" aria-label="개편된 화면" style="grid-template-columns:repeat(2,minmax(300px,390px))">
+
+    <div>
+      <div class="caption">
+        <span class="tag">서로 노트</span>
+        <h2>새 질문 20개</h2>
+        <p>연애 한 달차 기준으로 취향 · 하루 · 대화 · 함께 네 묶음, 20개 질문으로 교체했습니다. 예전 답은 화면에서 사라집니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <div class="brand">
+              <div class="mark">‹</div>
+              <div><div class="title">서로 노트</div><div class="sub">편한 만큼 채워두기</div></div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:6px;margin-bottom:13px;flex-wrap:wrap">
+            <span class="pill">전체</span><span class="pill soft">직접</span>
+            <span class="pill soft">취향</span><span class="pill soft">하루</span>
+            <span class="pill soft">대화</span><span class="pill soft">함께</span>
+          </div>
+
+          <div class="card" style="background:var(--sky-panel)">
+            <div class="eyebrow">오늘 채워볼 질문</div>
+            <div style="font-size:15px;font-weight:600;line-height:1.5">요즘 마음에 든 것</div>
+            <div class="q-meta">드라마, 물건, 장소 무엇이든</div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <div class="cta" style="flex:1;margin-top:0">이 질문 쓰기</div>
+              <div class="cta ghost" style="flex:0 0 96px;margin-top:0">넘겨두기</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div style="color:var(--muted);font-size:11px;font-weight:600">취향</div>
+              <div class="pill">채워짐</div>
+            </div>
+            <div style="font-size:14px;font-weight:600;margin-top:7px">요즘 반복 재생</div>
+            <p class="body-text" style="margin-top:5px">잔잔한 재즈를 자주 틀어둬요.</p>
+          </div>
+
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div style="color:var(--muted);font-size:11px;font-weight:600">대화</div>
+              <div class="pill soft">비어 있음</div>
+            </div>
+            <div style="font-size:14px;font-weight:600;margin-top:7px">편한 연락 속도</div>
+            <div class="q-meta">자주 또는 필요할 때</div>
+          </div>
+
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div style="color:var(--muted);font-size:11px;font-weight:600">함께</div>
+              <div class="pill soft">비어 있음</div>
+            </div>
+            <div style="font-size:14px;font-weight:600;margin-top:7px">다음에 같이 하고 싶은 것</div>
+            <div class="q-meta">가까운 시일에 해보고 싶은 것</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="caption">
+        <span class="tag">기억 카드</span>
+        <h2>1000자 카드 읽기</h2>
+        <p>본문이 길어져도 목록은 6줄까지만 보여주고, 나머지는 전체 보기 sheet에서 읽습니다. 카드 높이가 들쭉날쭉해지지 않습니다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <div class="brand">
+              <div class="mark">‹</div>
+              <div><div class="title">서로의 기억</div><div class="sub">잊고 싶지 않은 것들</div></div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:6px;margin-bottom:13px">
+            <span class="pill">영우의 공간</span><span class="pill soft">민영이의 공간</span>
+          </div>
+
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+              <div style="font-family:'Nanum Myeongjo',serif;font-size:16px;font-weight:800;line-height:1.4">
+                조용한 카페 자리
+              </div>
+              <div class="icon-btn" style="width:30px;height:30px;border-radius:999px;flex:0 0 30px">⤢</div>
+            </div>
+            <div style="margin:8px 0 9px">
+              <span class="pill">좋아하는 것</span><span class="pill soft">공유</span>
+            </div>
+            <p class="body-text clamp">
+              창가 두 번째 자리를 좋아한다고 했어요. 사람이 많으면 금방 지치는 편이라 조용한 쪽을
+              먼저 찾는다고 했고, 그 말을 들은 뒤로는 어디를 가도 자리를 먼저 보게 됐어요.
+              지난주에 갔던 곳도 창가가 비어 있어서 반가웠고, 커피가 나오기 전까지 한참 창밖만
+              보고 있던 얼굴이 오래 기억에 남았습니다. 다음에 같이 갈 때는 그 자리부터 확인해보려고 해요.
+            </p>
+            <div class="more">전체 보기</div>
+          </div>
+
+          <div class="card">
+            <div style="font-family:'Nanum Myeongjo',serif;font-size:16px;font-weight:800">
+              늦게 답장해도 괜찮다는 말
+            </div>
+            <div style="margin:8px 0 9px">
+              <span class="pill">요즘 이야기</span><span class="pill soft">나만 보기</span>
+            </div>
+            <p class="body-text">
+              바쁠 때 답장이 늦어도 괜찮다고 먼저 말해줬어요. 그 말이 생각보다 오래 남았습니다.
+            </p>
+          </div>
+
+          <div class="card" style="background:var(--sky-panel)">
+            <div class="eyebrow">새 카드</div>
+            <div style="font-size:13px;font-weight:600">제목 · 최대 80자</div>
+            <div style="margin-top:8px;height:96px;border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:11px;color:var(--muted);font-size:12px">
+              내용 · 최대 1000자 (4줄로 시작해 10줄까지 늘어남)
+            </div>
+            <div class="cta">저장하고 공유하기</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <section class="proposal-note" aria-label="구현 노트">
+    <h2>구현 노트</h2>
+    <p class="lead">
+      권장 방향은 <strong>A · 종이 카드 정리</strong>입니다. B는 위계가 또렷하지만 390px에서 스크롤이 길어지고,
+      C는 조용하지만 탭 가능한 영역이 흐려져 이 앱의 주 사용 맥락(한 손, 짧은 시간)에 맞지 않습니다.
+    </p>
+
+    <div class="note-grid">
+      <div class="note-block">
+        <h3>SCOPE</h3>
+        <ul>
+          <li><code>lib/src/shared/ui_style.dart</code>의 색 토큰은 노랑 계열로 이미 교체됐다. 남은 일은 카드 radius·padding 상수를 한곳에서 관리하는 것이다.</li>
+          <li><code>lib/src/shared/ui_components.dart</code>의 paper card, badge, filter pill을 단일 규칙으로 통일한다.</li>
+          <li>홈 plus grid는 우리 선택이 빠진 4칸(서로 노트 · 언젠가, 같이 · 음악 노트 · 장소 보드) 기준으로 재배치한다.</li>
+          <li>화면별 로컬 스타일 값은 공용 컴포넌트로 흡수하고, 남는 예외는 이유를 주석으로 남긴다.</li>
+        </ul>
+      </div>
+
+      <div class="note-block">
+        <h3>이번 커밋에 이미 반영된 것</h3>
+        <ul>
+          <li>우리 선택(taste match) 화면 · route · 저장 경로 · rules 전부 제거.</li>
+          <li>데일리 질문 58개를 연애 한 달차 기준으로 교체 (id <code>q001</code>–<code>q058</code> 유지).</li>
+          <li>서로 노트 슬롯을 새 id 20개로 교체 — 예전 slot id는 화면에서 더 이상 읽지 않는다.</li>
+          <li>기억 카드 제목 80자 / 본문 1000자, 목록 6줄 clamp + 전체 보기 sheet.</li>
+          <li>팔레트를 노랑 계열로 교체 — 배경 <code>#FDF9EA</code>, 표면 <code>#FFFDF7</code>, 주 accent <code>#8A6B1E</code>, 보조 <code>#C1922C</code>.</li>
+        </ul>
+      </div>
+
+      <div class="note-block">
+        <h3>Firestore write 경계</h3>
+        <ul>
+          <li>이 디자인 개편은 새로운 <strong>Firestore write</strong>를 만들지 않는다.</li>
+          <li>카드 열람, 전체 보기 sheet, 카테고리 칩 이동, plus grid 스크롤은 write가 아니다.</li>
+          <li>기억 카드 저장만 <code>memoryCards/{cardId}</code> 한 문서를 쓴다. 한도는 rules와 UI가 같은 값(80 / 1000)을 쓴다.</li>
+          <li>서로 노트 저장은 기존대로 <code>profileCards/{profileId}/slots/{slotId}</code> 한 문서만 쓴다.</li>
+        </ul>
+      </div>
+
+      <div class="note-block">
+        <h3>테스트</h3>
+        <ul>
+          <li>390px에서 카드 제목·본문·뱃지가 잘리거나 겹치지 않는지 확인한다.</li>
+          <li>본문 1000자 카드가 목록에서 6줄로 잘리고 전체 보기로 열리는지 widget test로 고정한다.</li>
+          <li>홈 plus grid에 우리 선택 진입점이 없는지 확인한다.</li>
+          <li>서로 노트 카테고리 칩(전체 · 직접 · 취향 · 하루 · 대화 · 함께)이 그대로 동작하는지 확인한다.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="warn">
+      <strong>남은 판단.</strong> 예전 서로 노트 답변은 Firestore에 문서로 남아 있습니다. 화면에서는 보이지 않지만
+      실제로 지우려면 <code>scripts/reset_profile_slots.js</code>를 <code>--dry-run</code>으로 확인한 뒤
+      <code>--confirm</code>으로 실행해야 합니다. 되돌릴 수 없습니다.
+      우리 선택 데이터(<code>balanceSelections</code>)는 rules에서 경로가 사라져 더 이상 읽고 쓸 수 없습니다.
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

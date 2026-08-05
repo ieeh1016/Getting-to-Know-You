@@ -81,8 +81,6 @@ void main() {
         expect(controller.insight.similarityPercent, 0);
         expect(controller.insight.matchedKeywords, isEmpty);
         expect(controller.visibleWishes, isEmpty);
-        expect(controller.activeBalanceSelection, isNull);
-        expect(controller.activePartnerBalanceSelection, isNull);
         expect(controller.activeProfileCard.filledCount, 0);
       },
     );
@@ -185,18 +183,6 @@ void main() {
                 createdLabel: '오늘',
               ),
             ],
-            balanceSelections: [
-              BalanceSelection(
-                questionId: 'b001',
-                profileId: 'youngwooUid',
-                optionId: 'sea',
-              ),
-              BalanceSelection(
-                questionId: 'b001',
-                profileId: 'minyoungUid',
-                optionId: 'forest',
-              ),
-            ],
             wishes: [
               WishItem(
                 id: 'wish_1',
@@ -223,8 +209,6 @@ void main() {
 
       expect(controller.todayMyAnswer?.body, '저는 노을 질 때가 좋아요.');
       expect(controller.todayPartnerAnswer?.body, '저는 아침 공기가 좋아요.');
-      expect(controller.activeBalanceSelection, 'sea');
-      expect(controller.activePartnerBalanceSelection, 'forest');
       expect(controller.visibleWishes.single.title, '조용한 카페에서 커피 마시기');
       expect(
         controller.latestReceivedCuriosityCard?.question,
@@ -1445,122 +1429,6 @@ void main() {
       expect(controller.todayQuestion.id, 'q001');
     });
 
-    test('last balance question completes instead of looping', () {
-      final controller = AlagagiController.forSession(firebaseTestSession);
-
-      while (!controller.isLastBalanceQuestion) {
-        controller.nextBalanceQuestion();
-      }
-
-      expect(controller.activeBalanceQuestion.id, 'b008');
-
-      controller.nextBalanceQuestion();
-
-      expect(controller.state.route, AlagagiRoute.home);
-      expect(controller.activeBalanceQuestion.id, 'b008');
-    });
-
-    test('balance reason is saved with my selection', () async {
-      final repository = RecordingAlagagiRepository();
-      final controller = AlagagiController.forSession(
-        firebaseTestSession,
-        repository: repository,
-      );
-
-      controller.selectBalanceOption('sea');
-      repository.savedBalanceSelections.clear();
-
-      controller.saveBalanceReason('조용한 곳이 더 끌려요');
-      await Future<void>.delayed(Duration.zero);
-
-      expect(controller.activeBalanceReason, '조용한 곳이 더 끌려요');
-      expect(repository.savedBalanceSelections, hasLength(1));
-      expect(
-        repository.savedBalanceSelections.single.selection.questionId,
-        'b001',
-      );
-      expect(
-        repository.savedBalanceSelections.single.selection.optionId,
-        'sea',
-      );
-      expect(
-        repository.savedBalanceSelections.single.selection.reason,
-        '조용한 곳이 더 끌려요',
-      );
-    });
-
-    test('selecting the same balance option clears the existing selection', () {
-      final repository = RecordingAlagagiRepository();
-      final session = firebaseSessionWithData(
-        const AlagagiSpaceData(
-          balanceSelections: [
-            BalanceSelection(
-              questionId: 'b001',
-              profileId: 'youngwooUid',
-              optionId: 'sea',
-            ),
-          ],
-        ),
-      );
-      final controller = AlagagiController.forSession(
-        session,
-        repository: repository,
-      );
-
-      expect(controller.activeBalanceSelection, 'sea');
-
-      controller.selectBalanceOption('sea');
-
-      expect(controller.activeBalanceSelection, isNull);
-      expect(repository.savedBalanceSelections, isEmpty);
-      expect(repository.deletedBalanceSelections, [
-        (spaceId: 'main', questionId: 'b001', profileId: 'youngwooUid'),
-      ]);
-    });
-
-    test('revealing a balance result is saved separately from selection', () {
-      final repository = RecordingAlagagiRepository();
-      final session = firebaseSessionWithData(
-        const AlagagiSpaceData(
-          balanceSelections: [
-            BalanceSelection(
-              questionId: 'b001',
-              profileId: 'youngwooUid',
-              optionId: 'sea',
-            ),
-            BalanceSelection(
-              questionId: 'b001',
-              profileId: 'minyoungUid',
-              optionId: 'forest',
-            ),
-          ],
-        ),
-      );
-      final controller = AlagagiController.forSession(
-        session,
-        repository: repository,
-      );
-      final question = controller.activeBalanceQuestion;
-
-      expect(controller.isBalanceResultReadyFor(question), isTrue);
-      expect(controller.isBalanceResultRevealedFor(question), isFalse);
-
-      controller.revealBalanceResult(question);
-
-      expect(controller.isBalanceResultRevealedFor(question), isTrue);
-      expect(controller.balanceRevealedCount, 1);
-      expect(repository.savedBalanceSelections, hasLength(1));
-      expect(
-        repository.savedBalanceSelections.single.selection.resultRevealedAt,
-        isNotNull,
-      );
-
-      repository.savedBalanceSelections.clear();
-      controller.revealBalanceResult(question);
-
-      expect(repository.savedBalanceSelections, isEmpty);
-    });
-
     test('wish draft creates and saves my wish', () {
       final repository = RecordingAlagagiRepository();
       final controller = AlagagiController.forSession(
@@ -1745,22 +1613,22 @@ void main() {
         expect(repository.savedProfileSlots.last.slot.custom, isTrue);
         expect(repository.savedProfileSlots.last.slot.value, contains('천천히'));
 
-        controller.hideProfileSlot('rest');
+        controller.hideProfileSlot('now_favorite');
         await Future<void>.delayed(Duration.zero);
 
         final hiddenRest = controller.myProfileCard.slots.firstWhere(
-          (slot) => slot.id == 'rest',
+          (slot) => slot.id == 'now_favorite',
         );
         expect(hiddenRest.hidden, isTrue);
         expect(hiddenRest.value, isNull);
-        expect(controller.todayFillableProfileSlot?.id, isNot('rest'));
+        expect(controller.todayFillableProfileSlot?.id, isNot('now_favorite'));
         expect(repository.savedProfileSlots.last.slot.hidden, isTrue);
 
-        controller.restoreProfileSlot('rest');
+        controller.restoreProfileSlot('now_favorite');
         await Future<void>.delayed(Duration.zero);
 
         final restoredRest = controller.myProfileCard.slots.firstWhere(
-          (slot) => slot.id == 'rest',
+          (slot) => slot.id == 'now_favorite',
         );
         expect(restoredRest.hidden, isFalse);
 
@@ -1829,8 +1697,8 @@ void main() {
               ProfileSlotValue(
                 profileId: 'minyoungUid',
                 slot: ProfileSlot(
-                  id: 'food',
-                  label: '먹고 싶은 음식',
+                  id: 'now_craving',
+                  label: '요즘 당기는 음식',
                   icon: 'food',
                   value: '따뜻한 국물',
                   updatedAt: DateTime.parse('2026-06-09T10:00:00.000Z'),
@@ -3499,10 +3367,6 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   Completer<void>? answerSaveCompleter;
   Completer<void>? sharedPlaceSaveCompleter;
   final List<({String spaceId, Answer answer})> savedAnswers = [];
-  final List<({String spaceId, BalanceSelection selection})>
-  savedBalanceSelections = [];
-  final List<({String spaceId, String questionId, String profileId})>
-  deletedBalanceSelections = [];
   final List<({String spaceId, String profileId, ProfileSlot slot})>
   savedProfileSlots = [];
   final List<({String spaceId, String profileId, String slotId})>
@@ -3557,27 +3421,6 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
       throw StateError('save failed');
     }
     savedAnswers.add((spaceId: spaceId, answer: answer));
-  }
-
-  @override
-  Future<void> saveBalanceSelection(
-    String spaceId,
-    BalanceSelection selection,
-  ) async {
-    savedBalanceSelections.add((spaceId: spaceId, selection: selection));
-  }
-
-  @override
-  Future<void> deleteBalanceSelection(
-    String spaceId,
-    String questionId,
-    String profileId,
-  ) async {
-    deletedBalanceSelections.add((
-      spaceId: spaceId,
-      questionId: questionId,
-      profileId: profileId,
-    ));
   }
 
   @override

@@ -26,7 +26,7 @@
 
 ### Global Entry
 
-- Always start from `AGENTS.md` for repository workflow.
+- Always start from `CLAUDE.md` for repository workflow.
 - For product behavior, read `docs/spec.md` and the relevant feature spec.
 - For traceability lookup, search `docs/spec_trace.md` before reading large test files.
 - For full verification intent, search `docs/test_plan.md` by feature or trace ID.
@@ -81,22 +81,6 @@
   - `lib/src/features/archive/`
   - `lib/src/features/questions/`
   - `lib/src/features/records/`
-  - `test/src/domain/alagagi_auth_test.dart`
-  - `test/src/domain/alagagi_controller_test.dart`
-  - `test/src/ui/alagagi_app_test.dart`
-
-### Taste Match
-
-- 먼저 읽을 문서:
-  - `docs/spec/taste_match.md`
-  - `docs/test_plan.md` entries with `TASTE-`
-- 검색 단서:
-  - `balance`
-  - `selection`
-  - `result reveal`
-  - `taste note`
-- 주요 code/test:
-  - `lib/src/features/balance/`
   - `test/src/domain/alagagi_auth_test.dart`
   - `test/src/domain/alagagi_controller_test.dart`
   - `test/src/ui/alagagi_app_test.dart`

@@ -483,7 +483,7 @@ class _NoteRow extends StatelessWidget {
           width: 26,
           height: 26,
           decoration: BoxDecoration(
-            color: const Color(0xFFEAF7FD),
+            color: const Color(0xFFFDF9EA),
             borderRadius: BorderRadius.circular(8),
           ),
           alignment: Alignment.center,

@@ -150,7 +150,7 @@ void showFirstVisitGuideBook(BuildContext context) {
                         onPressed: () => Navigator.of(sheetContext).pop(),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AlagagiColors.sageDeep,
-                          side: const BorderSide(color: Color(0x338A9A7E)),
+                          side: const BorderSide(color: Color(0x33A98B3C)),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -198,7 +198,7 @@ class _GuideBookFeatureRow extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: const Color(0xFFEAF7FD),
+              color: const Color(0xFFFDF9EA),
               borderRadius: BorderRadius.circular(13),
             ),
             child: Icon(icon, size: 19, color: AlagagiColors.sageDeep),
@@ -234,7 +234,7 @@ class _GuideBookFeatureRow extends StatelessWidget {
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFFF5FCFF),
+              color: const Color(0xFFFFFCF5),
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(

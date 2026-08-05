@@ -94,9 +94,9 @@ class _PastMeetingsButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           child: Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFEAF7FD),
+              color: const Color(0xFFFDF9EA),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0x6686B9D6)),
+              border: Border.all(color: const Color(0x66DDB95E)),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Row(
@@ -238,7 +238,7 @@ class _PastMeetingCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEAF7FD),
+                  color: const Color(0xFFFDF9EA),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 alignment: Alignment.center,
@@ -352,7 +352,7 @@ class _PastMeetingMiniListState extends State<_PastMeetingMiniList> {
         : widget.items.take(widget.collapsedLimit).toList();
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FCFF),
+        color: const Color(0xFFFFFCF5),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(16),
       ),
@@ -522,7 +522,7 @@ class _MeetingPlanHeroCard extends StatelessWidget {
                     size: 10.5,
                     weight: FontWeight.w900,
                     letterSpacing: 1.8,
-                    color: const Color(0xFFE6F6FF),
+                    color: const Color(0xFFFEF9E7),
                   ),
                 ),
               ),
@@ -537,7 +537,7 @@ class _MeetingPlanHeroCard extends StatelessWidget {
                 alignment: Alignment.center,
                 child: const Icon(
                   Icons.favorite_rounded,
-                  color: Color(0xFFBEE4F7),
+                  color: Color(0xFFF8EABD),
                   size: 22,
                 ),
               ),
@@ -633,7 +633,7 @@ class _MeetingPlanHeroMetric extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 15, color: const Color(0xFFBEE4F7)),
+          Icon(icon, size: 15, color: const Color(0xFFF8EABD)),
           const Spacer(),
           Text(
             label,
@@ -720,7 +720,7 @@ class _MeetingPlanDateCard extends StatelessWidget {
           onTap: onTap,
           child: Container(
             decoration: BoxDecoration(
-              color: selected ? AlagagiColors.ink : const Color(0xFFF7FCFF),
+              color: selected ? AlagagiColors.ink : const Color(0xFFFFFDF7),
               border: Border.all(
                 color: selected ? AlagagiColors.ink : const Color(0xFFE7E1D5),
               ),
@@ -764,7 +764,7 @@ class _MeetingPlanDateCard extends StatelessWidget {
                   style: sans(
                     size: 10.5,
                     color: selected
-                        ? const Color(0xFFBEE4F7)
+                        ? const Color(0xFFF8EABD)
                         : AlagagiColors.sageDeep,
                     weight: FontWeight.w800,
                   ),
@@ -823,7 +823,7 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
         AlagagiPaperCard(
           radius: 24,
           padding: const EdgeInsets.all(18),
-          highlightedBorder: const Color(0x6686B9D6),
+          highlightedBorder: const Color(0x66DDB95E),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -841,7 +841,7 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
                     child: const Icon(
                       Icons.checklist_rounded,
                       size: 19,
-                      color: Color(0xFFBEE4F7),
+                      color: Color(0xFFF8EABD),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -980,7 +980,7 @@ class _MeetingPlanTaskList extends StatelessWidget {
     if (items.isEmpty) {
       return Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF5FCFF),
+          color: const Color(0xFFFFFCF5),
           border: Border.all(color: AlagagiColors.line),
           borderRadius: BorderRadius.circular(16),
         ),
@@ -1061,9 +1061,9 @@ class _MeetingPlanSnapshot extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF7FD),
+        color: const Color(0xFFFDF9EA),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0x6686B9D6)),
+        border: Border.all(color: const Color(0x66DDB95E)),
       ),
       padding: const EdgeInsets.all(12),
       child: Row(
@@ -1075,7 +1075,7 @@ class _MeetingPlanSnapshot extends StatelessWidget {
               value: planCount == 0 ? '비어 있음' : '$planCount개',
             ),
           ),
-          Container(width: 1, height: 34, color: const Color(0x6686B9D6)),
+          Container(width: 1, height: 34, color: const Color(0x66DDB95E)),
           Expanded(
             child: _MeetingPlanSnapshotItem(
               icon: Icons.place_outlined,
@@ -1177,7 +1177,7 @@ class _MeetingPlanTaskRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: editing ? AlagagiColors.sageSoft : Colors.white,
         border: Border.all(
-          color: editing ? const Color(0x668A9A7E) : const Color(0xFFE7E1D5),
+          color: editing ? const Color(0x66A98B3C) : const Color(0xFFE7E1D5),
         ),
         borderRadius: BorderRadius.circular(16),
       ),
@@ -1256,7 +1256,7 @@ class _MeetingPlanTaskComposer extends StatelessWidget {
       children: [
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF5FCFF),
+            color: const Color(0xFFFFFCF5),
             border: Border.all(color: AlagagiColors.line),
             borderRadius: BorderRadius.circular(18),
           ),
@@ -1426,7 +1426,7 @@ class _MeetingPlanMorePlacesButton extends StatelessWidget {
         label: Text(expanded ? '접기' : '$hiddenCount곳 더 보기'),
         style: OutlinedButton.styleFrom(
           foregroundColor: AlagagiColors.sageDeep,
-          side: const BorderSide(color: Color(0x338A9A7E)),
+          side: const BorderSide(color: Color(0x33A98B3C)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(999),
           ),
@@ -1481,8 +1481,8 @@ class _MeetingPlanPlaceRow extends StatelessWidget {
                 height: 42,
                 decoration: BoxDecoration(
                   color: linked
-                      ? const Color(0xFFEAF7FD)
-                      : const Color(0xFFEAF7FD),
+                      ? const Color(0xFFFDF9EA)
+                      : const Color(0xFFFDF9EA),
                   borderRadius: BorderRadius.circular(15),
                 ),
                 alignment: Alignment.center,
@@ -1490,7 +1490,7 @@ class _MeetingPlanPlaceRow extends StatelessWidget {
                   placeCategoryIcon(place.category),
                   size: 21,
                   color: linked
-                      ? const Color(0xFF315F7A)
+                      ? const Color(0xFF796935)
                       : AlagagiColors.sageDeep,
                 ),
               ),
@@ -1531,13 +1531,13 @@ class _MeetingPlanPlaceRow extends StatelessWidget {
                         },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: linked
-                        ? const Color(0xFF315F7A)
+                        ? const Color(0xFF796935)
                         : AlagagiColors.sageDeep,
                     disabledForegroundColor: AlagagiColors.muted,
                     side: BorderSide(
                       color: linked
-                          ? const Color(0x6686B9D6)
-                          : const Color(0x338A9A7E),
+                          ? const Color(0x66DDB95E)
+                          : const Color(0x33A98B3C),
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(999),
@@ -1584,8 +1584,8 @@ class _MeetingPlanPlaceReservationBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF7FD),
-        border: Border.all(color: const Color(0x6686B9D6)),
+        color: const Color(0xFFFDF9EA),
+        border: Border.all(color: const Color(0x66DDB95E)),
         borderRadius: BorderRadius.circular(13),
       ),
       padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
@@ -1595,7 +1595,7 @@ class _MeetingPlanPlaceReservationBadge extends StatelessWidget {
           const Icon(
             Icons.schedule_rounded,
             size: 16,
-            color: Color(0xFF315F7A),
+            color: Color(0xFF796935),
           ),
           const SizedBox(width: 7),
           Expanded(
@@ -1607,7 +1607,7 @@ class _MeetingPlanPlaceReservationBadge extends StatelessWidget {
                 size: 12,
                 height: 1.35,
                 weight: FontWeight.w800,
-                color: const Color(0xFF315F7A),
+                color: const Color(0xFF796935),
               ),
             ),
           ),
@@ -1715,7 +1715,7 @@ class _MeetingPlanPlaceReservationEditorState
         widget.controller.isPlaceSaveTarget(widget.place.id);
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FCFF),
+        color: const Color(0xFFFFFCF5),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(14),
       ),

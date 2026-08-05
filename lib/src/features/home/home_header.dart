@@ -116,7 +116,7 @@ class HomeProgressStrip extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF315F7A), AlagagiColors.blue, AlagagiColors.sky],
+          colors: [Color(0xFF796935), AlagagiColors.blue, AlagagiColors.sky],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -272,7 +272,7 @@ class _HeroProfilePill extends StatelessWidget {
           borderRadius: BorderRadius.circular(999),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x1A1D3B4E),
+              color: Color(0x1A4A3A10),
               blurRadius: 18,
               offset: Offset(0, 9),
             ),
@@ -292,12 +292,12 @@ class _HeroProfilePill extends StatelessWidget {
                     avatar: meAvatar,
                     alignment: Alignment.centerLeft,
                     fill: AlagagiColors.paper,
-                    textColor: const Color(0xFF315F7A),
+                    textColor: const Color(0xFF796935),
                   ),
                   _HeroAvatarToken(
                     avatar: partnerAvatar,
                     alignment: Alignment.centerRight,
-                    fill: const Color(0xFFEAF7FD),
+                    fill: const Color(0xFFFDF9EA),
                     textColor: AlagagiColors.moss,
                   ),
                   Positioned(
@@ -307,7 +307,7 @@ class _HeroProfilePill extends StatelessWidget {
                       width: 16,
                       height: 16,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5FCFF),
+                        color: const Color(0xFFFFFCF5),
                         shape: BoxShape.circle,
                         border: Border.all(color: const Color(0x99FFFEFA)),
                       ),
@@ -315,7 +315,7 @@ class _HeroProfilePill extends StatelessWidget {
                       child: const Icon(
                         Icons.favorite_rounded,
                         size: 9,
-                        color: Color(0xFF6BAACB),
+                        color: Color(0xFFD4AC4E),
                       ),
                     ),
                   ),
@@ -614,17 +614,6 @@ void showHomeMenuSheet({
                 ),
                 const SizedBox(height: 8),
                 _HomeMenuRow(
-                  rowKey: homeMenuBalanceButtonKey,
-                  icon: Icons.swap_horiz_rounded,
-                  title: '우리 선택',
-                  subtitle: '다음 데이트 힌트가 되는 선택 남기기',
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    controller.goTo(AlagagiRoute.balance);
-                  },
-                ),
-                const SizedBox(height: 8),
-                _HomeMenuRow(
                   rowKey: homeMenuProfileCardButtonKey,
                   icon: Icons.badge_outlined,
                   title: '서로 노트',
@@ -710,7 +699,7 @@ class _HomeMenuRow extends StatelessWidget {
         child: Container(
           constraints: const BoxConstraints(minHeight: 64),
           decoration: BoxDecoration(
-            color: enabled ? const Color(0xFFF5FCFF) : const Color(0xFFEFF8FD),
+            color: enabled ? const Color(0xFFFFFCF5) : const Color(0xFFFDFAEF),
             border: Border.all(color: AlagagiColors.line),
             borderRadius: BorderRadius.circular(17),
           ),
@@ -721,8 +710,8 @@ class _HomeMenuRow extends StatelessWidget {
                 icon: icon,
                 size: 38,
                 iconSize: 18,
-                tone: const Color(0xFFEAF7FD),
-                iconColor: const Color(0xFF315F7A),
+                tone: const Color(0xFFFDF9EA),
+                iconColor: const Color(0xFF796935),
                 muted: !enabled,
               ),
               const SizedBox(width: 10),

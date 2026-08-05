@@ -1,6 +1,12 @@
-# AI Agent 작업 계약
+# CLAUDE.md
 
-이 저장소는 SDD + TDD 흐름으로 개발한다. `docs/spec.md`와 `docs/spec/` 아래의 관련 문서를 제품 기준 문서로 보고, 모든 동작 변경은 spec -> test -> implementation으로 추적 가능해야 한다.
+Claude Code가 이 저장소에서 작업할 때 따르는 계약이다.
+
+## 프로젝트 개요
+
+- Flutter 기반 비공개 커플 웹앱(`우리 둘`). 주 배포 타깃은 web, 백엔드는 Firebase(Firestore) Spark/free plan.
+- 개발 방식은 SDD + TDD. `docs/spec.md`와 `docs/spec/` 아래 문서가 제품 기준 문서이며, 모든 동작 변경은 spec -> test -> implementation으로 추적 가능해야 한다.
+- 주요 경로: `lib/src/features/<feature>/` (feature UI), `lib/src/shared/` (재사용 primitives), `lib/src/domain/`, `lib/src/data/`, `lib/src/firebase/`, `test/`.
 
 ## 필수 진행 순서
 
@@ -16,23 +22,23 @@
 
 `docs/ai_context_map.md`와 `docs/spec_trace.md`는 token/context 사용량을 줄이기 위한 운영 색인이다. 기준 문서는 여전히 `docs/spec.md`, 관련 feature spec, `docs/test_plan.md`다.
 
+순수 기계적 변경, documentation-only 변경, 긴급 수정이라면 production behavior test가 필요 없는 이유를 설명한다.
+
 ## Context 효율 규칙
 
 - 작업 시작 시 documentation-only, UI/copy, domain behavior, Firestore-backed, refactor 중 하나로 먼저 분류한다.
 - 첫 탐색은 `docs/ai_context_map.md`의 routing table에 있는 문서와 검색 단서로 제한한다.
 - test를 찾을 때는 trace ID, feature명, 테스트명 일부로 검색하고 필요한 block만 읽는다.
 - 작업 범위가 넓어지는 경우에만 추가 문서를 연다.
-- handoff에는 실제로 읽은 주요 문서와 실행한 verification을 적는다.
+- 여러 파일/네이밍 규칙을 훑어야 하는 넓은 탐색은 Explore subagent에 맡기고, 파일 위치나 심볼을 이미 아는 단건 확인은 직접 Grep/Read로 처리한다.
+- 요약이나 handoff에는 실제로 읽은 주요 문서와 실행한 verification을 적는다.
 
-순수 기계적 변경, documentation-only 변경, 긴급 수정이라면 production behavior test가 필요 없는 이유를 설명한다.
+## 작업 방식
 
-## Multi-Agent 작업
-
-여러 AI agent가 이 저장소에서 함께 작업할 때는 `docs/agent_harness_playbook.md`를 운영 가이드로 사용한다. 앱 runtime에는 AI agent가 포함되지 않으며, 이 playbook은 개발과 검증 작업 전용이다.
-
-- scope, file ownership, final review, handoff를 책임지는 orchestrator를 하나 둔다.
-- 같은 writable file을 여러 active implementation agent에게 동시에 배정하지 않는다.
-- parallel agent는 주로 spec, tests, UI QA, Firebase rules/budget, verification처럼 독립적인 review에 사용한다.
+- 범위가 큰 변경이나 여러 파일을 건드리는 변경은 plan mode로 계획을 먼저 합의한다.
+- 여러 단계로 나뉘는 작업은 TodoWrite로 진행 상황을 추적한다.
+- 같은 파일을 동시에 수정하는 병렬 agent는 두지 않는다. 병렬은 spec 검토, test 검토, UI QA, Firebase rules/budget 점검처럼 독립적인 read-only 작업에만 쓴다.
+- 여러 AI agent가 함께 작업할 때의 운영 규칙은 `docs/agent_harness_playbook.md`를 따른다. 앱 runtime에는 AI agent가 포함되지 않으며, 이 playbook은 개발과 검증 작업 전용이다.
 - final handoff에는 changed files, verification results, Firebase impact, UI QA notes, known risks를 포함한다.
 
 ## 검증
@@ -52,7 +58,7 @@ local one-command gate는 다음과 같다.
 ./scripts/verify.sh
 ```
 
-긴 command output은 handoff에 그대로 붙이지 않는다. 실패한 command, outcome, 첫 관련 failure, 관련 파일, 다음 action만 요약한다. 전체 로그가 필요하면 terminal에 남긴다.
+긴 command output은 응답에 그대로 붙이지 않는다. 실패한 command, outcome, 첫 관련 failure, 관련 파일, 다음 action만 요약한다. 전체 로그가 필요하면 terminal에 남긴다.
 
 ## 제품 Guardrail
 
@@ -88,6 +94,7 @@ local one-command gate는 다음과 같다.
 ## Git Hygiene
 
 - 명시적으로 요청받지 않는 한 user change를 revert하지 않는다.
+- commit과 push는 사용자가 요청할 때만 한다.
 - commit은 focused하게 유지하고 user-facing behavior 또는 harness change가 드러나게 이름 붙인다.
 - `change-passwords.js` 같은 ignored local helper file을 포함하지 않는다.
 - commit 전에는 `git status --short`와 staged diff scope를 확인한다.

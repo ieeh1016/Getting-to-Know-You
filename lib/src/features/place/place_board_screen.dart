@@ -175,7 +175,7 @@ class _PlaceBoardModeToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF7FCFF),
+        color: const Color(0xFFFFFDF7),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(17),
       ),
@@ -269,7 +269,7 @@ class _PlaceBoardFocusSummary extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AlagagiColors.creamPanel,
-        border: Border.all(color: const Color(0x6686B9D6)),
+        border: Border.all(color: const Color(0x66DDB95E)),
         borderRadius: BorderRadius.circular(24),
       ),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 15),
@@ -445,7 +445,7 @@ class _PlaceMapPreviewState extends State<_PlaceMapPreview> {
         final mapFrame = Container(
           decoration: BoxDecoration(
             color: AlagagiColors.paper,
-            border: Border.all(color: const Color(0x6686B9D6)),
+            border: Border.all(color: const Color(0x66DDB95E)),
             borderRadius: BorderRadius.circular(24),
           ),
           clipBehavior: Clip.antiAlias,
@@ -691,7 +691,7 @@ class _PlaceSearchEntryCard extends StatelessWidget {
     return AlagagiPaperCard(
       radius: 24,
       padding: const EdgeInsets.all(18),
-      highlightedBorder: const Color(0x228A9A7E),
+      highlightedBorder: const Color(0x22A98B3C),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -908,7 +908,7 @@ class _KakaoPlaceSearchPanelState extends State<_KakaoPlaceSearchPanel> {
     final selectedPlaceId = widget.controller.state.placeDraftProviderPlaceId;
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FCFF),
+        color: const Color(0xFFFFFCF5),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(17),
       ),
@@ -1025,7 +1025,7 @@ class _KakaoSearchHelpCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF8FD),
+        color: const Color(0xFFFDFAEF),
         border: Border.all(color: const Color(0x33B18472)),
         borderRadius: BorderRadius.circular(15),
       ),
@@ -1145,7 +1145,7 @@ class _KakaoPlaceResultRow extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected ? AlagagiColors.sagePanel : Colors.white,
             border: Border.all(
-              color: selected ? const Color(0x668A9A7E) : AlagagiColors.line,
+              color: selected ? const Color(0x66A98B3C) : AlagagiColors.line,
             ),
             borderRadius: BorderRadius.circular(14),
           ),
@@ -1195,7 +1195,7 @@ class _KakaoPlaceResultRow extends StatelessWidget {
               Container(
                 decoration: BoxDecoration(
                   color: selected ? Colors.white : AlagagiColors.paper,
-                  border: Border.all(color: const Color(0x336F7F63)),
+                  border: Border.all(color: const Color(0x339A7A2A)),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
@@ -1231,9 +1231,9 @@ class _SelectedPlacePreview extends StatelessWidget {
         name.isNotEmpty && latitude != null && longitude != null;
     return Container(
       decoration: BoxDecoration(
-        color: hasSelection ? AlagagiColors.paper : const Color(0xFFF5FCFF),
+        color: hasSelection ? AlagagiColors.paper : const Color(0xFFFFFCF5),
         border: Border.all(
-          color: hasSelection ? const Color(0x668A9A7E) : AlagagiColors.line,
+          color: hasSelection ? const Color(0x66A98B3C) : AlagagiColors.line,
         ),
         borderRadius: BorderRadius.circular(18),
       ),
@@ -1334,7 +1334,7 @@ class _SelectedPlaceMiniMap extends StatelessWidget {
       height: _selectedPlaceMiniMapHeight,
       decoration: BoxDecoration(
         color: AlagagiColors.paper,
-        border: Border.all(color: const Color(0x6686B9D6)),
+        border: Border.all(color: const Color(0x66DDB95E)),
         borderRadius: BorderRadius.circular(16),
       ),
       clipBehavior: Clip.antiAlias,
@@ -1386,7 +1386,7 @@ class _PlaceDraftErrorCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF8FD),
+        color: const Color(0xFFFDFAEF),
         border: Border.all(color: const Color(0x33B18472)),
         borderRadius: BorderRadius.circular(15),
       ),
@@ -1435,7 +1435,7 @@ class _SelectedPlaceField extends StatelessWidget {
     return Container(
       key: fieldKey,
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FCFF),
+        color: const Color(0xFFFFFCF5),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(15),
       ),
@@ -1535,7 +1535,7 @@ class _PlaceTextFieldState extends State<_PlaceTextField> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FCFF),
+        color: const Color(0xFFFFFCF5),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(15),
       ),
@@ -1596,7 +1596,7 @@ class _PlaceCard extends StatelessWidget {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEAF7FD),
+                  color: const Color(0xFFFDF9EA),
                   borderRadius: BorderRadius.circular(15),
                 ),
                 alignment: Alignment.center,
@@ -1675,7 +1675,7 @@ class _PlaceCard extends StatelessWidget {
                     label: const Text('지도에서 열기'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AlagagiColors.sageDeep,
-                      side: const BorderSide(color: Color(0x336F7F63)),
+                      side: const BorderSide(color: Color(0x339A7A2A)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(999),
                       ),
@@ -1700,7 +1700,7 @@ class _PlaceCard extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AlagagiColors.sageDeep,
                     disabledForegroundColor: AlagagiColors.muted,
-                    side: const BorderSide(color: Color(0x336F7F63)),
+                    side: const BorderSide(color: Color(0x339A7A2A)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(999),
                     ),
@@ -1720,7 +1720,7 @@ class _PlaceCard extends StatelessWidget {
                     label: const Text('수정'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AlagagiColors.sageDeep,
-                      side: const BorderSide(color: Color(0x336F7F63)),
+                      side: const BorderSide(color: Color(0x339A7A2A)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(999),
                       ),
@@ -1838,7 +1838,7 @@ class _QuietMapPainter extends CustomPainter {
     canvas.drawRect(Offset.zero & size, backgroundPaint);
 
     final gridPaint = Paint()
-      ..color = const Color(0x80CFE6F1)
+      ..color = const Color(0x80EFE1BE)
       ..strokeWidth = 1;
     for (var x = 0.0; x < size.width; x += 54) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);

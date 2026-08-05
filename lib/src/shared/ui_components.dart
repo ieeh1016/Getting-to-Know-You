@@ -115,7 +115,7 @@ class AlagagiFeatureHero extends StatelessWidget {
                   style: sans(
                     size: 10.2,
                     weight: FontWeight.w900,
-                    color: const Color(0xFFE6F6FF),
+                    color: const Color(0xFFFEF9E7),
                     letterSpacing: 1.5,
                   ),
                 ),
@@ -194,7 +194,7 @@ class _AlagagiFeatureHeroStat extends StatelessWidget {
                 border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
               ),
               alignment: Alignment.center,
-              child: Icon(stat.icon, size: 13, color: const Color(0xFFBEE4F7)),
+              child: Icon(stat.icon, size: 13, color: const Color(0xFFF8EABD)),
             ),
             const Spacer(),
             Text(
@@ -243,7 +243,7 @@ class _AlagagiHeroVisualMark extends StatelessWidget {
               width: 9,
               height: 9,
               decoration: BoxDecoration(
-                color: const Color(0xFFBEE4F7),
+                color: const Color(0xFFF8EABD),
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
               ),
@@ -270,7 +270,7 @@ class _AlagagiHeroVisualMark extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
               ),
               alignment: Alignment.center,
-              child: Icon(icon, size: 21, color: const Color(0xFFE6F6FF)),
+              child: Icon(icon, size: 21, color: const Color(0xFFFEF9E7)),
             ),
           ),
         ],
@@ -300,10 +300,10 @@ class AlagagiBrandLeafMark extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: AlagagiColors.paper,
-                border: Border.all(color: const Color(0x6686B9D6)),
+                border: Border.all(color: const Color(0x66DDB95E)),
                 boxShadow: const [
                   BoxShadow(
-                    color: Color(0x142F617A),
+                    color: Color(0x147A5B14),
                     blurRadius: 18,
                     offset: Offset(0, 8),
                   ),
@@ -333,7 +333,7 @@ class AlagagiBrandLeafMark extends StatelessWidget {
               height: bridgeSize,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFEFF8FD),
+                color: const Color(0xFFFDFAEF),
                 border: Border.all(color: const Color(0x99FFFEFA)),
               ),
               alignment: Alignment.center,
@@ -399,11 +399,11 @@ class AlagagiSymbolMark extends StatelessWidget {
         ? AlagagiColors.line
         : selected
         ? AlagagiColors.sky
-        : const Color(0x6686B9D6);
+        : const Color(0x66DDB95E);
     final foreground = muted
         ? const Color(0xFF9A988E)
         : selected
-        ? const Color(0xFF315F7A)
+        ? const Color(0xFF796935)
         : iconColor;
     return SizedBox(
       width: size,
@@ -424,7 +424,7 @@ class AlagagiSymbolMark extends StatelessWidget {
                 boxShadow: selected
                     ? const [
                         BoxShadow(
-                          color: Color(0x1F4F95B8),
+                          color: Color(0x1FC1922C),
                           blurRadius: 16,
                           offset: Offset(0, 8),
                         ),
@@ -496,7 +496,7 @@ class AlagagiAvatarStack extends StatelessWidget {
               width: 18,
               height: 18,
               decoration: BoxDecoration(
-                color: const Color(0xFFEFF8FD),
+                color: const Color(0xFFFDFAEF),
                 shape: BoxShape.circle,
                 border: Border.all(color: const Color(0xCCFFFEFA)),
               ),
@@ -504,7 +504,7 @@ class AlagagiAvatarStack extends StatelessWidget {
               child: const Icon(
                 Icons.favorite_rounded,
                 size: 10,
-                color: Color(0xFF6BAACB),
+                color: Color(0xFFD4AC4E),
               ),
             ),
           ),
@@ -531,7 +531,7 @@ class _AlagagiSmallAvatar extends StatelessWidget {
         border: Border.all(color: AlagagiColors.paper, width: 2),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x172F617A),
+            color: Color(0x177A5B14),
             blurRadius: 10,
             offset: Offset(0, 5),
           ),
@@ -630,8 +630,8 @@ class AlagagiEmptyStateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF3FBFF),
-        border: Border.all(color: const Color(0x5586B9D6)),
+        color: const Color(0xFFFFFCF3),
+        border: Border.all(color: const Color(0x55DDB95E)),
         borderRadius: BorderRadius.circular(20),
       ),
       padding: const EdgeInsets.fromLTRB(18, 17, 18, 17),
@@ -657,7 +657,7 @@ class AlagagiEmptyStateCard extends StatelessWidget {
               text,
               style: sans(
                 size: 12.8,
-                color: const Color(0xFF4F6370),
+                color: const Color(0xFF7A6534),
                 height: 1.55,
                 weight: FontWeight.w700,
               ),
@@ -729,7 +729,7 @@ class AlagagiKeywordChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: leaf ? AlagagiColors.skySoft : AlagagiColors.paper,
         border: Border.all(
-          color: leaf ? const Color(0x5586B9D6) : AlagagiColors.line,
+          color: leaf ? const Color(0x55DDB95E) : AlagagiColors.line,
         ),
         borderRadius: BorderRadius.circular(20),
       ),
@@ -755,7 +755,7 @@ class AlagagiSmallBadge extends StatelessWidget {
         color: dark
             ? Colors.white.withValues(alpha: 0.14)
             : AlagagiColors.skyPanel,
-        border: dark ? null : Border.all(color: const Color(0x6686B9D6)),
+        border: dark ? null : Border.all(color: const Color(0x66DDB95E)),
         borderRadius: BorderRadius.circular(20),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
@@ -764,7 +764,7 @@ class AlagagiSmallBadge extends StatelessWidget {
         style: sans(
           size: 10.5,
           weight: FontWeight.w800,
-          color: dark ? Colors.white : const Color(0xFF315F7A),
+          color: dark ? Colors.white : const Color(0xFF796935),
         ),
       ),
     );
@@ -787,9 +787,9 @@ class AlagagiQuietMetric extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: muted ? const Color(0xFFF5FCFF) : AlagagiColors.skyPanel,
+        color: muted ? const Color(0xFFFFFCF5) : AlagagiColors.skyPanel,
         border: Border.all(
-          color: muted ? AlagagiColors.line : const Color(0x6686B9D6),
+          color: muted ? AlagagiColors.line : const Color(0x66DDB95E),
         ),
         borderRadius: BorderRadius.circular(14),
       ),
@@ -805,7 +805,7 @@ class AlagagiQuietMetric extends StatelessWidget {
               context,
               size: 19,
               weight: FontWeight.w800,
-              color: muted ? AlagagiColors.muted : const Color(0xFF315F7A),
+              color: muted ? AlagagiColors.muted : const Color(0xFF796935),
             ),
           ),
         ],
@@ -824,7 +824,7 @@ class AlagagiSimilarityBadge extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AlagagiColors.skyPanel,
-        border: Border.all(color: const Color(0x6686B9D6)),
+        border: Border.all(color: const Color(0x66DDB95E)),
         borderRadius: BorderRadius.circular(20),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
@@ -918,8 +918,8 @@ class AlagagiFullTextCue extends StatelessWidget {
       child: Container(
         constraints: const BoxConstraints(minHeight: 30),
         decoration: BoxDecoration(
-          color: const Color(0xFFEFF8FD),
-          border: Border.all(color: const Color(0x336F7F63)),
+          color: const Color(0xFFFDFAEF),
+          border: Border.all(color: const Color(0x339A7A2A)),
           borderRadius: BorderRadius.circular(999),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -1061,7 +1061,7 @@ class _AlagagiTextFieldState extends State<AlagagiTextField> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FCFF),
+        color: const Color(0xFFFFFCF5),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(15),
       ),

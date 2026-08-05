@@ -64,7 +64,7 @@ void showReadableDetailSheet(
                     width: double.infinity,
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [Color(0xFFEFF8FD), AlagagiColors.paper],
+                        colors: [Color(0xFFFDFAEF), AlagagiColors.paper],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -211,8 +211,8 @@ class AlagagiOpenReadableIconButton extends StatelessWidget {
         width: 31,
         height: 31,
         decoration: BoxDecoration(
-          color: const Color(0xFFEFF8FD),
-          border: Border.all(color: const Color(0x336F7F63)),
+          color: const Color(0xFFFDFAEF),
+          border: Border.all(color: const Color(0x339A7A2A)),
           borderRadius: BorderRadius.circular(999),
         ),
         alignment: Alignment.center,
@@ -238,7 +238,7 @@ class _ReadableDetailMark extends StatelessWidget {
       height: 42,
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.76),
-        border: Border.all(color: const Color(0x336F7F63)),
+        border: Border.all(color: const Color(0x339A7A2A)),
         borderRadius: BorderRadius.circular(16),
       ),
       alignment: Alignment.center,
@@ -308,7 +308,7 @@ class _ReadableDetailPill extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: 26),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.72),
-        border: Border.all(color: const Color(0x266F7F63)),
+        border: Border.all(color: const Color(0x269A7A2A)),
         borderRadius: BorderRadius.circular(999),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -334,7 +334,7 @@ class _ReadableDetailBodyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF7FCFF),
+        color: const Color(0xFFFFFDF7),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(21),
         boxShadow: const [

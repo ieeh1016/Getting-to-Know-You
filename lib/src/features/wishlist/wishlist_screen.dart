@@ -83,7 +83,7 @@ class _WishlistHero extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AlagagiColors.paper, Color(0xFFEFF8FD)],
+          colors: [AlagagiColors.paper, Color(0xFFFDFAEF)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -206,7 +206,7 @@ class _WishlistAddButton extends StatelessWidget {
         label: const Text('하고 싶은 것 담기'),
         style: OutlinedButton.styleFrom(
           foregroundColor: AlagagiColors.sageDeep,
-          side: const BorderSide(color: Color(0x338A9A7E)),
+          side: const BorderSide(color: Color(0x33A98B3C)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(999),
           ),
@@ -382,7 +382,7 @@ class _WishlistLaneMoreButton extends StatelessWidget {
         label: Text(expanded ? '접기' : '$hiddenCount개 더 보기'),
         style: OutlinedButton.styleFrom(
           foregroundColor: AlagagiColors.sageDeep,
-          side: const BorderSide(color: Color(0x338A9A7E)),
+          side: const BorderSide(color: Color(0x33A98B3C)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(999),
           ),
@@ -565,7 +565,7 @@ class _WishlistSaveStatus extends StatelessWidget {
       padding: const EdgeInsets.only(top: 10),
       child: Container(
         decoration: BoxDecoration(
-          color: failed ? const Color(0xFFFFF7ED) : const Color(0xFFF3FBFF),
+          color: failed ? const Color(0xFFFFF7ED) : const Color(0xFFFFFCF3),
           border: Border.all(
             color: failed ? const Color(0xFFEBC9A2) : AlagagiColors.line,
           ),
@@ -685,7 +685,7 @@ class _WishCard extends StatelessWidget {
             color: wish.isMutual ? null : AlagagiColors.paper,
             gradient: wish.isMutual
                 ? const LinearGradient(
-                    colors: [Color(0xFFEAF7FD), Color(0xFFDFF2FB)],
+                    colors: [Color(0xFFFDF9EA), Color(0xFFFCF5DE)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   )
@@ -704,7 +704,7 @@ class _WishCard extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEAF7FD),
+                      color: const Color(0xFFFDF9EA),
                       borderRadius: BorderRadius.circular(13),
                     ),
                     alignment: Alignment.center,
@@ -819,7 +819,7 @@ class _WishActionChip extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           foregroundColor: color,
           side: BorderSide(
-            color: danger ? const Color(0x33B35A49) : const Color(0x338A9A7E),
+            color: danger ? const Color(0x33B35A49) : const Color(0x33A98B3C),
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(999),

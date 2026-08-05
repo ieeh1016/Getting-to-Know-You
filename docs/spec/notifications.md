@@ -22,7 +22,6 @@
 - Cloud Functions는 `activityEvents` create만 감지하고, 같은 space의 상대 member에게 발송한다.
 - 현재 activity event 대상:
   - 질문 답변/넘김, 답변 댓글/답장
-  - 밸런스 선택
   - 프로필 카드 저장
   - 위시 저장/상태 변경
   - shared 기억 카드 저장, shared 기억 카드 반응/수정 제안

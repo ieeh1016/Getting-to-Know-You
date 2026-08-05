@@ -242,7 +242,7 @@ class _CalendarDayButton extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color: selected
-                ? const Color(0xFFEAF7FD)
+                ? const Color(0xFFFDF9EA)
                 : inDisplayedMonth
                 ? Colors.white
                 : const Color(0xFFFAF8F3),

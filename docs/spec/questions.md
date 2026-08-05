@@ -15,6 +15,13 @@ Daily question은 앱의 핵심 slow-conversation loop다. records와 archive는
 - archive는 all, both answered, similar-answer filter를 지원한다.
 - record screen은 score나 percentage 없이 shared-answer summary와 matched keyword를 보여줄 수 있다.
 
+## 질문 카탈로그
+
+- `questionCatalogV1`은 `q001`–`q058` 58개 질문을 순서대로 가진다. id, `day`, `number`는 안정적으로 유지한다.
+- 질문은 만난 지 얼마 되지 않아 서로를 알아가는 두 사람 기준으로 쓴다. day 1–14는 가벼운 일상, 15–30은 서로에 대한 관찰과 연락/만남 방식, 31–45는 가치관과 스스로에 대한 이야기, 46–58은 조금 더 깊은 마음과 앞으로의 이야기다.
+- 장기 약속을 압박하는 표현(`결혼`, `평생`, `영원`, `기념일`, `헤어지`)은 질문 text와 highlight에 쓰지 않는다.
+- 질문 text를 바꿔도 id는 그대로 둔다. 이미 저장된 answer가 `{questionId}_{uid}` key로 붙어 있기 때문이다.
+
 ## 데이터 규칙
 
 - draft typing은 local state only다.

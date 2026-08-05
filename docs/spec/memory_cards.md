@@ -34,9 +34,18 @@
   - 함께 할 것
   - 조심할 것
 - 공개 범위 기본값은 `shared`다.
+- 제목은 2자 이상 80자 이하, 내용은 1자 이상 1000자 이하다. UI `maxLength`와 `firestore.rules`의 `validMemoryCardShape` 한도는 항상 같은 값을 쓴다.
+- 내용 입력 field는 최소 4줄로 시작해 최대 10줄까지 늘어나고, 그 이상은 field 안에서 스크롤한다.
 - draft 입력, 유형 선택, 공개 범위 선택, 공간 tab 전환은 Firestore write를 만들지 않는다.
 - `저장하고 공유하기` 또는 `나만 저장하기` 제출 시 `memoryCards/{cardId}` 한 문서만 저장한다.
 - 작성자는 자신의 카드만 수정할 수 있다.
+
+## 긴 카드 읽기
+
+- 목록의 카드 본문이 길면 6줄까지만 보여주고 `전체 보기` cue와 읽기 icon button을 함께 제공한다.
+- `전체 보기`는 공용 readable detail sheet를 열고, 카드 원문을 스크롤해서 읽게 한다.
+- 짧은 카드는 cue 없이 본문 전체를 그대로 보여준다.
+- sheet 열람은 Firestore write를 만들지 않는다.
 
 ## 반응과 수정 요청
 

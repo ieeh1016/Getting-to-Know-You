@@ -50,7 +50,6 @@ const homeMenuRefreshButtonKey = Key('home-menu-refresh-button');
 const homeMenuCuriosityButtonKey = Key('home-menu-curiosity-button');
 const homeMenuStockStoryButtonKey = Key('home-menu-stock-story-button');
 const homeMenuImprovementButtonKey = Key('home-menu-improvement-button');
-const homeMenuBalanceButtonKey = Key('home-menu-balance-button');
 const homeMenuProfileCardButtonKey = Key('home-menu-profile-card-button');
 const homeMenuWishlistButtonKey = Key('home-menu-wishlist-button');
 const homeMenuMemoryButtonKey = Key('home-menu-memory-button');
@@ -206,6 +205,7 @@ Key memoryCardTypeButtonKey(String type) => Key('memory-card-type-$type');
 Key memoryVisibilityButtonKey(String visibility) =>
     Key('memory-visibility-$visibility');
 Key memoryCardKey(String cardId) => Key('memory-card-$cardId');
+Key memoryCardReadButtonKey(String cardId) => Key('memory-card-read-$cardId');
 Key memoryResponseButtonKey(String cardId, String reaction) =>
     Key('memory-response-$cardId-$reaction');
 Key memoryCorrectionSaveButtonKey(String cardId) =>
@@ -244,15 +244,6 @@ const homeQuestionCardKey = Key('home-question-card');
 const homeQuestionAnswerButtonKey = Key('home-question-answer-button');
 const homeCuriosityEntryKey = Key('home-curiosity-entry');
 const firstVisitGuideBookSheetKey = Key('first-visit-guide-book-sheet');
-
-const balanceDeckKey = Key('balance-deck');
-const balanceReasonToggleButtonKey = Key('balance-reason-toggle-button');
-const balanceReasonFieldKey = Key('balance-reason-field');
-const balanceReasonSaveButtonKey = Key('balance-reason-save-button');
-const balanceResultToggleButtonKey = Key('balance-result-toggle-button');
-Key balanceRecordFilterButtonKey(String filter) =>
-    Key('balance-record-filter-$filter');
-Key balanceTabButtonKey(String tab) => Key('balance-tab-$tab');
 
 const profileRecommendedSlotButtonKey = Key('profile-recommended-slot-button');
 const profileRecommendedSlotSkipButtonKey = Key(

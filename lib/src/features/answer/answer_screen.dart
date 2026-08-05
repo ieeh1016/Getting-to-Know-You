@@ -112,7 +112,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                 context,
                 size: 64,
                 weight: FontWeight.w800,
-                color: const Color(0xFFEAF7FD),
+                color: const Color(0xFFFDF9EA),
               ),
             ),
             Text(
@@ -246,7 +246,7 @@ class _HintBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF7FD),
+        color: const Color(0xFFFDF9EA),
         borderRadius: BorderRadius.circular(14),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),

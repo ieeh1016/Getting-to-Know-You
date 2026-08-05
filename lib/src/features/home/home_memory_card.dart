@@ -113,7 +113,7 @@ class _MemoryIconButton extends StatelessWidget {
         padding: EdgeInsets.zero,
         style: IconButton.styleFrom(
           backgroundColor: Colors.white,
-          side: const BorderSide(color: Color(0x338A9A7E)),
+          side: const BorderSide(color: Color(0x33A98B3C)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -172,7 +172,7 @@ class _MemoryStarterLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FCFF),
+        color: const Color(0xFFFFFCF5),
         borderRadius: BorderRadius.circular(14),
       ),
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 11),
@@ -290,7 +290,7 @@ class _LatestMemoryPreview extends StatelessWidget {
           Container(
             width: double.infinity,
             decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: Color(0xFFCFE6F1))),
+              border: Border(top: BorderSide(color: Color(0xFFEFE1BE))),
             ),
             padding: const EdgeInsets.only(top: 10),
             child: Text(
@@ -323,7 +323,7 @@ class _MemorySpaceBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FCFF),
+        color: const Color(0xFFFFFCF5),
         borderRadius: BorderRadius.circular(15),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),

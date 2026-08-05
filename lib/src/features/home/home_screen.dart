@@ -279,7 +279,7 @@ class _DayChip extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(minHeight: 28),
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF7FD),
+        color: const Color(0xFFFDF9EA),
         borderRadius: BorderRadius.circular(999),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),

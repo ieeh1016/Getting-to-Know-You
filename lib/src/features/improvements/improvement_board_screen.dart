@@ -195,7 +195,7 @@ class _ImprovementHeroCard extends StatelessWidget {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              color: const Color(0xFFEAF7FD),
+              color: const Color(0xFFFDF9EA),
               borderRadius: BorderRadius.circular(16),
             ),
             alignment: Alignment.center,
@@ -289,7 +289,7 @@ class _ImprovementAddButton extends StatelessWidget {
         label: const Text('글 남기기'),
         style: OutlinedButton.styleFrom(
           foregroundColor: AlagagiColors.sageDeep,
-          side: const BorderSide(color: Color(0x338A9A7E)),
+          side: const BorderSide(color: Color(0x33A98B3C)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(999),
           ),
@@ -435,7 +435,7 @@ class _ImprovementPostCard extends StatelessWidget {
                   height: 40,
                   decoration: BoxDecoration(
                     color: isMine
-                        ? const Color(0xFFEAF7FD)
+                        ? const Color(0xFFFDF9EA)
                         : const Color(0xFFF1ECF6),
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -519,7 +519,7 @@ class _ImprovementPostCard extends StatelessWidget {
                     label: const Text('수정'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AlagagiColors.sageDeep,
-                      side: const BorderSide(color: Color(0x338A9A7E)),
+                      side: const BorderSide(color: Color(0x33A98B3C)),
                       visualDensity: VisualDensity.compact,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(999),
@@ -561,8 +561,8 @@ class _ImprovementOwnerNote extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF3FBFF),
-        border: Border.all(color: const Color(0x338A9A7E)),
+        color: const Color(0xFFFFFCF3),
+        border: Border.all(color: const Color(0x33A98B3C)),
         borderRadius: BorderRadius.circular(15),
       ),
       padding: const EdgeInsets.all(12),
@@ -662,7 +662,7 @@ class _ImprovementOwnerActionsState extends State<_ImprovementOwnerActions> {
     final post = widget.post;
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF7FCFF),
+        color: const Color(0xFFFFFDF7),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(16),
       ),
@@ -674,7 +674,7 @@ class _ImprovementOwnerActionsState extends State<_ImprovementOwnerActions> {
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFF5FCFF),
+              color: const Color(0xFFFFFCF5),
               border: Border.all(color: AlagagiColors.line),
               borderRadius: BorderRadius.circular(14),
             ),
@@ -710,7 +710,7 @@ class _ImprovementOwnerActionsState extends State<_ImprovementOwnerActions> {
                 label: const Text('답변 저장'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AlagagiColors.sageDeep,
-                  side: const BorderSide(color: Color(0x338A9A7E)),
+                  side: const BorderSide(color: Color(0x33A98B3C)),
                   visualDensity: VisualDensity.compact,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(999),
@@ -771,9 +771,9 @@ class _ImprovementSaveStatus extends StatelessWidget {
       padding: const EdgeInsets.only(top: 10),
       child: Container(
         decoration: BoxDecoration(
-          color: failed ? const Color(0xFFFFF7F3) : const Color(0xFFF3FBFF),
+          color: failed ? const Color(0xFFFFF7F3) : const Color(0xFFFFFCF3),
           border: Border.all(
-            color: failed ? const Color(0x33B18472) : const Color(0x338A9A7E),
+            color: failed ? const Color(0x33B18472) : const Color(0x33A98B3C),
           ),
           borderRadius: BorderRadius.circular(16),
         ),

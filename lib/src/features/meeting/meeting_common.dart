@@ -106,9 +106,9 @@ class MeetingSaveStatus extends StatelessWidget {
       padding: const EdgeInsets.only(top: 10),
       child: Container(
         decoration: BoxDecoration(
-          color: failed ? const Color(0xFFFFF7F3) : const Color(0xFFF3FBFF),
+          color: failed ? const Color(0xFFFFF7F3) : const Color(0xFFFFFCF3),
           border: Border.all(
-            color: failed ? const Color(0x33B18472) : const Color(0x338A9A7E),
+            color: failed ? const Color(0x33B18472) : const Color(0x33A98B3C),
           ),
           borderRadius: BorderRadius.circular(16),
         ),
@@ -225,7 +225,7 @@ class _MeetingTextFieldState extends State<MeetingTextField> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF5FCFF),
+        color: const Color(0xFFFFFCF5),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(15),
       ),

@@ -47,7 +47,6 @@ feature spec은 사용자가 무엇을 할 수 있는지 설명한다. 이 문�
 | --- | --- | --- | --- |
 | Questions | `DailyQuestion`, `Answer`, `AnswerComment`, `DailyQuestionProgress` | `answers`, `answerComments`, `progress/daily` | member는 자신의 answer만 쓴다. comment는 question/answer owner/commenter 조합당 하나다. answer owner는 그 comment에 reply를 하나 남길 수 있다. |
 | Records | `ArchiveItem`, `QuestionCalendarDay`, `TimelineEvent`, `RelationshipInsight` | answer와 catalog data에서 derived | read-only projection이다. browsing, filtering, month change 중 write를 만들면 안 된다. |
-| Taste match | `BalanceQuestion`, `BalanceOption`, `BalanceSelection` | `balanceSelections/{questionId_uid}` | member는 자신의 selection을 쓰거나 삭제한다. reason은 optional이고 result reveal은 explicit state다. |
 | Profile cards | `ProfileSlot`, `ProfileSlotValue`, `ProfileCardData` | `profileCards/{profileId}/slots/{slotId}` | member는 자신의 slot을 쓴다. custom slot은 owning profile이 삭제할 수 있다. |
 | Wishlist | `WishItem` | `wishes/{wishId}` | creator는 삭제할 수 있다. interest와 done state는 shared field지만 write에는 acting member가 `likedByProfileIds`에 포함되어야 한다. |
 | Memory cards | `MemoryCard`, `MemoryCardResponse` | `memoryCards/{cardId}`, `memoryCardResponses/{cardId_responderUid}` | card creator는 card body/visibility를 쓴다. shared card의 subject member는 reaction/correction response를 쓸 수 있지만 card body를 직접 덮어쓰지 않는다. private card는 creator만 읽고 쓸 수 있다. |

@@ -61,7 +61,6 @@ void main() {
     expect(find.byKey(homeMenuCuriosityButtonKey), findsOneWidget);
     expect(find.byKey(homeMenuStockStoryButtonKey), findsOneWidget);
     expect(find.byKey(homeMenuImprovementButtonKey), findsOneWidget);
-    expect(find.byKey(homeMenuBalanceButtonKey), findsOneWidget);
     expect(find.byKey(homeMenuProfileCardButtonKey), findsOneWidget);
     expect(find.byKey(homeMenuWishlistButtonKey), findsOneWidget);
 
@@ -186,6 +185,91 @@ void main() {
     expect(find.byKey(homeMemoryCreateButtonKey), findsOneWidget);
   });
 
+  testWidgets('memory card long body clamps and opens the readable detail sheet', (
+    tester,
+  ) async {
+    const longBody =
+        '창가 두 번째 자리를 좋아한다고 했어요. 사람이 많으면 금방 지치는 편이라 조용한 쪽을 먼저 찾는다고 했고, '
+        '그 말을 들은 뒤로는 어디를 가도 자리를 먼저 보게 됐어요. 지난주에 갔던 곳도 창가가 비어 있어서 반가웠고, '
+        '커피가 나오기 전까지 한참 창밖만 보고 있던 얼굴이 오래 기억에 남았습니다. 다음에 같이 갈 때는 그 자리부터 '
+        '확인해보려고 해요. 조용한 자리를 먼저 찾는 습관은 앞으로도 계속 기억해두려고 합니다.';
+
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          memoryCards: [
+            MemoryCard(
+              id: 'memory_long',
+              type: MemoryCardType.likes,
+              title: '조용한 카페 자리',
+              body: longBody,
+              createdByProfileId: 'youngwooUid',
+              subjectProfileId: 'minyoungUid',
+              visibility: MemoryCardVisibility.shared,
+              createdLabel: '오늘',
+            ),
+            MemoryCard(
+              id: 'memory_short',
+              type: MemoryCardType.current,
+              title: '늦은 답장',
+              body: '답장이 늦어도 괜찮다고 먼저 말해줬어요.',
+              createdByProfileId: 'youngwooUid',
+              subjectProfileId: 'minyoungUid',
+              visibility: MemoryCardVisibility.shared,
+              createdLabel: '어제',
+            ),
+          ],
+        ),
+      ),
+    )..goTo(AlagagiRoute.memoryCards);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(memoryCardReadButtonKey('memory_long')), findsOneWidget);
+    expect(find.byKey(memoryCardReadButtonKey('memory_short')), findsNothing);
+
+    final clampedBody = tester.widget<Text>(
+      find.descendant(
+        of: find.byKey(memoryCardKey('memory_long')),
+        matching: find.text(longBody),
+      ),
+    );
+    expect(clampedBody.maxLines, 6);
+    expect(clampedBody.overflow, TextOverflow.ellipsis);
+
+    await tester.ensureVisible(
+      find.byKey(memoryCardReadButtonKey('memory_long')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(memoryCardReadButtonKey('memory_long')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(readableDetailSheetKey), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(readableDetailSheetKey),
+        matching: find.text(longBody),
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('saves a curiosity reply and a new question in the sheet', (
     tester,
   ) async {
@@ -252,7 +336,6 @@ void main() {
     expect(find.text('궁금함 한 장'), findsOneWidget);
     expect(find.text('주식 이야기'), findsOneWidget);
     expect(find.byKey(homeMenuImprovementButtonKey), findsOneWidget);
-    expect(find.byKey(homeMenuBalanceButtonKey), findsOneWidget);
     expect(find.byKey(homeMenuProfileCardButtonKey), findsOneWidget);
     expect(find.byKey(homeMenuWishlistButtonKey), findsOneWidget);
 
@@ -495,14 +578,6 @@ void main() {
     await tester.pumpWidget(const AlagagiApp());
     await enterSpace(tester);
 
-    await tester.tap(find.byKey(homeMenuButtonKey));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(homeMenuBalanceButtonKey));
-    await tester.pumpAndSettle();
-    expect(find.byKey(balanceDeckKey), findsOneWidget);
-
-    await tester.tap(find.byKey(subScreenBackButtonKey));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(homeMenuButtonKey));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(homeMenuProfileCardButtonKey));
@@ -1821,7 +1896,7 @@ void main() {
             ProfileSlotValue(
               profileId: 'youngwooUid',
               slot: ProfileSlot(
-                id: 'rest',
+                id: 'now_favorite',
                 label: '나에게 맞는 속도',
                 icon: 'clock',
                 value: '천천히 생각하고 말하는 쪽이 편해요.',
@@ -1965,7 +2040,7 @@ void main() {
     expect(find.byKey(profileCategoryChipKey('전체')), findsOneWidget);
     expect(find.byKey(profileCategoryChipKey('취향')), findsOneWidget);
     expect(find.byKey(profileCategoryChipKey('하루')), findsOneWidget);
-    expect(find.text('2 / 24'), findsOneWidget);
+    expect(find.text('2 / 20'), findsOneWidget);
 
     await tester.ensureVisible(find.byKey(profileRecommendedSlotButtonKey));
     await tester.pumpAndSettle();
@@ -1976,28 +2051,28 @@ void main() {
     expect(find.text('카드 저장'), findsOneWidget);
 
     await tester.enterText(
-      find.byKey(profileSlotFieldKey('rest')),
+      find.byKey(profileSlotFieldKey('now_favorite')),
       '집에서 차 마시기',
     );
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.byKey(profileSlotSaveButtonKey('rest')));
+    await tester.ensureVisible(find.byKey(profileSlotSaveButtonKey('now_favorite')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(profileSlotSaveButtonKey('rest')));
+    await tester.tap(find.byKey(profileSlotSaveButtonKey('now_favorite')));
     await tester.pumpAndSettle();
 
     expect(find.text('집에서 차 마시기'), findsOneWidget);
-    expect(find.byKey(profileSlotReadButtonKey('rest')), findsOneWidget);
+    expect(find.byKey(profileSlotReadButtonKey('now_favorite')), findsOneWidget);
     expect(find.text('전체 보기'), findsNothing);
 
-    await tester.ensureVisible(find.byKey(profileSlotEditButtonKey('rest')));
+    await tester.ensureVisible(find.byKey(profileSlotEditButtonKey('now_favorite')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(profileSlotEditButtonKey('rest')));
+    await tester.tap(find.byKey(profileSlotEditButtonKey('now_favorite')));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(profileSlotFieldKey('rest')), '취소될 문장');
+    await tester.enterText(find.byKey(profileSlotFieldKey('now_favorite')), '취소될 문장');
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.byKey(profileSlotCancelButtonKey('rest')));
+    await tester.ensureVisible(find.byKey(profileSlotCancelButtonKey('now_favorite')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(profileSlotCancelButtonKey('rest')));
+    await tester.tap(find.byKey(profileSlotCancelButtonKey('now_favorite')));
     await tester.pumpAndSettle();
 
     expect(find.text('집에서 차 마시기'), findsOneWidget);
@@ -2017,7 +2092,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(controller.todayFillableProfileSlot?.id, 'rest');
+    expect(controller.todayFillableProfileSlot?.id, 'now_favorite');
     expect(find.byKey(profileRecommendedSlotSkipButtonKey), findsOneWidget);
 
     await tester.ensureVisible(find.byKey(profileRecommendedSlotSkipButtonKey));
@@ -2026,17 +2101,17 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(controller.myProfileCard.skippedCount, 1);
-    expect(controller.todayFillableProfileSlot?.id, isNot('rest'));
+    expect(controller.todayFillableProfileSlot?.id, isNot('now_favorite'));
     expect(find.text('넘겨둠'), findsOneWidget);
     expect(find.text('지금은 넘겨둔 질문이에요'), findsOneWidget);
 
-    await tester.ensureVisible(find.byKey(profileSlotRestoreButtonKey('rest')));
+    await tester.ensureVisible(find.byKey(profileSlotRestoreButtonKey('now_favorite')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(profileSlotRestoreButtonKey('rest')));
+    await tester.tap(find.byKey(profileSlotRestoreButtonKey('now_favorite')));
     await tester.pumpAndSettle();
 
     expect(controller.myProfileCard.skippedCount, 0);
-    expect(controller.todayFillableProfileSlot?.id, 'rest');
+    expect(controller.todayFillableProfileSlot?.id, 'now_favorite');
     expect(find.text('지금은 넘겨둔 질문이에요'), findsNothing);
   });
 
@@ -2083,28 +2158,28 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.ensureVisible(find.byKey(profileSlotHideButtonKey('rest')));
+    await tester.ensureVisible(find.byKey(profileSlotHideButtonKey('now_favorite')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(profileSlotHideButtonKey('rest')));
+    await tester.tap(find.byKey(profileSlotHideButtonKey('now_favorite')));
     await tester.pumpAndSettle();
 
     expect(
       controller.myProfileCard.slots
-          .firstWhere((slot) => slot.id == 'rest')
+          .firstWhere((slot) => slot.id == 'now_favorite')
           .hidden,
       isTrue,
     );
     expect(find.byKey(profileHiddenSlotsPanelKey), findsOneWidget);
-    expect(find.byKey(profileSlotCardKey('rest')), findsNothing);
+    expect(find.byKey(profileSlotCardKey('now_favorite')), findsNothing);
 
-    await tester.ensureVisible(find.byKey(profileSlotRestoreButtonKey('rest')));
+    await tester.ensureVisible(find.byKey(profileSlotRestoreButtonKey('now_favorite')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(profileSlotRestoreButtonKey('rest')));
+    await tester.tap(find.byKey(profileSlotRestoreButtonKey('now_favorite')));
     await tester.pumpAndSettle();
 
     expect(
       controller.myProfileCard.slots
-          .firstWhere((slot) => slot.id == 'rest')
+          .firstWhere((slot) => slot.id == 'now_favorite')
           .hidden,
       isFalse,
     );
@@ -2141,12 +2216,14 @@ void main() {
     expect(find.text('아직 비어 있어요'), findsNothing);
     expect(find.byKey(profileRecommendedSlotButtonKey), findsNothing);
     expect(find.text('이 질문 쓰기'), findsNothing);
-    expect(find.byKey(profileSlotReadButtonKey('food')), findsOneWidget);
+    expect(find.byKey(profileSlotReadButtonKey('now_craving')), findsOneWidget);
     expect(find.text('전체 보기'), findsNothing);
 
-    await tester.ensureVisible(find.byKey(profileSlotReadButtonKey('food')));
+    await tester.ensureVisible(
+      find.byKey(profileSlotReadButtonKey('now_craving')),
+    );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(profileSlotReadButtonKey('food')));
+    await tester.tap(find.byKey(profileSlotReadButtonKey('now_craving')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(readableDetailSheetKey), findsOneWidget);
@@ -2247,22 +2324,6 @@ void main() {
     await tester.drag(find.byType(Scrollable), const Offset(0, -600));
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.text('우리 선택'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('우리 선택'));
-    await tester.pumpAndSettle();
-    expect(find.byKey(balanceDeckKey), findsOneWidget);
-    expect(find.text('둘 중 하나만 골라도\n취향 기록이 쌓여요'), findsOneWidget);
-    expect(find.textContaining('궁합'), findsNothing);
-    expect(find.textContaining('%'), findsNothing);
-    expect(find.textContaining('점수'), findsNothing);
-    expect(find.textContaining('완벽'), findsNothing);
-    expect(find.text('⚖️'), findsNothing);
-    expect(find.textContaining('🌊'), findsNothing);
-    expect(find.textContaining('🌲'), findsNothing);
-
-    await tester.tap(find.byKey(subScreenBackButtonKey));
-    await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('서로 노트'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('서로 노트'));
@@ -2293,109 +2354,13 @@ void main() {
     expect(find.text('함께 답한 질문'), findsWidgets);
   });
 
-  testWidgets('balance next action waits until an option is selected', (
-    tester,
-  ) async {
-    await tester.pumpWidget(const AlagagiApp());
-    await enterSpace(tester);
-
-    await tester.drag(find.byType(Scrollable), const Offset(0, -600));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('우리 선택'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('우리 선택'));
-    await tester.pumpAndSettle();
-
-    final beforeSelection = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, '먼저 하나를 골라주세요'),
-    );
-    expect(beforeSelection.onPressed, isNull);
-
-    await tester.ensureVisible(find.text('조용한 바다'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('조용한 바다'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('선택한 카드를 한 번 더 누르면 취소돼요.'), findsOneWidget);
-    await tester.tap(find.text('조용한 바다'));
-    await tester.pumpAndSettle();
-    expect(find.byKey(balanceReasonFieldKey), findsNothing);
-    final clearedSelection = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, '먼저 하나를 골라주세요'),
-    );
-    expect(clearedSelection.onPressed, isNull);
-
-    await tester.tap(find.text('조용한 바다'));
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(balanceReasonFieldKey), findsNothing);
-    expect(find.text('이유 없이 넘어가도 괜찮아요.'), findsOneWidget);
-    await tester.ensureVisible(find.byKey(balanceReasonToggleButtonKey));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(balanceReasonToggleButtonKey));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.byKey(balanceReasonFieldKey));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(balanceReasonFieldKey), '조용한 바다가 끌려요');
-    await tester.pump(const Duration(milliseconds: 700));
-    await tester.pumpAndSettle();
-
-    expect(find.text('조용한 바다가 끌려요'), findsWidgets);
-    expect(find.text('결과 열어보기'), findsWidgets);
-    expect(find.text('다른 취향이 이야기로 남았어요'), findsNothing);
-    expect(find.byKey(balanceTabButtonKey('results')), findsOneWidget);
-    expect(find.byKey(balanceTabButtonKey('notes')), findsOneWidget);
-    expect(find.text('내 취향 노트'), findsNothing);
-    expect(find.text('선택 이유 한 줄'), findsOneWidget);
-    expect(find.text('결과 잠금'), findsNothing);
-
-    await tester.ensureVisible(find.byKey(balanceTabButtonKey('results')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(balanceTabButtonKey('results')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('결과함'), findsWidgets);
-    expect(find.text('결과 잠금'), findsOneWidget);
-    expect(find.text('선택 이유 한 줄'), findsNothing);
-    expect(find.text('내 취향 노트'), findsNothing);
-    expect(find.text('다름'), findsNothing);
-    expect(find.text('상대'), findsNothing);
-
-    await tester.ensureVisible(find.byKey(balanceTabButtonKey('notes')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(balanceTabButtonKey('notes')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('내 취향 노트'), findsOneWidget);
-    expect(find.textContaining('결과함에서만 공개'), findsWidgets);
-    expect(find.text('결과 잠금'), findsNothing);
-
-    await tester.ensureVisible(find.byKey(balanceTabButtonKey('choose')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(balanceTabButtonKey('choose')));
-    await tester.pumpAndSettle();
-
-    await tester.ensureVisible(find.byKey(balanceResultToggleButtonKey));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(balanceResultToggleButtonKey));
-    await tester.pumpAndSettle();
-
-    expect(find.text('다른 취향이 이야기로 남았어요'), findsOneWidget);
-    expect(find.text('결과 접기'), findsOneWidget);
-
-    final afterSelection = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, '다음 취향'),
-    );
-    expect(afterSelection.onPressed, isNotNull);
-  });
-
   testWidgets('sub screen header follows soft paper option', (tester) async {
     await tester.pumpWidget(const AlagagiApp());
     await enterSpace(tester);
 
     await tester.tap(find.byKey(homeMenuButtonKey));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(homeMenuBalanceButtonKey));
+    await tester.tap(find.byKey(homeMenuProfileCardButtonKey));
     await tester.pumpAndSettle();
 
     final backButton = tester.widget<InkWell>(
@@ -2416,10 +2381,10 @@ void main() {
     final backIcon = backContainer.child! as Icon;
     expect(backIcon.icon, Icons.chevron_left_rounded);
     expect(backIcon.size, 21);
-    expect(backIcon.color, const Color(0xFF656D5E));
+    expect(backIcon.color, const Color(0xFF6A6459));
 
     final titleStyles = tester
-        .widgetList<Text>(find.text('우리 선택'))
+        .widgetList<Text>(find.text('서로 노트'))
         .map((text) => text.style)
         .where((style) => style?.fontSize == 18);
     expect(titleStyles, isNotEmpty);
@@ -4460,19 +4425,6 @@ class _FailingSaveRepository implements AlagagiDataRepository {
     }
     savedAnswerComments.add((spaceId: spaceId, comment: comment));
   }
-
-  @override
-  Future<void> saveBalanceSelection(
-    String spaceId,
-    BalanceSelection selection,
-  ) async {}
-
-  @override
-  Future<void> deleteBalanceSelection(
-    String spaceId,
-    String questionId,
-    String profileId,
-  ) async {}
 
   @override
   Future<void> saveDailyQuestionProgress(

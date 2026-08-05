@@ -394,7 +394,7 @@ class _ProfileSummaryCard extends StatelessWidget {
         gradient: dark
             ? null
             : const LinearGradient(
-                colors: [AlagagiColors.paper, Color(0xFFEFF8FD)],
+                colors: [AlagagiColors.paper, Color(0xFFFDFAEF)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -487,9 +487,9 @@ class _ProfileSummaryCard extends StatelessWidget {
               minHeight: 8,
               backgroundColor: dark
                   ? const Color(0x24FFFFFF)
-                  : const Color(0xFFDFF2FB),
+                  : const Color(0xFFFCF5DE),
               valueColor: AlwaysStoppedAnimation<Color>(
-                dark ? const Color(0xFFE6F6FF) : AlagagiColors.lavender,
+                dark ? const Color(0xFFFEF9E7) : AlagagiColors.lavender,
               ),
             ),
           ),
@@ -534,7 +534,7 @@ class _ProfileSummaryCard extends StatelessWidget {
                   const Icon(
                     Icons.mark_chat_read_outlined,
                     size: 18,
-                    color: Color(0xFFBEE4F7),
+                    color: Color(0xFFF8EABD),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -684,7 +684,7 @@ class _ProfileCustomCardEntry extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: customCount > 0
-                    ? const Color(0xFFEAF7FD)
+                    ? const Color(0xFFFDF9EA)
                     : const Color(0x1FFFFFFF),
                 borderRadius: BorderRadius.circular(999),
               ),
@@ -694,7 +694,7 @@ class _ProfileCustomCardEntry extends StatelessWidget {
                 style: sans(
                   size: 11.5,
                   color: customCount > 0
-                      ? const Color(0xFF315F7A)
+                      ? const Color(0xFF796935)
                       : const Color(0xFFD9D7CF),
                   weight: FontWeight.w700,
                 ),
@@ -817,7 +817,7 @@ class _ProfileCustomCardPanelState extends State<_ProfileCustomCardPanel> {
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [AlagagiColors.paper, Color(0xFFEAF7FD)],
+                colors: [AlagagiColors.paper, Color(0xFFFDF9EA)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -921,7 +921,7 @@ class _ProfileCustomCardPanelState extends State<_ProfileCustomCardPanel> {
                 const SizedBox(height: 14),
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEAF7FD),
+                    color: const Color(0xFFFDF9EA),
                     borderRadius: BorderRadius.circular(17),
                   ),
                   padding: const EdgeInsets.all(12),
@@ -929,7 +929,7 @@ class _ProfileCustomCardPanelState extends State<_ProfileCustomCardPanel> {
                     '저장하면 상대의 카드 화면에 새 카드로 올라가고, 새로 도착한 것에도 표시됩니다.',
                     style: sans(
                       size: 11.8,
-                      color: const Color(0xFF315F7A),
+                      color: const Color(0xFF796935),
                       height: 1.52,
                       weight: FontWeight.w700,
                     ),
@@ -1020,9 +1020,9 @@ class _ProfileCustomCategoryChip extends StatelessWidget {
         height: 32,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: selected ? AlagagiColors.softSage : const Color(0xFFF5FCFF),
+          color: selected ? AlagagiColors.softSage : const Color(0xFFFFFCF5),
           border: Border.all(
-            color: selected ? const Color(0x338A9A7E) : AlagagiColors.line,
+            color: selected ? const Color(0x33A98B3C) : AlagagiColors.line,
           ),
           borderRadius: BorderRadius.circular(999),
         ),
@@ -1093,7 +1093,7 @@ class _ProfileCategoryChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected ? AlagagiColors.softSage : AlagagiColors.paper,
           border: Border.all(
-            color: selected ? const Color(0x338A9A7E) : AlagagiColors.line,
+            color: selected ? const Color(0x33A98B3C) : AlagagiColors.line,
           ),
           borderRadius: BorderRadius.circular(999),
         ),
@@ -1144,8 +1144,8 @@ class _ProfileRecommendCard extends StatelessWidget {
     }
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF7FD),
-        border: Border.all(color: const Color(0x338A9A7E)),
+        color: const Color(0xFFFDF9EA),
+        border: Border.all(color: const Color(0x33A98B3C)),
         borderRadius: BorderRadius.circular(22),
       ),
       padding: const EdgeInsets.all(17),
@@ -1176,7 +1176,7 @@ class _ProfileRecommendCard extends StatelessWidget {
             slot.inputHint,
             style: sans(
               size: 12.5,
-              color: const Color(0xFF7F8876),
+              color: const Color(0xFF867C6A),
               height: 1.6,
             ),
           ),
@@ -1308,7 +1308,7 @@ class _ProfileEditorPanelState extends State<_ProfileEditorPanel> {
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFFF7FCFF), Color(0xFFEAF7FD)],
+                colors: [Color(0xFFFFFDF7), Color(0xFFFDF9EA)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -1360,7 +1360,7 @@ class _ProfileEditorPanelState extends State<_ProfileEditorPanel> {
                     height: 31,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF5FCFF),
+                      color: const Color(0xFFFFFCF5),
                       border: Border.all(color: AlagagiColors.line),
                       borderRadius: BorderRadius.circular(999),
                     ),
@@ -1578,7 +1578,7 @@ class _ProfilePendingMoreButton extends StatelessWidget {
         label: Text(expanded ? '접기' : '$hiddenCount개 더 보기'),
         style: OutlinedButton.styleFrom(
           foregroundColor: AlagagiColors.sageDeep,
-          side: const BorderSide(color: Color(0x338A9A7E)),
+          side: const BorderSide(color: Color(0x33A98B3C)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(999),
           ),
@@ -1603,7 +1603,7 @@ class _ProfileHiddenSlotsPanel extends StatelessWidget {
     return Container(
       key: profileHiddenSlotsPanelKey,
       decoration: BoxDecoration(
-        color: const Color(0xFFF7FCFF),
+        color: const Color(0xFFFFFDF7),
         border: Border.all(color: AlagagiColors.line),
         borderRadius: BorderRadius.circular(20),
       ),
@@ -1693,17 +1693,17 @@ class _ProfileSlotCard extends StatelessWidget {
     final badgeBackground = slot.custom
         ? const Color(0xFFF0EDF4)
         : filled
-        ? const Color(0xFFF5FCFF)
+        ? const Color(0xFFFFFCF5)
         : skipped
-        ? const Color(0xFFEAF7FD)
-        : const Color(0xFFEAF7FD);
+        ? const Color(0xFFFDF9EA)
+        : const Color(0xFFFDF9EA);
     final badgeColor = slot.custom
         ? const Color(0xFF7D688F)
         : skipped
         ? const Color(0xFF8A8175)
         : filled
         ? AlagagiColors.muted
-        : const Color(0xFF315F7A);
+        : const Color(0xFF796935);
     void openFull() => showReadableDetailSheet(
       context,
       label: '서로 노트',
@@ -1724,15 +1724,15 @@ class _ProfileSlotCard extends StatelessWidget {
         constraints: BoxConstraints(minHeight: filled ? 0 : 126),
         decoration: BoxDecoration(
           color: accent
-              ? const Color(0xFFFBFDF8)
+              ? const Color(0xFFFDFBF8)
               : skipped
-              ? const Color(0xFFF5FCFF)
+              ? const Color(0xFFFFFCF5)
               : AlagagiColors.paper,
           border: Border.all(
             color: selected
                 ? AlagagiColors.sageDeep
                 : accent
-                ? const Color(0x3D6F7F63)
+                ? const Color(0x3D9A7A2A)
                 : AlagagiColors.line,
           ),
           borderRadius: BorderRadius.circular(21),
@@ -1963,7 +1963,7 @@ class _ProfileReadCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: featured
                         ? const Color(0xFFF0EDF4)
-                        : const Color(0xFFF5FCFF),
+                        : const Color(0xFFFFFCF5),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -2016,26 +2016,30 @@ class _ProfileSlotIcon extends StatelessWidget {
       size: 30,
       iconSize: 15,
       tone: AlagagiColors.skySoft,
-      iconColor: const Color(0xFF315F7A),
+      iconColor: const Color(0xFF796935),
       radius: 11,
     );
   }
 
   IconData _iconForSlot(String id) {
     return switch (id) {
-      'food' || 'shared_food' => Icons.restaurant_outlined,
-      'song' => Icons.music_note_outlined,
-      'rest' || 'weekend' => Icons.weekend_outlined,
-      'cafe' => Icons.local_cafe_outlined,
-      'walk' || 'neighborhood' || 'photo_walk' => Icons.directions_walk_rounded,
-      'comfort' || 'recharge' => Icons.eco_outlined,
-      'promise' => Icons.event_available_outlined,
-      'kindness' => Icons.volunteer_activism_outlined,
-      'pace' || 'morning_night' || 'focus_time' => Icons.schedule_rounded,
-      'wish_scene' || 'rainy_day' => Icons.near_me_outlined,
-      'talk_style' || 'question_style' => Icons.chat_bubble_outline_rounded,
-      'careful_words' => Icons.edit_note_rounded,
-      'small_taste' || 'object' || 'small_hobby' => Icons.lightbulb_outline,
+      'now_song' => Icons.music_note_outlined,
+      'now_craving' => Icons.restaurant_outlined,
+      'now_favorite' || 'small_joy' => Icons.lightbulb_outline,
+      'money_ok' => Icons.card_giftcard_outlined,
+      'day_rhythm' || 'week_shape' => Icons.schedule_rounded,
+      'recharge_way' => Icons.eco_outlined,
+      'tired_signal' => Icons.battery_alert_outlined,
+      'night_routine' => Icons.nightlight_outlined,
+      'reply_pace' || 'busy_signal' => Icons.chat_bubble_outline_rounded,
+      'call_or_text' => Icons.call_outlined,
+      'upset_style' => Icons.edit_note_rounded,
+      'words_i_like' => Icons.volunteer_activism_outlined,
+      'meet_flow' => Icons.event_available_outlined,
+      'quiet_together' => Icons.weekend_outlined,
+      'next_plan' => Icons.near_me_outlined,
+      'comfort_place' => Icons.place_outlined,
+      'care_wish' => Icons.spa_outlined,
       _ => Icons.notes_outlined,
     };
   }
@@ -2075,7 +2079,7 @@ class _TodaySlotCardState extends State<_TodaySlotCard> {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFEAF7FD),
+              color: const Color(0xFFFDF9EA),
               borderRadius: BorderRadius.circular(20),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

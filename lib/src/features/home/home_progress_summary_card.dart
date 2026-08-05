@@ -81,7 +81,7 @@ class _HomeSummaryCardContainer extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border.all(color: const Color(0x6686B9D6)),
+        border: Border.all(color: const Color(0x66DDB95E)),
         borderRadius: BorderRadius.circular(22),
         boxShadow: const [
           BoxShadow(
@@ -194,7 +194,7 @@ Color _summaryToneFill(HomeProgressSummaryTone tone) {
   return switch (tone) {
     HomeProgressSummaryTone.ready => AlagagiColors.sagePanel,
     HomeProgressSummaryTone.waiting => const Color(0xFFF5F1E9),
-    HomeProgressSummaryTone.calm => const Color(0xFFF5FCFF),
+    HomeProgressSummaryTone.calm => const Color(0xFFFFFCF5),
   };
 }
 
@@ -220,7 +220,7 @@ class _SecondaryActionButton extends StatelessWidget {
         label: Text(label),
         style: OutlinedButton.styleFrom(
           foregroundColor: AlagagiColors.sageDeep,
-          side: const BorderSide(color: Color(0x338A9A7E)),
+          side: const BorderSide(color: Color(0x33A98B3C)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),

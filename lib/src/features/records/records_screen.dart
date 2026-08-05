@@ -27,7 +27,7 @@ class RecordsScreen extends StatelessWidget {
           icon: Icons.timeline_rounded,
           gradient: const [
             Color(0xFF2F2E2A),
-            Color(0xFF718EA1),
+            Color(0xFF9A8C6B),
             Color(0xFF9F8AB6),
           ],
           stats: [
@@ -140,7 +140,7 @@ class _RecordsJournalPanel extends StatelessWidget {
                             style: sans(
                               size: 10.2,
                               weight: FontWeight.w900,
-                              color: const Color(0xFFBEE4F7),
+                              color: const Color(0xFFF8EABD),
                               letterSpacing: 1.7,
                             ),
                           ),
@@ -196,7 +196,7 @@ class _RecordsJournalPanel extends StatelessWidget {
                               style: sans(
                                 size: 11,
                                 weight: FontWeight.w900,
-                                color: const Color(0xFFBEE4F7),
+                                color: const Color(0xFFF8EABD),
                                 letterSpacing: 1.2,
                               ),
                             ),
@@ -288,7 +288,7 @@ class _RecordsMiniMetric extends StatelessWidget {
             style: sans(
               size: 12,
               weight: FontWeight.w900,
-              color: const Color(0xFFBEE4F7),
+              color: const Color(0xFFF8EABD),
             ),
           ),
         ],

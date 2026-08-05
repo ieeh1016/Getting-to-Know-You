@@ -72,11 +72,11 @@ class AlagagiBottomNav extends StatelessWidget {
     return Container(
       key: bottomNavigationKey,
       decoration: BoxDecoration(
-        color: const Color(0xF2F5FCFF),
-        border: const Border(top: BorderSide(color: Color(0x6686B9D6))),
+        color: const Color(0xF2FFFCF5),
+        border: const Border(top: BorderSide(color: Color(0x66DDB95E))),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x18315F7A),
+            color: Color(0x18796935),
             blurRadius: 18,
             offset: Offset(0, -8),
           ),
@@ -252,7 +252,7 @@ class _NavItem extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 42),
         decoration: BoxDecoration(
           color: selected ? AlagagiColors.skyPanel : Colors.transparent,
-          border: selected ? Border.all(color: const Color(0x6686B9D6)) : null,
+          border: selected ? Border.all(color: const Color(0x66DDB95E)) : null,
           borderRadius: BorderRadius.circular(16),
         ),
         padding: const EdgeInsets.symmetric(vertical: 5),
@@ -266,8 +266,8 @@ class _NavItem extends StatelessWidget {
                   icon,
                   size: 19,
                   color: selected
-                      ? const Color(0xFF315F7A)
-                      : const Color(0xFF6F8794),
+                      ? const Color(0xFF796935)
+                      : const Color(0xFF8C8069),
                 ),
                 if (showBadge)
                   Positioned(
@@ -278,9 +278,9 @@ class _NavItem extends StatelessWidget {
                       height: 7,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFF5B9DBF),
+                        color: const Color(0xFFC99B3C),
                         border: Border.all(
-                          color: const Color(0xFFF5FCFF),
+                          color: const Color(0xFFFFFCF5),
                           width: 1.2,
                         ),
                       ),
@@ -295,8 +295,8 @@ class _NavItem extends StatelessWidget {
                 size: 10,
                 weight: selected ? FontWeight.w700 : FontWeight.w400,
                 color: selected
-                    ? const Color(0xFF315F7A)
-                    : const Color(0xFF6F8794),
+                    ? const Color(0xFF796935)
+                    : const Color(0xFF8C8069),
               ),
             ),
           ],
@@ -341,7 +341,7 @@ class _BackButton extends StatelessWidget {
             child: const Icon(
               Icons.chevron_left_rounded,
               size: 21,
-              color: Color(0xFF656D5E),
+              color: Color(0xFF6A6459),
             ),
           ),
         ),
