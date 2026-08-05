@@ -53,6 +53,7 @@ const homeMenuImprovementButtonKey = Key('home-menu-improvement-button');
 const homeMenuProfileCardButtonKey = Key('home-menu-profile-card-button');
 const homeMenuWishlistButtonKey = Key('home-menu-wishlist-button');
 const homeMenuMemoryButtonKey = Key('home-menu-memory-button');
+const homeMenuTripsButtonKey = Key('home-menu-trips-button');
 const homeMenuGuideButtonKey = Key('home-menu-guide-button');
 const homeMemoryCardKey = Key('home-memory-card');
 const homeMemoryOpenButtonKey = Key('home-memory-open-button');
@@ -194,6 +195,25 @@ const wishlistBoardKey = Key('wishlist-board');
 Key wishEditButtonKey(String wishId) => Key('wish-edit-button-$wishId');
 Key wishDoneButtonKey(String wishId) => Key('wish-done-button-$wishId');
 Key wishDeleteButtonKey(String wishId) => Key('wish-delete-button-$wishId');
+
+const tripsScreenKey = Key('trips-screen');
+const tripDraftToggleButtonKey = Key('trip-draft-toggle-button');
+const tripTitleFieldKey = Key('trip-title-field');
+const tripDestinationFieldKey = Key('trip-destination-field');
+const tripStartDateFieldKey = Key('trip-start-date-field');
+const tripEndDateFieldKey = Key('trip-end-date-field');
+const tripSubmitButtonKey = Key('trip-submit-button');
+const tripItemTitleFieldKey = Key('trip-item-title-field');
+const tripItemNoteFieldKey = Key('trip-item-note-field');
+const tripItemSubmitButtonKey = Key('trip-item-submit-button');
+Key tripCardKey(String tripId) => Key('trip-card-$tripId');
+Key tripOpenButtonKey(String tripId) => Key('trip-open-$tripId');
+Key tripStatusButtonKey(String tripId, String status) =>
+    Key('trip-status-$tripId-$status');
+Key tripKindTabKey(String kind) => Key('trip-kind-tab-$kind');
+Key tripItemCardKey(String itemId) => Key('trip-item-card-$itemId');
+Key tripItemCheckButtonKey(String itemId) => Key('trip-item-check-$itemId');
+Key tripItemDateButtonKey(String dateKey) => Key('trip-item-date-$dateKey');
 
 const memoryCardsScreenKey = Key('memory-cards-screen');
 const memoryCardTitleFieldKey = Key('memory-card-title-field');

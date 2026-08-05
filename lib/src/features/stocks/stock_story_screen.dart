@@ -194,8 +194,7 @@ class _StockStorySummaryCard extends StatelessWidget {
         .length;
     final repliedCount = stories.where((story) => story.hasReply).length;
     return AlagagiPaperCard(
-      radius: 18,
-      padding: const EdgeInsets.all(14),
+      compact: true,
       child: Row(
         children: [
           Expanded(
@@ -448,8 +447,6 @@ class _StockStoryDraftCardState extends State<_StockStoryDraftCard> {
   Widget build(BuildContext context) {
     final controller = widget.controller;
     return AlagagiPaperCard(
-      radius: 22,
-      padding: const EdgeInsets.all(18),
       highlightedBorder: AlagagiColors.sage,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -632,8 +629,7 @@ class _StockStoryCardState extends State<_StockStoryCard> {
         body: detailBody,
       ),
       child: AlagagiPaperCard(
-        radius: 19,
-        padding: const EdgeInsets.all(14),
+        compact: true,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -1142,8 +1138,7 @@ class _StockHoldingSummaryCard extends StatelessWidget {
         )
         .length;
     return AlagagiPaperCard(
-      radius: 18,
-      padding: const EdgeInsets.all(14),
+      compact: true,
       child: Row(
         children: [
           Expanded(
@@ -1261,8 +1256,6 @@ class _StockHoldingDraftCardState extends State<_StockHoldingDraftCard> {
     final state = controller.state;
     final isEditing = state.editingStockHoldingId != null;
     return AlagagiPaperCard(
-      radius: 22,
-      padding: const EdgeInsets.all(18),
       highlightedBorder: AlagagiColors.sage,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1482,8 +1475,7 @@ class _StockHoldingCardState extends State<_StockHoldingCard> {
         body: detailBody,
       ),
       child: AlagagiPaperCard(
-        radius: 19,
-        padding: const EdgeInsets.all(14),
+        compact: true,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

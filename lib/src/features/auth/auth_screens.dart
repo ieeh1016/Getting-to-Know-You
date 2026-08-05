@@ -236,8 +236,6 @@ class FirebaseSetupRequiredScreen extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         AlagagiPaperCard(
-          radius: 18,
-          padding: const EdgeInsets.all(18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

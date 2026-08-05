@@ -30,6 +30,7 @@
 - [Domain model](spec/domain_model.md)
 - [Questions와 records](spec/questions.md)
 - [Meetings](spec/meetings.md)
+- [Trips](spec/trips.md)
 - [Places](spec/places.md)
 - [Music](spec/music.md)
 - [Stocks](spec/stocks.md)

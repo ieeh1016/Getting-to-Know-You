@@ -96,8 +96,6 @@ class _QuestionCard extends StatelessWidget {
 
     return AlagagiPaperCard(
       key: homeQuestionCardKey,
-      radius: 22,
-      padding: const EdgeInsets.fromLTRB(22, 22, 22, 21),
       highlightedBorder: AlagagiColors.roseSoft,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

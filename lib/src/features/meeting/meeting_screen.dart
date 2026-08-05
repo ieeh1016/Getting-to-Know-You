@@ -708,8 +708,6 @@ class _MeetingDetailCard extends StatelessWidget {
         sharedSlots.isNotEmpty;
     final showMeetingDayPanel = mutual || meetingDayEntry != null;
     return AlagagiPaperCard(
-      radius: 24,
-      padding: const EdgeInsets.all(18),
       highlightedBorder: const Color(0x22A98B3C),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1518,8 +1516,7 @@ class _MeetingCandidateCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: AlagagiPaperCard(
-          radius: 18,
-          padding: const EdgeInsets.all(14),
+          compact: true,
           child: Row(
             children: [
               Container(

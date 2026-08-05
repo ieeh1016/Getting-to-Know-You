@@ -68,6 +68,13 @@ lib/src/domain/
 - `lib/src/features/place/place_board_screen.dart`: place board tab, Kakao place search, map preview/fallback UI, shared place card action.
 - `lib/src/features/stocks/stock_story_screen.dart`: stock story와 holding tab, draft form, filter, reply composer, owner edit/delete action.
 - `lib/src/features/wishlist/wishlist_screen.dart`: shared wishlist board, wish draft form, filter, mutual-interest lane, wish card.
+- `lib/src/features/trip/trip_screen.dart`: 여행 목록, 여행 상세, 숙소/이동/준비물/계획 항목 편집.
+
+## Card Geometry
+
+- paper card는 두 형태만 쓴다. 기본형(`AlagagiCardGeometry.radius` 22 / `padding` 17)과 compact형(18 / 14)이다.
+- 화면마다 새 radius/padding을 만들지 않는다. 촘촘한 목록에는 `AlagagiPaperCard(compact: true)`를 쓴다.
+- 예외가 필요하면 `radius`/`padding`을 직접 넘기되 이유를 주석으로 남긴다.
 - `lib/src/features/profile/profile_card_screen.dart`: profile card tab, custom card creation, category filter, editor panel, hidden slot, read-only partner card view.
 - `lib/src/features/questions/question_view_switch.dart`: question-related view를 위한 shared archive/records segmented switch.
 - `lib/src/features/questions/answer_save_status.dart`: Home과 Archive에서 쓰는 shared answer save feedback과 retry status row.
@@ -82,7 +89,7 @@ lib/src/domain/
 1. shared foundation: colors, typography, common keys, buttons, sheet shells.
 2. Home panels와 sheets.
 3. bottom-tab feature screens: music, meetings, places, my.
-4. menu feature screens: profile cards, wishlist, stocks, improvements.
+4. menu feature screens: profile cards, wishlist, stocks, improvements, trips.
 5. UI dependency가 낮아진 뒤 domain model/repository/controller split.
 
 ## 완료 기준

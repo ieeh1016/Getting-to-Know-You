@@ -2071,8 +2071,6 @@ class _TodaySlotCardState extends State<_TodaySlotCard> {
     }
 
     return AlagagiPaperCard(
-      radius: 20,
-      padding: const EdgeInsets.all(20),
       highlightedBorder: AlagagiColors.softSage,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -453,9 +453,8 @@ class _WishDraftCardState extends State<_WishDraftCard> {
     final controller = widget.controller;
     final isEditing = controller.state.editingWishId != null;
     return AlagagiPaperCard(
-      radius: 18,
-      padding: const EdgeInsets.all(16),
       highlightedBorder: AlagagiColors.sage,
+      compact: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

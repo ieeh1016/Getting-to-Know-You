@@ -532,8 +532,7 @@ class _MyPushNotificationCard extends StatelessWidget {
     final enabled = state.enabled && state.supported;
     final statusText = _statusText(state);
     return AlagagiPaperCard(
-      radius: 20,
-      padding: const EdgeInsets.all(15),
+      compact: true,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -653,8 +652,6 @@ class _MyProfileSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlagagiPaperCard(
-      radius: 22,
-      padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -807,8 +804,7 @@ class _MyStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlagagiPaperCard(
-      radius: 18,
-      padding: const EdgeInsets.fromLTRB(11, 13, 11, 13),
+      compact: true,
       child: SizedBox(
         height: 72,
         child: Column(
@@ -1006,8 +1002,7 @@ class _MyNextTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: AlagagiPaperCard(
-          radius: 20,
-          padding: const EdgeInsets.all(13),
+          compact: true,
           child: SizedBox(
             height: 98,
             child: Column(
@@ -1094,8 +1089,7 @@ class _MyTraceCard extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: AlagagiPaperCard(
-        radius: 20,
-        padding: const EdgeInsets.all(14),
+        compact: true,
         child: SizedBox(
           height: 104,
           child: Column(
@@ -1154,8 +1148,7 @@ class _MyHelpCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlagagiPaperCard(
-      radius: 20,
-      padding: const EdgeInsets.all(15),
+      compact: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1259,8 +1252,7 @@ class _MyAccountCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlagagiPaperCard(
-      radius: 20,
-      padding: const EdgeInsets.all(15),
+      compact: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

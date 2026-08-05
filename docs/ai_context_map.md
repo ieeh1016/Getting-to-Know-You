@@ -104,6 +104,24 @@
   - `test/src/domain/alagagi_controller_test.dart`
   - `test/src/ui/alagagi_app_test.dart`
 
+### Trips
+
+- 먼저 읽을 문서:
+  - `docs/spec/trips.md`
+  - `docs/spec/domain_model.md`
+  - `docs/test_plan.md` entries with `TRIP-`
+- 검색 단서:
+  - `Trip`
+  - `TripItem`
+  - `tripItems`
+  - `durationLabel`
+  - `usesCheck`
+- 주요 code/test:
+  - `lib/src/features/trip/`
+  - `lib/src/data/firebase_alagagi_repositories.dart`
+  - `test/src/domain/trip_planning_test.dart`
+  - `test/src/ui/alagagi_app_test.dart`
+
 ### Places And Kakao Map
 
 - 먼저 읽을 문서:

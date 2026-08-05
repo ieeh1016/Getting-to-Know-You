@@ -135,8 +135,6 @@ class _AnswerScreenState extends State<AnswerScreen> {
             ),
             const SizedBox(height: 24),
             AlagagiPaperCard(
-              radius: 20,
-              padding: const EdgeInsets.all(20),
               child: TextField(
                 key: answerFieldKey,
                 controller: _answerController,

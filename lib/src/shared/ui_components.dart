@@ -583,17 +583,30 @@ class AlagagiPaperCard extends StatelessWidget {
   const AlagagiPaperCard({
     super.key,
     required this.child,
-    required this.radius,
-    required this.padding,
+    this.compact = false,
+    this.radius,
+    this.padding,
     this.dashed = false,
     this.highlightedBorder,
   });
 
   final Widget child;
-  final double radius;
-  final EdgeInsets padding;
+
+  /// 목록 안에 촘촘히 놓이는 카드는 `compact`를 쓴다. 화면마다 다른 값을
+  /// 넘기지 말고 [AlagagiCardGeometry]의 두 형태 중 하나를 고른다.
+  final bool compact;
+  final double? radius;
+  final EdgeInsets? padding;
   final bool dashed;
   final Color? highlightedBorder;
+
+  double get _radius =>
+      radius ??
+      (compact ? AlagagiCardGeometry.compactRadius : AlagagiCardGeometry.radius);
+
+  EdgeInsets get _padding =>
+      padding ??
+      (compact ? AlagagiCardGeometry.compactPadding : AlagagiCardGeometry.padding);
 
   @override
   Widget build(BuildContext context) {
@@ -604,7 +617,7 @@ class AlagagiPaperCard extends StatelessWidget {
           color: highlightedBorder ?? AlagagiColors.line,
           width: dashed ? 1.5 : 1,
         ),
-        borderRadius: BorderRadius.circular(radius),
+        borderRadius: BorderRadius.circular(_radius),
         boxShadow: dashed
             ? null
             : const [
@@ -615,7 +628,7 @@ class AlagagiPaperCard extends StatelessWidget {
                 ),
               ],
       ),
-      padding: padding,
+      padding: _padding,
       child: child,
     );
   }

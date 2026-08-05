@@ -32,6 +32,14 @@ const ACTIVITY_NOTIFICATION_COPY = {
     title: "프로필 카드를 채웠어요",
     body: "새로 알게 된 점을 확인해요.",
   },
+  tripSaved: {
+    title: "여행 계획을 업데이트했어요",
+    body: "여행 계획에서 확인해요.",
+  },
+  tripItemSaved: {
+    title: "여행 준비를 업데이트했어요",
+    body: "여행 계획에서 확인해요.",
+  },
   wishSaved: {
     title: "위시리스트를 업데이트했어요",
     body: "함께 하고 싶은 것을 확인해요.",

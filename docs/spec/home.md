@@ -18,7 +18,7 @@ Home은 하루를 시작하는 조용한 진입점이다. secondary card가 가�
 ## Navigation
 
 - bottom tabs: home, questions, music, meetings, places, my.
-- additional features는 menu에서 연다: curiosity, stocks, improvements, profile cards, wishlist, memory cards, first visit guide.
+- additional features는 menu에서 연다: curiosity, stocks, improvements, profile cards, wishlist, memory cards, trips, first visit guide.
 - feature screen이 bottom-tab root가 아니라면 부드러운 sub-screen header와 명확한 back action을 유지한다.
 
 ## 수용 기준

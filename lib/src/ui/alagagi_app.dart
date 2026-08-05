@@ -26,6 +26,7 @@ import '../features/place/place_board_screen.dart';
 import '../features/profile/profile_card_screen.dart';
 import '../features/records/records_screen.dart';
 import '../features/stocks/stock_story_screen.dart';
+import '../features/trip/trip_screen.dart';
 import '../features/wishlist/wishlist_screen.dart';
 import '../shared/readable_detail_sheet.dart';
 import '../shared/ui_style.dart';
@@ -242,6 +243,7 @@ class _AlagagiRootState extends State<AlagagiRoot> {
       AlagagiRoute.improvements => ImprovementBoardScreen(
         controller: _controller,
       ),
+      AlagagiRoute.trips => TripScreen(controller: _controller),
       AlagagiRoute.profileCard => ProfileCardScreen(controller: _controller),
       AlagagiRoute.wishlist => WishlistScreen(controller: _controller),
       AlagagiRoute.memoryCards => MemoryCardsScreen(controller: _controller),

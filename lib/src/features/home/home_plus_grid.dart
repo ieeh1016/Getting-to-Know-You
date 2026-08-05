@@ -21,6 +21,17 @@ class HomePlusGrid extends StatelessWidget {
             SizedBox(
               width: tileWidth,
               child: _PlusTile(
+                icon: Icons.luggage_outlined,
+                title: '여행 계획',
+                body: '같이 갈 여행',
+                tone: AlagagiColors.goldSoft,
+                iconColor: AlagagiColors.gold,
+                onTap: () => controller.goTo(AlagagiRoute.trips),
+              ),
+            ),
+            SizedBox(
+              width: tileWidth,
+              child: _PlusTile(
                 icon: Icons.person_outline_rounded,
                 title: '서로 노트',
                 body: '마음과 취향',

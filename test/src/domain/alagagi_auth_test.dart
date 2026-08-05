@@ -3371,6 +3371,10 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   savedProfileSlots = [];
   final List<({String spaceId, String profileId, String slotId})>
   deletedProfileSlots = [];
+  final List<({String spaceId, Trip trip})> savedTrips = [];
+  final List<({String spaceId, String tripId})> deletedTrips = [];
+  final List<({String spaceId, TripItem item})> savedTripItems = [];
+  final List<({String spaceId, String itemId})> deletedTripItems = [];
   final List<({String spaceId, WishItem wish})> savedWishes = [];
   final List<({String spaceId, String wishId})> deletedWishes = [];
   final List<({String spaceId, MemoryCard card})> savedMemoryCards = [];
@@ -3443,6 +3447,26 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
       profileId: profileId,
       slotId: slotId,
     ));
+  }
+
+  @override
+  Future<void> saveTrip(String spaceId, Trip trip) async {
+    savedTrips.add((spaceId: spaceId, trip: trip));
+  }
+
+  @override
+  Future<void> deleteTrip(String spaceId, String tripId) async {
+    deletedTrips.add((spaceId: spaceId, tripId: tripId));
+  }
+
+  @override
+  Future<void> saveTripItem(String spaceId, TripItem item) async {
+    savedTripItems.add((spaceId: spaceId, item: item));
+  }
+
+  @override
+  Future<void> deleteTripItem(String spaceId, String itemId) async {
+    deletedTripItems.add((spaceId: spaceId, itemId: itemId));
   }
 
   @override

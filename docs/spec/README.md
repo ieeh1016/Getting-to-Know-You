@@ -40,6 +40,7 @@
 | Shared domain model과 ownership | [`domain_model.md`](domain_model.md) |
 | Daily questions, answers, archive, records | [`questions.md`](questions.md) |
 | Schedule coordination과 fixed meeting plans | [`meetings.md`](meetings.md) |
+| Trip planning | [`trips.md`](trips.md) |
 | Kakao map place board | [`places.md`](places.md) |
 | Music notes | [`music.md`](music.md) |
 | Stock stories와 holdings | [`stocks.md`](stocks.md) |

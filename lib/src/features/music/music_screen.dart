@@ -339,8 +339,7 @@ class _MusicLibrarySummaryCard extends StatelessWidget {
     final unlistenedCount = controller.unlistenedMusicNoteCount;
     final mutualCount = controller.mutualListenedMusicNoteCount;
     return AlagagiPaperCard(
-      radius: 18,
-      padding: const EdgeInsets.all(14),
+      compact: true,
       child: Row(
         children: [
           Expanded(
@@ -512,8 +511,6 @@ class _MusicDraftCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isEditing = controller.state.editingMusicNoteId != null;
     return AlagagiPaperCard(
-      radius: 22,
-      padding: const EdgeInsets.all(18),
       highlightedBorder: AlagagiColors.sage,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -899,8 +896,7 @@ class _MusicNoteCard extends StatelessWidget {
         onOpenExternalLink: onOpenExternalLink,
       ),
       child: AlagagiPaperCard(
-        radius: 19,
-        padding: const EdgeInsets.all(14),
+        compact: true,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

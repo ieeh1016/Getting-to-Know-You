@@ -121,6 +121,7 @@ void main() {
       await tester.tap(find.byKey(homeMenuButtonKey));
       await tester.pumpAndSettle();
       expect(find.byKey(homeMenuMemoryButtonKey), findsOneWidget);
+      expect(find.byKey(homeMenuTripsButtonKey), findsOneWidget);
       await tester.tap(find.byKey(homeMenuMemoryButtonKey));
       await tester.pumpAndSettle();
 
@@ -268,6 +269,104 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('trip screen plans a trip and tracks packing checks', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(),
+      ),
+    )..goTo(AlagagiRoute.trips);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(tripsScreenKey), findsOneWidget);
+    expect(find.textContaining('아직 계획한 여행이 없어요'), findsOneWidget);
+
+    await tester.tap(find.byKey(tripDraftToggleButtonKey));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(tripTitleFieldKey), '가을 제주');
+    await tester.enterText(find.byKey(tripDestinationFieldKey), '제주도');
+    await tester.enterText(find.byKey(tripStartDateFieldKey), '2026-09-14');
+    await tester.enterText(find.byKey(tripEndDateFieldKey), '2026-09-12');
+    await tester.ensureVisible(find.byKey(tripSubmitButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(find.text('돌아오는 날은 떠나는 날보다 앞설 수 없어요.'), findsOneWidget);
+    expect(controller.trips, isEmpty);
+
+    await tester.enterText(find.byKey(tripStartDateFieldKey), '2026-09-12');
+    await tester.enterText(find.byKey(tripEndDateFieldKey), '2026-09-14');
+    await tester.ensureVisible(find.byKey(tripSubmitButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(controller.trips, hasLength(1));
+    final tripId = controller.trips.single.id;
+    expect(find.byKey(tripCardKey(tripId)), findsOneWidget);
+    expect(find.text('2박 3일'), findsWidgets);
+    expect(find.textContaining('%'), findsNothing);
+    expect(find.textContaining('달성'), findsNothing);
+
+    await tester.ensureVisible(find.byKey(tripOpenButtonKey(tripId)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripOpenButtonKey(tripId)));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(tripKindTabKey('packing')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripKindTabKey('packing')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(tripItemTitleFieldKey), '충전기');
+    await tester.ensureVisible(find.byKey(tripItemSubmitButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripItemSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    final packingItem = controller
+        .tripItemsFor(tripId, kind: TripItemKind.packing)
+        .single;
+    expect(find.byKey(tripItemCardKey(packingItem.id)), findsOneWidget);
+    expect(find.text('챙긴 것 0 / 1'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(tripItemCheckButtonKey(packingItem.id)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripItemCheckButtonKey(packingItem.id)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('챙긴 것 1 / 1'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(tripKindTabKey('plan')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripKindTabKey('plan')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(tripItemDateButtonKey('2026-09-13')), findsOneWidget);
+    expect(find.byKey(tripItemDateButtonKey('2026-09-20')), findsNothing);
+    expect(find.byKey(tripItemCheckButtonKey(packingItem.id)), findsNothing);
   });
 
   testWidgets('saves a curiosity reply and a new question in the sheet', (
@@ -4527,6 +4626,18 @@ class _FailingSaveRepository implements AlagagiDataRepository {
     String spaceId,
     SpacePersonalization personalization,
   ) async {}
+
+  @override
+  Future<void> saveTrip(String spaceId, Trip trip) async {}
+
+  @override
+  Future<void> deleteTrip(String spaceId, String tripId) async {}
+
+  @override
+  Future<void> saveTripItem(String spaceId, TripItem item) async {}
+
+  @override
+  Future<void> deleteTripItem(String spaceId, String itemId) async {}
 
   @override
   Future<void> saveWish(String spaceId, WishItem wish) async {}

@@ -263,6 +263,8 @@ service cloud.firestore {
           'answerCommentReplySaved',
           'profileSlotSaved',
           'wishSaved',
+          'tripSaved',
+          'tripItemSaved',
           'memoryCardSaved',
           'memoryCardResponseSaved',
           'musicNoteSaved',
@@ -291,6 +293,7 @@ service cloud.firestore {
           'meetings',
           'meetingPlans',
           'places',
+          'trips',
           'stockStory',
           'improvements',
           'profileCard',
@@ -308,6 +311,7 @@ service cloud.firestore {
           'meetings',
           'meetingPlans',
           'places',
+          'trips',
           'curiosity',
           'stocks',
           'improvements'
@@ -521,6 +525,72 @@ service cloud.firestore {
             && request.auth.uid in resource.data.listenedByProfileIds
           )
         );
+    }
+
+    function validTripShape(spaceId, tripId) {
+      return request.resource.data.keys().hasOnly([
+          'id',
+          'title',
+          'destination',
+          'startDateKey',
+          'endDateKey',
+          'status',
+          'note',
+          'createdByProfileId',
+          'updatedByProfileId',
+          'updatedAt'
+        ])
+        && request.resource.data.id == tripId
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 60
+        && request.resource.data.destination is string
+        && request.resource.data.destination.size() <= 60
+        && request.resource.data.startDateKey is string
+        && request.resource.data.startDateKey.size() == 10
+        && request.resource.data.endDateKey is string
+        && request.resource.data.endDateKey.size() == 10
+        && request.resource.data.startDateKey <= request.resource.data.endDateKey
+        && request.resource.data.status in ['planning', 'done']
+        && request.resource.data.note is string
+        && request.resource.data.note.size() <= 500
+        && request.resource.data.createdByProfileId is string
+        && request.resource.data.createdByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        && request.resource.data.updatedByProfileId == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function validTripItemShape(spaceId, itemId) {
+      return request.resource.data.keys().hasOnly([
+          'id',
+          'tripId',
+          'kind',
+          'title',
+          'note',
+          'dateKey',
+          'link',
+          'checked',
+          'createdByProfileId',
+          'updatedByProfileId',
+          'updatedAt'
+        ])
+        && request.resource.data.id == itemId
+        && request.resource.data.tripId is string
+        && request.resource.data.kind in ['stay', 'transport', 'packing', 'plan']
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 80
+        && request.resource.data.note is string
+        && request.resource.data.note.size() <= 500
+        && request.resource.data.dateKey is string
+        && request.resource.data.dateKey.size() <= 10
+        && request.resource.data.link is string
+        && request.resource.data.link.size() <= 500
+        && request.resource.data.checked is bool
+        && request.resource.data.createdByProfileId is string
+        && request.resource.data.createdByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        && request.resource.data.updatedByProfileId == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
     }
 
     function validMemoryCardShape(spaceId, cardId) {
@@ -1478,6 +1548,31 @@ service cloud.firestore {
           && request.resource.data.likedByProfileIds is list
           && request.auth.uid in request.resource.data.likedByProfileIds
           && request.resource.data.done is bool;
+        allow delete: if isSpaceMember(spaceId)
+          && resource.data.createdByProfileId == request.auth.uid;
+      }
+
+      match /trips/{tripId} {
+        allow read: if isSpaceMember(spaceId);
+        allow create: if isSpaceMember(spaceId)
+          && validTripShape(spaceId, tripId)
+          && request.resource.data.createdByProfileId == request.auth.uid;
+        allow update: if isSpaceMember(spaceId)
+          && validTripShape(spaceId, tripId)
+          && request.resource.data.createdByProfileId == resource.data.createdByProfileId;
+        allow delete: if isSpaceMember(spaceId)
+          && resource.data.createdByProfileId == request.auth.uid;
+      }
+
+      match /tripItems/{itemId} {
+        allow read: if isSpaceMember(spaceId);
+        allow create: if isSpaceMember(spaceId)
+          && validTripItemShape(spaceId, itemId)
+          && request.resource.data.createdByProfileId == request.auth.uid;
+        allow update: if isSpaceMember(spaceId)
+          && validTripItemShape(spaceId, itemId)
+          && request.resource.data.createdByProfileId == resource.data.createdByProfileId
+          && request.resource.data.tripId == resource.data.tripId;
         allow delete: if isSpaceMember(spaceId)
           && resource.data.createdByProfileId == request.auth.uid;
       }

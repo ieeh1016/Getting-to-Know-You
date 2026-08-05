@@ -75,8 +75,7 @@ class _QuestionCalendar extends StatelessWidget {
 
     return AlagagiPaperCard(
       key: archiveCalendarKey,
-      radius: 20,
-      padding: const EdgeInsets.fromLTRB(15, 15, 15, 14),
+      compact: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -388,8 +387,6 @@ class _SelectedQuestionDetail extends StatelessWidget {
     final statusLabel = _statusLabel(day.status);
     if (question == null || day.status == QuestionCalendarStatus.future) {
       return AlagagiPaperCard(
-        radius: 22,
-        padding: const EdgeInsets.all(19),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -442,8 +439,6 @@ class _SelectedQuestionDetail extends StatelessWidget {
             controller.state.me.id,
           );
     return AlagagiPaperCard(
-      radius: 22,
-      padding: const EdgeInsets.all(19),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -676,9 +671,7 @@ class _ArchiveCard extends StatelessWidget {
             controller.state.me.id,
           );
     return AlagagiPaperCard(
-      radius: 20,
       dashed: waiting || skipped,
-      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: waiting
             ? CrossAxisAlignment.center

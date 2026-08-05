@@ -392,8 +392,6 @@ class _MemoryDraftCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlagagiPaperCard(
-      radius: 22,
-      padding: const EdgeInsets.all(18),
       highlightedBorder: AlagagiColors.sage,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -554,8 +552,6 @@ class _MemoryCardTile extends StatelessWidget {
 
     return AlagagiPaperCard(
       key: memoryCardKey(card.id),
-      radius: 18,
-      padding: const EdgeInsets.fromLTRB(17, 17, 17, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

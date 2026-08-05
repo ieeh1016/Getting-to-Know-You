@@ -186,8 +186,6 @@ class _ImprovementHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlagagiPaperCard(
-      radius: 22,
-      padding: const EdgeInsets.all(18),
       highlightedBorder: AlagagiColors.sage,
       child: Row(
         children: [
@@ -248,8 +246,7 @@ class _ImprovementSummaryCard extends StatelessWidget {
     final openCount = posts.where((post) => !post.resolved).length;
     final resolvedCount = posts.where((post) => post.resolved).length;
     return AlagagiPaperCard(
-      radius: 18,
-      padding: const EdgeInsets.all(14),
+      compact: true,
       child: Row(
         children: [
           Expanded(
@@ -311,8 +308,6 @@ class _ImprovementDraftCard extends StatelessWidget {
     final state = controller.state;
     final isEditing = state.editingImprovementPostId != null;
     return AlagagiPaperCard(
-      radius: 22,
-      padding: const EdgeInsets.all(18),
       highlightedBorder: AlagagiColors.sage,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -422,8 +417,7 @@ class _ImprovementPostCard extends StatelessWidget {
         ].join('\n\n'),
       ),
       child: AlagagiPaperCard(
-        radius: 19,
-        padding: const EdgeInsets.all(14),
+        compact: true,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

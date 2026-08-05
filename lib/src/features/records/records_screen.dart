@@ -384,8 +384,6 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlagagiPaperCard(
-      radius: 18,
-      padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

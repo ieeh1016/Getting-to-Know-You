@@ -643,7 +643,7 @@ void main() {
 
     test('daily question catalog avoids long-term pressure language', () {
       const blockedWords = ['결혼', '평생', '영원', '기념일', '헤어지'];
-      final questionTexts = questionCatalogV1.expand(
+      final questionTexts = activeQuestionCatalog.expand(
         (question) => [question.text, question.highlightedText],
       );
 
@@ -670,6 +670,43 @@ void main() {
 
       final ids = questionCatalogV1.map((question) => question.id).toSet();
       expect(ids, hasLength(questionCatalogV1.length));
+    });
+
+    test('answered days keep their original question id and text', () {
+      // 지나간 자리의 질문을 바꾸면 이미 저장된 답변이 다른 질문에 붙는다.
+      // v2 시작 이전 자리는 v1 원문 그대로여야 한다.
+      for (var index = 0; index < kQuestionCatalogV2StartDay - 1; index++) {
+        expect(activeQuestionCatalog[index].id, questionCatalogV1[index].id);
+        expect(
+          activeQuestionCatalog[index].text,
+          questionCatalogV1[index].text,
+        );
+      }
+
+      expect(
+        activeQuestionCatalog[kQuestionCatalogV2StartDay - 1].id,
+        questionCatalogV2.first.id,
+      );
+      expect(questionCatalogV2.first.day, kQuestionCatalogV2StartDay);
+    });
+
+    test('question ids never repeat across catalog versions', () {
+      final ids = activeQuestionCatalog.map((question) => question.id).toList();
+
+      expect(ids.toSet(), hasLength(ids.length));
+      expect(
+        questionCatalogV1.map((question) => question.id).toSet().intersection(
+          questionCatalogV2.map((question) => question.id).toSet(),
+        ),
+        isEmpty,
+      );
+    });
+
+    test('active catalog days stay sequential from day one', () {
+      for (var index = 0; index < activeQuestionCatalog.length; index++) {
+        expect(activeQuestionCatalog[index].day, index + 1);
+        expect(activeQuestionCatalog[index].number, index + 1);
+      }
     });
 
     test('daily question resolver reaches the extended catalog', () {
@@ -699,9 +736,16 @@ void main() {
         todayDateKey: '2026-07-28',
       );
 
-      expect(controller.todayQuestion.id, 'q058');
-      expect(controller.todayQuestion.text, contains('지켜갔으면'));
-      expect(controller.dailyProgress.currentQuestionId, 'q058');
+      // 2026-06-01 시작 기준 2026-07-28은 DAY 58이고, v2 구간에 들어간다.
+      expect(controller.todayQuestion.day, 58);
+      expect(
+        controller.todayQuestion.id,
+        activeQuestionCatalog[57].id,
+      );
+      expect(
+        controller.dailyProgress.currentQuestionId,
+        activeQuestionCatalog[57].id,
+      );
     });
   });
 }

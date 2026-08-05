@@ -41,6 +41,19 @@ class AlagagiColors {
   static const sagePanel = Color(0xFFFAF3DC);
 }
 
+/// 카드 형태는 두 가지만 쓴다.
+///
+/// - 기본: 화면의 주요 카드. radius 22, padding 17.
+/// - compact: 목록 안에 촘촘히 놓이는 카드. radius 18, padding 14.
+///
+/// 화면마다 다른 radius/padding을 새로 만들지 않는다.
+class AlagagiCardGeometry {
+  static const double radius = 22;
+  static const double compactRadius = 18;
+  static const EdgeInsets padding = EdgeInsets.all(17);
+  static const EdgeInsets compactPadding = EdgeInsets.all(14);
+}
+
 const alagagiSansFonts = [
   'Apple SD Gothic Neo',
   'Noto Sans CJK KR',

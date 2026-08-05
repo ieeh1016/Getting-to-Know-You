@@ -226,8 +226,7 @@ class _PastMeetingCard extends StatelessWidget {
     final places = controller.placesForMeetingPlan(entry.dateKey);
     return AlagagiPaperCard(
       key: meetingPastMeetingCardKey(entry.dateKey),
-      radius: 20,
-      padding: const EdgeInsets.all(16),
+      compact: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -431,8 +430,6 @@ class _MeetingPlanEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlagagiPaperCard(
       key: meetingPlanScreenKey,
-      radius: 24,
-      padding: const EdgeInsets.all(20),
       dashed: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -821,8 +818,6 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AlagagiPaperCard(
-          radius: 24,
-          padding: const EdgeInsets.all(18),
           highlightedBorder: const Color(0x66DDB95E),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1465,8 +1460,7 @@ class _MeetingPlanPlaceRow extends StatelessWidget {
       if (place.address.isNotEmpty) place.address,
     ].join(' · ');
     return AlagagiPaperCard(
-      radius: 18,
-      padding: const EdgeInsets.all(14),
+      compact: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

@@ -689,8 +689,6 @@ class _PlaceSearchEntryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlagagiPaperCard(
-      radius: 24,
-      padding: const EdgeInsets.all(18),
       highlightedBorder: const Color(0x22A98B3C),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -750,8 +748,6 @@ class _PlaceDraftCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isEditing = controller.state.editingPlaceId != null;
     return AlagagiPaperCard(
-      radius: 22,
-      padding: const EdgeInsets.all(18),
       highlightedBorder: AlagagiColors.sage,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1584,8 +1580,7 @@ class _PlaceCard extends StatelessWidget {
         : controller.state.partner.nickname;
     final kakaoPlaceUrl = _kakaoPlaceUrl(place);
     return AlagagiPaperCard(
-      radius: 19,
-      padding: const EdgeInsets.all(14),
+      compact: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

@@ -32,6 +32,8 @@
 - `spaces/{spaceId}/musicNoteComments/{commentId}`
 - `spaces/{spaceId}/scheduleEntries/{dateKey_uid}`
 - `spaces/{spaceId}/sharedPlaces/{placeId}`
+- `spaces/{spaceId}/trips/{tripId}`
+- `spaces/{spaceId}/tripItems/{itemId}`
 - `spaces/{spaceId}/diagnosticEvents/{eventId}`
 - `spaces/{spaceId}/curiosityCards/{cardId}`
 - `spaces/{spaceId}/stockStories/{storyId}`

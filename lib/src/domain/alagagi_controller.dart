@@ -12,6 +12,7 @@ enum AlagagiRoute {
   meetings,
   meetingPlans,
   places,
+  trips,
   stockStory,
   improvements,
   profileCard,
@@ -267,6 +268,8 @@ class AlagagiSpaceData {
     this.scheduleEntries = const [],
     this.meetingPlans = const [],
     this.sharedPlaces = const [],
+    this.trips = const [],
+    this.tripItems = const [],
     this.curiosityCards = const [],
     this.stockStories = const [],
     this.stockHoldings = const [],
@@ -287,6 +290,8 @@ class AlagagiSpaceData {
   final List<ScheduleEntry> scheduleEntries;
   final List<MeetingPlan> meetingPlans;
   final List<SharedPlace> sharedPlaces;
+  final List<Trip> trips;
+  final List<TripItem> tripItems;
   final List<CuriosityCard> curiosityCards;
   final List<StockStory> stockStories;
   final List<StockHolding> stockHoldings;
@@ -355,6 +360,14 @@ abstract class AlagagiDataRepository {
     String profileId,
     String slotId,
   );
+
+  Future<void> saveTrip(String spaceId, Trip trip);
+
+  Future<void> deleteTrip(String spaceId, String tripId);
+
+  Future<void> saveTripItem(String spaceId, TripItem item);
+
+  Future<void> deleteTripItem(String spaceId, String itemId);
 
   Future<void> saveWish(String spaceId, WishItem wish);
 
@@ -991,6 +1004,207 @@ class WishItem {
       updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
     );
   }
+}
+
+enum TripStatus { planning, done }
+
+extension TripStatusMeta on TripStatus {
+  String get storageKey => switch (this) {
+    TripStatus.planning => 'planning',
+    TripStatus.done => 'done',
+  };
+
+  String get label => switch (this) {
+    TripStatus.planning => '계획 중',
+    TripStatus.done => '다녀옴',
+  };
+}
+
+enum TripItemKind { stay, transport, packing, plan }
+
+extension TripItemKindMeta on TripItemKind {
+  String get storageKey => switch (this) {
+    TripItemKind.stay => 'stay',
+    TripItemKind.transport => 'transport',
+    TripItemKind.packing => 'packing',
+    TripItemKind.plan => 'plan',
+  };
+
+  String get label => switch (this) {
+    TripItemKind.stay => '숙소',
+    TripItemKind.transport => '이동',
+    TripItemKind.packing => '준비물',
+    TripItemKind.plan => '계획',
+  };
+
+  String get titleHint => switch (this) {
+    TripItemKind.stay => '묵을 곳 이름',
+    TripItemKind.transport => '항공편, 기차 등',
+    TripItemKind.packing => '챙길 것',
+    TripItemKind.plan => '무엇을 할지',
+  };
+
+  String get noteHint => switch (this) {
+    TripItemKind.stay => '주소, 체크인 시간 같은 메모',
+    TripItemKind.transport => '편명, 시간, 좌석 같은 메모',
+    TripItemKind.packing => '수량이나 챙길 이유',
+    TripItemKind.plan => '가고 싶은 곳이나 하고 싶은 것',
+  };
+
+  String get emptyText => switch (this) {
+    TripItemKind.stay => '아직 정한 숙소가 없어요. 필요할 때 채우면 돼요.',
+    TripItemKind.transport => '아직 정한 이동편이 없어요.',
+    TripItemKind.packing => '챙길 것을 하나씩 적어두면 편해요.',
+    TripItemKind.plan => '아직 정한 계획이 없어요. 천천히 채워도 괜찮아요.',
+  };
+
+  bool get usesCheck => this == TripItemKind.packing;
+}
+
+const tripItemKindOptions = TripItemKind.values;
+
+class Trip {
+  const Trip({
+    required this.id,
+    required this.title,
+    required this.destination,
+    required this.startDateKey,
+    required this.endDateKey,
+    required this.createdByProfileId,
+    this.status = TripStatus.planning,
+    this.note = '',
+    this.updatedAt,
+    this.updatedByProfileId,
+  });
+
+  final String id;
+  final String title;
+  final String destination;
+  final String startDateKey;
+  final String endDateKey;
+  final String createdByProfileId;
+  final TripStatus status;
+  final String note;
+  final DateTime? updatedAt;
+  final String? updatedByProfileId;
+
+  DateTime? get startDate => DateTime.tryParse(startDateKey);
+
+  DateTime? get endDate => DateTime.tryParse(endDateKey);
+
+  /// 시작일과 종료일 사이의 밤 수. 같은 날이면 0이다.
+  int get nightCount {
+    final start = startDate;
+    final end = endDate;
+    if (start == null || end == null) {
+      return 0;
+    }
+    final nights = end.difference(start).inDays;
+    return nights < 0 ? 0 : nights;
+  }
+
+  int get dayCount => nightCount + 1;
+
+  String get durationLabel =>
+      nightCount == 0 ? '당일' : '$nightCount박 $dayCount일';
+
+  /// 여행 기간에 포함되는 날짜 key 목록.
+  List<String> get dateKeys {
+    final start = startDate;
+    if (start == null) {
+      return const [];
+    }
+    return List<String>.unmodifiable([
+      for (var offset = 0; offset < dayCount; offset += 1)
+        _tripDateKey(start.add(Duration(days: offset))),
+    ]);
+  }
+
+  bool containsDateKey(String dateKey) => dateKeys.contains(dateKey);
+
+  Trip copyWith({
+    String? title,
+    String? destination,
+    String? startDateKey,
+    String? endDateKey,
+    TripStatus? status,
+    String? note,
+    DateTime? updatedAt,
+    String? updatedByProfileId,
+  }) {
+    return Trip(
+      id: id,
+      title: title ?? this.title,
+      destination: destination ?? this.destination,
+      startDateKey: startDateKey ?? this.startDateKey,
+      endDateKey: endDateKey ?? this.endDateKey,
+      createdByProfileId: createdByProfileId,
+      status: status ?? this.status,
+      note: note ?? this.note,
+      updatedAt: updatedAt ?? this.updatedAt,
+      updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
+    );
+  }
+}
+
+class TripItem {
+  const TripItem({
+    required this.id,
+    required this.tripId,
+    required this.kind,
+    required this.title,
+    required this.createdByProfileId,
+    this.note = '',
+    this.dateKey,
+    this.link,
+    this.checked = false,
+    this.updatedAt,
+    this.updatedByProfileId,
+  });
+
+  final String id;
+  final String tripId;
+  final TripItemKind kind;
+  final String title;
+  final String createdByProfileId;
+  final String note;
+  final String? dateKey;
+  final String? link;
+  final bool checked;
+  final DateTime? updatedAt;
+  final String? updatedByProfileId;
+
+  TripItem copyWith({
+    TripItemKind? kind,
+    String? title,
+    String? note,
+    String? dateKey,
+    bool clearDateKey = false,
+    String? link,
+    bool clearLink = false,
+    bool? checked,
+    DateTime? updatedAt,
+    String? updatedByProfileId,
+  }) {
+    return TripItem(
+      id: id,
+      tripId: tripId,
+      kind: kind ?? this.kind,
+      title: title ?? this.title,
+      createdByProfileId: createdByProfileId,
+      note: note ?? this.note,
+      dateKey: clearDateKey ? null : dateKey ?? this.dateKey,
+      link: clearLink ? null : link ?? this.link,
+      checked: checked ?? this.checked,
+      updatedAt: updatedAt ?? this.updatedAt,
+      updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
+    );
+  }
+}
+
+String _tripDateKey(DateTime date) {
+  String twoDigits(int value) => value.toString().padLeft(2, '0');
+  return '${date.year}-${twoDigits(date.month)}-${twoDigits(date.day)}';
 }
 
 extension MemoryCardTypeMeta on MemoryCardType {
@@ -2800,20 +3014,20 @@ class AlagagiController extends ChangeNotifier {
        _spaceId = session.spaceId,
        _usesDemoData = false,
        _dailyProgress = _resolveDailyQuestionProgress(
-         questionCatalogV1,
+         activeQuestionCatalog,
          session.data.dailyProgress,
          todayDateKey: todayDateKey,
        ),
        _relationship = session.data.relationship,
        _todayQuestion = _questionForProgress(
-         questionCatalogV1,
+         activeQuestionCatalog,
          _resolveDailyQuestionProgress(
-           questionCatalogV1,
+           activeQuestionCatalog,
            session.data.dailyProgress,
            todayDateKey: todayDateKey,
          ),
        ),
-       questions = questionCatalogV1,
+       questions = activeQuestionCatalog,
        _state = AlagagiState(
          me: session.me,
          partner: session.partner,
@@ -2851,6 +3065,8 @@ class AlagagiController extends ChangeNotifier {
   final Map<String, AnswerComment> _answerCommentsByKey = {};
   final List<ProfileCardData> _profileCards = [];
   final List<WishItem> _wishes = [];
+  final List<Trip> _trips = [];
+  final List<TripItem> _tripItems = [];
   final List<MusicNote> _musicNotes = [];
   final List<MusicNoteComment> _musicNoteComments = [];
   final List<ScheduleEntry> _scheduleEntries = [];
@@ -3573,6 +3789,14 @@ class AlagagiController extends ChangeNotifier {
   }
 
   void _applySessionData(AlagagiSpaceData data) {
+    _trips
+      ..clear()
+      ..addAll(data.trips);
+    _sortTrips();
+    _tripItems
+      ..clear()
+      ..addAll(data.tripItems);
+
     _myAnswersByQuestionId.clear();
     _partnerAnswersByQuestionId.clear();
     _persistedMyAnswerQuestionIds.clear();
@@ -6860,6 +7084,285 @@ class AlagagiController extends ChangeNotifier {
   void setArchiveFilter(ArchiveFilter filter) {
     _state = _state.copyWith(archiveFilter: filter);
     notifyListeners();
+  }
+
+  // --- Trips ---
+
+  List<Trip> get trips => List<Trip>.unmodifiable(_trips);
+
+  List<Trip> tripsWithStatus(TripStatus status) =>
+      List<Trip>.unmodifiable(_trips.where((trip) => trip.status == status));
+
+  Trip? tripById(String tripId) {
+    for (final trip in _trips) {
+      if (trip.id == tripId) {
+        return trip;
+      }
+    }
+    return null;
+  }
+
+  List<TripItem> tripItemsFor(String tripId, {TripItemKind? kind}) {
+    final items = _tripItems
+        .where((item) => item.tripId == tripId)
+        .where((item) => kind == null || item.kind == kind)
+        .toList();
+    items.sort((first, second) {
+      final firstDate = first.dateKey;
+      final secondDate = second.dateKey;
+      if (firstDate == secondDate) {
+        return first.title.compareTo(second.title);
+      }
+      if (firstDate == null) {
+        return 1;
+      }
+      if (secondDate == null) {
+        return -1;
+      }
+      return firstDate.compareTo(secondDate);
+    });
+    return List<TripItem>.unmodifiable(items);
+  }
+
+  int tripPackingCheckedCount(String tripId) => tripItemsFor(
+    tripId,
+    kind: TripItemKind.packing,
+  ).where((item) => item.checked).length;
+
+  /// 여행을 만들거나 수정한다. 실패 이유가 있으면 문자열로 돌려주고 아무것도 쓰지 않는다.
+  String? saveTrip({
+    String? tripId,
+    required String title,
+    required String destination,
+    required String startDateKey,
+    required String endDateKey,
+    String note = '',
+    TripStatus? status,
+  }) {
+    final trimmedTitle = title.trim();
+    if (trimmedTitle.isEmpty) {
+      return '여행 이름을 적어주세요.';
+    }
+    final start = DateTime.tryParse(startDateKey);
+    final end = DateTime.tryParse(endDateKey);
+    if (start == null || end == null) {
+      return '날짜를 다시 확인해 주세요.';
+    }
+    if (end.isBefore(start)) {
+      return '돌아오는 날은 떠나는 날보다 앞설 수 없어요.';
+    }
+
+    final now = DateTime.now();
+    final existingIndex = tripId == null
+        ? -1
+        : _trips.indexWhere((trip) => trip.id == tripId);
+    final Trip trip;
+    if (existingIndex >= 0) {
+      trip = _trips[existingIndex].copyWith(
+        title: trimmedTitle,
+        destination: destination.trim(),
+        startDateKey: startDateKey,
+        endDateKey: endDateKey,
+        note: note.trim(),
+        status: status,
+        updatedAt: now,
+        updatedByProfileId: _state.me.id,
+      );
+      _trips[existingIndex] = trip;
+    } else {
+      trip = Trip(
+        id: 'trip_${_state.me.id}_${now.microsecondsSinceEpoch}',
+        title: trimmedTitle,
+        destination: destination.trim(),
+        startDateKey: startDateKey,
+        endDateKey: endDateKey,
+        createdByProfileId: _state.me.id,
+        status: status ?? TripStatus.planning,
+        note: note.trim(),
+        updatedAt: now,
+        updatedByProfileId: _state.me.id,
+      );
+      _trips.add(trip);
+    }
+    _sortTrips();
+    _dropTripItemDatesOutsideTrip(trip);
+    _persistTrip(trip);
+    notifyListeners();
+    return null;
+  }
+
+  void setTripStatus(String tripId, TripStatus status) {
+    final index = _trips.indexWhere((trip) => trip.id == tripId);
+    if (index < 0 || _trips[index].status == status) {
+      return;
+    }
+    final trip = _trips[index].copyWith(
+      status: status,
+      updatedAt: DateTime.now(),
+      updatedByProfileId: _state.me.id,
+    );
+    _trips[index] = trip;
+    _sortTrips();
+    _persistTrip(trip);
+    notifyListeners();
+  }
+
+  /// 여행은 만든 사람만 지울 수 있다.
+  bool deleteTrip(String tripId) {
+    final index = _trips.indexWhere((trip) => trip.id == tripId);
+    if (index < 0 || _trips[index].createdByProfileId != _state.me.id) {
+      return false;
+    }
+    _trips.removeAt(index);
+    _tripItems.removeWhere((item) => item.tripId == tripId);
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository != null && spaceId != null) {
+      unawaited(repository.deleteTrip(spaceId, tripId).catchError((_) {}));
+    }
+    notifyListeners();
+    return true;
+  }
+
+  /// 여행 항목을 만들거나 수정한다. 실패 이유가 있으면 문자열로 돌려준다.
+  String? saveTripItem({
+    required String tripId,
+    String? itemId,
+    required TripItemKind kind,
+    required String title,
+    String note = '',
+    String? dateKey,
+    String? link,
+  }) {
+    final trip = tripById(tripId);
+    if (trip == null) {
+      return '여행을 찾을 수 없어요.';
+    }
+    final trimmedTitle = title.trim();
+    if (trimmedTitle.isEmpty) {
+      return '내용을 적어주세요.';
+    }
+    final resolvedDateKey = dateKey != null && trip.containsDateKey(dateKey)
+        ? dateKey
+        : null;
+    if (dateKey != null && resolvedDateKey == null) {
+      return '여행 기간 안의 날짜만 고를 수 있어요.';
+    }
+
+    final now = DateTime.now();
+    final existingIndex = itemId == null
+        ? -1
+        : _tripItems.indexWhere((item) => item.id == itemId);
+    final TripItem item;
+    if (existingIndex >= 0) {
+      item = _tripItems[existingIndex].copyWith(
+        kind: kind,
+        title: trimmedTitle,
+        note: note.trim(),
+        dateKey: resolvedDateKey,
+        clearDateKey: resolvedDateKey == null,
+        link: link?.trim(),
+        clearLink: link == null || link.trim().isEmpty,
+        checked: kind.usesCheck ? null : false,
+        updatedAt: now,
+        updatedByProfileId: _state.me.id,
+      );
+      _tripItems[existingIndex] = item;
+    } else {
+      item = TripItem(
+        id: 'trip_item_${_state.me.id}_${now.microsecondsSinceEpoch}',
+        tripId: tripId,
+        kind: kind,
+        title: trimmedTitle,
+        createdByProfileId: _state.me.id,
+        note: note.trim(),
+        dateKey: resolvedDateKey,
+        link: link == null || link.trim().isEmpty ? null : link.trim(),
+        updatedAt: now,
+        updatedByProfileId: _state.me.id,
+      );
+      _tripItems.add(item);
+    }
+    _persistTripItem(item);
+    notifyListeners();
+    return null;
+  }
+
+  /// 체크는 준비물 항목에만 있다.
+  void toggleTripItemCheck(String itemId) {
+    final index = _tripItems.indexWhere((item) => item.id == itemId);
+    if (index < 0 || !_tripItems[index].kind.usesCheck) {
+      return;
+    }
+    final item = _tripItems[index].copyWith(
+      checked: !_tripItems[index].checked,
+      updatedAt: DateTime.now(),
+      updatedByProfileId: _state.me.id,
+    );
+    _tripItems[index] = item;
+    _persistTripItem(item);
+    notifyListeners();
+  }
+
+  /// 항목은 만든 사람만 지울 수 있다.
+  bool deleteTripItem(String itemId) {
+    final index = _tripItems.indexWhere((item) => item.id == itemId);
+    if (index < 0 || _tripItems[index].createdByProfileId != _state.me.id) {
+      return false;
+    }
+    _tripItems.removeAt(index);
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository != null && spaceId != null) {
+      unawaited(repository.deleteTripItem(spaceId, itemId).catchError((_) {}));
+    }
+    notifyListeners();
+    return true;
+  }
+
+  void _sortTrips() {
+    _trips.sort((first, second) => second.startDateKey.compareTo(
+      first.startDateKey,
+    ));
+  }
+
+  /// 기간이 줄어들면 밖으로 나간 항목 날짜는 미정으로 되돌린다.
+  void _dropTripItemDatesOutsideTrip(Trip trip) {
+    for (var index = 0; index < _tripItems.length; index += 1) {
+      final item = _tripItems[index];
+      final dateKey = item.dateKey;
+      if (item.tripId != trip.id || dateKey == null) {
+        continue;
+      }
+      if (trip.containsDateKey(dateKey)) {
+        continue;
+      }
+      final updated = item.copyWith(
+        clearDateKey: true,
+        updatedAt: DateTime.now(),
+        updatedByProfileId: _state.me.id,
+      );
+      _tripItems[index] = updated;
+      _persistTripItem(updated);
+    }
+  }
+
+  void _persistTrip(Trip trip) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      return;
+    }
+    unawaited(repository.saveTrip(spaceId, trip).catchError((_) {}));
+  }
+
+  void _persistTripItem(TripItem item) {
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      return;
+    }
+    unawaited(repository.saveTripItem(spaceId, item).catchError((_) {}));
   }
 
   void setProfileCardTab(ProfileCardTab tab) {
@@ -10355,472 +10858,955 @@ const seedQuestions = [
   ),
 ];
 
+/// 새 질문 세트가 시작되는 DAY.
+///
+/// 이 day 이전 자리는 [questionCatalogV1]을 그대로 유지한다. 답변은
+/// `{questionId}_{uid}` key로 저장되므로 이미 지나간 자리의 질문 id와 문구를
+/// 바꾸면 예전 답변이 다른 질문에 붙어 보인다. 질문 세트를 또 바꿀 때도
+/// 지나간 자리는 건드리지 말고 이 상수를 올린 뒤 새 catalog를 덧붙인다.
+const kQuestionCatalogV2StartDay = 33;
+
+/// 관계 시작부터 DAY 32까지 쓰인 첫 질문 세트. 보존용이며 수정하지 않는다.
 const questionCatalogV1 = [
   DailyQuestion(
     id: 'q001',
     day: 1,
     number: 1,
     depth: QuestionDepth.light,
-    text: '요즘 하루 중에 제일 마음이 편해지는 시간은 언제예요?',
-    highlightedText: '마음이 편해지는 시간',
+    text: '하루 중 가장 좋아하는 시간은 언제예요?',
+    highlightedText: '좋아하는 시간',
   ),
   DailyQuestion(
     id: 'q002',
     day: 2,
     number: 2,
     depth: QuestionDepth.light,
-    text: '오늘 나를 기분 좋게 한 아주 작은 일이 있었어요?',
-    highlightedText: '기분 좋았던 일',
+    text: '요즘 자주 듣는 노래가 있나요?',
+    highlightedText: '자주 듣는 노래',
   ),
   DailyQuestion(
     id: 'q003',
     day: 3,
     number: 3,
     depth: QuestionDepth.light,
-    text: '요즘 자주 듣는 노래 하나만 알려줄래요?',
-    highlightedText: '자주 듣는 노래',
+    text: '쉬는 날 혼자 시간이 생기면 제일 먼저 뭘 하고 싶어요?',
+    highlightedText: '쉬는 날',
   ),
   DailyQuestion(
     id: 'q004',
     day: 4,
     number: 4,
     depth: QuestionDepth.light,
-    text: '피곤할 때 나만의 회복 방법이 있어요?',
-    highlightedText: '회복 방법',
+    text: '카페를 고를 때 제일 먼저 보는 건 뭐예요?',
+    highlightedText: '카페',
   ),
   DailyQuestion(
     id: 'q005',
     day: 5,
     number: 5,
     depth: QuestionDepth.light,
-    text: '요즘 제일 자주 먹게 되는 음식은 뭐예요?',
-    highlightedText: '자주 먹는 음식',
+    text: '산책한다면 어떤 분위기의 길이 좋아요?',
+    highlightedText: '산책',
   ),
   DailyQuestion(
     id: 'q006',
     day: 6,
     number: 6,
     depth: QuestionDepth.light,
-    text: '카페에 가면 보통 뭘 시켜요?',
-    highlightedText: '카페에서 시키는 것',
+    text: '요즘 유난히 먹고 싶은 음식이 있어요?',
+    highlightedText: '먹고 싶은 음식',
   ),
   DailyQuestion(
     id: 'q007',
     day: 7,
     number: 7,
     depth: QuestionDepth.light,
-    text: '쉬는 날 아침은 보통 어떻게 시작해요?',
-    highlightedText: '쉬는 날 아침',
+    text: '갑자기 하루가 비면 어디에 가보고 싶어요?',
+    highlightedText: '가보고 싶은 곳',
   ),
   DailyQuestion(
     id: 'q008',
     day: 8,
     number: 8,
-    depth: QuestionDepth.light,
-    text: '요즘 빠져 있는 게 있다면 뭐예요?',
-    highlightedText: '요즘 빠진 것',
+    depth: QuestionDepth.daily,
+    text: '오늘 하루가 괜찮았다고 느끼는 순간은 언제예요?',
+    highlightedText: '괜찮았던 순간',
   ),
   DailyQuestion(
     id: 'q009',
     day: 9,
     number: 9,
-    depth: QuestionDepth.light,
-    text: '사진첩에서 최근에 찍은 사진은 어떤 거예요?',
-    highlightedText: '최근에 찍은 사진',
+    depth: QuestionDepth.daily,
+    text: '기분 전환이 필요할 때 보통 뭘 해요?',
+    highlightedText: '기분 전환',
   ),
   DailyQuestion(
     id: 'q010',
     day: 10,
     number: 10,
-    depth: QuestionDepth.light,
-    text: '기분이 가라앉을 때 찾아보는 콘텐츠가 있어요?',
-    highlightedText: '기분 전환 콘텐츠',
+    depth: QuestionDepth.daily,
+    text: '최근에 나를 웃게 한 작은 일이 있었나요?',
+    highlightedText: '웃게 한 일',
   ),
   DailyQuestion(
     id: 'q011',
     day: 11,
     number: 11,
-    depth: QuestionDepth.light,
-    text: '걷기 좋다고 느끼는 날씨는 어떤 날씨예요?',
-    highlightedText: '걷기 좋은 날씨',
+    depth: QuestionDepth.daily,
+    text: '완벽한 주말 아침을 그려본다면 어떤 모습이에요?',
+    highlightedText: '주말 아침',
   ),
   DailyQuestion(
     id: 'q012',
     day: 12,
     number: 12,
-    depth: QuestionDepth.light,
-    text: '요즘 사고 싶은 물건이 있어요?',
-    highlightedText: '사고 싶은 것',
+    depth: QuestionDepth.daily,
+    text: '일이 끝난 뒤 제일 편해지는 루틴은 뭐예요?',
+    highlightedText: '편해지는 루틴',
   ),
   DailyQuestion(
     id: 'q013',
     day: 13,
     number: 13,
-    depth: QuestionDepth.light,
-    text: '하루를 마무리할 때 꼭 하는 일이 있어요?',
-    highlightedText: '하루 마무리',
+    depth: QuestionDepth.daily,
+    text: '요즘 새롭게 관심이 생긴 게 있나요?',
+    highlightedText: '새로운 관심',
   ),
   DailyQuestion(
     id: 'q014',
     day: 14,
     number: 14,
-    depth: QuestionDepth.light,
-    text: '이번 주에 제일 잘한 일 하나만 꼽는다면요?',
-    highlightedText: '이번 주 잘한 일',
+    depth: QuestionDepth.daily,
+    text: '나를 편하게 해주는 말이나 행동은 뭐예요?',
+    highlightedText: '편안함',
   ),
   DailyQuestion(
     id: 'q015',
     day: 15,
     number: 15,
-    depth: QuestionDepth.daily,
-    text: '우리가 처음 만난 날, 제일 먼저 눈에 들어온 건 뭐였어요?',
-    highlightedText: '처음 만난 날',
+    depth: QuestionDepth.beliefs,
+    text: '어떤 사람과 있을 때 마음이 편해져요?',
+    highlightedText: '마음이 편한 사람',
   ),
   DailyQuestion(
     id: 'q016',
     day: 16,
     number: 16,
-    depth: QuestionDepth.daily,
-    text: '나랑 있을 때 제일 편했던 순간은 언제였어요?',
-    highlightedText: '편했던 순간',
+    depth: QuestionDepth.beliefs,
+    text: '약속에서 은근히 중요하게 생각하는 게 있다면요?',
+    highlightedText: '약속',
   ),
   DailyQuestion(
     id: 'q017',
     day: 17,
     number: 17,
-    depth: QuestionDepth.daily,
-    text: '요즘 나한테 연락하고 싶어지는 순간은 언제예요?',
-    highlightedText: '연락하고 싶은 순간',
+    depth: QuestionDepth.beliefs,
+    text: '처음엔 잘 안 보이지만 친해지면 드러나는 내 모습은?',
+    highlightedText: '친해지면',
   ),
   DailyQuestion(
     id: 'q018',
     day: 18,
     number: 18,
-    depth: QuestionDepth.daily,
-    text: '같이 갔던 곳 중에 다시 가보고 싶은 데가 있어요?',
-    highlightedText: '다시 가고 싶은 곳',
+    depth: QuestionDepth.beliefs,
+    text: '마음에 드는 공간들은 어떤 공통점이 있어요?',
+    highlightedText: '공간',
   ),
   DailyQuestion(
     id: 'q019',
     day: 19,
     number: 19,
-    depth: QuestionDepth.daily,
-    text: '내가 웃겼던 순간이 있었어요?',
-    highlightedText: '웃겼던 순간',
+    depth: QuestionDepth.beliefs,
+    text: '오래 기억에 남는 다정함은 어떤 종류예요?',
+    highlightedText: '다정함',
   ),
   DailyQuestion(
     id: 'q020',
     day: 20,
     number: 20,
-    depth: QuestionDepth.daily,
-    text: '요즘 나를 떠올리면 같이 생각나는 게 있어요?',
-    highlightedText: '같이 떠오르는 것',
+    depth: QuestionDepth.beliefs,
+    text: '요즘 나에게 필요한 속도는 어느 정도인 것 같아요?',
+    highlightedText: '필요한 속도',
   ),
   DailyQuestion(
     id: 'q021',
     day: 21,
     number: 21,
-    depth: QuestionDepth.daily,
-    text: '만나기 전에 보통 뭘 준비해요?',
-    highlightedText: '만나기 전 준비',
+    depth: QuestionDepth.beliefs,
+    text: '사람들과 친해질 때 천천히 가고 싶은 부분이 있다면요?',
+    highlightedText: '서두르지 않기',
   ),
   DailyQuestion(
     id: 'q022',
     day: 22,
     number: 22,
-    depth: QuestionDepth.daily,
-    text: '만날 코스는 미리 정하는 편이에요, 그때그때 정하는 편이에요?',
-    highlightedText: '코스 정하는 방식',
+    depth: QuestionDepth.inner,
+    text: '힘든 날에는 티가 나는 편이에요, 조용해지는 편이에요?',
+    highlightedText: '힘든 날',
   ),
   DailyQuestion(
     id: 'q023',
     day: 23,
     number: 23,
-    depth: QuestionDepth.daily,
-    text: '같이 있을 때 말없이 조용한 시간도 편한 편이에요?',
-    highlightedText: '조용한 시간',
+    depth: QuestionDepth.inner,
+    text: '마음이 놓인다고 느끼는 순간은 언제예요?',
+    highlightedText: '마음이 놓이는 순간',
   ),
   DailyQuestion(
     id: 'q024',
     day: 24,
     number: 24,
-    depth: QuestionDepth.daily,
-    text: '연락은 자주 오가는 게 좋아요, 필요할 때만 하는 게 좋아요?',
-    highlightedText: '연락 속도',
+    depth: QuestionDepth.inner,
+    text: '고마움을 표현할 때 어떤 방식이 편해요?',
+    highlightedText: '표현 방식',
   ),
   DailyQuestion(
     id: 'q025',
     day: 25,
     number: 25,
-    depth: QuestionDepth.daily,
-    text: '나한테 듣고 싶은 말이 있다면 뭐예요?',
-    highlightedText: '듣고 싶은 말',
+    depth: QuestionDepth.inner,
+    text: '요즘 나를 가장 많이 움직이게 하는 건 뭐예요?',
+    highlightedText: '움직이게 하는 것',
   ),
   DailyQuestion(
     id: 'q026',
     day: 26,
     number: 26,
-    depth: QuestionDepth.daily,
-    text: '서운한 게 생기면 바로 말하는 편이에요?',
-    highlightedText: '서운함 말하기',
+    depth: QuestionDepth.inner,
+    text: '조금 더 친해지면 알려주고 싶은 내 모습이 있나요?',
+    highlightedText: '알려주고 싶은 모습',
   ),
   DailyQuestion(
     id: 'q027',
     day: 27,
     number: 27,
-    depth: QuestionDepth.daily,
-    text: '기분이 안 좋은 날에는 옆에서 어떻게 해주면 좋아요?',
-    highlightedText: '기분이 안 좋은 날',
+    depth: QuestionDepth.inner,
+    text: '언젠가 같이 해보고 싶은 작은 장면이 있다면요?',
+    highlightedText: '같이 하고 싶은 장면',
   ),
   DailyQuestion(
     id: 'q028',
     day: 28,
     number: 28,
-    depth: QuestionDepth.daily,
-    text: '혼자 있고 싶은 날에는 어떻게 알려주면 좋을까요?',
-    highlightedText: '혼자 있고 싶은 날',
+    depth: QuestionDepth.inner,
+    text: '최근 대화에서 기억에 남은 작은 장면이 있다면요?',
+    highlightedText: '기억에 남은 장면',
   ),
   DailyQuestion(
     id: 'q029',
     day: 29,
     number: 29,
-    depth: QuestionDepth.daily,
-    text: '같이 하면 재밌을 것 같은데 아직 못 해본 게 있어요?',
-    highlightedText: '아직 못 해본 것',
+    depth: QuestionDepth.inner,
+    text: '요즘의 나를 색으로 표현한다면 어떤 색에 가까워요?',
+    highlightedText: '요즘의 색',
   ),
   DailyQuestion(
     id: 'q030',
     day: 30,
     number: 30,
-    depth: QuestionDepth.daily,
-    text: '요즘 우리한테 잘 맞는 만남 주기는 어느 정도인 것 같아요?',
-    highlightedText: '만남 주기',
+    depth: QuestionDepth.beliefs,
+    text: '오래 머물고 싶은 대화는 어떤 분위기예요?',
+    highlightedText: '대화 분위기',
   ),
   DailyQuestion(
     id: 'q031',
     day: 31,
     number: 31,
-    depth: QuestionDepth.beliefs,
-    text: '사람이 좋아지는 순간은 보통 어떤 때예요?',
-    highlightedText: '좋아지는 순간',
+    depth: QuestionDepth.daily,
+    text: '요즘 하루에서 가장 조용히 좋아지는 순간은 언제예요?',
+    highlightedText: '조용한 순간',
   ),
   DailyQuestion(
     id: 'q032',
     day: 32,
     number: 32,
     depth: QuestionDepth.beliefs,
-    text: '나를 편하게 만들어주는 사람들의 공통점이 있어요?',
-    highlightedText: '편해지는 사람',
+    text: '누군가를 알아갈 때 천천히 확인하고 싶은 부분은 뭐예요?',
+    highlightedText: '확인하고 싶은 부분',
   ),
   DailyQuestion(
     id: 'q033',
     day: 33,
     number: 33,
-    depth: QuestionDepth.beliefs,
-    text: '관계에서 제일 중요하게 생각하는 건 뭐예요?',
-    highlightedText: '중요하게 보는 것',
+    depth: QuestionDepth.inner,
+    text: '쉽게 말하지 않지만 은근히 중요하게 여기는 게 있나요?',
+    highlightedText: '중요하게 여기는 것',
   ),
   DailyQuestion(
     id: 'q034',
     day: 34,
     number: 34,
-    depth: QuestionDepth.beliefs,
-    text: '고마운데 표현을 잘 못하고 넘어간 적이 있어요?',
-    highlightedText: '표현하지 못한 마음',
+    depth: QuestionDepth.daily,
+    text: '날씨가 좋은 날 제일 먼저 떠오르는 일은 뭐예요?',
+    highlightedText: '좋은 날',
   ),
   DailyQuestion(
     id: 'q035',
     day: 35,
     number: 35,
     depth: QuestionDepth.beliefs,
-    text: '스스로 마음에 드는 성격 하나를 꼽는다면요?',
-    highlightedText: '마음에 드는 성격',
+    text: '편한 관계라고 느끼게 하는 작은 신호가 있다면요?',
+    highlightedText: '편한 관계',
   ),
   DailyQuestion(
     id: 'q036',
     day: 36,
     number: 36,
-    depth: QuestionDepth.beliefs,
-    text: '바꾸고 싶은 습관이 있어요?',
-    highlightedText: '바꾸고 싶은 습관',
+    depth: QuestionDepth.inner,
+    text: '요즘 나에게 가장 필요한 응원은 어떤 말이에요?',
+    highlightedText: '필요한 응원',
   ),
   DailyQuestion(
     id: 'q037',
     day: 37,
     number: 37,
-    depth: QuestionDepth.beliefs,
-    text: '요즘 가장 신경 쓰고 있는 일은 뭐예요?',
-    highlightedText: '신경 쓰이는 일',
+    depth: QuestionDepth.daily,
+    text: '요즘 자주 가고 싶은 동네나 공간이 있나요?',
+    highlightedText: '가고 싶은 공간',
   ),
   DailyQuestion(
     id: 'q038',
     day: 38,
     number: 38,
     depth: QuestionDepth.beliefs,
-    text: '일하거나 공부할 때 나는 어떤 사람이에요?',
-    highlightedText: '일할 때의 나',
+    text: '함께 시간을 보낼 때 중요하게 생각하는 리듬이 있어요?',
+    highlightedText: '함께하는 리듬',
   ),
   DailyQuestion(
     id: 'q039',
     day: 39,
     number: 39,
-    depth: QuestionDepth.beliefs,
-    text: '돈을 써도 아깝지 않은 항목이 있어요?',
-    highlightedText: '아깝지 않은 소비',
+    depth: QuestionDepth.inner,
+    text: '처음보다 조금 더 편해졌다고 느끼는 순간은 언제예요?',
+    highlightedText: '편해진 순간',
   ),
   DailyQuestion(
     id: 'q040',
     day: 40,
     number: 40,
-    depth: QuestionDepth.beliefs,
-    text: '어릴 때 자주 하던 놀이나 취미가 있었어요?',
-    highlightedText: '어릴 때 취미',
+    depth: QuestionDepth.daily,
+    text: '요즘 나를 쉬게 해주는 소리는 뭐예요?',
+    highlightedText: '쉬게 하는 소리',
   ),
   DailyQuestion(
     id: 'q041',
     day: 41,
     number: 41,
     depth: QuestionDepth.beliefs,
-    text: '가족이나 친구들 사이에서 나는 어떤 역할이에요?',
-    highlightedText: '내 역할',
+    text: '사소하지만 지켜주면 고마운 배려가 있나요?',
+    highlightedText: '고마운 배려',
   ),
   DailyQuestion(
     id: 'q042',
     day: 42,
     number: 42,
-    depth: QuestionDepth.beliefs,
-    text: '최근에 마음이 놓였던 순간은 언제였어요?',
-    highlightedText: '마음 놓인 순간',
+    depth: QuestionDepth.inner,
+    text: '마음이 복잡할 때 혼자 정리하는 방식은 뭐예요?',
+    highlightedText: '정리 방식',
   ),
   DailyQuestion(
     id: 'q043',
     day: 43,
     number: 43,
-    depth: QuestionDepth.beliefs,
-    text: '요즘 스스로에게 해주고 싶은 말이 있어요?',
-    highlightedText: '나에게 하고 싶은 말',
+    depth: QuestionDepth.daily,
+    text: '최근에 저장해둔 사진이나 장면 중 마음에 남는 게 있나요?',
+    highlightedText: '마음에 남은 장면',
   ),
   DailyQuestion(
     id: 'q044',
     day: 44,
     number: 44,
     depth: QuestionDepth.beliefs,
-    text: '무리하고 있다는 신호를 어떻게 알아채요?',
-    highlightedText: '무리하는 신호',
+    text: '서로 다른 취향을 만났을 때 어떤 방식이 편해요?',
+    highlightedText: '다른 취향',
   ),
   DailyQuestion(
     id: 'q045',
     day: 45,
     number: 45,
-    depth: QuestionDepth.beliefs,
-    text: '잘 쉬었다고 느끼는 하루는 어떤 하루예요?',
-    highlightedText: '잘 쉰 하루',
+    depth: QuestionDepth.inner,
+    text: '내가 나답다고 느끼는 순간은 언제예요?',
+    highlightedText: '나다운 순간',
   ),
   DailyQuestion(
     id: 'q046',
     day: 46,
     number: 46,
-    depth: QuestionDepth.inner,
-    text: '앞으로 몇 달 안에 해보고 싶은 게 있어요?',
-    highlightedText: '해보고 싶은 것',
+    depth: QuestionDepth.daily,
+    text: '요즘의 작은 목표가 있다면 뭐예요?',
+    highlightedText: '작은 목표',
   ),
   DailyQuestion(
     id: 'q047',
     day: 47,
     number: 47,
-    depth: QuestionDepth.inner,
-    text: '같이 가보고 싶은 도시나 동네가 있어요?',
-    highlightedText: '가보고 싶은 곳',
+    depth: QuestionDepth.beliefs,
+    text: '대화가 끊겨도 어색하지 않은 순간은 어떤 느낌일까요?',
+    highlightedText: '어색하지 않은 순간',
   ),
   DailyQuestion(
     id: 'q048',
     day: 48,
     number: 48,
     depth: QuestionDepth.inner,
-    text: '내가 잘 몰랐던 나의 모습이 있다면 알려줄래요?',
-    highlightedText: '잘 모르던 모습',
+    text: '아직은 낯설지만 조금 궁금한 주제가 있나요?',
+    highlightedText: '궁금한 주제',
   ),
   DailyQuestion(
     id: 'q049',
     day: 49,
     number: 49,
-    depth: QuestionDepth.inner,
-    text: '요즘 나에게 고마웠던 순간이 있었어요?',
-    highlightedText: '고마웠던 순간',
+    depth: QuestionDepth.daily,
+    text: '하루 끝에 남아 있으면 좋은 기분은 어떤 기분이에요?',
+    highlightedText: '좋은 기분',
   ),
   DailyQuestion(
     id: 'q050',
     day: 50,
     number: 50,
-    depth: QuestionDepth.inner,
-    text: '나랑 있을 때 조금 더 해보고 싶은 게 있어요?',
-    highlightedText: '더 해보고 싶은 것',
+    depth: QuestionDepth.beliefs,
+    text: '가까워질수록 더 조심하고 싶은 부분이 있나요?',
+    highlightedText: '조심하고 싶은 부분',
   ),
   DailyQuestion(
     id: 'q051',
     day: 51,
     number: 51,
     depth: QuestionDepth.inner,
-    text: '우리가 대화할 때 좋은 점은 뭐라고 생각해요?',
-    highlightedText: '대화의 좋은 점',
+    text: '요즘 스스로에게 자주 해주는 말이 있나요?',
+    highlightedText: '스스로에게 하는 말',
   ),
   DailyQuestion(
     id: 'q052',
     day: 52,
     number: 52,
-    depth: QuestionDepth.inner,
-    text: '서로 다르다고 느낀 부분이 있었어요?',
-    highlightedText: '다르다고 느낀 것',
+    depth: QuestionDepth.daily,
+    text: '같이 걷는다면 어떤 속도의 산책이 좋을 것 같아요?',
+    highlightedText: '산책 속도',
   ),
   DailyQuestion(
     id: 'q053',
     day: 53,
     number: 53,
-    depth: QuestionDepth.inner,
-    text: '그 다름이 오히려 재밌게 느껴진 적도 있어요?',
-    highlightedText: '다름의 재미',
+    depth: QuestionDepth.beliefs,
+    text: '작은 약속을 정할 때 어떤 방식이 편해요?',
+    highlightedText: '약속 방식',
   ),
   DailyQuestion(
     id: 'q054',
     day: 54,
     number: 54,
     depth: QuestionDepth.inner,
-    text: '나한테 아직 못 물어본 게 있어요?',
-    highlightedText: '못 물어본 질문',
+    text: '말보다 행동으로 더 잘 드러나는 내 마음은 어떤 쪽이에요?',
+    highlightedText: '행동으로 드러나는 마음',
   ),
   DailyQuestion(
     id: 'q055',
     day: 55,
     number: 55,
-    depth: QuestionDepth.inner,
-    text: '요즘 나를 보면서 안심이 되는 부분이 있어요?',
-    highlightedText: '안심되는 부분',
+    depth: QuestionDepth.daily,
+    text: '요즘 발견한 괜찮은 장소나 물건이 있나요?',
+    highlightedText: '괜찮은 발견',
   ),
   DailyQuestion(
     id: 'q056',
     day: 56,
     number: 56,
-    depth: QuestionDepth.inner,
-    text: '힘든 시기를 지날 때 옆 사람에게 바라는 건 뭐예요?',
-    highlightedText: '힘들 때 바라는 것',
+    depth: QuestionDepth.beliefs,
+    text: '오래 기억하고 싶은 하루는 어떤 요소가 있어요?',
+    highlightedText: '기억하고 싶은 하루',
   ),
   DailyQuestion(
     id: 'q057',
     day: 57,
     number: 57,
     depth: QuestionDepth.inner,
-    text: '지금 우리 속도는 어떤 것 같아요?',
-    highlightedText: '지금의 속도',
+    text: '지금보다 조금 더 알게 되면 좋을 내 취향은 뭐예요?',
+    highlightedText: '더 알고 싶은 취향',
   ),
   DailyQuestion(
     id: 'q058',
     day: 58,
     number: 58,
     depth: QuestionDepth.inner,
+    text: '이 공간에서 가장 자연스럽게 남기고 싶은 이야기는 뭐예요?',
+    highlightedText: '남기고 싶은 이야기',
+  ),
+];
+
+/// DAY 33부터 쓰는 질문 세트. 만난 지 얼마 되지 않은 두 사람 기준으로 다시 썼다.
+const questionCatalogV2 = [
+  DailyQuestion(
+    id: 'qb001',
+    day: 33,
+    number: 33,
+    depth: QuestionDepth.light,
+    text: '요즘 하루 중에 제일 마음이 편해지는 시간은 언제예요?',
+    highlightedText: '마음이 편해지는 시간',
+  ),
+  DailyQuestion(
+    id: 'qb002',
+    day: 34,
+    number: 34,
+    depth: QuestionDepth.light,
+    text: '오늘 나를 기분 좋게 한 아주 작은 일이 있었어요?',
+    highlightedText: '기분 좋았던 일',
+  ),
+  DailyQuestion(
+    id: 'qb003',
+    day: 35,
+    number: 35,
+    depth: QuestionDepth.light,
+    text: '요즘 자주 듣는 노래 하나만 알려줄래요?',
+    highlightedText: '자주 듣는 노래',
+  ),
+  DailyQuestion(
+    id: 'qb004',
+    day: 36,
+    number: 36,
+    depth: QuestionDepth.light,
+    text: '피곤할 때 나만의 회복 방법이 있어요?',
+    highlightedText: '회복 방법',
+  ),
+  DailyQuestion(
+    id: 'qb005',
+    day: 37,
+    number: 37,
+    depth: QuestionDepth.light,
+    text: '요즘 제일 자주 먹게 되는 음식은 뭐예요?',
+    highlightedText: '자주 먹는 음식',
+  ),
+  DailyQuestion(
+    id: 'qb006',
+    day: 38,
+    number: 38,
+    depth: QuestionDepth.light,
+    text: '카페에 가면 보통 뭘 시켜요?',
+    highlightedText: '카페에서 시키는 것',
+  ),
+  DailyQuestion(
+    id: 'qb007',
+    day: 39,
+    number: 39,
+    depth: QuestionDepth.light,
+    text: '쉬는 날 아침은 보통 어떻게 시작해요?',
+    highlightedText: '쉬는 날 아침',
+  ),
+  DailyQuestion(
+    id: 'qb008',
+    day: 40,
+    number: 40,
+    depth: QuestionDepth.light,
+    text: '요즘 빠져 있는 게 있다면 뭐예요?',
+    highlightedText: '요즘 빠진 것',
+  ),
+  DailyQuestion(
+    id: 'qb009',
+    day: 41,
+    number: 41,
+    depth: QuestionDepth.light,
+    text: '사진첩에서 최근에 찍은 사진은 어떤 거예요?',
+    highlightedText: '최근에 찍은 사진',
+  ),
+  DailyQuestion(
+    id: 'qb010',
+    day: 42,
+    number: 42,
+    depth: QuestionDepth.light,
+    text: '기분이 가라앉을 때 찾아보는 콘텐츠가 있어요?',
+    highlightedText: '기분 전환 콘텐츠',
+  ),
+  DailyQuestion(
+    id: 'qb011',
+    day: 43,
+    number: 43,
+    depth: QuestionDepth.light,
+    text: '걷기 좋다고 느끼는 날씨는 어떤 날씨예요?',
+    highlightedText: '걷기 좋은 날씨',
+  ),
+  DailyQuestion(
+    id: 'qb012',
+    day: 44,
+    number: 44,
+    depth: QuestionDepth.light,
+    text: '요즘 사고 싶은 물건이 있어요?',
+    highlightedText: '사고 싶은 것',
+  ),
+  DailyQuestion(
+    id: 'qb013',
+    day: 45,
+    number: 45,
+    depth: QuestionDepth.light,
+    text: '하루를 마무리할 때 꼭 하는 일이 있어요?',
+    highlightedText: '하루 마무리',
+  ),
+  DailyQuestion(
+    id: 'qb014',
+    day: 46,
+    number: 46,
+    depth: QuestionDepth.light,
+    text: '이번 주에 제일 잘한 일 하나만 꼽는다면요?',
+    highlightedText: '이번 주 잘한 일',
+  ),
+  DailyQuestion(
+    id: 'qb015',
+    day: 47,
+    number: 47,
+    depth: QuestionDepth.daily,
+    text: '우리가 처음 만난 날, 제일 먼저 눈에 들어온 건 뭐였어요?',
+    highlightedText: '처음 만난 날',
+  ),
+  DailyQuestion(
+    id: 'qb016',
+    day: 48,
+    number: 48,
+    depth: QuestionDepth.daily,
+    text: '나랑 있을 때 제일 편했던 순간은 언제였어요?',
+    highlightedText: '편했던 순간',
+  ),
+  DailyQuestion(
+    id: 'qb017',
+    day: 49,
+    number: 49,
+    depth: QuestionDepth.daily,
+    text: '요즘 나한테 연락하고 싶어지는 순간은 언제예요?',
+    highlightedText: '연락하고 싶은 순간',
+  ),
+  DailyQuestion(
+    id: 'qb018',
+    day: 50,
+    number: 50,
+    depth: QuestionDepth.daily,
+    text: '같이 갔던 곳 중에 다시 가보고 싶은 데가 있어요?',
+    highlightedText: '다시 가고 싶은 곳',
+  ),
+  DailyQuestion(
+    id: 'qb019',
+    day: 51,
+    number: 51,
+    depth: QuestionDepth.daily,
+    text: '내가 웃겼던 순간이 있었어요?',
+    highlightedText: '웃겼던 순간',
+  ),
+  DailyQuestion(
+    id: 'qb020',
+    day: 52,
+    number: 52,
+    depth: QuestionDepth.daily,
+    text: '요즘 나를 떠올리면 같이 생각나는 게 있어요?',
+    highlightedText: '같이 떠오르는 것',
+  ),
+  DailyQuestion(
+    id: 'qb021',
+    day: 53,
+    number: 53,
+    depth: QuestionDepth.daily,
+    text: '만나기 전에 보통 뭘 준비해요?',
+    highlightedText: '만나기 전 준비',
+  ),
+  DailyQuestion(
+    id: 'qb022',
+    day: 54,
+    number: 54,
+    depth: QuestionDepth.daily,
+    text: '만날 코스는 미리 정하는 편이에요, 그때그때 정하는 편이에요?',
+    highlightedText: '코스 정하는 방식',
+  ),
+  DailyQuestion(
+    id: 'qb023',
+    day: 55,
+    number: 55,
+    depth: QuestionDepth.daily,
+    text: '같이 있을 때 말없이 조용한 시간도 편한 편이에요?',
+    highlightedText: '조용한 시간',
+  ),
+  DailyQuestion(
+    id: 'qb024',
+    day: 56,
+    number: 56,
+    depth: QuestionDepth.daily,
+    text: '연락은 자주 오가는 게 좋아요, 필요할 때만 하는 게 좋아요?',
+    highlightedText: '연락 속도',
+  ),
+  DailyQuestion(
+    id: 'qb025',
+    day: 57,
+    number: 57,
+    depth: QuestionDepth.daily,
+    text: '나한테 듣고 싶은 말이 있다면 뭐예요?',
+    highlightedText: '듣고 싶은 말',
+  ),
+  DailyQuestion(
+    id: 'qb026',
+    day: 58,
+    number: 58,
+    depth: QuestionDepth.daily,
+    text: '서운한 게 생기면 바로 말하는 편이에요?',
+    highlightedText: '서운함 말하기',
+  ),
+  DailyQuestion(
+    id: 'qb027',
+    day: 59,
+    number: 59,
+    depth: QuestionDepth.daily,
+    text: '기분이 안 좋은 날에는 옆에서 어떻게 해주면 좋아요?',
+    highlightedText: '기분이 안 좋은 날',
+  ),
+  DailyQuestion(
+    id: 'qb028',
+    day: 60,
+    number: 60,
+    depth: QuestionDepth.daily,
+    text: '혼자 있고 싶은 날에는 어떻게 알려주면 좋을까요?',
+    highlightedText: '혼자 있고 싶은 날',
+  ),
+  DailyQuestion(
+    id: 'qb029',
+    day: 61,
+    number: 61,
+    depth: QuestionDepth.daily,
+    text: '같이 하면 재밌을 것 같은데 아직 못 해본 게 있어요?',
+    highlightedText: '아직 못 해본 것',
+  ),
+  DailyQuestion(
+    id: 'qb030',
+    day: 62,
+    number: 62,
+    depth: QuestionDepth.daily,
+    text: '요즘 우리한테 잘 맞는 만남 주기는 어느 정도인 것 같아요?',
+    highlightedText: '만남 주기',
+  ),
+  DailyQuestion(
+    id: 'qb031',
+    day: 63,
+    number: 63,
+    depth: QuestionDepth.beliefs,
+    text: '사람이 좋아지는 순간은 보통 어떤 때예요?',
+    highlightedText: '좋아지는 순간',
+  ),
+  DailyQuestion(
+    id: 'qb032',
+    day: 64,
+    number: 64,
+    depth: QuestionDepth.beliefs,
+    text: '나를 편하게 만들어주는 사람들의 공통점이 있어요?',
+    highlightedText: '편해지는 사람',
+  ),
+  DailyQuestion(
+    id: 'qb033',
+    day: 65,
+    number: 65,
+    depth: QuestionDepth.beliefs,
+    text: '관계에서 제일 중요하게 생각하는 건 뭐예요?',
+    highlightedText: '중요하게 보는 것',
+  ),
+  DailyQuestion(
+    id: 'qb034',
+    day: 66,
+    number: 66,
+    depth: QuestionDepth.beliefs,
+    text: '고마운데 표현을 잘 못하고 넘어간 적이 있어요?',
+    highlightedText: '표현하지 못한 마음',
+  ),
+  DailyQuestion(
+    id: 'qb035',
+    day: 67,
+    number: 67,
+    depth: QuestionDepth.beliefs,
+    text: '스스로 마음에 드는 성격 하나를 꼽는다면요?',
+    highlightedText: '마음에 드는 성격',
+  ),
+  DailyQuestion(
+    id: 'qb036',
+    day: 68,
+    number: 68,
+    depth: QuestionDepth.beliefs,
+    text: '바꾸고 싶은 습관이 있어요?',
+    highlightedText: '바꾸고 싶은 습관',
+  ),
+  DailyQuestion(
+    id: 'qb037',
+    day: 69,
+    number: 69,
+    depth: QuestionDepth.beliefs,
+    text: '요즘 가장 신경 쓰고 있는 일은 뭐예요?',
+    highlightedText: '신경 쓰이는 일',
+  ),
+  DailyQuestion(
+    id: 'qb038',
+    day: 70,
+    number: 70,
+    depth: QuestionDepth.beliefs,
+    text: '일하거나 공부할 때 나는 어떤 사람이에요?',
+    highlightedText: '일할 때의 나',
+  ),
+  DailyQuestion(
+    id: 'qb039',
+    day: 71,
+    number: 71,
+    depth: QuestionDepth.beliefs,
+    text: '돈을 써도 아깝지 않은 항목이 있어요?',
+    highlightedText: '아깝지 않은 소비',
+  ),
+  DailyQuestion(
+    id: 'qb040',
+    day: 72,
+    number: 72,
+    depth: QuestionDepth.beliefs,
+    text: '어릴 때 자주 하던 놀이나 취미가 있었어요?',
+    highlightedText: '어릴 때 취미',
+  ),
+  DailyQuestion(
+    id: 'qb041',
+    day: 73,
+    number: 73,
+    depth: QuestionDepth.beliefs,
+    text: '가족이나 친구들 사이에서 나는 어떤 역할이에요?',
+    highlightedText: '내 역할',
+  ),
+  DailyQuestion(
+    id: 'qb042',
+    day: 74,
+    number: 74,
+    depth: QuestionDepth.beliefs,
+    text: '최근에 마음이 놓였던 순간은 언제였어요?',
+    highlightedText: '마음 놓인 순간',
+  ),
+  DailyQuestion(
+    id: 'qb043',
+    day: 75,
+    number: 75,
+    depth: QuestionDepth.beliefs,
+    text: '요즘 스스로에게 해주고 싶은 말이 있어요?',
+    highlightedText: '나에게 하고 싶은 말',
+  ),
+  DailyQuestion(
+    id: 'qb044',
+    day: 76,
+    number: 76,
+    depth: QuestionDepth.beliefs,
+    text: '무리하고 있다는 신호를 어떻게 알아채요?',
+    highlightedText: '무리하는 신호',
+  ),
+  DailyQuestion(
+    id: 'qb045',
+    day: 77,
+    number: 77,
+    depth: QuestionDepth.beliefs,
+    text: '잘 쉬었다고 느끼는 하루는 어떤 하루예요?',
+    highlightedText: '잘 쉰 하루',
+  ),
+  DailyQuestion(
+    id: 'qb046',
+    day: 78,
+    number: 78,
+    depth: QuestionDepth.inner,
+    text: '앞으로 몇 달 안에 해보고 싶은 게 있어요?',
+    highlightedText: '해보고 싶은 것',
+  ),
+  DailyQuestion(
+    id: 'qb047',
+    day: 79,
+    number: 79,
+    depth: QuestionDepth.inner,
+    text: '같이 가보고 싶은 도시나 동네가 있어요?',
+    highlightedText: '가보고 싶은 곳',
+  ),
+  DailyQuestion(
+    id: 'qb048',
+    day: 80,
+    number: 80,
+    depth: QuestionDepth.inner,
+    text: '내가 잘 몰랐던 나의 모습이 있다면 알려줄래요?',
+    highlightedText: '잘 모르던 모습',
+  ),
+  DailyQuestion(
+    id: 'qb049',
+    day: 81,
+    number: 81,
+    depth: QuestionDepth.inner,
+    text: '요즘 나에게 고마웠던 순간이 있었어요?',
+    highlightedText: '고마웠던 순간',
+  ),
+  DailyQuestion(
+    id: 'qb050',
+    day: 82,
+    number: 82,
+    depth: QuestionDepth.inner,
+    text: '나랑 있을 때 조금 더 해보고 싶은 게 있어요?',
+    highlightedText: '더 해보고 싶은 것',
+  ),
+  DailyQuestion(
+    id: 'qb051',
+    day: 83,
+    number: 83,
+    depth: QuestionDepth.inner,
+    text: '우리가 대화할 때 좋은 점은 뭐라고 생각해요?',
+    highlightedText: '대화의 좋은 점',
+  ),
+  DailyQuestion(
+    id: 'qb052',
+    day: 84,
+    number: 84,
+    depth: QuestionDepth.inner,
+    text: '서로 다르다고 느낀 부분이 있었어요?',
+    highlightedText: '다르다고 느낀 것',
+  ),
+  DailyQuestion(
+    id: 'qb053',
+    day: 85,
+    number: 85,
+    depth: QuestionDepth.inner,
+    text: '그 다름이 오히려 재밌게 느껴진 적도 있어요?',
+    highlightedText: '다름의 재미',
+  ),
+  DailyQuestion(
+    id: 'qb054',
+    day: 86,
+    number: 86,
+    depth: QuestionDepth.inner,
+    text: '나한테 아직 못 물어본 게 있어요?',
+    highlightedText: '못 물어본 질문',
+  ),
+  DailyQuestion(
+    id: 'qb055',
+    day: 87,
+    number: 87,
+    depth: QuestionDepth.inner,
+    text: '요즘 나를 보면서 안심이 되는 부분이 있어요?',
+    highlightedText: '안심되는 부분',
+  ),
+  DailyQuestion(
+    id: 'qb056',
+    day: 88,
+    number: 88,
+    depth: QuestionDepth.inner,
+    text: '힘든 시기를 지날 때 옆 사람에게 바라는 건 뭐예요?',
+    highlightedText: '힘들 때 바라는 것',
+  ),
+  DailyQuestion(
+    id: 'qb057',
+    day: 89,
+    number: 89,
+    depth: QuestionDepth.inner,
+    text: '지금 우리 속도는 어떤 것 같아요?',
+    highlightedText: '지금의 속도',
+  ),
+  DailyQuestion(
+    id: 'qb058',
+    day: 90,
+    number: 90,
+    depth: QuestionDepth.inner,
     text: '앞으로 우리가 계속 지켜갔으면 하는 게 있어요?',
     highlightedText: '지켜가고 싶은 것',
   ),
 ];
+
+/// 앱이 실제로 쓰는 catalog. 지나간 자리는 v1, 그 뒤는 v2다.
+final activeQuestionCatalog = List<DailyQuestion>.unmodifiable([
+  ...questionCatalogV1.take(kQuestionCatalogV2StartDay - 1),
+  ...questionCatalogV2,
+]);
 
 const seedMyAnswers = [
   Answer(

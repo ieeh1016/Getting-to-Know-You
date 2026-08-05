@@ -21,8 +21,6 @@ class HomeMemoryCard extends StatelessWidget {
     final partnerCount = controller.memoryCardCountForOwner(state.partner.id);
     return AlagagiPaperCard(
       key: homeMemoryCardKey,
-      radius: 22,
-      padding: const EdgeInsets.fromLTRB(20, 19, 20, 18),
       highlightedBorder: unreadCount > 0 ? AlagagiColors.sage : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

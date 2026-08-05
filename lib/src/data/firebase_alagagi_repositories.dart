@@ -331,6 +331,93 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
   }
 
   @override
+  Future<void> saveTrip(String spaceId, Trip trip) {
+    return _setWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('trips')
+          .doc(trip.id),
+      {
+        'id': trip.id,
+        'title': trip.title,
+        'destination': trip.destination,
+        'startDateKey': trip.startDateKey,
+        'endDateKey': trip.endDateKey,
+        'status': trip.status.storageKey,
+        'note': trip.note,
+        'createdByProfileId': trip.createdByProfileId,
+        'updatedByProfileId':
+            trip.updatedByProfileId ?? trip.createdByProfileId,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      options: SetOptions(merge: true),
+      activityEvent: _ActivityEventDraft(
+        type: 'tripSaved',
+        actorProfileId: trip.updatedByProfileId ?? trip.createdByProfileId,
+        route: 'trips',
+        feature: 'trips',
+        targetId: trip.id,
+      ),
+    );
+  }
+
+  @override
+  Future<void> deleteTrip(String spaceId, String tripId) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('trips')
+        .doc(tripId)
+        .delete();
+  }
+
+  @override
+  Future<void> saveTripItem(String spaceId, TripItem item) {
+    return _setWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('tripItems')
+          .doc(item.id),
+      {
+        'id': item.id,
+        'tripId': item.tripId,
+        'kind': item.kind.storageKey,
+        'title': item.title,
+        'note': item.note,
+        'dateKey': item.dateKey ?? '',
+        'link': item.link ?? '',
+        'checked': item.checked,
+        'createdByProfileId': item.createdByProfileId,
+        'updatedByProfileId':
+            item.updatedByProfileId ?? item.createdByProfileId,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      options: SetOptions(merge: true),
+      activityEvent: _ActivityEventDraft(
+        type: 'tripItemSaved',
+        actorProfileId: item.updatedByProfileId ?? item.createdByProfileId,
+        route: 'trips',
+        feature: 'trips',
+        targetId: item.tripId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> deleteTripItem(String spaceId, String itemId) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('tripItems')
+        .doc(itemId)
+        .delete();
+  }
+
+  @override
   Future<void> saveWish(String spaceId, WishItem wish) {
     return _setWithActivityEvent(
       spaceId,
@@ -895,6 +982,8 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     final answersSnapshot = await space.collection('answers').get();
     final commentsSnapshot = await space.collection('answerComments').get();
     final wishesSnapshot = await space.collection('wishes').get();
+    final tripsSnapshot = await space.collection('trips').get();
+    final tripItemsSnapshot = await space.collection('tripItems').get();
     final sharedMemoryCardsSnapshot = await space
         .collection('memoryCards')
         .where('visibility', isEqualTo: 'shared')
@@ -956,6 +1045,14 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       profileSlots: profileSlots,
       wishes: wishesSnapshot.docs
           .map((doc) => _wishFromData(doc.id, doc.data()))
+          .nonNulls
+          .toList(),
+      trips: tripsSnapshot.docs
+          .map((doc) => _tripFromData(doc.data(), fallbackId: doc.id))
+          .nonNulls
+          .toList(),
+      tripItems: tripItemsSnapshot.docs
+          .map((doc) => _tripItemFromData(doc.data(), fallbackId: doc.id))
           .nonNulls
           .toList(),
       memoryCards: [
@@ -1063,6 +1160,65 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       currentQuestionId: currentQuestionId,
       openedDateKey: openedDateKey,
       catalogVersion: _readString(data, 'catalogVersion') ?? 'v1',
+    );
+  }
+
+  Trip? _tripFromData(Map<String, dynamic> data, {required String fallbackId}) {
+    final title = _readString(data, 'title');
+    final startDateKey = _readString(data, 'startDateKey');
+    final endDateKey = _readString(data, 'endDateKey');
+    final createdByProfileId = _readString(data, 'createdByProfileId');
+    if (title == null ||
+        startDateKey == null ||
+        endDateKey == null ||
+        createdByProfileId == null) {
+      return null;
+    }
+    return Trip(
+      id: _readString(data, 'id') ?? fallbackId,
+      title: title,
+      destination: _readString(data, 'destination') ?? '',
+      startDateKey: startDateKey,
+      endDateKey: endDateKey,
+      createdByProfileId: createdByProfileId,
+      status: _readString(data, 'status') == 'done'
+          ? TripStatus.done
+          : TripStatus.planning,
+      note: _readString(data, 'note') ?? '',
+      updatedAt: _readDateTime(data, 'updatedAt'),
+      updatedByProfileId: _readString(data, 'updatedByProfileId'),
+    );
+  }
+
+  TripItem? _tripItemFromData(
+    Map<String, dynamic> data, {
+    required String fallbackId,
+  }) {
+    final tripId = _readString(data, 'tripId');
+    final title = _readString(data, 'title');
+    final createdByProfileId = _readString(data, 'createdByProfileId');
+    if (tripId == null || title == null || createdByProfileId == null) {
+      return null;
+    }
+    final dateKey = _readString(data, 'dateKey');
+    final link = _readString(data, 'link');
+    return TripItem(
+      id: _readString(data, 'id') ?? fallbackId,
+      tripId: tripId,
+      kind: switch (_readString(data, 'kind')) {
+        'stay' => TripItemKind.stay,
+        'transport' => TripItemKind.transport,
+        'packing' => TripItemKind.packing,
+        _ => TripItemKind.plan,
+      },
+      title: title,
+      createdByProfileId: createdByProfileId,
+      note: _readString(data, 'note') ?? '',
+      dateKey: dateKey == null || dateKey.isEmpty ? null : dateKey,
+      link: link == null || link.isEmpty ? null : link,
+      checked: data['checked'] == true,
+      updatedAt: _readDateTime(data, 'updatedAt'),
+      updatedByProfileId: _readString(data, 'updatedByProfileId'),
     );
   }
 
