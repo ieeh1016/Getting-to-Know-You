@@ -68,7 +68,8 @@ lib/src/domain/
 - `lib/src/features/place/place_board_screen.dart`: place board tab, Kakao place search, map preview/fallback UI, shared place card action.
 - `lib/src/features/stocks/stock_story_screen.dart`: stock story와 holding tab, draft form, filter, reply composer, owner edit/delete action.
 - `lib/src/features/wishlist/wishlist_screen.dart`: shared wishlist board, wish draft form, filter, mutual-interest lane, wish card.
-- `lib/src/features/trip/trip_screen.dart`: 여행 목록, 여행 상세, 숙소/이동/준비물/계획 항목 편집.
+- `lib/src/features/trip/trip_screen.dart`: 여행 목록, 여행 상세, 일정/숙소/이동/준비물/계획 tab과 항목 편집 form.
+- `lib/src/features/trip/trip_timeline.dart`: 날짜별 세로 rail 타임라인과 하루 header, 항목 entry.
 
 ## Card Geometry
 

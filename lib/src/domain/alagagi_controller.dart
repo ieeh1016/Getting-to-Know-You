@@ -1076,6 +1076,9 @@ extension TripItemKindMeta on TripItemKind {
   };
 
   bool get usesCheck => this == TripItemKind.packing;
+
+  /// 타임라인에 시간 흐름으로 놓이는 종류인지.
+  bool get appearsOnTimeline => !usesCheck;
 }
 
 const tripItemKindOptions = TripItemKind.values;
@@ -1173,6 +1176,7 @@ class TripItem {
     required this.createdByProfileId,
     this.note = '',
     this.dateKey,
+    this.timeLabel,
     this.link,
     this.checked = false,
     this.updatedAt,
@@ -1186,6 +1190,9 @@ class TripItem {
   final String createdByProfileId;
   final String note;
   final String? dateKey;
+
+  /// `09:30` 형태의 시각. 없으면 그날 안에서 시간 미정으로 뒤에 놓인다.
+  final String? timeLabel;
   final String? link;
   final bool checked;
   final DateTime? updatedAt;
@@ -1197,6 +1204,8 @@ class TripItem {
     String? note,
     String? dateKey,
     bool clearDateKey = false,
+    String? timeLabel,
+    bool clearTimeLabel = false,
     String? link,
     bool clearLink = false,
     bool? checked,
@@ -1211,12 +1220,53 @@ class TripItem {
       createdByProfileId: createdByProfileId,
       note: note ?? this.note,
       dateKey: clearDateKey ? null : dateKey ?? this.dateKey,
+      timeLabel: clearTimeLabel ? null : timeLabel ?? this.timeLabel,
       link: clearLink ? null : link ?? this.link,
       checked: checked ?? this.checked,
       updatedAt: updatedAt ?? this.updatedAt,
       updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
     );
   }
+}
+
+/// 여행 하루. 타임라인은 이 묶음을 날짜순으로 이어 붙여 만든다.
+class TripDay {
+  const TripDay({
+    required this.dateKey,
+    required this.dayNumber,
+    required this.items,
+  });
+
+  /// 날짜 미정 묶음은 `dateKey`가 비어 있고 [dayNumber]가 0이다.
+  final String dateKey;
+  final int dayNumber;
+  final List<TripItem> items;
+
+  bool get isUndated => dateKey.isEmpty;
+
+  DateTime? get date => DateTime.tryParse(dateKey);
+
+  /// `9월 12일 (토)` 형태. 날짜 미정이면 안내 문구를 돌려준다.
+  String get dateLabel {
+    final parsed = date;
+    if (parsed == null) {
+      return '날짜 미정';
+    }
+    return '${parsed.month}월 ${parsed.day}일 (${tripWeekdayLabel(parsed)})';
+  }
+
+  String get dayLabel => isUndated ? '언제든' : '$dayNumber일차';
+}
+
+const _tripWeekdayLabels = ['월', '화', '수', '목', '금', '토', '일'];
+
+String tripWeekdayLabel(DateTime date) =>
+    _tripWeekdayLabels[(date.weekday - 1) % 7];
+
+/// 시각 표기는 `HH:mm`만 받는다. 비어 있으면 시간 미정이다.
+bool isValidTripTimeLabel(String value) {
+  final match = RegExp(r'^([01]\d|2[0-3]):([0-5]\d)$').firstMatch(value);
+  return match != null;
 }
 
 String _tripDateKey(DateTime date) {
@@ -7160,12 +7210,15 @@ class AlagagiController extends ChangeNotifier {
         .where((item) => item.tripId == tripId)
         .where((item) => kind == null || item.kind == kind)
         .toList();
-    items.sort((first, second) {
-      final firstDate = first.dateKey;
-      final secondDate = second.dateKey;
-      if (firstDate == secondDate) {
-        return first.title.compareTo(second.title);
-      }
+    items.sort(_compareTripItems);
+    return List<TripItem>.unmodifiable(items);
+  }
+
+  /// 날짜 -> 시각 -> 제목 순. 날짜와 시각이 없는 항목은 각각 뒤로 밀린다.
+  static int _compareTripItems(TripItem first, TripItem second) {
+    final firstDate = first.dateKey;
+    final secondDate = second.dateKey;
+    if (firstDate != secondDate) {
       if (firstDate == null) {
         return 1;
       }
@@ -7173,8 +7226,98 @@ class AlagagiController extends ChangeNotifier {
         return -1;
       }
       return firstDate.compareTo(secondDate);
-    });
-    return List<TripItem>.unmodifiable(items);
+    }
+    final firstTime = first.timeLabel;
+    final secondTime = second.timeLabel;
+    if (firstTime != secondTime) {
+      if (firstTime == null) {
+        return 1;
+      }
+      if (secondTime == null) {
+        return -1;
+      }
+      return firstTime.compareTo(secondTime);
+    }
+    return first.title.compareTo(second.title);
+  }
+
+  /// 여행 일정 타임라인. 날짜별로 묶고 날짜 미정 묶음을 마지막에 둔다.
+  ///
+  /// 준비물은 시간 흐름이 아니라 챙길 목록이라 타임라인에서 제외한다.
+  List<TripDay> tripTimelineDays(String tripId) {
+    final trip = tripById(tripId);
+    if (trip == null) {
+      return const [];
+    }
+    final scheduled = _tripItems
+        .where((item) => item.tripId == tripId && !item.kind.usesCheck)
+        .toList();
+    scheduled.sort(_compareTripItems);
+
+    final days = <TripDay>[];
+    final dateKeys = trip.dateKeys;
+    for (var index = 0; index < dateKeys.length; index += 1) {
+      final dateKey = dateKeys[index];
+      days.add(
+        TripDay(
+          dateKey: dateKey,
+          dayNumber: index + 1,
+          items: List<TripItem>.unmodifiable(
+            scheduled.where((item) => item.dateKey == dateKey),
+          ),
+        ),
+      );
+    }
+
+    final undated = scheduled.where((item) => item.dateKey == null).toList();
+    if (undated.isNotEmpty) {
+      days.add(
+        TripDay(
+          dateKey: '',
+          dayNumber: 0,
+          items: List<TripItem>.unmodifiable(undated),
+        ),
+      );
+    }
+    return List<TripDay>.unmodifiable(days);
+  }
+
+  /// 한 종류 안에서도 날짜별로 묶어 보여준다.
+  List<TripDay> tripDaysForKind(String tripId, TripItemKind kind) {
+    final trip = tripById(tripId);
+    if (trip == null) {
+      return const [];
+    }
+    final items = tripItemsFor(tripId, kind: kind);
+    final days = <TripDay>[];
+    final dateKeys = trip.dateKeys;
+    for (var index = 0; index < dateKeys.length; index += 1) {
+      final dateKey = dateKeys[index];
+      final dayItems = items
+          .where((item) => item.dateKey == dateKey)
+          .toList();
+      if (dayItems.isEmpty) {
+        continue;
+      }
+      days.add(
+        TripDay(
+          dateKey: dateKey,
+          dayNumber: index + 1,
+          items: List<TripItem>.unmodifiable(dayItems),
+        ),
+      );
+    }
+    final undated = items.where((item) => item.dateKey == null).toList();
+    if (undated.isNotEmpty) {
+      days.add(
+        TripDay(
+          dateKey: '',
+          dayNumber: 0,
+          items: List<TripItem>.unmodifiable(undated),
+        ),
+      );
+    }
+    return List<TripDay>.unmodifiable(days);
   }
 
   int tripPackingCheckedCount(String tripId) => tripItemsFor(
@@ -7285,6 +7428,7 @@ class AlagagiController extends ChangeNotifier {
     required String title,
     String note = '',
     String? dateKey,
+    String? timeLabel,
     String? link,
   }) {
     final trip = tripById(tripId);
@@ -7301,6 +7445,14 @@ class AlagagiController extends ChangeNotifier {
     if (dateKey != null && resolvedDateKey == null) {
       return '여행 기간 안의 날짜만 고를 수 있어요.';
     }
+    final trimmedTime = timeLabel?.trim() ?? '';
+    if (trimmedTime.isNotEmpty && !isValidTripTimeLabel(trimmedTime)) {
+      return '시간은 09:30처럼 적어주세요.';
+    }
+    // 날짜를 정하지 않았으면 시각만 남겨둘 이유가 없다.
+    final resolvedTimeLabel = resolvedDateKey == null || trimmedTime.isEmpty
+        ? null
+        : trimmedTime;
 
     final now = DateTime.now();
     final existingIndex = itemId == null
@@ -7314,6 +7466,8 @@ class AlagagiController extends ChangeNotifier {
         note: note.trim(),
         dateKey: resolvedDateKey,
         clearDateKey: resolvedDateKey == null,
+        timeLabel: resolvedTimeLabel,
+        clearTimeLabel: resolvedTimeLabel == null,
         link: link?.trim(),
         clearLink: link == null || link.trim().isEmpty,
         checked: kind.usesCheck ? null : false,
@@ -7330,6 +7484,7 @@ class AlagagiController extends ChangeNotifier {
         createdByProfileId: _state.me.id,
         note: note.trim(),
         dateKey: resolvedDateKey,
+        timeLabel: resolvedTimeLabel,
         link: link == null || link.trim().isEmpty ? null : link.trim(),
         updatedAt: now,
         updatedByProfileId: _state.me.id,
@@ -7392,6 +7547,7 @@ class AlagagiController extends ChangeNotifier {
       }
       final updated = item.copyWith(
         clearDateKey: true,
+        clearTimeLabel: true,
         updatedAt: DateTime.now(),
         updatedByProfileId: _state.me.id,
       );

@@ -429,6 +429,7 @@ service cloud.firestore {
           'title',
           'note',
           'dateKey',
+          'timeLabel',
           'link',
           'checked',
           'createdByProfileId',
@@ -445,6 +446,8 @@ service cloud.firestore {
         && request.resource.data.note.size() <= 500
         && request.resource.data.dateKey is string
         && request.resource.data.dateKey.size() <= 10
+        && request.resource.data.timeLabel is string
+        && request.resource.data.timeLabel.size() <= 5
         && request.resource.data.link is string
         && request.resource.data.link.size() <= 500
         && request.resource.data.checked is bool

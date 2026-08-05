@@ -197,6 +197,11 @@ Key wishDoneButtonKey(String wishId) => Key('wish-done-button-$wishId');
 Key wishDeleteButtonKey(String wishId) => Key('wish-delete-button-$wishId');
 
 const tripsScreenKey = Key('trips-screen');
+const tripTimelineKey = Key('trip-timeline');
+const tripItemTimeFieldKey = Key('trip-item-time-field');
+Key tripTimelineDayKey(String dateKey) => Key('trip-timeline-day-$dateKey');
+Key tripTimelineEntryKey(String itemId) => Key('trip-timeline-entry-$itemId');
+Key tripDayGroupKey(String dateKey) => Key('trip-day-group-$dateKey');
 const tripDraftToggleButtonKey = Key('trip-draft-toggle-button');
 const tripTitleFieldKey = Key('trip-title-field');
 const tripDestinationFieldKey = Key('trip-destination-field');

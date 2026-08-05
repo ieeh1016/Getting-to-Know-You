@@ -200,6 +200,164 @@ void main() {
       expect(controller.tripPackingCheckedCount(tripId), 1);
     });
 
+    test('timeline groups items by day and orders them by time', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-14',
+      );
+      final tripId = controller.trips.single.id;
+
+      controller.saveTripItem(
+        tripId: tripId,
+        kind: TripItemKind.plan,
+        title: '저녁 식사',
+        dateKey: '2026-09-12',
+        timeLabel: '19:00',
+      );
+      controller.saveTripItem(
+        tripId: tripId,
+        kind: TripItemKind.transport,
+        title: '김포 출발',
+        dateKey: '2026-09-12',
+        timeLabel: '08:20',
+      );
+      controller.saveTripItem(
+        tripId: tripId,
+        kind: TripItemKind.stay,
+        title: '체크인',
+        dateKey: '2026-09-12',
+      );
+      controller.saveTripItem(
+        tripId: tripId,
+        kind: TripItemKind.plan,
+        title: '언제든 가보고 싶은 카페',
+      );
+      controller.saveTripItem(
+        tripId: tripId,
+        kind: TripItemKind.packing,
+        title: '충전기',
+      );
+
+      final days = controller.tripTimelineDays(tripId);
+
+      // 여행 3일 + 날짜 미정 묶음
+      expect(days, hasLength(4));
+      expect(days.first.dayNumber, 1);
+      expect(days.first.dateKey, '2026-09-12');
+
+      // 시각이 있는 항목이 먼저, 시간 미정은 그날 끝에 붙는다.
+      expect(
+        days.first.items.map((item) => item.title),
+        ['김포 출발', '저녁 식사', '체크인'],
+      );
+
+      // 준비물은 시간 흐름이 아니라 목록이라 타임라인에 오지 않는다.
+      expect(
+        days.expand((day) => day.items).map((item) => item.title),
+        isNot(contains('충전기')),
+      );
+
+      final undated = days.last;
+      expect(undated.isUndated, isTrue);
+      expect(undated.dayLabel, '언제든');
+      expect(undated.items.single.title, '언제든 가보고 싶은 카페');
+    });
+
+    test('day header labels read as 1일차 and a dated weekday', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-13',
+      );
+      final tripId = controller.trips.single.id;
+
+      final days = controller.tripTimelineDays(tripId);
+
+      expect(days.first.dayLabel, '1일차');
+      // 2026-09-12는 토요일이다.
+      expect(days.first.dateLabel, '9월 12일 (토)');
+      expect(days[1].dayLabel, '2일차');
+      expect(days[1].dateLabel, '9월 13일 (일)');
+    });
+
+    test('time label is rejected unless it reads as HH:mm', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-14',
+      );
+      final tripId = controller.trips.single.id;
+
+      expect(
+        controller.saveTripItem(
+          tripId: tripId,
+          kind: TripItemKind.transport,
+          title: '출발',
+          dateKey: '2026-09-12',
+          timeLabel: '8시 20분',
+        ),
+        isNotNull,
+      );
+      expect(
+        controller.saveTripItem(
+          tripId: tripId,
+          kind: TripItemKind.transport,
+          title: '출발',
+          dateKey: '2026-09-12',
+          timeLabel: '25:00',
+        ),
+        isNotNull,
+      );
+      expect(
+        controller.saveTripItem(
+          tripId: tripId,
+          kind: TripItemKind.transport,
+          title: '출발',
+          dateKey: '2026-09-12',
+          timeLabel: '08:20',
+        ),
+        isNull,
+      );
+      expect(controller.tripItemsFor(tripId).single.timeLabel, '08:20');
+    });
+
+    test('clearing a date also clears the time it belonged to', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-14',
+      );
+      final tripId = controller.trips.single.id;
+      controller.saveTripItem(
+        tripId: tripId,
+        kind: TripItemKind.plan,
+        title: '오름 산책',
+        dateKey: '2026-09-14',
+        timeLabel: '10:00',
+      );
+
+      controller.saveTrip(
+        tripId: tripId,
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-13',
+      );
+
+      final item = controller.tripItemsFor(tripId).single;
+      expect(item.dateKey, isNull);
+      expect(item.timeLabel, isNull);
+    });
+
     test('only the creator can delete a trip or an item', () {
       final controller = buildController();
       controller.saveTrip(

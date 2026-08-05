@@ -389,6 +389,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         'title': item.title,
         'note': item.note,
         'dateKey': item.dateKey ?? '',
+        'timeLabel': item.timeLabel ?? '',
         'link': item.link ?? '',
         'checked': item.checked,
         'createdByProfileId': item.createdByProfileId,
@@ -1201,6 +1202,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       return null;
     }
     final dateKey = _readString(data, 'dateKey');
+    final timeLabel = _readString(data, 'timeLabel');
     final link = _readString(data, 'link');
     return TripItem(
       id: _readString(data, 'id') ?? fallbackId,
@@ -1215,6 +1217,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       createdByProfileId: createdByProfileId,
       note: _readString(data, 'note') ?? '',
       dateKey: dateKey == null || dateKey.isEmpty ? null : dateKey,
+      timeLabel: timeLabel == null || timeLabel.isEmpty ? null : timeLabel,
       link: link == null || link.isEmpty ? null : link,
       checked: data['checked'] == true,
       updatedAt: _readDateTime(data, 'updatedAt'),

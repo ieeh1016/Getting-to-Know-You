@@ -369,6 +369,123 @@ void main() {
     expect(find.byKey(tripItemCheckButtonKey(packingItem.id)), findsNothing);
   });
 
+  testWidgets('trip timeline orders a day by time and opens an item to edit', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(),
+      ),
+    )..goTo(AlagagiRoute.trips);
+
+    controller.saveTrip(
+      title: '가을 제주',
+      destination: '제주도',
+      startDateKey: '2026-09-12',
+      endDateKey: '2026-09-13',
+    );
+    final tripId = controller.trips.single.id;
+    controller.saveTripItem(
+      tripId: tripId,
+      kind: TripItemKind.plan,
+      title: '저녁 식사',
+      dateKey: '2026-09-12',
+      timeLabel: '19:00',
+    );
+    controller.saveTripItem(
+      tripId: tripId,
+      kind: TripItemKind.transport,
+      title: '김포 출발',
+      dateKey: '2026-09-12',
+      timeLabel: '08:20',
+    );
+    controller.saveTripItem(
+      tripId: tripId,
+      kind: TripItemKind.packing,
+      title: '충전기',
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(tripOpenButtonKey(tripId)));
+    await tester.pumpAndSettle();
+
+    // 상세를 열면 일정 타임라인이 기본 탭이다.
+    expect(find.byKey(tripTimelineKey), findsOneWidget);
+    expect(find.byKey(tripTimelineDayKey('2026-09-12')), findsOneWidget);
+    expect(find.text('1일차'), findsWidgets);
+    expect(find.text('9월 12일 (토)'), findsOneWidget);
+    expect(find.text('2일차'), findsWidgets);
+
+    final departure = controller
+        .tripItemsFor(tripId, kind: TripItemKind.transport)
+        .single;
+    final dinner = controller
+        .tripItemsFor(tripId, kind: TripItemKind.plan)
+        .single;
+
+    // 이른 시각이 위에 온다.
+    final departureY = tester
+        .getTopLeft(find.byKey(tripTimelineEntryKey(departure.id)))
+        .dy;
+    final dinnerY = tester
+        .getTopLeft(find.byKey(tripTimelineEntryKey(dinner.id)))
+        .dy;
+    expect(departureY, lessThan(dinnerY));
+    expect(find.text('08:20'), findsOneWidget);
+    expect(find.text('19:00'), findsOneWidget);
+
+    // 준비물은 시간 흐름이 아니라 타임라인에 오지 않는다.
+    expect(find.text('충전기'), findsNothing);
+
+    // 타임라인 항목을 누르면 해당 종류 탭에서 바로 고칠 수 있다.
+    await tester.tap(find.byKey(tripTimelineEntryKey(departure.id)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('이동 고치기'), findsOneWidget);
+    expect(find.text('고친 내용 저장하기'), findsOneWidget);
+    expect(
+      tester.widget<TextField>(find.byKey(tripItemTimeFieldKey)).controller!.text,
+      '08:20',
+    );
+
+    await tester.enterText(find.byKey(tripItemTimeFieldKey), '07:40');
+    await tester.ensureVisible(find.byKey(tripItemSubmitButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripItemSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(
+      controller.tripItemsFor(tripId, kind: TripItemKind.transport).single
+          .timeLabel,
+      '07:40',
+    );
+    // 새 항목이 추가된 게 아니라 기존 항목이 바뀐 것이다.
+    expect(
+      controller.tripItemsFor(tripId, kind: TripItemKind.transport),
+      hasLength(1),
+    );
+
+    // 종류 탭도 날짜 묶음 헤더를 보여준다.
+    expect(find.byKey(tripDayGroupKey('2026-09-12')), findsOneWidget);
+  });
+
   testWidgets('saves a curiosity reply and a new question in the sheet', (
     tester,
   ) async {
