@@ -17,12 +17,15 @@ Daily question은 앱의 핵심 slow-conversation loop다. records와 archive는
 
 ## 질문 카탈로그
 
-- 질문 catalog는 버전으로 쌓는다. 현재 활성 catalog는 `activeQuestionCatalog`이고, `questionCatalogV1`의 DAY 1–32 자리 + `questionCatalogV2`(DAY 33부터)로 구성된다.
-- **이미 지나간 자리의 질문 id와 문구는 절대 바꾸지 않는다.** answer는 `{questionId}_{uid}` key로 저장되므로, 지나간 자리의 문구를 바꾸면 예전 답변이 다른 질문에 붙어 보인다.
-- 질문 세트를 새로 쓸 때는 기존 catalog를 그대로 두고, `kQuestionCatalogV2StartDay` 같은 cutover 상수를 올린 뒤 새 catalog를 새 id namespace로 덧붙인다. v1은 `q001`–`q058`, v2는 `qb001`–`qb058`을 쓴다.
-- `day`와 `number`는 활성 catalog 안에서 1부터 연속이어야 한다. 오늘의 질문은 `startedDateKey`와 오늘 날짜의 day 차이로 위치를 계산하기 때문이다.
+- 질문 catalog는 버전으로 쌓는다. `questionCatalogV1`은 이미 지나간 질문이라 보존용이고, `questionCatalogV2`는 앞으로 나올 질문이다.
+- **이미 나온 질문의 id와 문구는 절대 바꾸지 않는다.** answer는 `{questionId}_{uid}` key로 저장되므로, 지나간 자리의 문구를 바꾸면 예전 답변이 다른 질문에 붙어 보인다.
+- 활성 순서는 `buildActiveQuestionCatalog(startedDateKey, todayDateKey)`가 만든다. 오늘까지 나온 자리는 v1 원문 그대로 두고, **내일부터** v2가 이어진다.
+- cutover를 상수로 고정하지 않는다. space의 실제 `startedDateKey`와 오늘 날짜에서 매번 계산해야 시작일이 달라도 어긋나지 않는다.
+- `day`와 `number`는 활성 순서 안에서 1부터 연속이어야 한다. 오늘의 질문 위치를 날짜 차이로 계산하기 때문이다.
+- 답이 있는 질문은 활성 순서에서 빠졌더라도 기록 화면에서 사라지면 안 된다. 조회는 `allKnownQuestions`(v1 + v2)로 fallback한다.
+- 새 질문 세트를 또 추가할 때는 기존 catalog를 그대로 두고 새 id namespace를 쓴다. v1은 `q001`–`q058`, v2는 `qb001`–`qb058`이다.
 - v2 질문은 만난 지 얼마 되지 않아 서로를 알아가는 두 사람 기준으로 쓴다. 가벼운 일상 -> 서로에 대한 관찰과 연락/만남 방식 -> 가치관 -> 조금 더 깊은 마음 순으로 이어진다.
-- 장기 약속을 압박하는 표현(`결혼`, `평생`, `영원`, `기념일`, `헤어지`)은 활성 catalog 전체에서 쓰지 않는다.
+- 장기 약속을 압박하는 표현(`결혼`, `평생`, `영원`, `기념일`, `헤어지`)은 전체 catalog에서 쓰지 않는다.
 
 ## 데이터 규칙
 

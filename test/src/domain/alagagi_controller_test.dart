@@ -643,7 +643,7 @@ void main() {
 
     test('daily question catalog avoids long-term pressure language', () {
       const blockedWords = ['결혼', '평생', '영원', '기념일', '헤어지'];
-      final questionTexts = activeQuestionCatalog.expand(
+      final questionTexts = allKnownQuestions.expand(
         (question) => [question.text, question.highlightedText],
       );
 
@@ -672,26 +672,59 @@ void main() {
       expect(ids, hasLength(questionCatalogV1.length));
     });
 
-    test('answered days keep their original question id and text', () {
-      // 지나간 자리의 질문을 바꾸면 이미 저장된 답변이 다른 질문에 붙는다.
-      // v2 시작 이전 자리는 v1 원문 그대로여야 한다.
-      for (var index = 0; index < kQuestionCatalogV2StartDay - 1; index++) {
-        expect(activeQuestionCatalog[index].id, questionCatalogV1[index].id);
-        expect(
-          activeQuestionCatalog[index].text,
-          questionCatalogV1[index].text,
-        );
-      }
+    test('every day up to today keeps its original question', () {
+      // 2026-07-05 시작, 2026-08-05 오늘이면 DAY 1-32가 이미 나온 질문이다.
+      final catalog = buildActiveQuestionCatalog(
+        startedDateKey: '2026-07-05',
+        todayDateKey: '2026-08-05',
+      );
 
       expect(
-        activeQuestionCatalog[kQuestionCatalogV2StartDay - 1].id,
-        questionCatalogV2.first.id,
+        questionCatalogV1PreservedCount(
+          startedDateKey: '2026-07-05',
+          todayDateKey: '2026-08-05',
+        ),
+        32,
       );
-      expect(questionCatalogV2.first.day, kQuestionCatalogV2StartDay);
+
+      for (var index = 0; index < 32; index++) {
+        expect(catalog[index].id, questionCatalogV1[index].id);
+        expect(catalog[index].text, questionCatalogV1[index].text);
+      }
+    });
+
+    test('new questions start the day after today', () {
+      final catalog = buildActiveQuestionCatalog(
+        startedDateKey: '2026-07-05',
+        todayDateKey: '2026-08-05',
+      );
+
+      // 오늘은 DAY 32, 내일은 DAY 33이다.
+      expect(catalog[31].id, questionCatalogV1[31].id);
+      expect(catalog[32].id, questionCatalogV2.first.id);
+      expect(catalog[32].day, 33);
+    });
+
+    test('cutover follows the real start date instead of a fixed day', () {
+      // 더 오래된 space라면 그만큼 v1이 더 많이 보존돼야 한다.
+      final longer = buildActiveQuestionCatalog(
+        startedDateKey: '2026-06-01',
+        todayDateKey: '2026-08-05',
+      );
+      final shorter = buildActiveQuestionCatalog(
+        startedDateKey: '2026-08-01',
+        todayDateKey: '2026-08-05',
+      );
+
+      // v1이 58개뿐이라 66일이 지난 space는 v1을 모두 소진한 상태다.
+      expect(longer[57].id, questionCatalogV1.last.id);
+      expect(longer[58].id, questionCatalogV2.first.id);
+      expect(shorter[4].id, questionCatalogV1[4].id);
+      expect(shorter[5].id, questionCatalogV2.first.id);
     });
 
     test('question ids never repeat across catalog versions', () {
-      final ids = activeQuestionCatalog.map((question) => question.id).toList();
+      final ids = allKnownQuestions.map((question) => question.id).toList();
 
       expect(ids.toSet(), hasLength(ids.length));
       expect(
@@ -703,10 +736,68 @@ void main() {
     });
 
     test('active catalog days stay sequential from day one', () {
-      for (var index = 0; index < activeQuestionCatalog.length; index++) {
-        expect(activeQuestionCatalog[index].day, index + 1);
-        expect(activeQuestionCatalog[index].number, index + 1);
+      final catalog = buildActiveQuestionCatalog(
+        startedDateKey: '2026-07-05',
+        todayDateKey: '2026-08-05',
+      );
+
+      for (var index = 0; index < catalog.length; index++) {
+        expect(catalog[index].day, index + 1);
+        expect(catalog[index].number, index + 1);
       }
+    });
+
+    test('answers to retired questions stay visible in the archive', () {
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            answers: [
+              Answer(
+                questionId: 'q050',
+                profileId: 'youngwooUid',
+                body: '한참 전에 남긴 답이에요.',
+                createdLabel: '지난달',
+              ),
+            ],
+            dailyProgress: DailyQuestionProgress(
+              startedDateKey: '2026-07-05',
+              currentQuestionId: 'q001',
+              openedDateKey: '2026-07-05',
+            ),
+          ),
+        ),
+        todayDateKey: '2026-08-05',
+      );
+
+      // q050은 오늘 기준 활성 순서에는 없지만 답이 있으므로 기록에 남아야 한다.
+      expect(
+        controller.questions.map((question) => question.id),
+        isNot(contains('q050')),
+      );
+      expect(
+        controller.archiveItems.map((item) => item.question.id),
+        contains('q050'),
+      );
+      expect(
+        controller.archiveItems
+            .firstWhere((item) => item.question.id == 'q050')
+            .question
+            .text,
+        questionCatalogV1[49].text,
+      );
     });
 
     test('daily question resolver reaches the extended catalog', () {
@@ -736,15 +827,12 @@ void main() {
         todayDateKey: '2026-07-28',
       );
 
-      // 2026-06-01 시작 기준 2026-07-28은 DAY 58이고, v2 구간에 들어간다.
+      // 2026-06-01 시작 기준 2026-07-28은 DAY 58이다.
       expect(controller.todayQuestion.day, 58);
-      expect(
-        controller.todayQuestion.id,
-        activeQuestionCatalog[57].id,
-      );
+      expect(controller.todayQuestion.id, controller.questions[57].id);
       expect(
         controller.dailyProgress.currentQuestionId,
-        activeQuestionCatalog[57].id,
+        controller.questions[57].id,
       );
     });
   });

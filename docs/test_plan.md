@@ -78,7 +78,9 @@
 - private 기억 카드는 작성자에게만 보이고 partner 목록/카운트에 노출되지 않는다.
 - `[PUSH-001]` Spark plan에서는 푸시 알림 UI와 token registration이 기본 비활성화되어 token 문서를 갱신하지 않는다.
 - `[Q-CATALOG-001]` 활성 질문 카탈로그는 DAY 1부터 연속이고 id가 중복되지 않으며, 장기 약속을 압박하는 `결혼`, `평생`, `영원`, `기념일`, `헤어지` 문구를 노출하지 않는다.
-- `[Q-CATALOG-002]` cutover(`kQuestionCatalogV2StartDay`) 이전 자리는 `questionCatalogV1`의 원래 질문 id와 문구를 그대로 유지해, 이미 저장된 답변이 다른 질문에 붙지 않는다.
+- `[Q-CATALOG-002]` 오늘까지 나온 자리는 `questionCatalogV1`의 원래 질문 id와 문구를 그대로 유지하고, 새 질문 세트는 내일부터 시작한다.
+- `[Q-CATALOG-002]` cutover는 고정 상수가 아니라 space의 실제 `startedDateKey`와 오늘 날짜에서 계산한다.
+- `[Q-CATALOG-003]` 답이 있는 질문은 활성 순서에서 빠졌더라도 기록 화면에 원래 문구로 계속 보인다.
 - 개인화 설정이 없으면 기본 이름/아바타/초대 문구로 fallback한다.
 - 홈 진행 요약은 summary/progress/today answers/music notes에서 `오늘 질문`, `둘 다 답한 질문`, `음악 노트` 상태를 계산한다.
 - `[HOME-MUSIC-001]` 홈 진행 요약은 localStorage의 마지막 음악 탭 확인 시간 이후 상대가 남긴 music note가 있으면 `새 음악 노트가 있어요`를 계산한다.

@@ -462,6 +462,16 @@ class DailyQuestion {
   final QuestionDepth depth;
   final String text;
   final String highlightedText;
+
+  /// 질문 문구와 id는 그대로 두고 순서 번호만 옮긴다.
+  DailyQuestion withDay(int newDay) => DailyQuestion(
+    id: id,
+    day: newDay,
+    number: newDay,
+    depth: depth,
+    text: text,
+    highlightedText: highlightedText,
+  );
 }
 
 class Answer {
@@ -3014,20 +3024,20 @@ class AlagagiController extends ChangeNotifier {
        _spaceId = session.spaceId,
        _usesDemoData = false,
        _dailyProgress = _resolveDailyQuestionProgress(
-         activeQuestionCatalog,
+         _sessionQuestionCatalog(session, todayDateKey),
          session.data.dailyProgress,
          todayDateKey: todayDateKey,
        ),
        _relationship = session.data.relationship,
        _todayQuestion = _questionForProgress(
-         activeQuestionCatalog,
+         _sessionQuestionCatalog(session, todayDateKey),
          _resolveDailyQuestionProgress(
-           activeQuestionCatalog,
+           _sessionQuestionCatalog(session, todayDateKey),
            session.data.dailyProgress,
            todayDateKey: todayDateKey,
          ),
        ),
-       questions = activeQuestionCatalog,
+       questions = _sessionQuestionCatalog(session, todayDateKey),
        _state = AlagagiState(
          me: session.me,
          partner: session.partner,
@@ -3898,6 +3908,19 @@ class AlagagiController extends ChangeNotifier {
       ..clear()
       ..addAll(data.improvementPosts);
     _sortImprovementPostsByUpdatedAt();
+  }
+
+  /// space의 실제 시작일과 오늘 날짜로 활성 질문 순서를 만든다.
+  static List<DailyQuestion> _sessionQuestionCatalog(
+    AlagagiSession session,
+    String? todayDateKey,
+  ) {
+    final resolvedTodayDateKey = todayDateKey ?? _todayDateKey();
+    return buildActiveQuestionCatalog(
+      startedDateKey:
+          session.data.dailyProgress?.startedDateKey ?? resolvedTodayDateKey,
+      todayDateKey: resolvedTodayDateKey,
+    );
   }
 
   static DailyQuestionProgress _resolveDailyQuestionProgress(
@@ -5962,10 +5985,31 @@ class AlagagiController extends ChangeNotifier {
     return _state.improvementSaveTargetId == postId;
   }
 
+  /// 답이 있는 질문은 활성 순서에서 빠졌더라도 기록에서 사라지면 안 된다.
+  List<DailyQuestion> get answerableQuestions {
+    final byId = {for (final question in questions) question.id: question};
+    final answeredIds = {
+      ..._myAnswersByQuestionId.keys,
+      ..._partnerAnswersByQuestionId.keys,
+    };
+    final missing = allKnownQuestions
+        .where(
+          (question) =>
+              answeredIds.contains(question.id) &&
+              !byId.containsKey(question.id),
+        )
+        .toList();
+    if (missing.isEmpty) {
+      return questions;
+    }
+    return List<DailyQuestion>.unmodifiable([...questions, ...missing]);
+  }
+
   List<ArchiveItem> get archiveItems {
+    final catalog = answerableQuestions;
     final visibleQuestions = _usesDemoData
-        ? questions
-        : questions.where((question) {
+        ? catalog
+        : catalog.where((question) {
             return _myAnswersByQuestionId.containsKey(question.id) ||
                 _partnerAnswersByQuestionId.containsKey(question.id);
           }).toList();
@@ -10858,15 +10902,7 @@ const seedQuestions = [
   ),
 ];
 
-/// 새 질문 세트가 시작되는 DAY.
-///
-/// 이 day 이전 자리는 [questionCatalogV1]을 그대로 유지한다. 답변은
-/// `{questionId}_{uid}` key로 저장되므로 이미 지나간 자리의 질문 id와 문구를
-/// 바꾸면 예전 답변이 다른 질문에 붙어 보인다. 질문 세트를 또 바꿀 때도
-/// 지나간 자리는 건드리지 말고 이 상수를 올린 뒤 새 catalog를 덧붙인다.
-const kQuestionCatalogV2StartDay = 33;
-
-/// 관계 시작부터 DAY 32까지 쓰인 첫 질문 세트. 보존용이며 수정하지 않는다.
+/// 첫 질문 세트. 이미 지나간 질문이므로 보존용이며 수정하지 않는다.
 const questionCatalogV1 = [
   DailyQuestion(
     id: 'q001',
@@ -11802,11 +11838,48 @@ const questionCatalogV2 = [
   ),
 ];
 
-/// 앱이 실제로 쓰는 catalog. 지나간 자리는 v1, 그 뒤는 v2다.
-final activeQuestionCatalog = List<DailyQuestion>.unmodifiable([
-  ...questionCatalogV1.take(kQuestionCatalogV2StartDay - 1),
+/// 지금까지 나온 질문과 앞으로 나올 질문을 모두 담은 조회용 목록.
+///
+/// 답변은 `{questionId}_{uid}` key로 저장되므로, 한 번이라도 나왔던 질문은
+/// 계속 조회할 수 있어야 기록 화면에서 사라지지 않는다.
+final allKnownQuestions = List<DailyQuestion>.unmodifiable([
+  ...questionCatalogV1,
   ...questionCatalogV2,
 ]);
+
+/// 오늘까지 나온 질문은 [questionCatalogV1] 원문 그대로 두고, 내일부터
+/// [questionCatalogV2]가 이어지도록 순서를 만든다.
+///
+/// cutover를 상수로 박아두면 실제 `startedDateKey`가 다를 때 조용히 어긋난다.
+/// 그래서 space의 시작일과 오늘 날짜에서 매번 계산한다.
+List<DailyQuestion> buildActiveQuestionCatalog({
+  required String startedDateKey,
+  required String todayDateKey,
+}) {
+  final preservedCount = questionCatalogV1PreservedCount(
+    startedDateKey: startedDateKey,
+    todayDateKey: todayDateKey,
+  );
+  return List<DailyQuestion>.unmodifiable([
+    ...questionCatalogV1.take(preservedCount),
+    for (var index = 0; index < questionCatalogV2.length; index += 1)
+      questionCatalogV2[index].withDay(preservedCount + index + 1),
+  ]);
+}
+
+/// 오늘까지 쓰인 v1 질문 수. 최소 1개, 최대 v1 전체다.
+int questionCatalogV1PreservedCount({
+  required String startedDateKey,
+  required String todayDateKey,
+}) {
+  final started = DateTime.tryParse(startedDateKey);
+  final today = DateTime.tryParse(todayDateKey);
+  if (started == null || today == null) {
+    return questionCatalogV1.length;
+  }
+  final elapsedDays = today.difference(started).inDays + 1;
+  return elapsedDays.clamp(1, questionCatalogV1.length);
+}
 
 const seedMyAnswers = [
   Answer(
