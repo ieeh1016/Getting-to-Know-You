@@ -20,6 +20,9 @@ Daily question은 앱의 핵심 slow-conversation loop다. records와 archive는
 - 질문 catalog는 버전으로 쌓는다. `questionCatalogV1`은 이미 지나간 질문이라 보존용이고, `questionCatalogV2`는 앞으로 나올 질문이다.
 - **이미 나온 질문의 id와 문구는 절대 바꾸지 않는다.** answer는 `{questionId}_{uid}` key로 저장되므로, 지나간 자리의 문구를 바꾸면 예전 답변이 다른 질문에 붙어 보인다.
 - 활성 순서는 `buildActiveQuestionCatalog(startedDateKey, todayDateKey)`가 만든다. 오늘까지 나온 자리는 v1 원문 그대로 두고, **내일부터** v2가 이어진다.
+- 기준 시작일은 `progress/daily`의 `startedDateKey`다. 이 값은 첫 질문을 연 날이며, progress 문서가 처음 만들어질 때 `openedDateKey`로 채워진다.
+- 이 space의 첫 질문 날짜는 2026-06-09이고 `kQuestionStartedDateKey`에 기록한다. progress 문서를 읽지 못했을 때만 fallback으로 쓴다. 오늘 날짜로 fallback하면 v1이 잘려 이미 나온 질문이 사라진다.
+- `kRelationshipStartedDateKey`(관계 시작일, 홈 헤더 표기)와 혼동하지 않는다. 질문 순서와는 무관한 값이다.
 - cutover를 상수로 고정하지 않는다. space의 실제 `startedDateKey`와 오늘 날짜에서 매번 계산해야 시작일이 달라도 어긋나지 않는다.
 - `day`와 `number`는 활성 순서 안에서 1부터 연속이어야 한다. 오늘의 질문 위치를 날짜 차이로 계산하기 때문이다.
 - 답이 있는 질문은 활성 순서에서 빠졌더라도 기록 화면에서 사라지면 안 된다. 조회는 `allKnownQuestions`(v1 + v2)로 fallback한다.

@@ -591,6 +591,13 @@ class DailyQuestionProgress {
 
 const kRelationshipStartedDateKey = '2026-07-05';
 
+/// 이 space에서 첫 질문을 연 날. `progress/daily`의 `startedDateKey`가 기준이고,
+/// 이 상수는 그 문서를 읽지 못했을 때 쓰는 fallback이다.
+///
+/// [kRelationshipStartedDateKey]와는 다른 값이다. 그쪽은 홈 헤더에 보여주는
+/// 관계 시작일이고, 이 값은 질문 순서를 세는 기준일이다.
+const kQuestionStartedDateKey = '2026-06-09';
+
 class RelationshipMetadata {
   const RelationshipMetadata({
     this.startedDateKey = kRelationshipStartedDateKey,
@@ -3916,9 +3923,11 @@ class AlagagiController extends ChangeNotifier {
     String? todayDateKey,
   ) {
     final resolvedTodayDateKey = todayDateKey ?? _todayDateKey();
+    // progress 문서를 읽지 못했을 때 오늘을 시작일로 보면 v1이 1개로 잘려
+    // 이미 나온 질문이 사라진다. 모를 때는 실제 첫 질문 날짜로 되돌린다.
     return buildActiveQuestionCatalog(
       startedDateKey:
-          session.data.dailyProgress?.startedDateKey ?? resolvedTodayDateKey,
+          session.data.dailyProgress?.startedDateKey ?? kQuestionStartedDateKey,
       todayDateKey: resolvedTodayDateKey,
     );
   }

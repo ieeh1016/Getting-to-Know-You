@@ -705,6 +705,65 @@ void main() {
       expect(catalog[32].day, 33);
     });
 
+    test('this space keeps all 58 first-set questions through today', () {
+      // 이 space는 2026-06-09에 첫 질문을 열었다. 2026-08-05는 DAY 58이고
+      // v1 마지막 질문이므로, 오늘까지 나온 58개가 모두 원문으로 남아야 한다.
+      const startedDateKey = kQuestionStartedDateKey;
+      const todayDateKey = '2026-08-05';
+
+      expect(
+        questionCatalogV1PreservedCount(
+          startedDateKey: startedDateKey,
+          todayDateKey: todayDateKey,
+        ),
+        questionCatalogV1.length,
+      );
+
+      final catalog = buildActiveQuestionCatalog(
+        startedDateKey: startedDateKey,
+        todayDateKey: todayDateKey,
+      );
+
+      for (var index = 0; index < questionCatalogV1.length; index++) {
+        expect(catalog[index].id, questionCatalogV1[index].id);
+        expect(catalog[index].text, questionCatalogV1[index].text);
+      }
+
+      expect(catalog[57].day, 58);
+      expect(catalog[58].id, questionCatalogV2.first.id);
+      expect(catalog[58].day, 59);
+    });
+
+    test('missing progress falls back to the real first question date', () {
+      // progress 문서를 읽지 못해도 이미 나온 질문이 잘리면 안 된다.
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(),
+        ),
+        todayDateKey: '2026-08-05',
+      );
+
+      expect(
+        controller.questions.take(questionCatalogV1.length).map(
+          (question) => question.id,
+        ),
+        questionCatalogV1.map((question) => question.id),
+      );
+    });
+
     test('cutover follows the real start date instead of a fixed day', () {
       // 더 오래된 space라면 그만큼 v1이 더 많이 보존돼야 한다.
       final longer = buildActiveQuestionCatalog(

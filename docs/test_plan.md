@@ -80,6 +80,8 @@
 - `[Q-CATALOG-001]` 활성 질문 카탈로그는 DAY 1부터 연속이고 id가 중복되지 않으며, 장기 약속을 압박하는 `결혼`, `평생`, `영원`, `기념일`, `헤어지` 문구를 노출하지 않는다.
 - `[Q-CATALOG-002]` 오늘까지 나온 자리는 `questionCatalogV1`의 원래 질문 id와 문구를 그대로 유지하고, 새 질문 세트는 내일부터 시작한다.
 - `[Q-CATALOG-002]` cutover는 고정 상수가 아니라 space의 실제 `startedDateKey`와 오늘 날짜에서 계산한다.
+- `[Q-CATALOG-002]` 첫 질문 날짜 2026-06-09 기준 2026-08-05은 DAY 58이므로 v1 58개가 모두 원문으로 남고 새 질문은 DAY 59부터 시작한다.
+- `[Q-CATALOG-002]` progress 문서를 읽지 못하면 오늘이 아니라 `kQuestionStartedDateKey`로 fallback해 이미 나온 질문이 잘리지 않게 한다.
 - `[Q-CATALOG-003]` 답이 있는 질문은 활성 순서에서 빠졌더라도 기록 화면에 원래 문구로 계속 보인다.
 - 개인화 설정이 없으면 기본 이름/아바타/초대 문구로 fallback한다.
 - 홈 진행 요약은 summary/progress/today answers/music notes에서 `오늘 질문`, `둘 다 답한 질문`, `음악 노트` 상태를 계산한다.
