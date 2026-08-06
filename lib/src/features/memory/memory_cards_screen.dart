@@ -448,7 +448,7 @@ class _MemoryDraftCard extends StatelessWidget {
             controller: bodyController,
             label: '내용',
             hint: '기억하고 싶은 내용을 직접 적어두기',
-            maxLength: 1000,
+            maxLength: 2000,
             minLines: 4,
             maxLines: 10,
           ),

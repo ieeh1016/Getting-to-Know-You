@@ -34,7 +34,7 @@
   - 함께 할 것
   - 조심할 것
 - 공개 범위 기본값은 `shared`다.
-- 제목은 2자 이상 80자 이하, 내용은 1자 이상 1000자 이하다. UI `maxLength`와 `firestore.rules`의 `validMemoryCardShape` 한도는 항상 같은 값을 쓴다.
+- 제목은 2자 이상 80자 이하, 내용은 1자 이상 2000자 이하다. UI `maxLength`와 `firestore.rules`의 `validMemoryCardShape` 한도는 항상 같은 값을 쓴다.
 - 내용 입력 field는 최소 4줄로 시작해 최대 10줄까지 늘어나고, 그 이상은 field 안에서 스크롤한다.
 - draft 입력, 유형 선택, 공개 범위 선택, 공간 tab 전환은 Firestore write를 만들지 않는다.
 - `저장하고 공유하기` 또는 `나만 저장하기` 제출 시 `memoryCards/{cardId}` 한 문서만 저장한다.

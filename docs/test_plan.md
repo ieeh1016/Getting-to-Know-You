@@ -77,7 +77,7 @@
 - 위시 추가 draft 입력은 repository write를 호출하지 않고 제출 시에만 저장한다.
 - `[MEMORY-002]` 기억 카드 draft 입력, 유형 선택, 공개 범위 선택은 repository write를 호출하지 않고 제출 시에만 `memoryCards/{cardId}` 한 문서를 저장한다.
 - `[MEMORY-002]` 기억 카드 반응과 수정 요청은 `memoryCardResponses/{cardId_responderUid}` 한 문서만 저장하고 원문 카드를 자동 수정하지 않는다.
-- `[MEMORY-003]` 기억 카드 제목은 80자, 내용은 1000자까지 저장할 수 있고 UI `maxLength`와 `firestore.rules` 한도가 같은 값을 쓴다.
+- `[MEMORY-003]` 기억 카드 제목은 80자, 내용은 2000자까지 저장할 수 있고 UI `maxLength`와 `firestore.rules` 한도가 같은 값을 쓴다.
 - `[MEMORY-003]` 긴 기억 카드 본문은 목록에서 6줄로 잘리고 `전체 보기` cue와 읽기 button으로 readable detail sheet를 연다. 짧은 카드에는 cue가 없다.
 - private 기억 카드는 작성자에게만 보이고 partner 목록/카운트에 노출되지 않는다.
 - `[PUSH-001]` Spark plan에서는 푸시 알림 UI와 token registration이 기본 비활성화되어 token 문서를 갱신하지 않는다.

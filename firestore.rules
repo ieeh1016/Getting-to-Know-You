@@ -477,7 +477,7 @@ service cloud.firestore {
         && request.resource.data.title.size() <= 80
         && request.resource.data.body is string
         && request.resource.data.body.size() > 0
-        && request.resource.data.body.size() <= 1000
+        && request.resource.data.body.size() <= 2000
         && request.resource.data.createdByProfileId is string
         && request.resource.data.subjectProfileId is string
         && request.resource.data.createdByProfileId != request.resource.data.subjectProfileId
