@@ -84,8 +84,9 @@ const kMemoryCardTitleMinLength = 2;
 const kMemoryCardTitleMaxLength = 80;
 const kMemoryCardBodyMaxLength = 2000;
 
-/// 수정 제안은 카드 본문이 아니라 짧은 반응이라 따로 둔다.
-const kMemoryCardCorrectionMaxLength = 240;
+/// 수정 제안은 작성자가 반영하면 그대로 카드 본문이 된다. 본문보다 짧게 두면
+/// 긴 카드를 통째로 고쳐 제안할 수 없으므로 같은 한도를 쓴다.
+const kMemoryCardCorrectionMaxLength = kMemoryCardBodyMaxLength;
 
 const memoryCardTypeOptions = [
   MemoryCardType.likes,

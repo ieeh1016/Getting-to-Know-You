@@ -79,7 +79,7 @@
 - `[MEMORY-002]` 기억 카드 반응과 수정 요청은 `memoryCardResponses/{cardId_responderUid}` 한 문서만 저장하고 원문 카드를 자동 수정하지 않는다.
 - `[MEMORY-003]` 기억 카드 제목은 80자, 내용은 2000자까지 저장할 수 있고 UI `maxLength`, controller 검증, `firestore.rules` 한도가 모두 같은 값을 쓴다.
 - `[MEMORY-003]` 한도 경계값(제목 80자, 내용 2000자)은 저장되고 한 글자 초과는 저장되지 않는다.
-- `[MEMORY-003]` 수정 제안 text는 카드 본문과 별개로 240자 한도를 유지한다.
+- `[MEMORY-003]` 수정 제안 text는 반영되면 카드 본문이 되므로 본문과 같은 2000자 한도를 쓴다.
 - `[MEMORY-003]` 긴 기억 카드 본문은 목록에서 6줄로 잘리고 `전체 보기` cue와 읽기 button으로 readable detail sheet를 연다. 짧은 카드에는 cue가 없다.
 - private 기억 카드는 작성자에게만 보이고 partner 목록/카운트에 노출되지 않는다.
 - `[PUSH-001]` Spark plan에서는 푸시 알림 UI와 token registration이 기본 비활성화되어 token 문서를 갱신하지 않는다.

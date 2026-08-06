@@ -760,7 +760,8 @@ class _MemoryResponseActions extends StatelessWidget {
             label: '수정 제안',
             hint: '이렇게 기억해주면 더 가까워요',
             maxLength: kMemoryCardCorrectionMaxLength,
-            maxLines: 4,
+            minLines: 4,
+            maxLines: 10,
           ),
           const SizedBox(height: 10),
           SizedBox(

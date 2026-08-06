@@ -57,7 +57,7 @@
   - `조금 수정`
 - `맞아`, `좋아`는 상대의 `memoryCardResponses/{cardId_responderUid}` 문서 하나를 저장한다.
 - `조금 수정`은 correction text를 함께 저장하며 원문 카드를 즉시 바꾸지 않는다.
-- correction text는 카드 본문이 아니라 짧은 반응이라 `kMemoryCardCorrectionMaxLength`(240자)를 따로 쓴다. 카드 본문 한도를 올려도 여기는 따라 올리지 않는다.
+- correction text는 작성자가 반영하면 그대로 카드 본문이 되므로 본문과 같은 한도(`kMemoryCardCorrectionMaxLength` = `kMemoryCardBodyMaxLength`)를 쓴다. 더 짧으면 긴 카드를 통째로 고쳐 제안할 수 없고, 더 길면 반영할 때 본문 한도를 넘긴다.
 - 작성자가 수정 요청을 반영할 때만 `memoryCards/{cardId}`를 수정한다.
 - partner는 작성자의 카드 원문을 직접 덮어쓸 수 없다.
 

@@ -536,7 +536,7 @@ service cloud.firestore {
         && responseId == request.resource.data.cardId + '_' + request.resource.data.responderProfileId
         && request.resource.data.reaction in ['agree', 'liked', 'correction']
         && request.resource.data.correctionText is string
-        && request.resource.data.correctionText.size() <= 240
+        && request.resource.data.correctionText.size() <= 2000
         && (
           (
             request.resource.data.reaction == 'correction'
