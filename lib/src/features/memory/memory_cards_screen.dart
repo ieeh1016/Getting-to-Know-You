@@ -144,7 +144,9 @@ class _MemoryCardsScreenState extends State<MemoryCardsScreen> {
     );
     if (card == null) {
       setState(() {
-        _draftError = '제목은 2자 이상, 내용은 240자 안으로 남겨주세요.';
+        _draftError =
+            '제목은 $kMemoryCardTitleMinLength자 이상 $kMemoryCardTitleMaxLength자 이하, '
+            '내용은 $kMemoryCardBodyMaxLength자 안으로 남겨주세요.';
         _draftFeedback = null;
       });
       return;
@@ -439,7 +441,7 @@ class _MemoryDraftCard extends StatelessWidget {
             controller: titleController,
             label: '제목',
             hint: '예: 조용한 카페 자리',
-            maxLength: 80,
+            maxLength: kMemoryCardTitleMaxLength,
             maxLines: 1,
           ),
           const SizedBox(height: 10),
@@ -448,7 +450,7 @@ class _MemoryDraftCard extends StatelessWidget {
             controller: bodyController,
             label: '내용',
             hint: '기억하고 싶은 내용을 직접 적어두기',
-            maxLength: 2000,
+            maxLength: kMemoryCardBodyMaxLength,
             minLines: 4,
             maxLines: 10,
           ),
@@ -757,7 +759,7 @@ class _MemoryResponseActions extends StatelessWidget {
             controller: correctionController,
             label: '수정 제안',
             hint: '이렇게 기억해주면 더 가까워요',
-            maxLength: 240,
+            maxLength: kMemoryCardCorrectionMaxLength,
             maxLines: 4,
           ),
           const SizedBox(height: 10),

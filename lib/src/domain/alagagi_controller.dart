@@ -77,6 +77,16 @@ const stockStoryReplyToneOptions = ['같이 볼래요', '더 찾아볼게요', '
 const stockHoldingStatusOptions = ['보유 중', '정리 고민 중', '최근 정리함'];
 const stockHoldingWeightOptions = ['작게', '보통', '크게'];
 const improvementPostCategoryOptions = ['개선', '추가 요청', '불편함', '아이디어'];
+/// 기억 카드 입력 한도. UI `maxLength`, controller 검증, `firestore.rules`의
+/// `validMemoryCardShape`가 모두 이 값을 따라야 한다. 한 곳만 바꾸면 입력은
+/// 되는데 저장이 조용히 실패한다.
+const kMemoryCardTitleMinLength = 2;
+const kMemoryCardTitleMaxLength = 80;
+const kMemoryCardBodyMaxLength = 2000;
+
+/// 수정 제안은 카드 본문이 아니라 짧은 반응이라 따로 둔다.
+const kMemoryCardCorrectionMaxLength = 240;
+
 const memoryCardTypeOptions = [
   MemoryCardType.likes,
   MemoryCardType.dislikes,
@@ -8015,10 +8025,11 @@ class AlagagiController extends ChangeNotifier {
   }) {
     final trimmedTitle = title.trim();
     final trimmedBody = body.trim();
-    if (trimmedTitle.length < 2 || trimmedTitle.length > 48) {
+    if (trimmedTitle.length < kMemoryCardTitleMinLength ||
+        trimmedTitle.length > kMemoryCardTitleMaxLength) {
       return null;
     }
-    if (trimmedBody.isEmpty || trimmedBody.length > 240) {
+    if (trimmedBody.isEmpty || trimmedBody.length > kMemoryCardBodyMaxLength) {
       return null;
     }
     final now = DateTime.now();
@@ -8080,7 +8091,7 @@ class AlagagiController extends ChangeNotifier {
         trimmedCorrection.isEmpty) {
       return null;
     }
-    if (trimmedCorrection.length > 240) {
+    if (trimmedCorrection.length > kMemoryCardCorrectionMaxLength) {
       return null;
     }
 

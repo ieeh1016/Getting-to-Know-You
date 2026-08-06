@@ -34,7 +34,8 @@
   - 함께 할 것
   - 조심할 것
 - 공개 범위 기본값은 `shared`다.
-- 제목은 2자 이상 80자 이하, 내용은 1자 이상 2000자 이하다. UI `maxLength`와 `firestore.rules`의 `validMemoryCardShape` 한도는 항상 같은 값을 쓴다.
+- 제목은 2자 이상 80자 이하, 내용은 1자 이상 2000자 이하다.
+- 한도는 `kMemoryCardTitleMaxLength`, `kMemoryCardBodyMaxLength` 한 곳에서 정한다. UI `maxLength`, controller 검증, `firestore.rules`의 `validMemoryCardShape`가 모두 같은 값을 써야 한다. 한 곳만 올리면 입력은 되는데 저장이 조용히 실패한다.
 - 내용 입력 field는 최소 4줄로 시작해 최대 10줄까지 늘어나고, 그 이상은 field 안에서 스크롤한다.
 - draft 입력, 유형 선택, 공개 범위 선택, 공간 tab 전환은 Firestore write를 만들지 않는다.
 - `저장하고 공유하기` 또는 `나만 저장하기` 제출 시 `memoryCards/{cardId}` 한 문서만 저장한다.
@@ -56,6 +57,7 @@
   - `조금 수정`
 - `맞아`, `좋아`는 상대의 `memoryCardResponses/{cardId_responderUid}` 문서 하나를 저장한다.
 - `조금 수정`은 correction text를 함께 저장하며 원문 카드를 즉시 바꾸지 않는다.
+- correction text는 카드 본문이 아니라 짧은 반응이라 `kMemoryCardCorrectionMaxLength`(240자)를 따로 쓴다. 카드 본문 한도를 올려도 여기는 따라 올리지 않는다.
 - 작성자가 수정 요청을 반영할 때만 `memoryCards/{cardId}`를 수정한다.
 - partner는 작성자의 카드 원문을 직접 덮어쓸 수 없다.
 
