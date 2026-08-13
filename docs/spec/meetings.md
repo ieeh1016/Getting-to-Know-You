@@ -13,6 +13,7 @@ Meetings는 두 user가 가능한 날짜를 조율하고, confirmed meeting day�
 - meeting day detail은 rigid time preset을 강제하지 않고 free-form copy를 사용한다.
 - `만남` tab은 fixed meeting day만 보여주고, 그날의 plan을 정리하게 한다.
 - plan copy는 `영우·민영의 계획`을 사용한다.
+- 사람 행에 붙는 `상대에게 남길 한마디`와 만나는 날 메모는 두 줄까지 보여주고, 넘치면 `전체 보기`로 원문을 연다. 한 줄로 잘라 `...`만 남기면 남긴 말을 읽을 방법이 없다.
 
 ## 데이터 규칙
 
@@ -29,3 +30,5 @@ Meetings는 두 user가 가능한 날짜를 조율하고, confirmed meeting day�
 - fixed meeting plan에서 plan item을 add/remove할 수 있다.
 - fixed meeting day를 취소하면 upcoming/past meeting list에서 빠진다.
 - place ownership을 깨지 않고 place-board link를 meeting plan으로 가져올 수 있다.
+- 긴 한마디는 사람 행에서 잘리더라도 `전체 보기`로 원문 전체를 읽을 수 있다. 짧은 한마디에는 cue가 붙지 않는다.
+- `전체 보기` sheet 열람은 Firestore write를 만들지 않는다.

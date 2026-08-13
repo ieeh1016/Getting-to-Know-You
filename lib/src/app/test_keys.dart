@@ -85,6 +85,8 @@ Key myTraceCardKey(String type) => Key('my-trace-card-$type');
 const meetingCalendarKey = Key('meeting-calendar');
 const meetingCalendarPreviousButtonKey = Key('meeting-calendar-previous');
 const meetingCalendarNextButtonKey = Key('meeting-calendar-next');
+Key meetingRowNoteReadButtonKey(String profileId) =>
+    Key('meeting-row-note-read-$profileId');
 const meetingSharedMemoFieldKey = Key('meeting-shared-memo-field');
 const meetingSubmitButtonKey = Key('meeting-submit-button');
 const meetingRetryButtonKey = Key('meeting-retry-button');

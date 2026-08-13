@@ -2655,6 +2655,90 @@ void main() {
     expect(find.text('답변 속 공통점이 조금씩 보여요'), findsOneWidget);
   });
 
+  testWidgets('long meeting note stays readable behind a 전체 보기 cue', (
+    tester,
+  ) async {
+    const longMemo =
+        '이번 주는 회의가 늦게 끝나는 날이 많아서 저녁 일곱 시 반 이후면 편할 것 같아요. '
+        '혹시 낮에 시간이 괜찮으면 점심때 잠깐 보는 것도 좋고, 아니면 다음 주 주말로 미뤄도 괜찮아요.';
+    const shortMemo = '저녁이 편해요';
+
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          scheduleEntries: [
+            ScheduleEntry(
+              dateKey: '2026-06-09',
+              profileId: 'minyoungUid',
+              availability: MeetingAvailability.available,
+              timeSlots: {MeetingTimeSlot.evening},
+              sharedMemo: longMemo,
+            ),
+            ScheduleEntry(
+              dateKey: '2026-06-09',
+              profileId: 'youngwooUid',
+              availability: MeetingAvailability.available,
+              timeSlots: {MeetingTimeSlot.evening},
+              sharedMemo: shortMemo,
+            ),
+          ],
+        ),
+      ),
+      todayDateKey: '2026-06-09',
+    )..goTo(AlagagiRoute.meetings);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    // 긴 메모는 두 줄로 자르고 전체 보기 cue를 붙인다.
+    final longNote = tester.widget<Text>(
+      find.text(longMemo),
+    );
+    expect(longNote.maxLines, 2);
+    expect(longNote.overflow, TextOverflow.ellipsis);
+    expect(
+      find.byKey(meetingRowNoteReadButtonKey('minyoungUid')),
+      findsOneWidget,
+    );
+
+    // 짧은 메모에는 cue가 붙지 않는다.
+    expect(
+      find.byKey(meetingRowNoteReadButtonKey('youngwooUid')),
+      findsNothing,
+    );
+
+    await tester.ensureVisible(
+      find.byKey(meetingRowNoteReadButtonKey('minyoungUid')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(meetingRowNoteReadButtonKey('minyoungUid')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(readableDetailSheetKey), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(readableDetailSheetKey),
+        matching: find.text(longMemo),
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('meeting tab saves detailed schedule and shared note', (
     tester,
   ) async {

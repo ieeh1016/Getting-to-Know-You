@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/app_shell.dart';
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
+import '../../shared/readable_detail_sheet.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 import 'meeting_common.dart';
@@ -1378,33 +1379,27 @@ class _MeetingPersonRow extends StatelessWidget {
                 ],
                 if (sharedMemo.isNotEmpty) ...[
                   const SizedBox(height: 5),
-                  Text(
-                    isMe ? '상대에게: $sharedMemo' : sharedMemo,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: sans(
-                      size: 11,
-                      color: const Color(0xFF6B675F),
-                      height: 1.35,
-                    ),
+                  _MeetingRowNote(
+                    profileId: entry?.profileId ?? name,
+                    text: isMe ? '상대에게: $sharedMemo' : sharedMemo,
+                    fullText: sharedMemo,
+                    sheetTitle: isMe ? '내가 남긴 한마디' : '$name님이 남긴 한마디',
+                    color: const Color(0xFF6B675F),
                   ),
                 ],
                 if (entry?.isMeetingDay == true) ...[
                   const SizedBox(height: 5),
-                  Text(
-                    [
+                  _MeetingRowNote(
+                    profileId: '${entry?.profileId ?? name}-day',
+                    text: [
                       '만나는 날',
                       if (meetingTimeLabel.isNotEmpty) meetingTimeLabel,
                       if (meetingNote.isNotEmpty) meetingNote,
                     ].join(' · '),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: sans(
-                      size: 11,
-                      color: AlagagiColors.sageDeep,
-                      weight: FontWeight.w800,
-                      height: 1.35,
-                    ),
+                    fullText: meetingNote,
+                    sheetTitle: '만나는 날 메모',
+                    color: AlagagiColors.sageDeep,
+                    weight: FontWeight.w800,
                   ),
                 ],
               ],
@@ -1412,6 +1407,72 @@ class _MeetingPersonRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 좁은 사람 행에 들어가는 메모 한 줄.
+///
+/// 예전에는 한 줄로 잘라 `...`만 남겨 긴 메모를 읽을 방법이 없었다. 이제는
+/// 두 줄까지 보여주고, 그래도 넘치면 `전체 보기`로 원문을 열 수 있게 한다.
+class _MeetingRowNote extends StatelessWidget {
+  const _MeetingRowNote({
+    required this.profileId,
+    required this.text,
+    required this.fullText,
+    required this.sheetTitle,
+    required this.color,
+    this.weight,
+  });
+
+  /// 이 행의 폭에서 두 줄을 넘기기 시작하는 대략적인 길이.
+  static const int _previewThreshold = 46;
+
+  final String profileId;
+  final String text;
+  final String fullText;
+  final String sheetTitle;
+  final Color color;
+  final FontWeight? weight;
+
+  @override
+  Widget build(BuildContext context) {
+    final showsCue =
+        fullText.trim().isNotEmpty &&
+        showsReadableCue(text, threshold: _previewThreshold);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          text,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: sans(size: 11, color: color, weight: weight, height: 1.35),
+        ),
+        if (showsCue)
+          InkWell(
+            key: meetingRowNoteReadButtonKey(profileId),
+            onTap: () => showReadableDetailSheet(
+              context,
+              label: '만나는 날',
+              title: sheetTitle,
+              body: fullText,
+            ),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 3, bottom: 1),
+              child: Text(
+                '전체 보기',
+                style: sans(
+                  size: 10.8,
+                  weight: FontWeight.w800,
+                  color: AlagagiColors.sageDeep,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
