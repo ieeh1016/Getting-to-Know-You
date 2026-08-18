@@ -588,6 +588,12 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   Future<void> deleteTripItem(String spaceId, String itemId) async {}
 
   @override
+  Future<void> saveTripPhoto(String spaceId, TripPhoto photo) async {}
+
+  @override
+  Future<void> deleteTripPhoto(String spaceId, String photoId) async {}
+
+  @override
   Future<void> saveWish(String spaceId, WishItem wish) async {
     savedWishes.add(wish);
   }

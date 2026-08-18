@@ -486,6 +486,324 @@ void main() {
     expect(find.byKey(tripDayGroupKey('2026-09-12')), findsOneWidget);
   });
 
+  testWidgets('trip stay sits above the day instead of inside the time flow', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(),
+      ),
+    )..goTo(AlagagiRoute.trips);
+
+    controller.saveTrip(
+      title: '가을 제주',
+      destination: '제주도',
+      startDateKey: '2026-09-12',
+      endDateKey: '2026-09-14',
+    );
+    final tripId = controller.trips.single.id;
+    controller.saveTripItem(
+      tripId: tripId,
+      kind: TripItemKind.stay,
+      title: '오션뷰 호텔',
+      dateKey: '2026-09-12',
+      timeLabel: '15:00',
+      endDateKey: '2026-09-14',
+      endTimeLabel: '11:00',
+    );
+    controller.saveTripItem(
+      tripId: tripId,
+      kind: TripItemKind.transport,
+      title: 'KE1201',
+      dateKey: '2026-09-12',
+      timeLabel: '08:20',
+      endTimeLabel: '09:35',
+      transportMode: TripTransportMode.flight,
+      fromLabel: '김포공항',
+      toLabel: '제주공항',
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(tripOpenButtonKey(tripId)));
+    await tester.pumpAndSettle();
+
+    final stay = controller
+        .tripItemsFor(tripId, kind: TripItemKind.stay)
+        .single;
+    final flight = controller
+        .tripItemsFor(tripId, kind: TripItemKind.transport)
+        .single;
+
+    // 숙소는 시각 항목이 아니라 하루 머리의 띠로 나온다.
+    expect(find.byKey(tripTimelineEntryKey(stay.id)), findsNothing);
+    expect(
+      find.byKey(tripStayBandKey('2026-09-12-${stay.id}-checkin')),
+      findsOneWidget,
+    );
+    expect(find.text('체크인'), findsOneWidget);
+
+    // 둘째 날은 계속 머무는 밤, 셋째 날은 체크아웃으로 다르게 읽힌다.
+    expect(
+      find.byKey(tripStayBandKey('2026-09-13-${stay.id}-staying')),
+      findsOneWidget,
+    );
+    expect(find.text('머무는 곳'), findsOneWidget);
+    expect(
+      find.byKey(tripStayBandKey('2026-09-14-${stay.id}-checkout')),
+      findsOneWidget,
+    );
+    expect(find.text('체크아웃'), findsOneWidget);
+    // 체크아웃 당일 밤에는 더 이상 머물지 않는다.
+    expect(
+      find.byKey(tripStayBandKey('2026-09-14-${stay.id}-staying')),
+      findsNothing,
+    );
+
+    // 이동은 구간과 수단이 함께 보인다.
+    expect(find.byKey(tripTimelineEntryKey(flight.id)), findsOneWidget);
+    expect(find.text('08:20 → 09:35'), findsOneWidget);
+    expect(find.text('비행기'), findsWidgets);
+    expect(find.text('김포공항'), findsWidgets);
+    expect(find.text('제주공항'), findsWidgets);
+  });
+
+  testWidgets('trip transport form collects mode, route and both times', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(),
+      ),
+    )..goTo(AlagagiRoute.trips);
+
+    controller.saveTrip(
+      title: '가을 제주',
+      destination: '제주도',
+      startDateKey: '2026-09-12',
+      endDateKey: '2026-09-13',
+    );
+    final tripId = controller.trips.single.id;
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripOpenButtonKey(tripId)));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(tripKindTabKey('transport')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripKindTabKey('transport')));
+    await tester.pumpAndSettle();
+
+    // 수단을 고르면 편명 예시 문구가 따라 바뀐다.
+    await tester.ensureVisible(find.byKey(tripTransportModeButtonKey('train')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripTransportModeButtonKey('train')));
+    await tester.pumpAndSettle();
+    expect(find.text('예: KTX 101'), findsOneWidget);
+
+    await tester.enterText(find.byKey(tripItemFromFieldKey), '서울역');
+    await tester.enterText(find.byKey(tripItemToFieldKey), '강릉역');
+    await tester.enterText(find.byKey(tripItemTitleFieldKey), 'KTX 101');
+    await tester.ensureVisible(find.byKey(tripItemDateButtonKey('2026-09-12')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripItemDateButtonKey('2026-09-12')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(tripItemTimeFieldKey), '08:20');
+    await tester.enterText(find.byKey(tripItemEndTimeFieldKey), '10:45');
+    await tester.ensureVisible(find.byKey(tripItemSubmitButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripItemSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    final item = controller
+        .tripItemsFor(tripId, kind: TripItemKind.transport)
+        .single;
+    expect(item.transportMode, TripTransportMode.train);
+    expect(item.fromLabel, '서울역');
+    expect(item.toLabel, '강릉역');
+    expect(item.timeLabel, '08:20');
+    expect(item.endTimeLabel, '10:45');
+  });
+
+  testWidgets('trip stay form asks for a check-out after the check-in day', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(),
+      ),
+    )..goTo(AlagagiRoute.trips);
+
+    controller.saveTrip(
+      title: '가을 제주',
+      destination: '제주도',
+      startDateKey: '2026-09-12',
+      endDateKey: '2026-09-14',
+    );
+    final tripId = controller.trips.single.id;
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripOpenButtonKey(tripId)));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(tripKindTabKey('stay')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripKindTabKey('stay')));
+    await tester.pumpAndSettle();
+
+    // 체크인을 고르기 전에는 체크아웃 선택지가 없다.
+    expect(find.byKey(tripStayCheckOutDateButtonKey('2026-09-13')), findsNothing);
+
+    await tester.enterText(find.byKey(tripItemTitleFieldKey), '오션뷰 호텔');
+    await tester.ensureVisible(find.byKey(tripItemDateButtonKey('2026-09-12')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripItemDateButtonKey('2026-09-12')));
+    await tester.pumpAndSettle();
+
+    // 체크아웃은 체크인 다음 날부터만 고를 수 있다.
+    expect(
+      find.byKey(tripStayCheckOutDateButtonKey('2026-09-12')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(tripStayCheckOutDateButtonKey('2026-09-13')),
+      findsOneWidget,
+    );
+
+    await tester.ensureVisible(
+      find.byKey(tripStayCheckOutDateButtonKey('2026-09-14')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripStayCheckOutDateButtonKey('2026-09-14')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('2박 머물러요'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(tripItemSubmitButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripItemSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    final stay = controller
+        .tripItemsFor(tripId, kind: TripItemKind.stay)
+        .single;
+    expect(stay.dateKey, '2026-09-12');
+    expect(stay.endDateKey, '2026-09-14');
+    expect(stay.stayNightCount, 2);
+  });
+
+  testWidgets('trip photo tab shows saved photos and an owner-only delete', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(),
+      ),
+    )..goTo(AlagagiRoute.trips);
+
+    controller.saveTrip(
+      title: '가을 제주',
+      destination: '제주도',
+      startDateKey: '2026-09-12',
+      endDateKey: '2026-09-13',
+    );
+    final tripId = controller.trips.single.id;
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripOpenButtonKey(tripId)));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(tripKindTabKey('photos')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripKindTabKey('photos')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(tripPhotoAddButtonKey), findsOneWidget);
+    expect(find.textContaining('아직 담은 사진이 없어요'), findsOneWidget);
+
+    // 1x1 투명 PNG.
+    const tinyPng =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ'
+        'AAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+    controller.saveTripPhoto(
+      tripId: tripId,
+      imageDataUrl: tinyPng,
+      caption: '숙소 앞',
+    );
+    await tester.pumpAndSettle();
+
+    final photo = controller.tripPhotosFor(tripId).single;
+    expect(find.byKey(tripPhotoGridKey), findsOneWidget);
+    expect(find.byKey(tripPhotoCardKey(photo.id)), findsOneWidget);
+    expect(find.text('숙소 앞'), findsOneWidget);
+    expect(find.byKey(tripPhotoDeleteButtonKey(photo.id)), findsOneWidget);
+    expect(find.text('사진 1'), findsOneWidget);
+  });
+
   testWidgets('saves a curiosity reply and a new question in the sheet', (
     tester,
   ) async {
@@ -4839,6 +5157,12 @@ class _FailingSaveRepository implements AlagagiDataRepository {
 
   @override
   Future<void> deleteTripItem(String spaceId, String itemId) async {}
+
+  @override
+  Future<void> saveTripPhoto(String spaceId, TripPhoto photo) async {}
+
+  @override
+  Future<void> deleteTripPhoto(String spaceId, String photoId) async {}
 
   @override
   Future<void> saveWish(String spaceId, WishItem wish) async {}

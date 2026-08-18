@@ -281,6 +281,7 @@ class AlagagiSpaceData {
     this.sharedPlaces = const [],
     this.trips = const [],
     this.tripItems = const [],
+    this.tripPhotos = const [],
     this.curiosityCards = const [],
     this.stockStories = const [],
     this.stockHoldings = const [],
@@ -303,6 +304,7 @@ class AlagagiSpaceData {
   final List<SharedPlace> sharedPlaces;
   final List<Trip> trips;
   final List<TripItem> tripItems;
+  final List<TripPhoto> tripPhotos;
   final List<CuriosityCard> curiosityCards;
   final List<StockStory> stockStories;
   final List<StockHolding> stockHoldings;
@@ -379,6 +381,10 @@ abstract class AlagagiDataRepository {
   Future<void> saveTripItem(String spaceId, TripItem item);
 
   Future<void> deleteTripItem(String spaceId, String itemId);
+
+  Future<void> saveTripPhoto(String spaceId, TripPhoto photo);
+
+  Future<void> deleteTripPhoto(String spaceId, String photoId);
 
   Future<void> saveWish(String spaceId, WishItem wish);
 
@@ -1048,6 +1054,51 @@ extension TripStatusMeta on TripStatus {
   };
 }
 
+/// 이동 수단. 아이콘과 기본 문구가 여기에 붙는다.
+enum TripTransportMode { flight, train, bus, car, ship, walk }
+
+extension TripTransportModeMeta on TripTransportMode {
+  String get storageKey => switch (this) {
+    TripTransportMode.flight => 'flight',
+    TripTransportMode.train => 'train',
+    TripTransportMode.bus => 'bus',
+    TripTransportMode.car => 'car',
+    TripTransportMode.ship => 'ship',
+    TripTransportMode.walk => 'walk',
+  };
+
+  String get label => switch (this) {
+    TripTransportMode.flight => '비행기',
+    TripTransportMode.train => '기차',
+    TripTransportMode.bus => '버스',
+    TripTransportMode.car => '자동차',
+    TripTransportMode.ship => '배',
+    TripTransportMode.walk => '도보',
+  };
+
+  /// 편명, 호선처럼 수단마다 다르게 부르는 값의 예시.
+  String get titleHint => switch (this) {
+    TripTransportMode.flight => '예: KE1201',
+    TripTransportMode.train => '예: KTX 101',
+    TripTransportMode.bus => '예: 공항버스 6015',
+    TripTransportMode.car => '예: 렌터카',
+    TripTransportMode.ship => '예: 완도-제주 페리',
+    TripTransportMode.walk => '예: 숙소까지 걷기',
+  };
+}
+
+const tripTransportModeOptions = TripTransportMode.values;
+
+TripTransportMode tripTransportModeFromKey(String? key) => switch (key) {
+  'flight' => TripTransportMode.flight,
+  'train' => TripTransportMode.train,
+  'bus' => TripTransportMode.bus,
+  'car' => TripTransportMode.car,
+  'ship' => TripTransportMode.ship,
+  'walk' => TripTransportMode.walk,
+  _ => TripTransportMode.flight,
+};
+
 enum TripItemKind { stay, transport, packing, plan }
 
 extension TripItemKindMeta on TripItemKind {
@@ -1067,14 +1118,14 @@ extension TripItemKindMeta on TripItemKind {
 
   String get titleHint => switch (this) {
     TripItemKind.stay => '묵을 곳 이름',
-    TripItemKind.transport => '항공편, 기차 등',
+    TripItemKind.transport => '편명이나 노선',
     TripItemKind.packing => '챙길 것',
     TripItemKind.plan => '무엇을 할지',
   };
 
   String get noteHint => switch (this) {
-    TripItemKind.stay => '주소, 체크인 시간 같은 메모',
-    TripItemKind.transport => '편명, 시간, 좌석 같은 메모',
+    TripItemKind.stay => '주소나 예약 정보 같은 메모',
+    TripItemKind.transport => '좌석, 예약 번호 같은 메모',
     TripItemKind.packing => '수량이나 챙길 이유',
     TripItemKind.plan => '가고 싶은 곳이나 하고 싶은 것',
   };
@@ -1088,8 +1139,16 @@ extension TripItemKindMeta on TripItemKind {
 
   bool get usesCheck => this == TripItemKind.packing;
 
-  /// 타임라인에 시간 흐름으로 놓이는 종류인지.
-  bool get appearsOnTimeline => !usesCheck;
+  /// 숙소는 하룻밤을 통째로 차지하므로 하루 안의 시각 흐름에 끼우지 않고
+  /// 그날 머무는 곳으로 따로 보여준다. 준비물은 시간과 무관한 목록이다.
+  bool get appearsOnTimeline =>
+      this == TripItemKind.transport || this == TripItemKind.plan;
+
+  /// 날짜 범위를 갖는 종류인지. 숙소만 체크인~체크아웃을 가진다.
+  bool get usesDateRange => this == TripItemKind.stay;
+
+  /// 출발/도착 시각과 수단을 갖는 종류인지.
+  bool get usesRoute => this == TripItemKind.transport;
 }
 
 const tripItemKindOptions = TripItemKind.values;
@@ -1188,6 +1247,11 @@ class TripItem {
     this.note = '',
     this.dateKey,
     this.timeLabel,
+    this.endDateKey,
+    this.endTimeLabel,
+    this.transportMode,
+    this.fromLabel,
+    this.toLabel,
     this.link,
     this.checked = false,
     this.updatedAt,
@@ -1202,12 +1266,55 @@ class TripItem {
   final String note;
   final String? dateKey;
 
-  /// `09:30` 형태의 시각. 없으면 그날 안에서 시간 미정으로 뒤에 놓인다.
+  /// `09:30` 형태의 시각. 숙소는 체크인, 이동은 출발 시각이다.
+  /// 없으면 그날 안에서 시간 미정으로 뒤에 놓인다.
   final String? timeLabel;
+
+  /// 숙소 체크아웃 날짜. 숙소에만 쓴다.
+  final String? endDateKey;
+
+  /// 숙소 체크아웃 시각 또는 이동 도착 시각.
+  final String? endTimeLabel;
+
+  /// 이동 수단. 이동에만 쓴다.
+  final TripTransportMode? transportMode;
+
+  /// 이동 출발지와 도착지.
+  final String? fromLabel;
+  final String? toLabel;
   final String? link;
   final bool checked;
   final DateTime? updatedAt;
   final String? updatedByProfileId;
+
+  /// 숙소가 덮는 밤 수. 체크인 다음 날 체크아웃이면 1박이다.
+  int get stayNightCount {
+    final start = DateTime.tryParse(dateKey ?? '');
+    final end = DateTime.tryParse(endDateKey ?? '');
+    if (start == null || end == null) {
+      return 0;
+    }
+    final nights = end.difference(start).inDays;
+    return nights < 0 ? 0 : nights;
+  }
+
+  /// 이 숙소가 `dateKey` 밤에 머무는 곳인지. 체크아웃 당일 밤은 제외한다.
+  bool coversNight(String nightDateKey) {
+    if (kind != TripItemKind.stay) {
+      return false;
+    }
+    final start = DateTime.tryParse(dateKey ?? '');
+    final night = DateTime.tryParse(nightDateKey);
+    if (start == null || night == null) {
+      return false;
+    }
+    final end = DateTime.tryParse(endDateKey ?? '');
+    if (end == null) {
+      // 체크아웃을 아직 안 정했으면 체크인 당일만 표시한다.
+      return night == start;
+    }
+    return !night.isBefore(start) && night.isBefore(end);
+  }
 
   TripItem copyWith({
     TripItemKind? kind,
@@ -1217,6 +1324,16 @@ class TripItem {
     bool clearDateKey = false,
     String? timeLabel,
     bool clearTimeLabel = false,
+    String? endDateKey,
+    bool clearEndDateKey = false,
+    String? endTimeLabel,
+    bool clearEndTimeLabel = false,
+    TripTransportMode? transportMode,
+    bool clearTransportMode = false,
+    String? fromLabel,
+    bool clearFromLabel = false,
+    String? toLabel,
+    bool clearToLabel = false,
     String? link,
     bool clearLink = false,
     bool? checked,
@@ -1232,6 +1349,15 @@ class TripItem {
       note: note ?? this.note,
       dateKey: clearDateKey ? null : dateKey ?? this.dateKey,
       timeLabel: clearTimeLabel ? null : timeLabel ?? this.timeLabel,
+      endDateKey: clearEndDateKey ? null : endDateKey ?? this.endDateKey,
+      endTimeLabel: clearEndTimeLabel
+          ? null
+          : endTimeLabel ?? this.endTimeLabel,
+      transportMode: clearTransportMode
+          ? null
+          : transportMode ?? this.transportMode,
+      fromLabel: clearFromLabel ? null : fromLabel ?? this.fromLabel,
+      toLabel: clearToLabel ? null : toLabel ?? this.toLabel,
       link: clearLink ? null : link ?? this.link,
       checked: checked ?? this.checked,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -1239,6 +1365,35 @@ class TripItem {
     );
   }
 }
+
+/// 여행에 붙이는 사진 한 장.
+///
+/// Spark plan에는 Cloud Storage를 쓰지 않으므로 이미지는 앱에서 줄인 뒤
+/// data URI 문자열로 Firestore 문서 하나에 담는다. 그래서 크기 상한이 있다.
+class TripPhoto {
+  const TripPhoto({
+    required this.id,
+    required this.tripId,
+    required this.imageDataUrl,
+    required this.createdByProfileId,
+    this.caption = '',
+    this.dateKey,
+    this.updatedAt,
+  });
+
+  final String id;
+  final String tripId;
+
+  /// `data:image/jpeg;base64,...` 형태.
+  final String imageDataUrl;
+  final String createdByProfileId;
+  final String caption;
+  final String? dateKey;
+  final DateTime? updatedAt;
+}
+
+/// 사진 data URI 상한. Firestore 문서 한도(1MiB)와 목록 로딩 비용을 함께 본다.
+const kTripPhotoMaxDataUrlLength = 700000;
 
 /// 여행 하루. 타임라인은 이 묶음을 날짜순으로 이어 붙여 만든다.
 class TripDay {
@@ -3145,6 +3300,7 @@ class AlagagiController extends ChangeNotifier {
   final List<WishItem> _wishes = [];
   final List<Trip> _trips = [];
   final List<TripItem> _tripItems = [];
+  final List<TripPhoto> _tripPhotos = [];
   final List<MusicNote> _musicNotes = [];
   final List<MusicNoteComment> _musicNoteComments = [];
   final List<ScheduleEntry> _scheduleEntries = [];
@@ -3874,6 +4030,9 @@ class AlagagiController extends ChangeNotifier {
     _tripItems
       ..clear()
       ..addAll(data.tripItems);
+    _tripPhotos
+      ..clear()
+      ..addAll(data.tripPhotos);
 
     _myAnswersByQuestionId.clear();
     _partnerAnswersByQuestionId.clear();
@@ -7252,16 +7411,46 @@ class AlagagiController extends ChangeNotifier {
     return first.title.compareTo(second.title);
   }
 
+  /// 그날 밤 머무는 숙소. 체크아웃 당일 밤은 포함하지 않는다.
+  List<TripItem> tripStaysForNight(String tripId, String dateKey) {
+    final stays = _tripItems
+        .where(
+          (item) =>
+              item.tripId == tripId &&
+              item.kind == TripItemKind.stay &&
+              item.coversNight(dateKey),
+        )
+        .toList();
+    stays.sort(_compareTripItems);
+    return List<TripItem>.unmodifiable(stays);
+  }
+
+  /// 그날 체크아웃하는 숙소. 아침에 나가는 일정이라 하루 머리에 보여준다.
+  List<TripItem> tripStaysCheckingOut(String tripId, String dateKey) {
+    final stays = _tripItems
+        .where(
+          (item) =>
+              item.tripId == tripId &&
+              item.kind == TripItemKind.stay &&
+              item.endDateKey == dateKey,
+        )
+        .toList();
+    stays.sort(_compareTripItems);
+    return List<TripItem>.unmodifiable(stays);
+  }
+
   /// 여행 일정 타임라인. 날짜별로 묶고 날짜 미정 묶음을 마지막에 둔다.
   ///
-  /// 준비물은 시간 흐름이 아니라 챙길 목록이라 타임라인에서 제외한다.
+  /// 준비물은 챙길 목록이라, 숙소는 하룻밤을 통째로 차지해 시각 흐름에
+  /// 끼우면 어색하므로 둘 다 타임라인 항목에서 제외한다. 숙소는
+  /// [tripStaysForNight]로 하루 머리에 따로 보여준다.
   List<TripDay> tripTimelineDays(String tripId) {
     final trip = tripById(tripId);
     if (trip == null) {
       return const [];
     }
     final scheduled = _tripItems
-        .where((item) => item.tripId == tripId && !item.kind.usesCheck)
+        .where((item) => item.tripId == tripId && item.kind.appearsOnTimeline)
         .toList();
     scheduled.sort(_compareTripItems);
 
@@ -7422,6 +7611,7 @@ class AlagagiController extends ChangeNotifier {
     }
     _trips.removeAt(index);
     _tripItems.removeWhere((item) => item.tripId == tripId);
+    _tripPhotos.removeWhere((photo) => photo.tripId == tripId);
     final repository = _repository;
     final spaceId = _spaceId;
     if (repository != null && spaceId != null) {
@@ -7440,6 +7630,11 @@ class AlagagiController extends ChangeNotifier {
     String note = '',
     String? dateKey,
     String? timeLabel,
+    String? endDateKey,
+    String? endTimeLabel,
+    TripTransportMode? transportMode,
+    String? fromLabel,
+    String? toLabel,
     String? link,
   }) {
     final trip = tripById(tripId);
@@ -7465,6 +7660,44 @@ class AlagagiController extends ChangeNotifier {
         ? null
         : trimmedTime;
 
+    final trimmedEndTime = endTimeLabel?.trim() ?? '';
+    if (trimmedEndTime.isNotEmpty && !isValidTripTimeLabel(trimmedEndTime)) {
+      return '시간은 09:30처럼 적어주세요.';
+    }
+
+    // 숙소는 체크인~체크아웃 범위를 갖는다.
+    String? resolvedEndDateKey;
+    if (kind.usesDateRange && endDateKey != null) {
+      if (!trip.containsDateKey(endDateKey)) {
+        return '여행 기간 안의 날짜만 고를 수 있어요.';
+      }
+      if (resolvedDateKey == null) {
+        return '체크인 날짜를 먼저 골라주세요.';
+      }
+      final checkIn = DateTime.parse(resolvedDateKey);
+      final checkOut = DateTime.parse(endDateKey);
+      if (!checkOut.isAfter(checkIn)) {
+        return '체크아웃은 체크인 다음 날부터 고를 수 있어요.';
+      }
+      resolvedEndDateKey = endDateKey;
+    }
+
+    final resolvedEndTimeLabel = trimmedEndTime.isEmpty ? null : trimmedEndTime;
+    if (kind.usesRoute && resolvedTimeLabel == null &&
+        resolvedEndTimeLabel != null) {
+      return '출발 시각을 먼저 적어주세요.';
+    }
+    final resolvedMode = kind.usesRoute
+        ? (transportMode ?? TripTransportMode.flight)
+        : null;
+    String? trimmedOrNull(String? value) {
+      final trimmed = value?.trim() ?? '';
+      return trimmed.isEmpty ? null : trimmed;
+    }
+
+    final resolvedFrom = kind.usesRoute ? trimmedOrNull(fromLabel) : null;
+    final resolvedTo = kind.usesRoute ? trimmedOrNull(toLabel) : null;
+
     final now = DateTime.now();
     final existingIndex = itemId == null
         ? -1
@@ -7479,6 +7712,16 @@ class AlagagiController extends ChangeNotifier {
         clearDateKey: resolvedDateKey == null,
         timeLabel: resolvedTimeLabel,
         clearTimeLabel: resolvedTimeLabel == null,
+        endDateKey: resolvedEndDateKey,
+        clearEndDateKey: resolvedEndDateKey == null,
+        endTimeLabel: resolvedEndTimeLabel,
+        clearEndTimeLabel: resolvedEndTimeLabel == null,
+        transportMode: resolvedMode,
+        clearTransportMode: resolvedMode == null,
+        fromLabel: resolvedFrom,
+        clearFromLabel: resolvedFrom == null,
+        toLabel: resolvedTo,
+        clearToLabel: resolvedTo == null,
         link: link?.trim(),
         clearLink: link == null || link.trim().isEmpty,
         checked: kind.usesCheck ? null : false,
@@ -7496,6 +7739,11 @@ class AlagagiController extends ChangeNotifier {
         note: note.trim(),
         dateKey: resolvedDateKey,
         timeLabel: resolvedTimeLabel,
+        endDateKey: resolvedEndDateKey,
+        endTimeLabel: resolvedEndTimeLabel,
+        transportMode: resolvedMode,
+        fromLabel: resolvedFrom,
+        toLabel: resolvedTo,
         link: link == null || link.trim().isEmpty ? null : link.trim(),
         updatedAt: now,
         updatedByProfileId: _state.me.id,
@@ -7539,6 +7787,83 @@ class AlagagiController extends ChangeNotifier {
     return true;
   }
 
+  // --- Trip photos ---
+
+  List<TripPhoto> tripPhotosFor(String tripId) {
+    final photos = _tripPhotos
+        .where((photo) => photo.tripId == tripId)
+        .toList();
+    photos.sort((first, second) {
+      final firstAt = first.updatedAt;
+      final secondAt = second.updatedAt;
+      if (firstAt == null || secondAt == null) {
+        return 0;
+      }
+      return secondAt.compareTo(firstAt);
+    });
+    return List<TripPhoto>.unmodifiable(photos);
+  }
+
+  int tripPhotoCount(String tripId) => tripPhotosFor(tripId).length;
+
+  /// 갤러리에서 고른 사진을 여행에 붙인다. 실패 이유가 있으면 문자열로 돌려준다.
+  String? saveTripPhoto({
+    required String tripId,
+    required String imageDataUrl,
+    String caption = '',
+    String? dateKey,
+  }) {
+    final trip = tripById(tripId);
+    if (trip == null) {
+      return '여행을 찾을 수 없어요.';
+    }
+    if (!imageDataUrl.startsWith('data:image/')) {
+      return '사진 파일만 올릴 수 있어요.';
+    }
+    if (imageDataUrl.length > kTripPhotoMaxDataUrlLength) {
+      return '사진 용량이 너무 커요. 다른 사진으로 골라주세요.';
+    }
+    final resolvedDateKey = dateKey != null && trip.containsDateKey(dateKey)
+        ? dateKey
+        : null;
+
+    final now = DateTime.now();
+    final photo = TripPhoto(
+      id: 'trip_photo_${_state.me.id}_${now.microsecondsSinceEpoch}',
+      tripId: tripId,
+      imageDataUrl: imageDataUrl,
+      createdByProfileId: _state.me.id,
+      caption: caption.trim(),
+      dateKey: resolvedDateKey,
+      updatedAt: now,
+    );
+    _tripPhotos.insert(0, photo);
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository != null && spaceId != null) {
+      unawaited(repository.saveTripPhoto(spaceId, photo).catchError((_) {}));
+    }
+    notifyListeners();
+    return null;
+  }
+
+  /// 사진은 올린 사람만 지울 수 있다.
+  bool deleteTripPhoto(String photoId) {
+    final index = _tripPhotos.indexWhere((photo) => photo.id == photoId);
+    if (index < 0 ||
+        _tripPhotos[index].createdByProfileId != _state.me.id) {
+      return false;
+    }
+    _tripPhotos.removeAt(index);
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository != null && spaceId != null) {
+      unawaited(repository.deleteTripPhoto(spaceId, photoId).catchError((_) {}));
+    }
+    notifyListeners();
+    return true;
+  }
+
   void _sortTrips() {
     _trips.sort((first, second) => second.startDateKey.compareTo(
       first.startDateKey,
@@ -7549,16 +7874,23 @@ class AlagagiController extends ChangeNotifier {
   void _dropTripItemDatesOutsideTrip(Trip trip) {
     for (var index = 0; index < _tripItems.length; index += 1) {
       final item = _tripItems[index];
+      if (item.tripId != trip.id) {
+        continue;
+      }
       final dateKey = item.dateKey;
-      if (item.tripId != trip.id || dateKey == null) {
+      final endDateKey = item.endDateKey;
+      final startDropped = dateKey != null && !trip.containsDateKey(dateKey);
+      final endDropped =
+          endDateKey != null && !trip.containsDateKey(endDateKey);
+      if (!startDropped && !endDropped) {
         continue;
       }
-      if (trip.containsDateKey(dateKey)) {
-        continue;
-      }
+      // 체크인이 살아 있으면 체크아웃만 비운다.
       final updated = item.copyWith(
-        clearDateKey: true,
-        clearTimeLabel: true,
+        clearDateKey: startDropped,
+        clearTimeLabel: startDropped,
+        clearEndDateKey: startDropped || endDropped,
+        clearEndTimeLabel: startDropped || endDropped,
         updatedAt: DateTime.now(),
         updatedByProfileId: _state.me.id,
       );

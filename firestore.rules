@@ -126,6 +126,7 @@ service cloud.firestore {
           'wishSaved',
           'tripSaved',
           'tripItemSaved',
+          'tripPhotoSaved',
           'memoryCardSaved',
           'memoryCardResponseSaved',
           'musicNoteSaved',
@@ -421,6 +422,32 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
     }
 
+    function validTripPhotoShape(spaceId, photoId) {
+      return request.resource.data.keys().hasOnly([
+          'id',
+          'tripId',
+          'imageDataUrl',
+          'caption',
+          'dateKey',
+          'createdByProfileId',
+          'updatedByProfileId',
+          'updatedAt'
+        ])
+        && request.resource.data.id == photoId
+        && request.resource.data.tripId is string
+        && request.resource.data.imageDataUrl is string
+        && request.resource.data.imageDataUrl.matches('data:image/.*')
+        && request.resource.data.imageDataUrl.size() <= 700000
+        && request.resource.data.caption is string
+        && request.resource.data.caption.size() <= 200
+        && request.resource.data.dateKey is string
+        && request.resource.data.dateKey.size() <= 10
+        && request.resource.data.createdByProfileId is string
+        && request.resource.data.createdByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
+        && request.resource.data.updatedByProfileId == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+    }
+
     function validTripItemShape(spaceId, itemId) {
       return request.resource.data.keys().hasOnly([
           'id',
@@ -430,6 +457,11 @@ service cloud.firestore {
           'note',
           'dateKey',
           'timeLabel',
+          'endDateKey',
+          'endTimeLabel',
+          'transportMode',
+          'fromLabel',
+          'toLabel',
           'link',
           'checked',
           'createdByProfileId',
@@ -448,6 +480,15 @@ service cloud.firestore {
         && request.resource.data.dateKey.size() <= 10
         && request.resource.data.timeLabel is string
         && request.resource.data.timeLabel.size() <= 5
+        && request.resource.data.endDateKey is string
+        && request.resource.data.endDateKey.size() <= 10
+        && request.resource.data.endTimeLabel is string
+        && request.resource.data.endTimeLabel.size() <= 5
+        && request.resource.data.transportMode in ['', 'flight', 'train', 'bus', 'car', 'ship', 'walk']
+        && request.resource.data.fromLabel is string
+        && request.resource.data.fromLabel.size() <= 40
+        && request.resource.data.toLabel is string
+        && request.resource.data.toLabel.size() <= 40
         && request.resource.data.link is string
         && request.resource.data.link.size() <= 500
         && request.resource.data.checked is bool
@@ -1423,6 +1464,19 @@ service cloud.firestore {
           && request.resource.data.createdByProfileId == request.auth.uid;
         allow update: if isSpaceMember(spaceId)
           && validTripShape(spaceId, tripId)
+          && request.resource.data.createdByProfileId == resource.data.createdByProfileId;
+        allow delete: if isSpaceMember(spaceId)
+          && resource.data.createdByProfileId == request.auth.uid;
+      }
+
+      match /tripPhotos/{photoId} {
+        allow read: if isSpaceMember(spaceId);
+        allow create: if isSpaceMember(spaceId)
+          && validTripPhotoShape(spaceId, photoId)
+          && request.resource.data.createdByProfileId == request.auth.uid;
+        allow update: if isSpaceMember(spaceId)
+          && validTripPhotoShape(spaceId, photoId)
+          && resource.data.createdByProfileId == request.auth.uid
           && request.resource.data.createdByProfileId == resource.data.createdByProfileId;
         allow delete: if isSpaceMember(spaceId)
           && resource.data.createdByProfileId == request.auth.uid;

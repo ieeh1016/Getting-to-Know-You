@@ -36,6 +36,10 @@ const ACTIVITY_NOTIFICATION_COPY = {
     title: "여행 계획을 업데이트했어요",
     body: "여행 계획에서 확인해요.",
   },
+  tripPhotoSaved: {
+    title: "여행 사진을 올렸어요",
+    body: "여행 계획에서 확인해요.",
+  },
   tripItemSaved: {
     title: "여행 준비를 업데이트했어요",
     body: "여행 계획에서 확인해요.",

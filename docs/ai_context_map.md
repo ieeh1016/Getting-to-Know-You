@@ -114,10 +114,14 @@
   - `Trip`
   - `TripItem`
   - `tripItems`
+  - `tripPhotos`
   - `durationLabel`
+  - `coversNight`
+  - `transportMode`
   - `usesCheck`
 - 주요 code/test:
   - `lib/src/features/trip/`
+  - `lib/src/data/trip_photo_picker.dart`
   - `lib/src/data/firebase_alagagi_repositories.dart`
   - `test/src/domain/trip_planning_test.dart`
   - `test/src/ui/alagagi_app_test.dart`

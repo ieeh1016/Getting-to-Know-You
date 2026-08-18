@@ -199,6 +199,18 @@ Key wishDoneButtonKey(String wishId) => Key('wish-done-button-$wishId');
 Key wishDeleteButtonKey(String wishId) => Key('wish-delete-button-$wishId');
 
 const tripsScreenKey = Key('trips-screen');
+const tripItemEndTimeFieldKey = Key('trip-item-end-time-field');
+const tripItemFromFieldKey = Key('trip-item-from-field');
+const tripItemToFieldKey = Key('trip-item-to-field');
+const tripPhotoAddButtonKey = Key('trip-photo-add-button');
+const tripPhotoGridKey = Key('trip-photo-grid');
+Key tripTransportModeButtonKey(String mode) => Key('trip-transport-mode-$mode');
+Key tripStayBandKey(String dateKey) => Key('trip-stay-band-$dateKey');
+Key tripStayCheckOutDateButtonKey(String dateKey) =>
+    Key('trip-stay-checkout-$dateKey');
+Key tripPhotoCardKey(String photoId) => Key('trip-photo-card-$photoId');
+Key tripPhotoDeleteButtonKey(String photoId) =>
+    Key('trip-photo-delete-$photoId');
 const tripTimelineKey = Key('trip-timeline');
 const tripItemTimeFieldKey = Key('trip-item-time-field');
 Key tripTimelineDayKey(String dateKey) => Key('trip-timeline-day-$dateKey');

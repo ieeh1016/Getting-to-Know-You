@@ -390,6 +390,11 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         'note': item.note,
         'dateKey': item.dateKey ?? '',
         'timeLabel': item.timeLabel ?? '',
+        'endDateKey': item.endDateKey ?? '',
+        'endTimeLabel': item.endTimeLabel ?? '',
+        'transportMode': item.transportMode?.storageKey ?? '',
+        'fromLabel': item.fromLabel ?? '',
+        'toLabel': item.toLabel ?? '',
         'link': item.link ?? '',
         'checked': item.checked,
         'createdByProfileId': item.createdByProfileId,
@@ -415,6 +420,46 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         .doc(spaceId)
         .collection('tripItems')
         .doc(itemId)
+        .delete();
+  }
+
+  @override
+  Future<void> saveTripPhoto(String spaceId, TripPhoto photo) {
+    return _setWithActivityEvent(
+      spaceId,
+      _firestore
+          .collection('spaces')
+          .doc(spaceId)
+          .collection('tripPhotos')
+          .doc(photo.id),
+      {
+        'id': photo.id,
+        'tripId': photo.tripId,
+        'imageDataUrl': photo.imageDataUrl,
+        'caption': photo.caption,
+        'dateKey': photo.dateKey ?? '',
+        'createdByProfileId': photo.createdByProfileId,
+        'updatedByProfileId': photo.createdByProfileId,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      options: SetOptions(merge: true),
+      activityEvent: _ActivityEventDraft(
+        type: 'tripPhotoSaved',
+        actorProfileId: photo.createdByProfileId,
+        route: 'trips',
+        feature: 'trips',
+        targetId: photo.tripId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> deleteTripPhoto(String spaceId, String photoId) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('tripPhotos')
+        .doc(photoId)
         .delete();
   }
 
@@ -985,6 +1030,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     final wishesSnapshot = await space.collection('wishes').get();
     final tripsSnapshot = await space.collection('trips').get();
     final tripItemsSnapshot = await space.collection('tripItems').get();
+    final tripPhotosSnapshot = await space.collection('tripPhotos').get();
     final sharedMemoryCardsSnapshot = await space
         .collection('memoryCards')
         .where('visibility', isEqualTo: 'shared')
@@ -1054,6 +1100,10 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           .toList(),
       tripItems: tripItemsSnapshot.docs
           .map((doc) => _tripItemFromData(doc.data(), fallbackId: doc.id))
+          .nonNulls
+          .toList(),
+      tripPhotos: tripPhotosSnapshot.docs
+          .map((doc) => _tripPhotoFromData(doc.data(), fallbackId: doc.id))
           .nonNulls
           .toList(),
       memoryCards: [
@@ -1203,7 +1253,15 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     }
     final dateKey = _readString(data, 'dateKey');
     final timeLabel = _readString(data, 'timeLabel');
+    final endDateKey = _readString(data, 'endDateKey');
+    final endTimeLabel = _readString(data, 'endTimeLabel');
+    final transportMode = _readString(data, 'transportMode');
+    final fromLabel = _readString(data, 'fromLabel');
+    final toLabel = _readString(data, 'toLabel');
     final link = _readString(data, 'link');
+
+    String? orNull(String? value) =>
+        value == null || value.isEmpty ? null : value;
     return TripItem(
       id: _readString(data, 'id') ?? fallbackId,
       tripId: tripId,
@@ -1217,11 +1275,40 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       createdByProfileId: createdByProfileId,
       note: _readString(data, 'note') ?? '',
       dateKey: dateKey == null || dateKey.isEmpty ? null : dateKey,
-      timeLabel: timeLabel == null || timeLabel.isEmpty ? null : timeLabel,
+      timeLabel: orNull(timeLabel),
+      endDateKey: orNull(endDateKey),
+      endTimeLabel: orNull(endTimeLabel),
+      transportMode: transportMode == null || transportMode.isEmpty
+          ? null
+          : tripTransportModeFromKey(transportMode),
+      fromLabel: orNull(fromLabel),
+      toLabel: orNull(toLabel),
       link: link == null || link.isEmpty ? null : link,
       checked: data['checked'] == true,
       updatedAt: _readDateTime(data, 'updatedAt'),
       updatedByProfileId: _readString(data, 'updatedByProfileId'),
+    );
+  }
+
+  TripPhoto? _tripPhotoFromData(
+    Map<String, dynamic> data, {
+    required String fallbackId,
+  }) {
+    final tripId = _readString(data, 'tripId');
+    final imageDataUrl = _readString(data, 'imageDataUrl');
+    final createdByProfileId = _readString(data, 'createdByProfileId');
+    if (tripId == null || imageDataUrl == null || createdByProfileId == null) {
+      return null;
+    }
+    final dateKey = _readString(data, 'dateKey');
+    return TripPhoto(
+      id: _readString(data, 'id') ?? fallbackId,
+      tripId: tripId,
+      imageDataUrl: imageDataUrl,
+      createdByProfileId: createdByProfileId,
+      caption: _readString(data, 'caption') ?? '',
+      dateKey: dateKey == null || dateKey.isEmpty ? null : dateKey,
+      updatedAt: _readDateTime(data, 'updatedAt'),
     );
   }
 

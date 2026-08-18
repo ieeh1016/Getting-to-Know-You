@@ -7,28 +7,47 @@ import '../../shared/ui_style.dart';
 
 IconData tripItemKindIcon(TripItemKind kind) => switch (kind) {
   TripItemKind.stay => Icons.bed_outlined,
-  TripItemKind.transport => Icons.flight_takeoff_rounded,
+  TripItemKind.transport => Icons.swap_horiz_rounded,
   TripItemKind.packing => Icons.backpack_outlined,
   TripItemKind.plan => Icons.explore_outlined,
 };
 
+IconData tripTransportModeIcon(TripTransportMode mode) => switch (mode) {
+  TripTransportMode.flight => Icons.flight_takeoff_rounded,
+  TripTransportMode.train => Icons.train_outlined,
+  TripTransportMode.bus => Icons.directions_bus_outlined,
+  TripTransportMode.car => Icons.directions_car_outlined,
+  TripTransportMode.ship => Icons.directions_boat_outlined,
+  TripTransportMode.walk => Icons.directions_walk_rounded,
+};
+
 /// 여행 하루를 세로 rail로 이어 보여주는 타임라인.
 ///
-/// 날짜가 정해진 항목은 시간순으로, 시간이 없으면 그날 끝에 놓인다.
-/// 준비물은 시간 흐름이 아니라 목록이라 여기 오지 않는다.
+/// 숙소는 하룻밤을 통째로 차지하므로 시각 흐름에 끼우지 않고 하루 머리의
+/// 머무는 곳 띠로 보여준다. 준비물도 시간과 무관해 여기 오지 않는다.
 class TripTimeline extends StatelessWidget {
   const TripTimeline({
     super.key,
     required this.days,
+    required this.staysForNight,
+    required this.staysCheckingOut,
     required this.onTapItem,
   });
 
   final List<TripDay> days;
+  final List<TripItem> Function(String dateKey) staysForNight;
+  final List<TripItem> Function(String dateKey) staysCheckingOut;
   final ValueChanged<TripItem> onTapItem;
+
+  bool get _isEmpty =>
+      days.every((day) => day.items.isEmpty) &&
+      days.every(
+        (day) => day.isUndated || staysForNight(day.dateKey).isEmpty,
+      );
 
   @override
   Widget build(BuildContext context) {
-    if (days.every((day) => day.items.isEmpty)) {
+    if (_isEmpty) {
       return const AlagagiEmptyStateCard(
         text: '아직 정한 일정이 없어요. 숙소나 이동부터 하나씩 담아봐요.',
       );
@@ -38,13 +57,18 @@ class TripTimeline extends StatelessWidget {
       key: tripTimelineKey,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (var index = 0; index < days.length; index += 1) ...[
+        for (var index = 0; index < days.length; index += 1)
           _TripTimelineDay(
             day: days[index],
             isLast: index == days.length - 1,
+            stays: days[index].isUndated
+                ? const []
+                : staysForNight(days[index].dateKey),
+            checkOuts: days[index].isUndated
+                ? const []
+                : staysCheckingOut(days[index].dateKey),
             onTapItem: onTapItem,
           ),
-        ],
       ],
     );
   }
@@ -54,22 +78,44 @@ class _TripTimelineDay extends StatelessWidget {
   const _TripTimelineDay({
     required this.day,
     required this.isLast,
+    required this.stays,
+    required this.checkOuts,
     required this.onTapItem,
   });
 
   final TripDay day;
   final bool isLast;
+  final List<TripItem> stays;
+  final List<TripItem> checkOuts;
   final ValueChanged<TripItem> onTapItem;
 
   @override
   Widget build(BuildContext context) {
+    final isBlank = day.items.isEmpty && stays.isEmpty && checkOuts.isEmpty;
+
     return Column(
       key: tripTimelineDayKey(day.isUndated ? 'undated' : day.dateKey),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _TripDayHeader(day: day),
-        const SizedBox(height: 10),
-        if (day.items.isEmpty)
+        _TripDayHeader(day: day, entryCount: day.items.length),
+        const SizedBox(height: 9),
+        for (final stay in checkOuts)
+          _TripStayBand(
+            dateKey: day.dateKey,
+            stay: stay,
+            mode: _StayBandMode.checkOut,
+            onTap: () => onTapItem(stay),
+          ),
+        for (final stay in stays)
+          _TripStayBand(
+            dateKey: day.dateKey,
+            stay: stay,
+            mode: stay.dateKey == day.dateKey
+                ? _StayBandMode.checkIn
+                : _StayBandMode.staying,
+            onTap: () => onTapItem(stay),
+          ),
+        if (isBlank)
           Padding(
             padding: const EdgeInsets.only(left: 34, bottom: 16),
             child: Text(
@@ -90,10 +136,117 @@ class _TripTimelineDay extends StatelessWidget {
   }
 }
 
+enum _StayBandMode { checkIn, staying, checkOut }
+
+/// 그날 머무는 곳을 하루 머리에 얇은 띠로 보여준다.
+///
+/// 숙소를 시각 항목으로 끼우면 "저녁 식사" 사이에 "호텔"이 껴 있는 것처럼
+/// 읽혀 어색하다. 하룻밤을 감싸는 배경에 가깝게 다룬다.
+class _TripStayBand extends StatelessWidget {
+  const _TripStayBand({
+    required this.dateKey,
+    required this.stay,
+    required this.mode,
+    required this.onTap,
+  });
+
+  final String dateKey;
+  final TripItem stay;
+  final _StayBandMode mode;
+  final VoidCallback onTap;
+
+  String get _leadLabel => switch (mode) {
+    _StayBandMode.checkIn => '체크인',
+    _StayBandMode.staying => '머무는 곳',
+    _StayBandMode.checkOut => '체크아웃',
+  };
+
+  String get _modeKey => switch (mode) {
+    _StayBandMode.checkIn => 'checkin',
+    _StayBandMode.staying => 'staying',
+    _StayBandMode.checkOut => 'checkout',
+  };
+
+  String? get _timeLabel => switch (mode) {
+    _StayBandMode.checkIn => stay.timeLabel,
+    _StayBandMode.staying => null,
+    _StayBandMode.checkOut => stay.endTimeLabel,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final nights = stay.stayNightCount;
+    final time = _timeLabel;
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 30, bottom: 8),
+      child: InkWell(
+        key: tripStayBandKey('$dateKey-${stay.id}-$_modeKey'),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(13),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AlagagiColors.skyPanel,
+            border: Border.all(color: AlagagiColors.line),
+            borderRadius: BorderRadius.circular(13),
+          ),
+          padding: const EdgeInsets.fromLTRB(11, 9, 11, 9),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.bed_outlined,
+                size: 15,
+                color: AlagagiColors.sageDeep,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                _leadLabel,
+                style: sans(
+                  size: 10.8,
+                  weight: FontWeight.w800,
+                  color: AlagagiColors.sageDeep,
+                  letterSpacing: 0.6,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  stay.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: sans(size: 12.5, weight: FontWeight.w700),
+                ),
+              ),
+              if (time != null) ...[
+                const SizedBox(width: 6),
+                Text(
+                  time,
+                  style: sans(
+                    size: 11.5,
+                    weight: FontWeight.w800,
+                    color: AlagagiColors.sageDeep,
+                  ),
+                ),
+              ] else if (nights > 0 && mode == _StayBandMode.staying) ...[
+                const SizedBox(width: 6),
+                Text(
+                  '$nights박',
+                  style: sans(size: 11, color: AlagagiColors.muted),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _TripDayHeader extends StatelessWidget {
-  const _TripDayHeader({required this.day});
+  const _TripDayHeader({required this.day, required this.entryCount});
 
   final TripDay day;
+  final int entryCount;
 
   @override
   Widget build(BuildContext context) {
@@ -145,9 +298,9 @@ class _TripDayHeader extends StatelessWidget {
             ],
           ),
         ),
-        if (day.items.isNotEmpty)
+        if (entryCount > 0)
           Text(
-            '${day.items.length}개',
+            '$entryCount개',
             style: sans(size: 11.5, color: AlagagiColors.muted),
           ),
       ],
@@ -168,6 +321,11 @@ class _TripTimelineEntry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mode = item.transportMode;
+    final icon = mode == null
+        ? tripItemKindIcon(item.kind)
+        : tripTransportModeIcon(mode);
+
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -210,7 +368,7 @@ class _TripTimelineEntry extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       AlagagiSymbolMark(
-                        icon: tripItemKindIcon(item.kind),
+                        icon: icon,
                         size: 30,
                         iconSize: 15,
                         tone: AlagagiColors.skyPanel,
@@ -222,28 +380,7 @@ class _TripTimelineEntry extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                Text(
-                                  item.timeLabel ?? '시간 미정',
-                                  style: sans(
-                                    size: 11.5,
-                                    weight: FontWeight.w800,
-                                    color: item.timeLabel == null
-                                        ? AlagagiColors.muted
-                                        : AlagagiColors.sageDeep,
-                                  ),
-                                ),
-                                const SizedBox(width: 7),
-                                Text(
-                                  item.kind.label,
-                                  style: sans(
-                                    size: 11,
-                                    color: AlagagiColors.muted,
-                                  ),
-                                ),
-                              ],
-                            ),
+                            _TripEntryMeta(item: item),
                             const SizedBox(height: 5),
                             Text(
                               item.title,
@@ -252,6 +389,7 @@ class _TripTimelineEntry extends StatelessWidget {
                                 weight: FontWeight.w700,
                               ),
                             ),
+                            if (item.kind.usesRoute) _TripRouteLine(item: item),
                             if (item.note.isNotEmpty) ...[
                               const SizedBox(height: 5),
                               Text(
@@ -271,6 +409,98 @@ class _TripTimelineEntry extends StatelessWidget {
                     ],
                   ),
                 ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 시각과 종류를 한 줄로. 이동은 `08:20 → 09:35`처럼 구간으로 보여준다.
+class _TripEntryMeta extends StatelessWidget {
+  const _TripEntryMeta({required this.item});
+
+  final TripItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final start = item.timeLabel;
+    final end = item.endTimeLabel;
+    final timeText = start == null
+        ? '시간 미정'
+        : end == null
+        ? start
+        : '$start → $end';
+    final kindText = item.transportMode?.label ?? item.kind.label;
+
+    return Row(
+      children: [
+        Text(
+          timeText,
+          style: sans(
+            size: 11.5,
+            weight: FontWeight.w800,
+            color: start == null
+                ? AlagagiColors.muted
+                : AlagagiColors.sageDeep,
+          ),
+        ),
+        const SizedBox(width: 7),
+        Text(kindText, style: sans(size: 11, color: AlagagiColors.muted)),
+      ],
+    );
+  }
+}
+
+/// 출발지와 도착지를 화살표로 잇는 한 줄.
+class _TripRouteLine extends StatelessWidget {
+  const _TripRouteLine({required this.item});
+
+  final TripItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final from = item.fromLabel;
+    final to = item.toLabel;
+    if (from == null && to == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 5),
+      child: Row(
+        children: [
+          Flexible(
+            child: Text(
+              from ?? '출발지 미정',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: sans(
+                size: 12,
+                weight: FontWeight.w700,
+                color: from == null ? AlagagiColors.muted : AlagagiColors.ink,
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 6),
+            child: Icon(
+              Icons.arrow_right_alt_rounded,
+              size: 16,
+              color: AlagagiColors.sageDeep,
+            ),
+          ),
+          Flexible(
+            child: Text(
+              to ?? '도착지 미정',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: sans(
+                size: 12,
+                weight: FontWeight.w700,
+                color: to == null ? AlagagiColors.muted : AlagagiColors.ink,
               ),
             ),
           ),

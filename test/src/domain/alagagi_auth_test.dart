@@ -3371,6 +3371,8 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   savedProfileSlots = [];
   final List<({String spaceId, String profileId, String slotId})>
   deletedProfileSlots = [];
+  final List<({String spaceId, TripPhoto photo})> savedTripPhotos = [];
+  final List<({String spaceId, String photoId})> deletedTripPhotos = [];
   final List<({String spaceId, Trip trip})> savedTrips = [];
   final List<({String spaceId, String tripId})> deletedTrips = [];
   final List<({String spaceId, TripItem item})> savedTripItems = [];
@@ -3467,6 +3469,16 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   @override
   Future<void> deleteTripItem(String spaceId, String itemId) async {
     deletedTripItems.add((spaceId: spaceId, itemId: itemId));
+  }
+
+  @override
+  Future<void> saveTripPhoto(String spaceId, TripPhoto photo) async {
+    savedTripPhotos.add((spaceId: spaceId, photo: photo));
+  }
+
+  @override
+  Future<void> deleteTripPhoto(String spaceId, String photoId) async {
+    deletedTripPhotos.add((spaceId: spaceId, photoId: photoId));
   }
 
   @override
