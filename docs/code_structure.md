@@ -73,6 +73,12 @@ lib/src/domain/
 - `lib/src/data/trip_photo_picker.dart`: 갤러리 사진 선택기. web은 file input + canvas 축소, 그 외는 미지원 stub.
 - `lib/src/features/trip/trip_photo_viewer.dart`: 전체 화면 사진 뷰어. 좌우 넘기기, 확대, 설명 편집, 삭제.
 
+## Input Pickers
+
+- 날짜와 시각은 `lib/src/shared/picker_sheets.dart`의 `showAlagagiDatePicker`, `showAlagagiTimePicker`로 고른다.
+- 새 화면에서 날짜/시각을 받을 때 text field로 직접 받지 않는다. 형식 검증을 화면마다 새로 만들게 되고 입력이 번거롭다.
+- 고르는 값을 보여주는 자리는 `_PickerRow`처럼 label + 현재 값 + icon 구조를 유지한다.
+
 ## Card Geometry
 
 - paper card는 두 형태만 쓴다. 기본형(`AlagagiCardGeometry.radius` 22 / `padding` 17)과 compact형(18 / 14)이다.

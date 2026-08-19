@@ -198,6 +198,16 @@ Key wishEditButtonKey(String wishId) => Key('wish-edit-button-$wishId');
 Key wishDoneButtonKey(String wishId) => Key('wish-done-button-$wishId');
 Key wishDeleteButtonKey(String wishId) => Key('wish-delete-button-$wishId');
 
+const datePickerPreviousMonthButtonKey = Key('date-picker-previous-month');
+const datePickerNextMonthButtonKey = Key('date-picker-next-month');
+Key datePickerDayButtonKey(String dateKey) => Key('date-picker-day-$dateKey');
+const timePickerPreviewKey = Key('time-picker-preview');
+const timePickerConfirmButtonKey = Key('time-picker-confirm');
+const timePickerHourColumnKey = Key('time-picker-hour-column');
+const timePickerMinuteColumnKey = Key('time-picker-minute-column');
+Key timePickerHourButtonKey(int hour) => Key('time-picker-hour-$hour');
+Key timePickerMinuteButtonKey(int minute) => Key('time-picker-minute-$minute');
+
 const tripsScreenKey = Key('trips-screen');
 const tripItemEndTimeFieldKey = Key('trip-item-end-time-field');
 const tripItemFromFieldKey = Key('trip-item-from-field');

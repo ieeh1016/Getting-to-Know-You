@@ -4,6 +4,7 @@ import '../../app/app_shell.dart';
 import '../../app/test_keys.dart';
 import '../../data/trip_photo_picker.dart';
 import '../../domain/alagagi_controller.dart';
+import '../../shared/picker_sheets.dart';
 import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
@@ -38,8 +39,8 @@ class _TripScreenState extends State<TripScreen> {
 
   late final ImeSafeTextEditingController _titleController;
   late final ImeSafeTextEditingController _destinationController;
-  late final ImeSafeTextEditingController _startController;
-  late final ImeSafeTextEditingController _endController;
+  String? _draftStartDateKey;
+  String? _draftEndDateKey;
   late final ImeSafeTextEditingController _itemTitleController;
   late final ImeSafeTextEditingController _itemNoteController;
   late final ImeSafeTextEditingController _itemTimeController;
@@ -53,8 +54,6 @@ class _TripScreenState extends State<TripScreen> {
     super.initState();
     _titleController = ImeSafeTextEditingController();
     _destinationController = ImeSafeTextEditingController();
-    _startController = ImeSafeTextEditingController();
-    _endController = ImeSafeTextEditingController();
     _itemTitleController = ImeSafeTextEditingController();
     _itemNoteController = ImeSafeTextEditingController();
     _itemTimeController = ImeSafeTextEditingController();
@@ -68,8 +67,6 @@ class _TripScreenState extends State<TripScreen> {
   void dispose() {
     _titleController.dispose();
     _destinationController.dispose();
-    _startController.dispose();
-    _endController.dispose();
     _itemTitleController.dispose();
     _itemNoteController.dispose();
     _itemTimeController.dispose();
@@ -86,8 +83,8 @@ class _TripScreenState extends State<TripScreen> {
       _tripError = null;
       _titleController.text = trip?.title ?? '';
       _destinationController.text = trip?.destination ?? '';
-      _startController.text = trip?.startDateKey ?? '';
-      _endController.text = trip?.endDateKey ?? '';
+      _draftStartDateKey = trip?.startDateKey;
+      _draftEndDateKey = trip?.endDateKey;
     });
   }
 
@@ -99,13 +96,73 @@ class _TripScreenState extends State<TripScreen> {
     });
   }
 
+  /// 고른 두 날짜로 기간을 미리 되짚어준다.
+  String? get _draftDurationLabel {
+    final start = DateTime.tryParse(_draftStartDateKey ?? '');
+    final end = DateTime.tryParse(_draftEndDateKey ?? '');
+    if (start == null || end == null || end.isBefore(start)) {
+      return null;
+    }
+    final nights = end.difference(start).inDays;
+    return nights == 0 ? '당일치기' : '$nights박 ${nights + 1}일';
+  }
+
+  Future<void> _pickTripDate({required bool isStart}) async {
+    final now = DateTime.now();
+    final start = DateTime.tryParse(_draftStartDateKey ?? '');
+    final picked = await showAlagagiDatePicker(
+      context,
+      title: isStart ? '떠나는 날' : '돌아오는 날',
+      initialDate: isStart
+          ? start
+          : DateTime.tryParse(_draftEndDateKey ?? '') ?? start,
+      // 돌아오는 날은 떠나는 날부터 고를 수 있게 막아둔다.
+      firstDate: isStart ? DateTime(now.year - 1) : start,
+      lastDate: DateTime(now.year + 3),
+    );
+    if (picked == null) {
+      return;
+    }
+    setState(() {
+      final dateKey = alagagiDateKey(picked);
+      if (isStart) {
+        _draftStartDateKey = dateKey;
+        final end = DateTime.tryParse(_draftEndDateKey ?? '');
+        if (end != null && end.isBefore(picked)) {
+          _draftEndDateKey = null;
+        }
+      } else {
+        _draftEndDateKey = dateKey;
+      }
+      _tripError = null;
+    });
+  }
+
+  Future<void> _pickItemTime({
+    required TextEditingController controller,
+    required String title,
+  }) async {
+    final picked = await showAlagagiTimePicker(
+      context,
+      title: title,
+      initialLabel: controller.text.trim().isEmpty ? null : controller.text,
+    );
+    if (picked == null) {
+      return;
+    }
+    setState(() {
+      controller.text = picked;
+      _itemError = null;
+    });
+  }
+
   void _submitTrip() {
     final error = widget.controller.saveTrip(
       tripId: _editingTripId,
       title: _titleController.text,
       destination: _destinationController.text,
-      startDateKey: _startController.text.trim(),
-      endDateKey: _endController.text.trim(),
+      startDateKey: _draftStartDateKey ?? '',
+      endDateKey: _draftEndDateKey ?? '',
     );
     setState(() {
       _tripError = error;
@@ -321,26 +378,49 @@ class _TripScreenState extends State<TripScreen> {
           Row(
             children: [
               Expanded(
-                child: _TripField(
-                  fieldKey: tripStartDateFieldKey,
-                  controller: _startController,
+                child: _PickerRow(
+                  rowKey: tripStartDateFieldKey,
                   label: '떠나는 날',
-                  hint: '2026-09-12',
-                  maxLength: 10,
+                  value: _draftStartDateKey,
+                  placeholder: '날짜 고르기',
+                  icon: Icons.calendar_today_outlined,
+                  onTap: () => _pickTripDate(isStart: true),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _TripField(
-                  fieldKey: tripEndDateFieldKey,
-                  controller: _endController,
+                child: _PickerRow(
+                  rowKey: tripEndDateFieldKey,
                   label: '돌아오는 날',
-                  hint: '2026-09-14',
-                  maxLength: 10,
+                  value: _draftEndDateKey,
+                  placeholder: '날짜 고르기',
+                  icon: Icons.calendar_today_outlined,
+                  onTap: () => _pickTripDate(isStart: false),
                 ),
               ),
             ],
           ),
+          if (_draftDurationLabel != null) ...[
+            const SizedBox(height: 9),
+            Row(
+              children: [
+                const Icon(
+                  Icons.nights_stay_outlined,
+                  size: 15,
+                  color: AlagagiColors.sageDeep,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  _draftDurationLabel!,
+                  style: sans(
+                    size: 12,
+                    weight: FontWeight.w800,
+                    color: AlagagiColors.sageDeep,
+                  ),
+                ),
+              ],
+            ),
+          ],
           if (_tripError != null) ...[
             const SizedBox(height: 8),
             Text(
@@ -766,12 +846,16 @@ class _TripScreenState extends State<TripScreen> {
       ),
       if (_itemDateKey != null) ...[
         const SizedBox(height: 9),
-        _TripField(
-          fieldKey: tripItemTimeFieldKey,
-          controller: _itemTimeController,
-          label: '체크인 시각 (선택)',
-          hint: '15:00',
-          maxLength: 5,
+        _PickerRow(
+          rowKey: tripItemTimeFieldKey,
+          label: '체크인 시각',
+          value: _itemTimeController.text,
+          placeholder: '시각 고르기',
+          icon: Icons.schedule_rounded,
+          onTap: () => _pickItemTime(
+            controller: _itemTimeController,
+            title: '체크인 시각',
+          ),
         ),
         const SizedBox(height: 11),
         _TripFieldLabel(text: '체크아웃'),
@@ -787,12 +871,16 @@ class _TripScreenState extends State<TripScreen> {
         ),
         if (_itemEndDateKey != null) ...[
           const SizedBox(height: 9),
-          _TripField(
-            fieldKey: tripItemEndTimeFieldKey,
-            controller: _itemEndTimeController,
-            label: '체크아웃 시각 (선택)',
-            hint: '11:00',
-            maxLength: 5,
+          _PickerRow(
+            rowKey: tripItemEndTimeFieldKey,
+            label: '체크아웃 시각',
+            value: _itemEndTimeController.text,
+            placeholder: '시각 고르기',
+            icon: Icons.schedule_rounded,
+            onTap: () => _pickItemTime(
+              controller: _itemEndTimeController,
+              title: '체크아웃 시각',
+            ),
           ),
         ],
         if (nights > 0) ...[
@@ -838,23 +926,31 @@ class _TripScreenState extends State<TripScreen> {
         Row(
           children: [
             Expanded(
-              child: _TripField(
-                fieldKey: tripItemTimeFieldKey,
-                controller: _itemTimeController,
-                label: kind.usesRoute ? '출발' : '몇 시 (선택)',
-                hint: '09:30',
-                maxLength: 5,
+              child: _PickerRow(
+                rowKey: tripItemTimeFieldKey,
+                label: kind.usesRoute ? '출발' : '몇 시',
+                value: _itemTimeController.text,
+                placeholder: '시각 고르기',
+                icon: Icons.schedule_rounded,
+                onTap: () => _pickItemTime(
+                  controller: _itemTimeController,
+                  title: kind.usesRoute ? '출발 시각' : '시각',
+                ),
               ),
             ),
             if (kind.usesRoute) ...[
               const SizedBox(width: 10),
               Expanded(
-                child: _TripField(
-                  fieldKey: tripItemEndTimeFieldKey,
-                  controller: _itemEndTimeController,
+                child: _PickerRow(
+                  rowKey: tripItemEndTimeFieldKey,
                   label: '도착',
-                  hint: '10:45',
-                  maxLength: 5,
+                  value: _itemEndTimeController.text,
+                  placeholder: '시각 고르기',
+                  icon: Icons.flag_outlined,
+                  onTap: () => _pickItemTime(
+                    controller: _itemEndTimeController,
+                    title: '도착 시각',
+                  ),
                 ),
               ),
             ],
@@ -866,6 +962,71 @@ class _TripScreenState extends State<TripScreen> {
 }
 
 enum _TripDetailTab { timeline, items, photos }
+
+/// 눌러서 값을 고르는 한 칸. 날짜와 시각처럼 타이핑하지 않는 값에 쓴다.
+class _PickerRow extends StatelessWidget {
+  const _PickerRow({
+    required this.rowKey,
+    required this.label,
+    required this.value,
+    required this.placeholder,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final Key rowKey;
+  final String label;
+  final String? value;
+  final String placeholder;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final filled = value != null && value!.isNotEmpty;
+
+    return InkWell(
+      key: rowKey,
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(15),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AlagagiColors.skyPanel,
+          border: Border.all(color: AlagagiColors.line),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        padding: const EdgeInsets.fromLTRB(13, 9, 11, 9),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: sans(size: 10.8, color: AlagagiColors.muted)),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    filled ? value! : placeholder,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: sans(
+                      size: 13,
+                      weight: filled ? FontWeight.w700 : FontWeight.w500,
+                      color: filled
+                          ? AlagagiColors.ink
+                          : AlagagiColors.muted,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Icon(icon, size: 15, color: AlagagiColors.sageDeep),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _TripFieldLabel extends StatelessWidget {
   const _TripFieldLabel({required this.text});

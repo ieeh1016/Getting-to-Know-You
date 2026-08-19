@@ -12,6 +12,68 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// 달력 sheet를 열어 날짜를 고른다.
+  Future<void> pickTripDate(
+    WidgetTester tester,
+    Key rowKey,
+    String dateKey,
+  ) async {
+    await tester.ensureVisible(find.byKey(rowKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(rowKey));
+    await tester.pumpAndSettle();
+    // 달력은 오늘이 있는 달로 열린다. 목표 날짜가 보일 때까지 달을 넘긴다.
+    for (var attempt = 0; attempt < 24; attempt += 1) {
+      if (find.byKey(datePickerDayButtonKey(dateKey)).evaluate().isNotEmpty) {
+        break;
+      }
+      await tester.tap(find.byKey(datePickerNextMonthButtonKey));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.byKey(datePickerDayButtonKey(dateKey)));
+    await tester.pumpAndSettle();
+  }
+
+  /// 시각 sheet를 열어 시/분을 고른다.
+  Future<void> pickTripTime(
+    WidgetTester tester,
+    Key rowKey,
+    int hour,
+    int minute,
+  ) async {
+    await tester.ensureVisible(find.byKey(rowKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(rowKey));
+    await tester.pumpAndSettle();
+    // 시/분 목록은 현재 값 근처에서 열리므로 먼 값은 굴려서 찾는다.
+    await tester.scrollUntilVisible(
+      find.byKey(timePickerHourButtonKey(hour)),
+      60,
+      scrollable: find.descendant(
+        of: find.byKey(timePickerHourColumnKey),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.ensureVisible(find.byKey(timePickerHourButtonKey(hour)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(timePickerHourButtonKey(hour)));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(timePickerMinuteButtonKey(minute)),
+      60,
+      scrollable: find.descendant(
+        of: find.byKey(timePickerMinuteColumnKey),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.ensureVisible(find.byKey(timePickerMinuteButtonKey(minute)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(timePickerMinuteButtonKey(minute)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(timePickerConfirmButtonKey));
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('shows invite and enters home with nickname', (tester) async {
     await tester.pumpWidget(const AlagagiApp());
 
@@ -306,18 +368,20 @@ void main() {
 
     await tester.enterText(find.byKey(tripTitleFieldKey), '가을 제주');
     await tester.enterText(find.byKey(tripDestinationFieldKey), '제주도');
-    await tester.enterText(find.byKey(tripStartDateFieldKey), '2026-09-14');
-    await tester.enterText(find.byKey(tripEndDateFieldKey), '2026-09-12');
+
+    // 날짜를 고르기 전에는 저장할 수 없다.
     await tester.ensureVisible(find.byKey(tripSubmitButtonKey));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(tripSubmitButtonKey));
     await tester.pumpAndSettle();
-
-    expect(find.text('돌아오는 날은 떠나는 날보다 앞설 수 없어요.'), findsOneWidget);
     expect(controller.trips, isEmpty);
 
-    await tester.enterText(find.byKey(tripStartDateFieldKey), '2026-09-12');
-    await tester.enterText(find.byKey(tripEndDateFieldKey), '2026-09-14');
+    await pickTripDate(tester, tripStartDateFieldKey, '2026-09-12');
+    await pickTripDate(tester, tripEndDateFieldKey, '2026-09-14');
+
+    // 고른 기간을 저장 전에 되짚어준다.
+    expect(find.text('2박 3일'), findsWidgets);
+
     await tester.ensureVisible(find.byKey(tripSubmitButtonKey));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(tripSubmitButtonKey));
@@ -460,12 +524,16 @@ void main() {
 
     expect(find.text('이동 고치기'), findsOneWidget);
     expect(find.text('고친 내용 저장하기'), findsOneWidget);
+    // 고쳐 열면 원래 시각이 그대로 들어와 있다.
     expect(
-      tester.widget<TextField>(find.byKey(tripItemTimeFieldKey)).controller!.text,
-      '08:20',
+      find.descendant(
+        of: find.byKey(tripItemTimeFieldKey),
+        matching: find.text('08:20'),
+      ),
+      findsOneWidget,
     );
 
-    await tester.enterText(find.byKey(tripItemTimeFieldKey), '07:40');
+    await pickTripTime(tester, tripItemTimeFieldKey, 7, 40);
     await tester.ensureVisible(find.byKey(tripItemSubmitButtonKey));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(tripItemSubmitButtonKey));
@@ -640,8 +708,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(tripItemDateButtonKey('2026-09-12')));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(tripItemTimeFieldKey), '08:20');
-    await tester.enterText(find.byKey(tripItemEndTimeFieldKey), '10:45');
+    await pickTripTime(tester, tripItemTimeFieldKey, 8, 20);
+    await pickTripTime(tester, tripItemEndTimeFieldKey, 10, 45);
     await tester.ensureVisible(find.byKey(tripItemSubmitButtonKey));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(tripItemSubmitButtonKey));
