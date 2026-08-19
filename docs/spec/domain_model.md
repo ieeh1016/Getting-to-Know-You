@@ -54,7 +54,7 @@ feature spec은 사용자가 무엇을 할 수 있는지 설명한다. 이 문�
 | Schedule coordination | `ScheduleTimeBlock`, `ScheduleEntry`, `MeetingCandidate` | `scheduleEntries/{dateKey_uid}` | member는 자신의 date entry만 쓴다. meeting-day marker는 schedule entry에 저장된다. |
 | Meeting plans | `MeetingPlan` | `meetingPlans/{dateKey}` | fixed meeting day의 shared plan list와 cancellation state다. 가장 최근 saver는 `updatedByProfileId`로 기록한다. |
 | Trips | `Trip`, `TripItem`, `TripDay`, `TripPhoto` | `trips/{tripId}`, `tripItems/{itemId}`, `tripPhotos/{photoId}` | 두 member 모두 여행과 항목을 create/edit할 수 있고 삭제는 creator만 한다. 항목은 `tripId`로 여행을 가리키며, 숙소만 날짜 범위를, 이동만 수단/경로를, 준비물만 체크 상태를 쓴다. 숙소와 계획은 `placeId`로 `sharedPlaces`를 가리키되 장소를 소유하지 않는다. 사진은 Storage 없이 data URI로 담고 올린 사람만 지운다. |
-| Places | `SharedPlace`, `MeetingPlaceLink` | `sharedPlaces/{placeId}` | creator가 place content를 소유한다. interested member는 narrow place-link path로 interest 또는 meeting link를 update할 수 있다. provider는 Kakao만 사용한다. |
+| Places | `SharedPlace`, `MeetingPlaceLink` | `sharedPlaces/{placeId}` | creator가 place content를 소유한다. interested member는 narrow place-link path로 interest 또는 meeting link를 update할 수 있다. provider는 Kakao 검색(`kakao`)과 직접 입력(`manual`) 두 가지다. `manual`은 좌표가 없고 이름·주소로 중복을 본다. |
 | Curiosity | `CuriosityCard` | `curiosityCards/{cardId}` | sender는 상대 member에게 question을 하나 만든다. receiver가 reply를 쓴다. |
 | Stocks | `StockStory`, `StockHolding` | `stockStories`, `stockHoldings` | creator가 initial story/holding을 쓴다. partner는 story에 reply하고, holding owner는 holding detail을 edit하며 partner도 reply할 수 있다. |
 | Improvements | `ImprovementPost` | `improvementPosts/{postId}` | creator는 자신의 post를 create/edit/delete할 수 있다. owner-role user는 owner note를 남기고 resolved 처리할 수 있다. |

@@ -154,6 +154,17 @@ Key meetingTimeBlockRemoveButtonKey(String blockId) =>
 
 const placeBoardKey = Key('place-board');
 const placeAddButtonKey = Key('place-add-button');
+const placeManualAddButtonKey = Key('place-manual-add-button');
+const placeManualSheetKey = Key('place-manual-sheet');
+const placeManualNameFieldKey = Key('place-manual-name-field');
+const placeManualAddressFieldKey = Key('place-manual-address-field');
+const placeManualNoteFieldKey = Key('place-manual-note-field');
+const placeManualLinkFieldKey = Key('place-manual-link-field');
+const placeManualSubmitButtonKey = Key('place-manual-submit-button');
+Key placeManualCategoryButtonKey(String category) =>
+    Key('place-manual-category-$category');
+Key placeGoogleMapsButtonKey(String placeId) =>
+    Key('place-google-maps-$placeId');
 const placeSearchFieldKey = Key('place-search-field');
 const placeSearchButtonKey = Key('place-search-button');
 const placeNameFieldKey = Key('place-name-field');

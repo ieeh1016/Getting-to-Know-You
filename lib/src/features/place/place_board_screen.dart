@@ -7,6 +7,7 @@ import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 import '../../ui/kakao_map_panel.dart';
+import 'manual_place_sheet.dart';
 import 'place_common.dart';
 
 const _mapCenterLatitude = 37.5665;
@@ -731,6 +732,28 @@ class _PlaceSearchEntryCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
               textStyle: sans(size: 13, weight: FontWeight.w800),
+            ),
+          ),
+          const SizedBox(height: 9),
+          // 카카오 검색은 국내만 다룬다. 해외 장소는 직접 담는다.
+          SizedBox(
+            height: 46,
+            child: OutlinedButton.icon(
+              key: placeManualAddButtonKey,
+              onPressed: () => showManualPlaceSheet(
+                context,
+                controller: controller,
+              ),
+              icon: const Icon(Icons.edit_location_alt_outlined, size: 17),
+              label: const Text('해외거나 검색에 없으면 직접 담기'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AlagagiColors.sageDeep,
+                side: const BorderSide(color: AlagagiColors.line),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                textStyle: sans(size: 12.5, weight: FontWeight.w700),
+              ),
             ),
           ),
         ],
@@ -1661,13 +1684,32 @@ class _PlaceCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
+              // 카카오로 담은 국내 장소도, 직접 담은 해외 장소도 구글 지도로
+              // 열 수 있게 항상 둔다. 해외에서는 이쪽이 실제로 쓰인다.
+              SizedBox(
+                height: 32,
+                child: OutlinedButton.icon(
+                  key: placeGoogleMapsButtonKey(place.id),
+                  onPressed: () => onOpenExternalLink(place.googleMapsUrl),
+                  icon: const Icon(Icons.map_outlined, size: 14),
+                  label: const Text('구글 지도'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AlagagiColors.sageDeep,
+                    side: const BorderSide(color: Color(0x339A7A2A)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    textStyle: sans(size: 11.5, weight: FontWeight.w800),
+                  ),
+                ),
+              ),
               if (kakaoPlaceUrl != null)
                 SizedBox(
                   height: 32,
                   child: OutlinedButton.icon(
                     onPressed: () => onOpenExternalLink(kakaoPlaceUrl),
                     icon: const Icon(Icons.open_in_new_rounded, size: 14),
-                    label: const Text('지도에서 열기'),
+                    label: const Text('카카오맵'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AlagagiColors.sageDeep,
                       side: const BorderSide(color: Color(0x339A7A2A)),
@@ -1886,6 +1928,7 @@ String _kakaoMapFallbackMessage(String reason) {
 String _providerLabel(MapApiProvider provider) {
   return switch (provider) {
     MapApiProvider.kakao => '지도 검색',
+    MapApiProvider.manual => '직접 담음',
   };
 }
 

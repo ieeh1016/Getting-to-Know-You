@@ -53,7 +53,11 @@ enum MeetingAvailability { available, maybe, busy }
 
 enum MeetingTimeSlot { morning, afternoon, evening }
 
-enum MapApiProvider { kakao }
+/// 장소를 어디서 가져왔는지.
+///
+/// `kakao`는 국내 지도 검색 결과, `manual`은 직접 적어 넣은 곳이다. 카카오
+/// 검색은 국내만 다루므로 해외 여행에서는 직접 입력으로 담는다.
+enum MapApiProvider { kakao, manual }
 
 enum PlaceCategory { cafe, food, exhibition, walk, activity }
 
@@ -1903,6 +1907,7 @@ class SharedPlace {
     this.latitude,
     this.longitude,
     this.note = '',
+    this.mapLink = '',
     this.linkedDateKey,
     this.meetingPlanLinks = const [],
     this.updatedAt,
@@ -1918,6 +1923,9 @@ class SharedPlace {
   final double? latitude;
   final double? longitude;
   final String note;
+
+  /// 사용자가 붙여넣은 지도 링크. 좌표가 없는 직접 입력 장소를 지도로 잇는다.
+  final String mapLink;
   final String createdByProfileId;
   final Set<String> interestedByProfileIds;
   final String? linkedDateKey;
@@ -1931,6 +1939,29 @@ class SharedPlace {
 
   bool isLinkedToMeetingDate(String dateKey) {
     return linkedDateKey == dateKey || meetingPlanLinkFor(dateKey) != null;
+  }
+
+  /// 이 장소를 구글 지도에서 여는 주소.
+  ///
+  /// 붙여넣은 링크가 있으면 그대로 쓰고, 좌표가 있으면 좌표로, 둘 다 없으면
+  /// 이름과 주소로 검색한다. 카카오로 담은 국내 장소도 해외에서 쓰는 지도
+  /// 앱으로 열 수 있게 항상 값을 돌려준다.
+  String get googleMapsUrl {
+    final link = mapLink.trim();
+    if (link.isNotEmpty) {
+      return link;
+    }
+    final latitude = this.latitude;
+    final longitude = this.longitude;
+    if (latitude != null && longitude != null) {
+      return 'https://www.google.com/maps/search/?api=1'
+          '&query=$latitude,$longitude';
+    }
+    final query = [name.trim(), address.trim()]
+        .where((part) => part.isNotEmpty)
+        .join(' ');
+    return 'https://www.google.com/maps/search/?api=1'
+        '&query=${Uri.encodeComponent(query)}';
   }
 
   MeetingPlaceLink? meetingPlanLinkFor(String dateKey) {
@@ -2009,6 +2040,7 @@ class SharedPlace {
     double? latitude,
     double? longitude,
     String? note,
+    String? mapLink,
     Set<String>? interestedByProfileIds,
     String? linkedDateKey,
     bool clearLinkedDateKey = false,
@@ -2026,6 +2058,7 @@ class SharedPlace {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       note: note ?? this.note,
+      mapLink: mapLink ?? this.mapLink,
       createdByProfileId: createdByProfileId,
       interestedByProfileIds:
           interestedByProfileIds ?? this.interestedByProfileIds,
@@ -7477,6 +7510,116 @@ class AlagagiController extends ChangeNotifier {
       return first.sortOrder.compareTo(second.sortOrder);
     }
     return first.title.compareTo(second.title);
+  }
+
+  /// 지도 검색 없이 장소를 직접 담는다.
+  ///
+  /// 카카오 검색은 국내만 다뤄 해외 여행에서는 결과가 나오지 않는다. 이름과
+  /// 메모만으로도 담고, 지도 링크를 붙여두면 나중에 지도 앱으로 바로 연다.
+  /// 실패 이유가 있으면 문자열로 돌려주고 아무것도 쓰지 않는다.
+  String? saveManualPlace({
+    String? placeId,
+    required String name,
+    required PlaceCategory category,
+    String address = '',
+    String note = '',
+    String mapLink = '',
+  }) {
+    final trimmedName = name.trim();
+    if (trimmedName.isEmpty) {
+      return '장소 이름을 적어주세요.';
+    }
+    if (trimmedName.length > 40) {
+      return '장소 이름은 40자 안으로 적어주세요.';
+    }
+    final trimmedAddress = address.trim();
+    if (trimmedAddress.length > 120) {
+      return '주소는 120자 안으로 적어주세요.';
+    }
+    final trimmedNote = note.trim();
+    if (trimmedNote.length > 120) {
+      return '메모는 120자 안으로 남겨주세요.';
+    }
+    final trimmedLink = mapLink.trim();
+    if (trimmedLink.isNotEmpty && !_isSupportedPlaceLink(trimmedLink)) {
+      return '지도 링크는 http로 시작하는 주소여야 해요.';
+    }
+    if (trimmedLink.length > 500) {
+      return '지도 링크가 너무 길어요.';
+    }
+
+    final editingIndex = placeId == null
+        ? -1
+        : _sharedPlaces.indexWhere((place) => place.id == placeId);
+    if (placeId != null && editingIndex == -1) {
+      return '수정할 장소를 찾지 못했어요.';
+    }
+    if (editingIndex != -1 &&
+        _sharedPlaces[editingIndex].createdByProfileId != _state.me.id) {
+      return '내가 담은 장소만 수정할 수 있어요.';
+    }
+
+    // 직접 입력에는 provider place id가 없다. 같은 곳을 각자 담아 카드가
+    // 둘로 갈라지지 않도록 이름과 주소로 같은 곳인지 본다.
+    final duplicateIndex = _sharedPlaces.indexWhere(
+      (place) =>
+          place.provider == MapApiProvider.manual &&
+          place.id != placeId &&
+          _normalizedPlaceKey(place.name) == _normalizedPlaceKey(trimmedName) &&
+          _normalizedPlaceKey(place.address) ==
+              _normalizedPlaceKey(trimmedAddress),
+    );
+    final targetIndex = editingIndex != -1 ? editingIndex : duplicateIndex;
+
+    final now = DateTime.now();
+    final SharedPlace place;
+    if (targetIndex != -1) {
+      final existing = _sharedPlaces[targetIndex];
+      place = existing.copyWith(
+        name: trimmedName,
+        address: trimmedAddress,
+        category: category,
+        note: trimmedNote.isEmpty ? existing.note : trimmedNote,
+        mapLink: trimmedLink.isEmpty ? existing.mapLink : trimmedLink,
+        interestedByProfileIds: {
+          ...existing.interestedByProfileIds,
+          _state.me.id,
+        },
+        updatedAt: now,
+        updatedByProfileId: _state.me.id,
+      );
+      _sharedPlaces[targetIndex] = place;
+    } else {
+      place = SharedPlace(
+        id: 'place_${_state.me.id}_${now.microsecondsSinceEpoch}',
+        name: trimmedName,
+        address: trimmedAddress,
+        category: category,
+        provider: MapApiProvider.manual,
+        createdByProfileId: _state.me.id,
+        interestedByProfileIds: {_state.me.id},
+        note: trimmedNote,
+        mapLink: trimmedLink,
+        updatedAt: now,
+        updatedByProfileId: _state.me.id,
+      );
+      _sharedPlaces.insert(0, place);
+    }
+    _persistSharedPlace(place);
+    notifyListeners();
+    return null;
+  }
+
+  static bool _isSupportedPlaceLink(String value) {
+    final uri = Uri.tryParse(value);
+    return uri != null &&
+        (uri.scheme == 'http' || uri.scheme == 'https') &&
+        uri.host.isNotEmpty;
+  }
+
+  /// 띄어쓰기와 대소문자 차이는 같은 곳으로 본다.
+  static String _normalizedPlaceKey(String value) {
+    return value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
   }
 
   /// 여행 항목에 붙은 장소. 장소가 지워졌으면 null이다.

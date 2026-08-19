@@ -1542,6 +1542,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       latitude: _readDouble(data, 'latitude'),
       longitude: _readDouble(data, 'longitude'),
       note: _readString(data, 'note') ?? '',
+      mapLink: _readString(data, 'mapLink') ?? '',
       createdByProfileId: _readString(data, 'createdByProfileId') ?? '',
       interestedByProfileIds: _readStringList(
         data,
@@ -1869,6 +1870,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       'latitude': place.latitude,
       'longitude': place.longitude,
       'note': place.note,
+      'mapLink': place.mapLink,
       'createdByProfileId': place.createdByProfileId,
       ..._sharedPlaceMeetingLinkPatchToData(place),
     };
@@ -1896,12 +1898,14 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
   String _mapApiProviderToData(MapApiProvider provider) {
     return switch (provider) {
       MapApiProvider.kakao => 'kakao',
+      MapApiProvider.manual => 'manual',
     };
   }
 
   MapApiProvider _mapApiProviderFromData(String? value) {
     return switch (value) {
       'kakao' => MapApiProvider.kakao,
+      'manual' => MapApiProvider.manual,
       _ => MapApiProvider.kakao,
     };
   }

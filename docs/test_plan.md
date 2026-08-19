@@ -305,6 +305,10 @@
 - `[MEETING-003]` 사람 행의 `상대에게 남길 한마디`와 만나는 날 메모는 두 줄까지 보여주고, 넘치면 `전체 보기` cue로 원문 sheet를 연다. 짧은 메모에는 cue가 붙지 않는다.
 - Kakao place search typing/result selection, map pan/zoom, detail open, category draft changes는 Firestore write를 만들지 않는다.
 - `[PLACE-001]` Place save/interest action은 사용자 명시 action에서만 shared place document를 저장한다.
+- `[PLACE-003]` 지도 검색 없이 이름만으로 장소를 담을 수 있고, 이름이 비면 저장되지 않는다.
+- `[PLACE-003]` 직접 담은 장소의 지도 링크는 `http`/`https`만 받는다.
+- `[PLACE-003]` 직접 담은 같은 이름·주소는 카드를 새로 만들지 않고 합친다. 주소가 다르면 따로 둔다.
+- `[PLACE-004]` 모든 장소는 구글 지도로 열 수 있고, 링크 -> 좌표 -> 이름·주소 검색 순으로 주소를 만든다.
 - Place board는 현재 위치, 이동 경로, raw API payload, 이미지 blob을 저장하지 않는다.
 - Home은 전체 answer/wish/profile slot subcollection hydration 없이 summary/progress/today docs로 렌더링 가능해야 한다.
 - My dashboard는 이미 로드된 answers/profile slots/music notes로 count/preview를 계산하고 별도 Firestore read/write를 만들지 않는다.

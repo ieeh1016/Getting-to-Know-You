@@ -1251,6 +1251,7 @@ service cloud.firestore {
           'latitude',
           'longitude',
           'note',
+          'mapLink',
           'createdByProfileId',
           'interestedByProfileIds',
           'linkedDateKey',
@@ -1265,9 +1266,11 @@ service cloud.firestore {
         && request.resource.data.address is string
         && request.resource.data.address.size() <= 90
         && request.resource.data.category in ['cafe', 'food', 'exhibition', 'walk', 'activity']
-        && request.resource.data.provider == 'kakao'
+        && request.resource.data.provider in ['kakao', 'manual']
         && request.resource.data.providerPlaceId is string
         && request.resource.data.providerPlaceId.size() <= 80
+        && request.resource.data.mapLink is string
+        && request.resource.data.mapLink.size() <= 500
         && (
           request.resource.data.latitude == null
           || request.resource.data.latitude is number
