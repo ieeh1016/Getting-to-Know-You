@@ -600,6 +600,119 @@ class _PlaceOption extends StatelessWidget {
   }
 }
 
+/// 사진을 여행의 어느 날 것으로 묶을지 고른다.
+///
+/// 빈 문자열을 돌려주면 날짜를 지운다는 뜻이다.
+Future<String?> showTripPhotoDaySheet(
+  BuildContext context, {
+  required Trip trip,
+  String? selectedDateKey,
+}) {
+  return _showFormSheet<String>(
+    context,
+    sheetKey: tripPhotoDaySheetKey,
+    title: '언제 찍은 사진인가요',
+    subtitle: trip.title,
+    builder: (sheetContext) {
+      final dateKeys = trip.dateKeys;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var index = 0; index < dateKeys.length; index += 1) ...[
+            _PhotoDayOption(
+              dateKey: dateKeys[index],
+              dayNumber: index + 1,
+              selected: selectedDateKey == dateKeys[index],
+              onTap: () => Navigator.of(sheetContext).pop(dateKeys[index]),
+            ),
+            const SizedBox(height: 8),
+          ],
+          const SizedBox(height: 4),
+          SizedBox(
+            height: 46,
+            child: OutlinedButton(
+              key: tripPhotoDayClearButtonKey,
+              onPressed: () => Navigator.of(sheetContext).pop(''),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AlagagiColors.muted,
+                side: const BorderSide(color: AlagagiColors.line),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                textStyle: sans(size: 12.5, weight: FontWeight.w700),
+              ),
+              child: const Text('날짜 없이 두기'),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+class _PhotoDayOption extends StatelessWidget {
+  const _PhotoDayOption({
+    required this.dateKey,
+    required this.dayNumber,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String dateKey;
+  final int dayNumber;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final date = DateTime.tryParse(dateKey);
+
+    return InkWell(
+      key: tripPhotoDaySheetOptionKey(dateKey),
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(15),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 52),
+        decoration: BoxDecoration(
+          color: selected ? AlagagiColors.skyPanel : AlagagiColors.paper,
+          border: Border.all(
+            color: selected ? AlagagiColors.sageDeep : AlagagiColors.line,
+          ),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+        child: Row(
+          children: [
+            Text(
+              '$dayNumber일차',
+              style: sans(
+                size: 12,
+                weight: FontWeight.w800,
+                color: AlagagiColors.sageDeep,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                date == null
+                    ? dateKey
+                    : '${date.month}월 ${date.day}일 (${tripWeekdayLabel(date)})',
+                style: sans(size: 13, weight: FontWeight.w700),
+              ),
+            ),
+            if (selected)
+              const Icon(
+                Icons.check_circle_rounded,
+                size: 19,
+                color: AlagagiColors.sageDeep,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// 여행 항목을 만들거나 고친다. 종류에 따라 묻는 것이 달라진다.
 Future<void> showTripItemFormSheet(
   BuildContext context, {

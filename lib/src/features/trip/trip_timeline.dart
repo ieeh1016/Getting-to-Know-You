@@ -33,14 +33,24 @@ class TripTimeline extends StatelessWidget {
     required this.staysForNight,
     required this.staysCheckingOut,
     required this.placeFor,
+    required this.photosForDate,
+    required this.todayDateKey,
     required this.onTapItem,
+    required this.onTapPhoto,
+    required this.onReorder,
   });
 
   final List<TripDay> days;
   final List<TripItem> Function(String dateKey) staysForNight;
   final List<TripItem> Function(String dateKey) staysCheckingOut;
   final SharedPlace? Function(TripItem item) placeFor;
+  final List<TripPhoto> Function(String dateKey) photosForDate;
+  final String todayDateKey;
   final ValueChanged<TripItem> onTapItem;
+  final ValueChanged<TripPhoto> onTapPhoto;
+
+  /// (dateKey, oldIndex, newIndex)
+  final void Function(String? dateKey, int oldIndex, int newIndex) onReorder;
 
   bool get _isEmpty =>
       days.every((day) => day.items.isEmpty) &&
@@ -71,7 +81,14 @@ class TripTimeline extends StatelessWidget {
                 ? const []
                 : staysCheckingOut(days[index].dateKey),
             placeFor: placeFor,
+            photos: days[index].isUndated
+                ? const []
+                : photosForDate(days[index].dateKey),
+            isToday: !days[index].isUndated &&
+                days[index].dateKey == todayDateKey,
             onTapItem: onTapItem,
+            onTapPhoto: onTapPhoto,
+            onReorder: onReorder,
           ),
       ],
     );
@@ -85,7 +102,11 @@ class _TripTimelineDay extends StatelessWidget {
     required this.stays,
     required this.checkOuts,
     required this.placeFor,
+    required this.photos,
+    required this.isToday,
     required this.onTapItem,
+    required this.onTapPhoto,
+    required this.onReorder,
   });
 
   final TripDay day;
@@ -93,17 +114,28 @@ class _TripTimelineDay extends StatelessWidget {
   final List<TripItem> stays;
   final List<TripItem> checkOuts;
   final SharedPlace? Function(TripItem item) placeFor;
+  final List<TripPhoto> photos;
+  final bool isToday;
   final ValueChanged<TripItem> onTapItem;
+  final ValueChanged<TripPhoto> onTapPhoto;
+  final void Function(String? dateKey, int oldIndex, int newIndex) onReorder;
 
   @override
   Widget build(BuildContext context) {
-    final isBlank = day.items.isEmpty && stays.isEmpty && checkOuts.isEmpty;
+    final isBlank = day.items.isEmpty &&
+        stays.isEmpty &&
+        checkOuts.isEmpty &&
+        photos.isEmpty;
 
     return Column(
       key: tripTimelineDayKey(day.isUndated ? 'undated' : day.dateKey),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _TripDayHeader(day: day, entryCount: day.items.length),
+        _TripDayHeader(
+          day: day,
+          entryCount: day.items.length,
+          isToday: isToday,
+        ),
         const SizedBox(height: 9),
         for (final stay in checkOuts)
           _TripStayBand(
@@ -129,14 +161,30 @@ class _TripTimelineDay extends StatelessWidget {
               style: sans(size: 12, color: AlagagiColors.muted),
             ),
           )
-        else
-          for (var index = 0; index < day.items.length; index += 1)
-            _TripTimelineEntry(
+        else if (day.items.isNotEmpty)
+          ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            buildDefaultDragHandles: false,
+            itemCount: day.items.length,
+            // onReorderItem은 제거된 자리를 이미 보정한 index를 준다.
+            onReorderItem: (oldIndex, newIndex) =>
+                onReorder(day.isUndated ? null : day.dateKey, oldIndex, newIndex),
+            itemBuilder: (context, index) => _TripTimelineEntry(
+              key: ValueKey(day.items[index].id),
+              index: index,
               item: day.items[index],
               place: placeFor(day.items[index]),
-              isLastInDay: index == day.items.length - 1 && isLast,
+              isLastInDay:
+                  index == day.items.length - 1 && isLast && photos.isEmpty,
               onTap: () => onTapItem(day.items[index]),
             ),
+          ),
+        if (photos.isNotEmpty) ...[
+          _TripDayPhotoStrip(photos: photos, onTapPhoto: onTapPhoto),
+          const SizedBox(height: 6),
+        ],
         if (!isLast) const SizedBox(height: 8),
       ],
     );
@@ -250,10 +298,15 @@ class _TripStayBand extends StatelessWidget {
 }
 
 class _TripDayHeader extends StatelessWidget {
-  const _TripDayHeader({required this.day, required this.entryCount});
+  const _TripDayHeader({
+    required this.day,
+    required this.entryCount,
+    required this.isToday,
+  });
 
   final TripDay day;
   final int entryCount;
+  final bool isToday;
 
   @override
   Widget build(BuildContext context) {
@@ -288,14 +341,40 @@ class _TripDayHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                day.dayLabel,
-                style: sans(
-                  size: 11,
-                  weight: FontWeight.w800,
-                  color: AlagagiColors.sageDeep,
-                  letterSpacing: 1.1,
-                ),
+              Row(
+                children: [
+                  Text(
+                    day.dayLabel,
+                    style: sans(
+                      size: 11,
+                      weight: FontWeight.w800,
+                      color: AlagagiColors.sageDeep,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                  if (isToday) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      key: tripTodayMarkerKey(day.dateKey),
+                      decoration: BoxDecoration(
+                        color: AlagagiColors.sageDeep,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
+                      child: Text(
+                        '오늘',
+                        style: sans(
+                          size: 9.5,
+                          weight: FontWeight.w800,
+                          color: AlagagiColors.appBackground,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
               const SizedBox(height: 2),
               Text(
@@ -317,12 +396,15 @@ class _TripDayHeader extends StatelessWidget {
 
 class _TripTimelineEntry extends StatelessWidget {
   const _TripTimelineEntry({
+    super.key,
+    required this.index,
     required this.item,
     required this.place,
     required this.isLastInDay,
     required this.onTap,
   });
 
+  final int index;
   final TripItem item;
   final SharedPlace? place;
   final bool isLastInDay;
@@ -416,6 +498,21 @@ class _TripTimelineEntry extends StatelessWidget {
                           ],
                         ),
                       ),
+                      // 시각이 같은 항목은 시각만으로 순서가 정해지지 않는다.
+                      // 길게 눌러 끌면 그 자리를 굳힌다.
+                      ReorderableDragStartListener(
+                        key: tripItemDragHandleKey(item.id),
+                        index: index,
+                        child: const SizedBox(
+                          width: 34,
+                          height: 44,
+                          child: Icon(
+                            Icons.drag_indicator_rounded,
+                            size: 17,
+                            color: AlagagiColors.muted,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -458,7 +555,15 @@ class _TripEntryMeta extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 7),
-        Text(kindText, style: sans(size: 11, color: AlagagiColors.muted)),
+        // 끌기 손잡이가 자리를 가져가 좁아져도 넘치지 않게 한다.
+        Flexible(
+          child: Text(
+            kindText,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: sans(size: 11, color: AlagagiColors.muted),
+          ),
+        ),
       ],
     );
   }
@@ -558,6 +663,58 @@ class _TripPlaceLine extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// 그날 담은 사진을 하루 끝에 가로로 이어 보여준다.
+class _TripDayPhotoStrip extends StatelessWidget {
+  const _TripDayPhotoStrip({required this.photos, required this.onTapPhoto});
+
+  final List<TripPhoto> photos;
+  final ValueChanged<TripPhoto> onTapPhoto;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 40, bottom: 4),
+      child: SizedBox(
+        height: 72,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: photos.length,
+          separatorBuilder: (_, _) => const SizedBox(width: 7),
+          itemBuilder: (context, index) {
+            final photo = photos[index];
+            return InkWell(
+              key: tripTimelinePhotoKey(photo.id),
+              onTap: () => onTapPhoto(photo),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: 72,
+                decoration: BoxDecoration(
+                  border: Border.all(color: AlagagiColors.line),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Image.network(
+                  photo.imageDataUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: AlagagiColors.skyPanel,
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.image_not_supported_outlined,
+                      size: 16,
+                      color: AlagagiColors.muted,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

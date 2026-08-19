@@ -1284,6 +1284,8 @@ class TripItem {
     this.toLabel,
     this.placeId,
     this.link,
+    this.assigneeProfileId,
+    this.sortOrder = 0,
     this.checked = false,
     this.updatedAt,
     this.updatedByProfileId,
@@ -1317,6 +1319,12 @@ class TripItem {
   /// 장소 보드에 저장해둔 장소 id. 식당이나 카페를 일정에 붙일 때 쓴다.
   final String? placeId;
   final String? link;
+
+  /// 준비물을 챙기기로 한 사람. 정하지 않으면 둘 중 누구든이다.
+  final String? assigneeProfileId;
+
+  /// 같은 날 같은 시각일 때의 순서. 사용자가 끌어서 바꾼 값이다.
+  final int sortOrder;
   final bool checked;
   final DateTime? updatedAt;
   final String? updatedByProfileId;
@@ -1372,6 +1380,9 @@ class TripItem {
     bool clearPlaceId = false,
     String? link,
     bool clearLink = false,
+    String? assigneeProfileId,
+    bool clearAssignee = false,
+    int? sortOrder,
     bool? checked,
     DateTime? updatedAt,
     String? updatedByProfileId,
@@ -1396,6 +1407,10 @@ class TripItem {
       toLabel: clearToLabel ? null : toLabel ?? this.toLabel,
       placeId: clearPlaceId ? null : placeId ?? this.placeId,
       link: clearLink ? null : link ?? this.link,
+      assigneeProfileId: clearAssignee
+          ? null
+          : assigneeProfileId ?? this.assigneeProfileId,
+      sortOrder: sortOrder ?? this.sortOrder,
       checked: checked ?? this.checked,
       updatedAt: updatedAt ?? this.updatedAt,
       updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
@@ -7451,6 +7466,10 @@ class AlagagiController extends ChangeNotifier {
       }
       return firstTime.compareTo(secondTime);
     }
+    // 시각까지 같으면 사용자가 정한 순서를 따른다.
+    if (first.sortOrder != second.sortOrder) {
+      return first.sortOrder.compareTo(second.sortOrder);
+    }
     return first.title.compareTo(second.title);
   }
 
@@ -7694,6 +7713,7 @@ class AlagagiController extends ChangeNotifier {
     String? toLabel,
     String? placeId,
     String? link,
+    String? assigneeProfileId,
   }) {
     final trip = tripById(tripId);
     if (trip == null) {
@@ -7768,6 +7788,16 @@ class AlagagiController extends ChangeNotifier {
     }
     final resolvedLink = trimmedOrNull(link);
 
+    // 담당은 준비물에만 두고, 우리 둘 중 한 명이어야 한다.
+    final trimmedAssignee = kind.usesCheck
+        ? trimmedOrNull(assigneeProfileId)
+        : null;
+    if (trimmedAssignee != null &&
+        trimmedAssignee != _state.me.id &&
+        trimmedAssignee != _state.partner.id) {
+      return '둘 중 한 사람만 고를 수 있어요.';
+    }
+
     final now = DateTime.now();
     final existingIndex = itemId == null
         ? -1
@@ -7796,6 +7826,8 @@ class AlagagiController extends ChangeNotifier {
         clearPlaceId: resolvedPlaceId == null,
         link: resolvedLink,
         clearLink: resolvedLink == null,
+        assigneeProfileId: trimmedAssignee,
+        clearAssignee: trimmedAssignee == null,
         checked: kind.usesCheck ? null : false,
         updatedAt: now,
         updatedByProfileId: _state.me.id,
@@ -7818,6 +7850,8 @@ class AlagagiController extends ChangeNotifier {
         toLabel: resolvedTo,
         placeId: resolvedPlaceId,
         link: resolvedLink,
+        assigneeProfileId: trimmedAssignee,
+        sortOrder: _nextTripItemOrder(tripId, resolvedDateKey),
         updatedAt: now,
         updatedByProfileId: _state.me.id,
       );
@@ -7998,6 +8032,154 @@ class AlagagiController extends ChangeNotifier {
   }
 
   /// 계획 중인 여행은 가까운 순, 다녀온 여행은 최근 순으로 읽는 편이 맞다.
+  /// 같은 날 안에서 새 항목이 맨 뒤에 붙도록 다음 순서 값을 만든다.
+  int _nextTripItemOrder(String tripId, String? dateKey) {
+    var maxOrder = -1;
+    for (final item in _tripItems) {
+      if (item.tripId != tripId || item.dateKey != dateKey) {
+        continue;
+      }
+      if (item.sortOrder > maxOrder) {
+        maxOrder = item.sortOrder;
+      }
+    }
+    return maxOrder + 1;
+  }
+
+  /// 타임라인에서 끌어 옮긴 순서를 저장한다.
+  ///
+  /// 시각이 같은 항목끼리는 시각만으로 순서를 정할 수 없다. 옮긴 자리의
+  /// 순서를 그대로 굳혀 다음에 열어도 같게 보이도록 한다.
+  void reorderTripDayItems(
+    String tripId,
+    String? dateKey,
+    int oldIndex,
+    int newIndex,
+  ) {
+    final items = _tripItems
+        .where(
+          (item) =>
+              item.tripId == tripId &&
+              item.dateKey == dateKey &&
+              item.kind.appearsOnTimeline,
+        )
+        .toList();
+    items.sort(_compareTripItems);
+    if (oldIndex < 0 || oldIndex >= items.length) {
+      return;
+    }
+    // 호출부가 제거된 자리를 보정한 index를 준다.
+    if (newIndex < 0 || newIndex >= items.length || newIndex == oldIndex) {
+      return;
+    }
+    final moved = items.removeAt(oldIndex);
+    items.insert(newIndex, moved);
+
+    final now = DateTime.now();
+    for (var index = 0; index < items.length; index += 1) {
+      final current = items[index];
+      if (current.sortOrder == index) {
+        continue;
+      }
+      final updated = current.copyWith(
+        sortOrder: index,
+        updatedAt: now,
+        updatedByProfileId: _state.me.id,
+      );
+      final position = _tripItems.indexWhere(
+        (candidate) => candidate.id == current.id,
+      );
+      if (position >= 0) {
+        _tripItems[position] = updated;
+        _persistTripItem(updated);
+      }
+    }
+    notifyListeners();
+  }
+
+  /// 준비물을 챙길 사람을 바꾼다. 같은 사람을 다시 고르면 담당을 지운다.
+  void setTripItemAssignee(String itemId, String? profileId) {
+    final index = _tripItems.indexWhere((item) => item.id == itemId);
+    if (index < 0 || !_tripItems[index].kind.usesCheck) {
+      return;
+    }
+    final current = _tripItems[index];
+    final next = current.assigneeProfileId == profileId ? null : profileId;
+    if (next != null && next != _state.me.id && next != _state.partner.id) {
+      return;
+    }
+    final updated = current.copyWith(
+      assigneeProfileId: next,
+      clearAssignee: next == null,
+      updatedAt: DateTime.now(),
+      updatedByProfileId: _state.me.id,
+    );
+    _tripItems[index] = updated;
+    _persistTripItem(updated);
+    notifyListeners();
+  }
+
+  /// 사진을 여행 특정 날짜에 묶는다. 빈 값이면 날짜 없이 둔다.
+  String? setTripPhotoDateKey(String photoId, String? dateKey) {
+    final index = _tripPhotos.indexWhere((photo) => photo.id == photoId);
+    if (index < 0) {
+      return '사진을 찾을 수 없어요.';
+    }
+    final existing = _tripPhotos[index];
+    if (existing.createdByProfileId != _state.me.id) {
+      return '올린 사람만 날짜를 정할 수 있어요.';
+    }
+    final trip = tripById(existing.tripId);
+    if (dateKey != null && (trip == null || !trip.containsDateKey(dateKey))) {
+      return '여행 기간 안의 날짜만 고를 수 있어요.';
+    }
+    _tripPhotos[index] = TripPhoto(
+      id: existing.id,
+      tripId: existing.tripId,
+      imageDataUrl: existing.imageDataUrl,
+      createdByProfileId: existing.createdByProfileId,
+      caption: existing.caption,
+      dateKey: dateKey,
+      updatedAt: existing.updatedAt,
+    );
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository != null && spaceId != null) {
+      unawaited(
+        repository.saveTripPhoto(spaceId, _tripPhotos[index]).catchError((_) {}),
+      );
+    }
+    notifyListeners();
+    return null;
+  }
+
+  /// 그날 찍은 사진. 타임라인 하루 끝에 함께 보여준다.
+  List<TripPhoto> tripPhotosForDate(String tripId, String dateKey) {
+    return List<TripPhoto>.unmodifiable(
+      tripPhotosFor(tripId).where((photo) => photo.dateKey == dateKey),
+    );
+  }
+
+  /// 홈에 보여줄 다가오거나 진행 중인 여행. 없으면 null이다.
+  Trip? get upcomingTrip {
+    for (final trip in _trips) {
+      if (trip.status != TripStatus.planning) {
+        continue;
+      }
+      final phase = tripTimingFor(trip).phase;
+      if (phase == TripPhase.upcoming || phase == TripPhase.ongoing) {
+        return trip;
+      }
+    }
+    return null;
+  }
+
+  /// 날짜가 지났는데 아직 `계획 중`인 여행. 상태를 물어볼 때 쓴다.
+  bool tripNeedsStatusNudge(Trip trip) {
+    return trip.status == TripStatus.planning &&
+        tripTimingFor(trip).phase == TripPhase.past;
+  }
+
   void _sortTrips() {
     _trips.sort((first, second) {
       if (first.status != second.status) {

@@ -11,6 +11,7 @@ import '../questions/answer_save_status.dart';
 import 'curiosity_menu_sheet.dart';
 import 'home_header.dart';
 import 'home_memory_card.dart';
+import 'home_upcoming_trip_card.dart';
 import 'home_plus_grid.dart';
 import 'home_progress_summary_card.dart';
 import 'unread_activity_panel.dart';
@@ -63,6 +64,7 @@ class HomeScreen extends StatelessWidget {
         const SizedBox(height: 18),
         HomeProgressSummaryCard(controller: controller),
         const SizedBox(height: 18),
+        HomeUpcomingTripCard(controller: controller),
         const AlagagiSectionLabel('서로의 기억'),
         const SizedBox(height: 12),
         HomeMemoryCard(controller: controller),

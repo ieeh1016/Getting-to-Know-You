@@ -224,11 +224,27 @@ const tripItemToFieldKey = Key('trip-item-to-field');
 const tripItemPlaceFieldKey = Key('trip-item-place-field');
 const tripItemLinkFieldKey = Key('trip-item-link-field');
 const tripPlacePickerSheetKey = Key('trip-place-picker-sheet');
+const tripPhotoDaySheetKey = Key('trip-photo-day-sheet');
+const tripPhotoDayClearButtonKey = Key('trip-photo-day-clear');
+Key tripPhotoDaySheetOptionKey(String dateKey) =>
+    Key('trip-photo-day-option-$dateKey');
 const tripPlacePickerClearButtonKey = Key('trip-place-picker-clear');
 Key tripPlacePickerCategoryKey(String category) =>
     Key('trip-place-category-$category');
 Key tripPlacePickerOptionKey(String placeId) =>
     Key('trip-place-option-$placeId');
+
+const tripStatusNudgeKey = Key('trip-status-nudge');
+const tripStatusNudgeConfirmButtonKey = Key('trip-status-nudge-confirm');
+const homeUpcomingTripCardKey = Key('home-upcoming-trip-card');
+Key tripTodayMarkerKey(String dateKey) => Key('trip-today-marker-$dateKey');
+Key tripItemDragHandleKey(String itemId) => Key('trip-item-drag-$itemId');
+Key tripItemAssigneeButtonKey(String itemId, String profileId) =>
+    Key('trip-item-assignee-$itemId-$profileId');
+Key tripPhotoDayButtonKey(String dateKey) => Key('trip-photo-day-$dateKey');
+Key tripPhotoDayTagButtonKey(String photoId) =>
+    Key('trip-photo-day-tag-$photoId');
+Key tripTimelinePhotoKey(String photoId) => Key('trip-timeline-photo-$photoId');
 
 const tripPhotoAddButtonKey = Key('trip-photo-add-button');
 const tripPhotoGridKey = Key('trip-photo-grid');

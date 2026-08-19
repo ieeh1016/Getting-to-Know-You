@@ -463,6 +463,8 @@ service cloud.firestore {
           'fromLabel',
           'toLabel',
           'placeId',
+          'assigneeProfileId',
+          'sortOrder',
           'link',
           'checked',
           'createdByProfileId',
@@ -492,6 +494,11 @@ service cloud.firestore {
         && request.resource.data.toLabel.size() <= 40
         && request.resource.data.placeId is string
         && request.resource.data.placeId.size() <= 120
+        && request.resource.data.assigneeProfileId is string
+        && request.resource.data.assigneeProfileId.size() <= 120
+        && request.resource.data.sortOrder is int
+        && request.resource.data.sortOrder >= 0
+        && request.resource.data.sortOrder <= 999
         && request.resource.data.link is string
         && request.resource.data.link.size() <= 500
         && request.resource.data.checked is bool

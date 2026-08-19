@@ -1130,6 +1130,166 @@ void main() {
     );
   });
 
+  testWidgets('trip detail marks today, tags photos and assigns packing', (
+    tester,
+  ) async {
+    const tinyPng =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ'
+        'AAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(),
+      ),
+      todayDateKey: '2026-09-13',
+    )..goTo(AlagagiRoute.trips);
+
+    controller.saveTrip(
+      title: '가을 제주',
+      destination: '제주도',
+      startDateKey: '2026-09-12',
+      endDateKey: '2026-09-14',
+    );
+    final tripId = controller.trips.single.id;
+    controller.saveTripItem(
+      tripId: tripId,
+      kind: TripItemKind.plan,
+      title: '오름 산책',
+      dateKey: '2026-09-13',
+      timeLabel: '10:00',
+    );
+    controller.saveTripItem(
+      tripId: tripId,
+      kind: TripItemKind.packing,
+      title: '충전기',
+    );
+    controller.saveTripPhoto(tripId: tripId, imageDataUrl: tinyPng);
+    final photoId = controller.tripPhotosFor(tripId).single.id;
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    // 홈에 다가오는 여행이 보인다.
+    controller.goTo(AlagagiRoute.home);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(homeUpcomingTripCardKey));
+    await tester.pumpAndSettle();
+    expect(find.text('여행 2일차'), findsWidgets);
+
+    await tester.tap(find.byKey(homeUpcomingTripCardKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripCardKey(tripId)));
+    await tester.pumpAndSettle();
+
+    // 여행 중이면 오늘이 어느 날인지 표시된다.
+    expect(find.byKey(tripTodayMarkerKey('2026-09-13')), findsOneWidget);
+    expect(find.byKey(tripTodayMarkerKey('2026-09-12')), findsNothing);
+
+    // 준비물에 챙길 사람을 정한다.
+    await tester.tap(find.byKey(tripKindTabKey('packing')));
+    await tester.pumpAndSettle();
+    final packing = controller
+        .tripItemsFor(tripId, kind: TripItemKind.packing)
+        .single;
+    await tester.ensureVisible(
+      find.byKey(tripItemAssigneeButtonKey(packing.id, 'minyoungUid')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(tripItemAssigneeButtonKey(packing.id, 'minyoungUid')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      controller
+          .tripItemsFor(tripId, kind: TripItemKind.packing)
+          .single
+          .assigneeProfileId,
+      'minyoungUid',
+    );
+
+    // 사진을 여행 날짜에 묶는다.
+    await tester.tap(find.byKey(tripKindTabKey('photos')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(tripPhotoDayTagButtonKey(photoId)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripPhotoDayTagButtonKey(photoId)));
+    await tester.pumpAndSettle();
+    expect(find.byKey(tripPhotoDaySheetKey), findsOneWidget);
+    await tester.tap(find.byKey(tripPhotoDaySheetOptionKey('2026-09-13')));
+    await tester.pumpAndSettle();
+    expect(controller.tripPhotosFor(tripId).single.dateKey, '2026-09-13');
+
+    // 묶은 사진은 그날 타임라인에도 함께 보인다.
+    await tester.tap(find.byKey(tripKindTabKey('timeline')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(tripTimelinePhotoKey(photoId)));
+    await tester.pumpAndSettle();
+    expect(find.byKey(tripTimelinePhotoKey(photoId)), findsOneWidget);
+  });
+
+  testWidgets('a past planning trip is offered a move instead of moving itself', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(),
+      ),
+      todayDateKey: '2026-09-20',
+    )..goTo(AlagagiRoute.trips);
+
+    controller.saveTrip(
+      title: '지난 여행',
+      destination: '강릉',
+      startDateKey: '2026-09-12',
+      endDateKey: '2026-09-13',
+    );
+    final tripId = controller.trips.single.id;
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripCardKey(tripId)));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(tripStatusNudgeKey), findsOneWidget);
+    expect(controller.trips.single.status, TripStatus.planning);
+
+    await tester.tap(find.byKey(tripStatusNudgeConfirmButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(controller.trips.single.status, TripStatus.done);
+    expect(find.byKey(tripStatusNudgeKey), findsNothing);
+  });
+
   testWidgets('saves a curiosity reply and a new question in the sheet', (
     tester,
   ) async {

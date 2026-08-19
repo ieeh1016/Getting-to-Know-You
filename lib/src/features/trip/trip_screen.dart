@@ -47,6 +47,7 @@ class _TripScreenState extends State<TripScreen> {
   String? _openTripId;
   TripDetailTab _tab = TripDetailTab.timeline;
   String? _photoError;
+  String? _photoDayFilter;
   bool _photoBusy = false;
 
   late final TripPhotoPicker _photoPicker;
@@ -95,6 +96,23 @@ class _TripScreenState extends State<TripScreen> {
       kind: item.kind,
       item: item,
     );
+  }
+
+  /// 사진을 여행의 어느 날 것으로 묶을지 고른다.
+  Future<void> _tagPhotoDay(Trip trip, TripPhoto photo) async {
+    final picked = await showTripPhotoDaySheet(
+      context,
+      trip: trip,
+      selectedDateKey: photo.dateKey,
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    final error = widget.controller.setTripPhotoDateKey(
+      photo.id,
+      picked.isEmpty ? null : picked,
+    );
+    setState(() => _photoError = error);
   }
 
   Future<void> _pickPhoto(Trip trip) async {
@@ -219,6 +237,15 @@ class _TripScreenState extends State<TripScreen> {
           setState(() => _openTripId = null);
         },
       ),
+      if (widget.controller.tripNeedsStatusNudge(trip)) ...[
+        const SizedBox(height: 12),
+        _TripStatusNudge(
+          onConfirm: () => widget.controller.setTripStatus(
+            trip.id,
+            TripStatus.done,
+          ),
+        ),
+      ],
       const SizedBox(height: 14),
       _TripTabBar(
         selected: _tab,
@@ -286,7 +313,24 @@ class _TripScreenState extends State<TripScreen> {
         staysCheckingOut: (dateKey) =>
             widget.controller.tripStaysCheckingOut(trip.id, dateKey),
         placeFor: widget.controller.placeForTripItem,
+        photosForDate: (dateKey) =>
+            widget.controller.tripPhotosForDate(trip.id, dateKey),
+        todayDateKey: widget.controller.todayDateKey,
         onTapItem: (item) => _editItem(trip, item),
+        onTapPhoto: (photo) => showTripPhotoViewer(
+          context,
+          controller: widget.controller,
+          tripId: trip.id,
+          initialPhotoId: photo.id,
+        ),
+        onReorder: (dateKey, oldIndex, newIndex) => setState(() {
+          widget.controller.reorderTripDayItems(
+            trip.id,
+            dateKey,
+            oldIndex,
+            newIndex,
+          );
+        }),
       ),
     ];
   }
@@ -337,6 +381,9 @@ class _TripScreenState extends State<TripScreen> {
             controller: widget.controller,
             onEdit: () => _editItem(trip, item),
             onDelete: () => _confirmItemDelete(item),
+            onAssign: (profileId) => setState(() {
+              widget.controller.setTripItemAssignee(item.id, profileId);
+            }),
           ),
           const SizedBox(height: 9),
         ],
@@ -399,6 +446,14 @@ class _TripScreenState extends State<TripScreen> {
           style: sans(size: 12, color: const Color(0xFFB35A49)),
         ),
       ],
+      if (photos.isNotEmpty) ...[
+        const SizedBox(height: 12),
+        _PhotoDayFilter(
+          trip: trip,
+          selected: _photoDayFilter,
+          onSelected: (dateKey) => setState(() => _photoDayFilter = dateKey),
+        ),
+      ],
       const SizedBox(height: 12),
       if (photos.isEmpty)
         const AlagagiEmptyStateCard(
@@ -406,8 +461,13 @@ class _TripScreenState extends State<TripScreen> {
         )
       else
         _TripPhotoMosaic(
-          photos: photos,
+          photos: _photoDayFilter == null
+              ? photos
+              : photos
+                    .where((photo) => photo.dateKey == _photoDayFilter)
+                    .toList(),
           myProfileId: widget.controller.state.me.id,
+          onTagDay: (photo) => _tagPhotoDay(trip, photo),
           onOpen: (photo) => showTripPhotoViewer(
             context,
             controller: widget.controller,
@@ -785,12 +845,105 @@ class _ConfirmSheet extends StatelessWidget {
   }
 }
 
+/// 날짜가 지났는데 아직 `계획 중`인 여행에 조용히 물어본다.
+///
+/// 날짜만 보고 자동으로 바꾸지 않는다. 일정이 밀렸을 수도 있어서다.
+class _TripStatusNudge extends StatelessWidget {
+  const _TripStatusNudge({required this.onConfirm});
+
+  final VoidCallback onConfirm;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: tripStatusNudgeKey,
+      decoration: BoxDecoration(
+        color: AlagagiColors.skyPanel,
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '여행 날짜가 지났어요. 다녀온 여행으로 옮겨둘까요?',
+              style: sans(size: 12.5, height: 1.5),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            height: 40,
+            child: FilledButton(
+              key: tripStatusNudgeConfirmButtonKey,
+              onPressed: onConfirm,
+              style: FilledButton.styleFrom(
+                backgroundColor: AlagagiColors.ink,
+                foregroundColor: AlagagiColors.appBackground,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                textStyle: sans(size: 12, weight: FontWeight.w800),
+              ),
+              child: const Text('옮기기'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 사진을 여행의 날짜로 좁혀 본다.
+class _PhotoDayFilter extends StatelessWidget {
+  const _PhotoDayFilter({
+    required this.trip,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final Trip trip;
+  final String? selected;
+  final ValueChanged<String?> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final dateKeys = trip.dateKeys;
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          AlagagiFilterPill(
+            key: tripPhotoDayButtonKey('all'),
+            label: '전체',
+            selected: selected == null,
+            onTap: () => onSelected(null),
+          ),
+          const SizedBox(width: 7),
+          for (var index = 0; index < dateKeys.length; index += 1) ...[
+            AlagagiFilterPill(
+              key: tripPhotoDayButtonKey(dateKeys[index]),
+              label: '${index + 1}일차',
+              selected: selected == dateKeys[index],
+              onTap: () => onSelected(dateKeys[index]),
+            ),
+            if (index != dateKeys.length - 1) const SizedBox(width: 7),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 /// 담아둔 여행 사진 배치.
 class _TripPhotoMosaic extends StatelessWidget {
   const _TripPhotoMosaic({
     required this.photos,
     required this.myProfileId,
     required this.onOpen,
+    required this.onTagDay,
   });
 
   static const double _gap = 8;
@@ -798,9 +951,13 @@ class _TripPhotoMosaic extends StatelessWidget {
   final List<TripPhoto> photos;
   final String myProfileId;
   final ValueChanged<TripPhoto> onOpen;
+  final ValueChanged<TripPhoto> onTagDay;
 
   @override
   Widget build(BuildContext context) {
+    if (photos.isEmpty) {
+      return const AlagagiEmptyStateCard(text: '이 날짜에 담은 사진이 없어요.');
+    }
     final rest = photos.length > 1 ? photos.sublist(1) : const <TripPhoto>[];
 
     return LayoutBuilder(
@@ -816,6 +973,7 @@ class _TripPhotoMosaic extends StatelessWidget {
               mine: photos.first.createdByProfileId == myProfileId,
               aspectRatio: 4 / 3,
               onTap: () => onOpen(photos.first),
+              onTagDay: () => onTagDay(photos.first),
             ),
             if (rest.isNotEmpty) ...[
               const SizedBox(height: _gap),
@@ -831,6 +989,7 @@ class _TripPhotoMosaic extends StatelessWidget {
                         mine: photo.createdByProfileId == myProfileId,
                         aspectRatio: 1,
                         onTap: () => onOpen(photo),
+                        onTagDay: () => onTagDay(photo),
                       ),
                     ),
                 ],
@@ -849,12 +1008,14 @@ class _TripPhotoTile extends StatelessWidget {
     required this.mine,
     required this.aspectRatio,
     required this.onTap,
+    required this.onTagDay,
   });
 
   final TripPhoto photo;
   final bool mine;
   final double aspectRatio;
   final VoidCallback onTap;
+  final VoidCallback onTagDay;
 
   @override
   Widget build(BuildContext context) {
@@ -918,23 +1079,27 @@ class _TripPhotoTile extends StatelessWidget {
                 ),
               if (mine)
                 Positioned(
-                  top: 7,
-                  right: 7,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.38),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 7,
-                      vertical: 3,
-                    ),
-                    child: Text(
-                      '내가 담음',
-                      style: sans(
-                        size: 9.5,
-                        weight: FontWeight.w700,
-                        color: Colors.white,
+                  top: 5,
+                  right: 5,
+                  child: InkWell(
+                    key: tripPhotoDayTagButtonKey(photo.id),
+                    onTap: onTagDay,
+                    borderRadius: BorderRadius.circular(999),
+                    child: Container(
+                      constraints: const BoxConstraints(minHeight: 28),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.42),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 9),
+                      child: Text(
+                        photo.dateKey == null ? '날짜 정하기' : photo.dateKey!,
+                        style: sans(
+                          size: 9.5,
+                          weight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -943,6 +1108,41 @@ class _TripPhotoTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 준비물을 누가 챙길지 고르는 줄.
+///
+/// 정하지 않아도 된다. 같은 사람을 다시 누르면 담당이 풀린다.
+class _AssigneeRow extends StatelessWidget {
+  const _AssigneeRow({
+    required this.item,
+    required this.controller,
+    required this.onAssign,
+  });
+
+  final TripItem item;
+  final AlagagiController controller;
+  final ValueChanged<String?> onAssign;
+
+  @override
+  Widget build(BuildContext context) {
+    final me = controller.state.me;
+    final partner = controller.state.partner;
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        for (final profile in [me, partner])
+          AlagagiFilterPill(
+            key: tripItemAssigneeButtonKey(item.id, profile.id),
+            label: profile.isMe ? '내가' : '${profile.nickname}이',
+            selected: item.assigneeProfileId == profile.id,
+            onTap: () => onAssign(profile.id),
+          ),
+      ],
     );
   }
 }
@@ -1202,12 +1402,16 @@ class _TripItemCard extends StatelessWidget {
     required this.controller,
     required this.onEdit,
     required this.onDelete,
+    this.onAssign,
   });
 
   final TripItem item;
   final AlagagiController controller;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+
+  /// 준비물에서만 쓴다. 챙길 사람을 고르는 콜백이다.
+  final ValueChanged<String?>? onAssign;
 
   @override
   Widget build(BuildContext context) {
@@ -1321,6 +1525,14 @@ class _TripItemCard extends StatelessWidget {
                         height: 1.6,
                         color: AlagagiColors.muted,
                       ),
+                    ),
+                  ],
+                  if (onAssign != null) ...[
+                    const SizedBox(height: 8),
+                    _AssigneeRow(
+                      item: item,
+                      controller: controller,
+                      onAssign: onAssign!,
                     ),
                   ],
                 ],

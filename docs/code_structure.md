@@ -74,6 +74,7 @@ lib/src/domain/
 - `lib/src/features/trip/trip_photo_viewer.dart`: 전체 화면 사진 뷰어. 좌우 넘기기, 확대, 설명 편집, 삭제.
 - `lib/src/features/trip/trip_sheets.dart`: 여행/항목 입력 bottom sheet와 종류 선택 sheet.
 - `lib/src/features/trip/trip_form_fields.dart`: 여행 화면과 sheet가 함께 쓰는 입력 조각(text field, picker row, 일차 선택, 주 action).
+- `lib/src/features/home/home_upcoming_trip_card.dart`: 다가오거나 진행 중인 여행만 보여주는 홈 카드.
 
 ## Input Pickers
 

@@ -767,6 +767,181 @@ void main() {
       );
     });
 
+    test('same-time items keep the order they were dragged into', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-13',
+      );
+      final tripId = controller.trips.single.id;
+      for (final title in ['가', '나', '다']) {
+        controller.saveTripItem(
+          tripId: tripId,
+          kind: TripItemKind.plan,
+          title: title,
+          dateKey: '2026-09-12',
+          timeLabel: '09:00',
+        );
+      }
+
+      // 시각이 같으면 담은 순서를 따른다.
+      expect(
+        controller.tripTimelineDays(tripId).first.items.map((i) => i.title),
+        ['가', '나', '다'],
+      );
+
+      controller.reorderTripDayItems(tripId, '2026-09-12', 2, 0);
+
+      expect(
+        controller.tripTimelineDays(tripId).first.items.map((i) => i.title),
+        ['다', '가', '나'],
+      );
+    });
+
+    test('packing items can be assigned to one of us and unassigned', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-13',
+      );
+      final tripId = controller.trips.single.id;
+      controller.saveTripItem(
+        tripId: tripId,
+        kind: TripItemKind.packing,
+        title: '충전기',
+      );
+      final item = controller.tripItemsFor(tripId).single;
+
+      controller.setTripItemAssignee(item.id, 'minyoungUid');
+      expect(
+        controller.tripItemsFor(tripId).single.assigneeProfileId,
+        'minyoungUid',
+      );
+
+      // 같은 사람을 다시 고르면 담당이 풀린다.
+      controller.setTripItemAssignee(item.id, 'minyoungUid');
+      expect(
+        controller.tripItemsFor(tripId).single.assigneeProfileId,
+        isNull,
+      );
+
+      // 우리 둘이 아닌 사람은 담당이 될 수 없다.
+      controller.setTripItemAssignee(item.id, 'strangerUid');
+      expect(
+        controller.tripItemsFor(tripId).single.assigneeProfileId,
+        isNull,
+      );
+    });
+
+    test('photos can be tagged with a trip day and grouped by it', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-13',
+      );
+      final tripId = controller.trips.single.id;
+      controller.saveTripPhoto(
+        tripId: tripId,
+        imageDataUrl: 'data:image/jpeg;base64,AAAA',
+      );
+      final photoId = controller.tripPhotosFor(tripId).single.id;
+
+      expect(controller.setTripPhotoDateKey(photoId, '2026-09-20'), isNotNull);
+      expect(controller.setTripPhotoDateKey(photoId, '2026-09-12'), isNull);
+      expect(
+        controller.tripPhotosForDate(tripId, '2026-09-12').single.id,
+        photoId,
+      );
+      expect(controller.tripPhotosForDate(tripId, '2026-09-13'), isEmpty);
+
+      expect(controller.setTripPhotoDateKey(photoId, null), isNull);
+      expect(controller.tripPhotosForDate(tripId, '2026-09-12'), isEmpty);
+    });
+
+    test('a past planning trip asks to be moved, without moving itself', () {
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(),
+        ),
+        todayDateKey: '2026-09-20',
+      );
+      controller.saveTrip(
+        title: '지난 여행',
+        destination: '강릉',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-13',
+      );
+      final trip = controller.trips.single;
+
+      expect(controller.tripNeedsStatusNudge(trip), isTrue);
+      // 물어보기만 하고 스스로 바꾸지는 않는다.
+      expect(trip.status, TripStatus.planning);
+
+      controller.setTripStatus(trip.id, TripStatus.done);
+      expect(
+        controller.tripNeedsStatusNudge(controller.trips.single),
+        isFalse,
+      );
+    });
+
+    test('home shows the nearest upcoming or ongoing trip only', () {
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(),
+        ),
+        todayDateKey: '2026-09-01',
+      );
+
+      expect(controller.upcomingTrip, isNull);
+
+      controller.saveTrip(
+        title: '늦가을',
+        destination: '강릉',
+        startDateKey: '2026-11-01',
+        endDateKey: '2026-11-02',
+      );
+      controller.saveTrip(
+        title: '초가을',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-13',
+      );
+
+      expect(controller.upcomingTrip?.title, '초가을');
+    });
+
     test('only the creator can delete a trip or an item', () {
       final controller = buildController();
       controller.saveTrip(
