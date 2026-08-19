@@ -4,6 +4,7 @@ import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
+import '../place/place_common.dart';
 
 IconData tripItemKindIcon(TripItemKind kind) => switch (kind) {
   TripItemKind.stay => Icons.bed_outlined,
@@ -31,12 +32,14 @@ class TripTimeline extends StatelessWidget {
     required this.days,
     required this.staysForNight,
     required this.staysCheckingOut,
+    required this.placeFor,
     required this.onTapItem,
   });
 
   final List<TripDay> days;
   final List<TripItem> Function(String dateKey) staysForNight;
   final List<TripItem> Function(String dateKey) staysCheckingOut;
+  final SharedPlace? Function(TripItem item) placeFor;
   final ValueChanged<TripItem> onTapItem;
 
   bool get _isEmpty =>
@@ -67,6 +70,7 @@ class TripTimeline extends StatelessWidget {
             checkOuts: days[index].isUndated
                 ? const []
                 : staysCheckingOut(days[index].dateKey),
+            placeFor: placeFor,
             onTapItem: onTapItem,
           ),
       ],
@@ -80,6 +84,7 @@ class _TripTimelineDay extends StatelessWidget {
     required this.isLast,
     required this.stays,
     required this.checkOuts,
+    required this.placeFor,
     required this.onTapItem,
   });
 
@@ -87,6 +92,7 @@ class _TripTimelineDay extends StatelessWidget {
   final bool isLast;
   final List<TripItem> stays;
   final List<TripItem> checkOuts;
+  final SharedPlace? Function(TripItem item) placeFor;
   final ValueChanged<TripItem> onTapItem;
 
   @override
@@ -127,6 +133,7 @@ class _TripTimelineDay extends StatelessWidget {
           for (var index = 0; index < day.items.length; index += 1)
             _TripTimelineEntry(
               item: day.items[index],
+              place: placeFor(day.items[index]),
               isLastInDay: index == day.items.length - 1 && isLast,
               onTap: () => onTapItem(day.items[index]),
             ),
@@ -311,11 +318,13 @@ class _TripDayHeader extends StatelessWidget {
 class _TripTimelineEntry extends StatelessWidget {
   const _TripTimelineEntry({
     required this.item,
+    required this.place,
     required this.isLastInDay,
     required this.onTap,
   });
 
   final TripItem item;
+  final SharedPlace? place;
   final bool isLastInDay;
   final VoidCallback onTap;
 
@@ -390,6 +399,7 @@ class _TripTimelineEntry extends StatelessWidget {
                               ),
                             ),
                             if (item.kind.usesRoute) _TripRouteLine(item: item),
+                            if (place != null) _TripPlaceLine(place: place!),
                             if (item.note.isNotEmpty) ...[
                               const SizedBox(height: 5),
                               Text(
@@ -504,6 +514,49 @@ class _TripRouteLine extends StatelessWidget {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 일정에 붙은 장소 한 줄. 분류 icon과 이름, 주소를 보여준다.
+class _TripPlaceLine extends StatelessWidget {
+  const _TripPlaceLine({required this.place});
+
+  final SharedPlace place;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 5),
+      child: Row(
+        children: [
+          Icon(
+            placeCategoryIcon(place.category),
+            size: 14,
+            color: AlagagiColors.sageDeep,
+          ),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              place.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: sans(size: 12, weight: FontWeight.w700),
+            ),
+          ),
+          if (place.address.isNotEmpty) ...[
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                place.address,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: sans(size: 11.5, color: AlagagiColors.muted),
+              ),
+            ),
+          ],
         ],
       ),
     );

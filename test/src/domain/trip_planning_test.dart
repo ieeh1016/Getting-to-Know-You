@@ -665,6 +665,108 @@ void main() {
       );
     });
 
+    test('a plan can point at a place saved on the place board', () {
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            sharedPlaces: [
+              SharedPlace(
+                id: 'place_ramen',
+                name: '골목 라멘',
+                address: '제주시 어딘가',
+                category: PlaceCategory.food,
+                provider: MapApiProvider.kakao,
+                createdByProfileId: 'youngwooUid',
+                interestedByProfileIds: {'youngwooUid'},
+              ),
+            ],
+          ),
+        ),
+      );
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-13',
+      );
+      final tripId = controller.trips.single.id;
+
+      final error = controller.saveTripItem(
+        tripId: tripId,
+        kind: TripItemKind.plan,
+        title: '점심',
+        dateKey: '2026-09-12',
+        placeId: 'place_ramen',
+        link: 'https://example.com/reserve',
+      );
+
+      expect(error, isNull);
+      final item = controller.tripItemsFor(tripId).single;
+      expect(item.placeId, 'place_ramen');
+      expect(item.link, 'https://example.com/reserve');
+      expect(controller.placeForTripItem(item)?.name, '골목 라멘');
+      expect(
+        controller.placeForTripItem(item)?.category,
+        PlaceCategory.food,
+      );
+    });
+
+    test('an unknown place id is rejected', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-13',
+      );
+      final tripId = controller.trips.single.id;
+
+      expect(
+        controller.saveTripItem(
+          tripId: tripId,
+          kind: TripItemKind.plan,
+          title: '점심',
+          placeId: 'place_missing',
+        ),
+        isNotNull,
+      );
+      expect(controller.tripItemsFor(tripId), isEmpty);
+    });
+
+    test('planning trips read nearest first and past trips most recent', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '늦가을',
+        destination: '강릉',
+        startDateKey: '2026-11-01',
+        endDateKey: '2026-11-02',
+      );
+      controller.saveTrip(
+        title: '초가을',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-13',
+      );
+
+      expect(
+        controller.tripsWithStatus(TripStatus.planning).map((t) => t.title),
+        ['초가을', '늦가을'],
+      );
+    });
+
     test('only the creator can delete a trip or an item', () {
       final controller = buildController();
       controller.saveTrip(

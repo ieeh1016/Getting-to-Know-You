@@ -1149,6 +1149,10 @@ extension TripItemKindMeta on TripItemKind {
 
   /// 출발/도착 시각과 수단을 갖는 종류인지.
   bool get usesRoute => this == TripItemKind.transport;
+
+  /// 장소를 붙일 수 있는 종류인지. 숙소와 계획은 실제 장소가 있다.
+  bool get usesPlace =>
+      this == TripItemKind.stay || this == TripItemKind.plan;
 }
 
 const tripItemKindOptions = TripItemKind.values;
@@ -1278,6 +1282,7 @@ class TripItem {
     this.transportMode,
     this.fromLabel,
     this.toLabel,
+    this.placeId,
     this.link,
     this.checked = false,
     this.updatedAt,
@@ -1308,6 +1313,9 @@ class TripItem {
   /// 이동 출발지와 도착지.
   final String? fromLabel;
   final String? toLabel;
+
+  /// 장소 보드에 저장해둔 장소 id. 식당이나 카페를 일정에 붙일 때 쓴다.
+  final String? placeId;
   final String? link;
   final bool checked;
   final DateTime? updatedAt;
@@ -1360,6 +1368,8 @@ class TripItem {
     bool clearFromLabel = false,
     String? toLabel,
     bool clearToLabel = false,
+    String? placeId,
+    bool clearPlaceId = false,
     String? link,
     bool clearLink = false,
     bool? checked,
@@ -1384,6 +1394,7 @@ class TripItem {
           : transportMode ?? this.transportMode,
       fromLabel: clearFromLabel ? null : fromLabel ?? this.fromLabel,
       toLabel: clearToLabel ? null : toLabel ?? this.toLabel,
+      placeId: clearPlaceId ? null : placeId ?? this.placeId,
       link: clearLink ? null : link ?? this.link,
       checked: checked ?? this.checked,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -7443,6 +7454,20 @@ class AlagagiController extends ChangeNotifier {
     return first.title.compareTo(second.title);
   }
 
+  /// 여행 항목에 붙은 장소. 장소가 지워졌으면 null이다.
+  SharedPlace? placeForTripItem(TripItem item) {
+    final placeId = item.placeId;
+    if (placeId == null) {
+      return null;
+    }
+    for (final place in _sharedPlaces) {
+      if (place.id == placeId) {
+        return place;
+      }
+    }
+    return null;
+  }
+
   /// 그날 밤 머무는 숙소. 체크아웃 당일 밤은 포함하지 않는다.
   List<TripItem> tripStaysForNight(String tripId, String dateKey) {
     final stays = _tripItems
@@ -7667,6 +7692,7 @@ class AlagagiController extends ChangeNotifier {
     TripTransportMode? transportMode,
     String? fromLabel,
     String? toLabel,
+    String? placeId,
     String? link,
   }) {
     final trip = tripById(tripId);
@@ -7730,6 +7756,18 @@ class AlagagiController extends ChangeNotifier {
     final resolvedFrom = kind.usesRoute ? trimmedOrNull(fromLabel) : null;
     final resolvedTo = kind.usesRoute ? trimmedOrNull(toLabel) : null;
 
+    // 장소는 저장해둔 장소 보드의 것만 붙인다.
+    final trimmedPlaceId = trimmedOrNull(placeId);
+    final resolvedPlaceId =
+        trimmedPlaceId != null &&
+            _sharedPlaces.any((place) => place.id == trimmedPlaceId)
+        ? trimmedPlaceId
+        : null;
+    if (trimmedPlaceId != null && resolvedPlaceId == null) {
+      return '장소를 찾을 수 없어요.';
+    }
+    final resolvedLink = trimmedOrNull(link);
+
     final now = DateTime.now();
     final existingIndex = itemId == null
         ? -1
@@ -7754,8 +7792,10 @@ class AlagagiController extends ChangeNotifier {
         clearFromLabel: resolvedFrom == null,
         toLabel: resolvedTo,
         clearToLabel: resolvedTo == null,
-        link: link?.trim(),
-        clearLink: link == null || link.trim().isEmpty,
+        placeId: resolvedPlaceId,
+        clearPlaceId: resolvedPlaceId == null,
+        link: resolvedLink,
+        clearLink: resolvedLink == null,
         checked: kind.usesCheck ? null : false,
         updatedAt: now,
         updatedByProfileId: _state.me.id,
@@ -7776,7 +7816,8 @@ class AlagagiController extends ChangeNotifier {
         transportMode: resolvedMode,
         fromLabel: resolvedFrom,
         toLabel: resolvedTo,
-        link: link == null || link.trim().isEmpty ? null : link.trim(),
+        placeId: resolvedPlaceId,
+        link: resolvedLink,
         updatedAt: now,
         updatedByProfileId: _state.me.id,
       );
@@ -7956,10 +7997,17 @@ class AlagagiController extends ChangeNotifier {
     return true;
   }
 
+  /// 계획 중인 여행은 가까운 순, 다녀온 여행은 최근 순으로 읽는 편이 맞다.
   void _sortTrips() {
-    _trips.sort((first, second) => second.startDateKey.compareTo(
-      first.startDateKey,
-    ));
+    _trips.sort((first, second) {
+      if (first.status != second.status) {
+        return first.status == TripStatus.planning ? -1 : 1;
+      }
+      if (first.status == TripStatus.planning) {
+        return first.startDateKey.compareTo(second.startDateKey);
+      }
+      return second.startDateKey.compareTo(first.startDateKey);
+    });
   }
 
   /// 기간이 줄어들면 밖으로 나간 항목 날짜는 미정으로 되돌린다.

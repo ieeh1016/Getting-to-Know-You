@@ -601,6 +601,7 @@ service cloud.firestore {
           'transportMode',
           'fromLabel',
           'toLabel',
+          'placeId',
           'link',
           'checked',
           'createdByProfileId',
@@ -628,6 +629,8 @@ service cloud.firestore {
         && request.resource.data.fromLabel.size() <= 40
         && request.resource.data.toLabel is string
         && request.resource.data.toLabel.size() <= 40
+        && request.resource.data.placeId is string
+        && request.resource.data.placeId.size() <= 120
         && request.resource.data.link is string
         && request.resource.data.link.size() <= 500
         && request.resource.data.checked is bool

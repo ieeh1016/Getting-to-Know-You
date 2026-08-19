@@ -6,6 +6,7 @@ import '../../shared/picker_sheets.dart';
 import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
+import '../place/place_common.dart';
 import 'trip_form_fields.dart';
 import 'trip_timeline.dart';
 
@@ -405,6 +406,200 @@ class _KindOption extends StatelessWidget {
   }
 }
 
+/// 여행 일정에 붙일 장소를 장소 보드에서 고른다.
+///
+/// 식당이나 카페는 이미 장소 보드에 모아두고 있다. 여행에서 이름을 다시
+/// 적게 하면 같은 곳이 두 군데 따로 쌓인다.
+Future<String?> showTripPlacePickerSheet(
+  BuildContext context, {
+  required AlagagiController controller,
+  String? selectedPlaceId,
+}) {
+  return _showFormSheet<String>(
+    context,
+    sheetKey: tripPlacePickerSheetKey,
+    title: '어디에서',
+    subtitle: '장소 보드에 담아둔 곳에서 고를 수 있어요',
+    builder: (sheetContext) => _PlacePicker(
+      controller: controller,
+      selectedPlaceId: selectedPlaceId,
+      onPick: (placeId) => Navigator.of(sheetContext).pop(placeId),
+    ),
+  );
+}
+
+class _PlacePicker extends StatefulWidget {
+  const _PlacePicker({
+    required this.controller,
+    required this.selectedPlaceId,
+    required this.onPick,
+  });
+
+  final AlagagiController controller;
+  final String? selectedPlaceId;
+  final ValueChanged<String> onPick;
+
+  @override
+  State<_PlacePicker> createState() => _PlacePickerState();
+}
+
+class _PlacePickerState extends State<_PlacePicker> {
+  PlaceCategory? _category;
+
+  @override
+  Widget build(BuildContext context) {
+    final places = widget.controller.sharedPlaces
+        .where((place) => _category == null || place.category == _category)
+        .toList();
+
+    if (widget.controller.sharedPlaces.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AlagagiEmptyStateCard(
+            text: '장소 보드에 담아둔 곳이 아직 없어요. 장소 보드에서 먼저 담아두면 여기서 고를 수 있어요.',
+          ),
+          const SizedBox(height: 14),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              AlagagiFilterPill(
+                key: tripPlacePickerCategoryKey('all'),
+                label: '전체',
+                selected: _category == null,
+                onTap: () => setState(() => _category = null),
+              ),
+              const SizedBox(width: 7),
+              for (final category in PlaceCategory.values) ...[
+                AlagagiFilterPill(
+                  key: tripPlacePickerCategoryKey(category.name),
+                  label: placeCategoryLabel(category),
+                  selected: _category == category,
+                  onTap: () => setState(() => _category = category),
+                ),
+                if (category != PlaceCategory.values.last)
+                  const SizedBox(width: 7),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        if (places.isEmpty)
+          const AlagagiEmptyStateCard(text: '이 분류에는 담아둔 곳이 없어요.')
+        else
+          for (final place in places) ...[
+            _PlaceOption(
+              place: place,
+              selected: place.id == widget.selectedPlaceId,
+              onTap: () => widget.onPick(place.id),
+            ),
+            const SizedBox(height: 8),
+          ],
+        if (widget.selectedPlaceId != null) ...[
+          const SizedBox(height: 4),
+          SizedBox(
+            height: 46,
+            child: OutlinedButton(
+              key: tripPlacePickerClearButtonKey,
+              onPressed: () => widget.onPick(''),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AlagagiColors.muted,
+                side: const BorderSide(color: AlagagiColors.line),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                textStyle: sans(size: 12.5, weight: FontWeight.w700),
+              ),
+              child: const Text('장소 지우기'),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _PlaceOption extends StatelessWidget {
+  const _PlaceOption({
+    required this.place,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final SharedPlace place;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      key: tripPlacePickerOptionKey(place.id),
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(15),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 58),
+        decoration: BoxDecoration(
+          color: selected ? AlagagiColors.skyPanel : AlagagiColors.paper,
+          border: Border.all(
+            color: selected ? AlagagiColors.sageDeep : AlagagiColors.line,
+          ),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        child: Row(
+          children: [
+            AlagagiSymbolMark(
+              icon: placeCategoryIcon(place.category),
+              size: 32,
+              iconSize: 16,
+              tone: AlagagiColors.skyPanel,
+              iconColor: AlagagiColors.sageDeep,
+              radius: 11,
+            ),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    place.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: sans(size: 13, weight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    place.address.isEmpty
+                        ? placeCategoryLabel(place.category)
+                        : '${placeCategoryLabel(place.category)} · ${place.address}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: sans(size: 11.5, color: AlagagiColors.muted),
+                  ),
+                ],
+              ),
+            ),
+            if (selected)
+              const Icon(
+                Icons.check_circle_rounded,
+                size: 19,
+                color: AlagagiColors.sageDeep,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// 여행 항목을 만들거나 고친다. 종류에 따라 묻는 것이 달라진다.
 Future<void> showTripItemFormSheet(
   BuildContext context, {
@@ -456,6 +651,8 @@ class _TripItemFormState extends State<_TripItemForm> {
   String? _endDateKey;
   String? _timeLabel;
   String? _endTimeLabel;
+  String? _placeId;
+  late final ImeSafeTextEditingController _linkController;
   late TripTransportMode _mode;
   String? _error;
 
@@ -471,6 +668,8 @@ class _TripItemFormState extends State<_TripItemForm> {
     _endDateKey = item?.endDateKey;
     _timeLabel = item?.timeLabel;
     _endTimeLabel = item?.endTimeLabel;
+    _placeId = item?.placeId;
+    _linkController = ImeSafeTextEditingController(text: item?.link ?? '');
     _mode = item?.transportMode ?? TripTransportMode.flight;
   }
 
@@ -480,6 +679,7 @@ class _TripItemFormState extends State<_TripItemForm> {
     _noteController.dispose();
     _fromController.dispose();
     _toController.dispose();
+    _linkController.dispose();
     super.dispose();
   }
 
@@ -526,6 +726,8 @@ class _TripItemFormState extends State<_TripItemForm> {
       transportMode: widget.kind.usesRoute ? _mode : null,
       fromLabel: _fromController.text,
       toLabel: _toController.text,
+      placeId: _placeId,
+      link: _linkController.text,
     );
     if (error != null) {
       setState(() => _error = error);
@@ -557,6 +759,15 @@ class _TripItemFormState extends State<_TripItemForm> {
           hint: kind.noteHint,
           maxLength: 500,
           maxLines: 3,
+        ),
+        if (kind.usesPlace) ..._placeFields(),
+        const SizedBox(height: 10),
+        TripTextField(
+          fieldKey: tripItemLinkFieldKey,
+          controller: _linkController,
+          label: '링크 (선택)',
+          hint: '예약 페이지나 지도 링크',
+          maxLength: 500,
         ),
         if (kind.usesDateRange) ..._stayFields(),
         if (kind.usesRoute || kind == TripItemKind.plan) ..._scheduleFields(),
@@ -623,6 +834,42 @@ class _TripItemFormState extends State<_TripItemForm> {
         ],
       ),
       const SizedBox(height: 10),
+    ];
+  }
+
+  /// 식당이나 카페는 장소 보드에서 골라 붙인다.
+  List<Widget> _placeFields() {
+    final place = _placeId == null
+        ? null
+        : widget.controller.sharedPlaces
+              .where((candidate) => candidate.id == _placeId)
+              .firstOrNull;
+
+    return [
+      const SizedBox(height: 10),
+      TripPickerRow(
+        rowKey: tripItemPlaceFieldKey,
+        label: '어디에서',
+        value: place == null
+            ? null
+            : '${place.name} · ${placeCategoryLabel(place.category)}',
+        placeholder: '장소 보드에서 고르기',
+        icon: Icons.place_outlined,
+        onTap: () async {
+          final picked = await showTripPlacePickerSheet(
+            context,
+            controller: widget.controller,
+            selectedPlaceId: _placeId,
+          );
+          if (picked == null) {
+            return;
+          }
+          setState(() {
+            _placeId = picked.isEmpty ? null : picked;
+            _error = null;
+          });
+        },
+      ),
     ];
   }
 

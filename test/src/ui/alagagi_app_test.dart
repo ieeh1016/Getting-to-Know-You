@@ -1026,6 +1026,110 @@ void main() {
     expect(find.textContaining('아직 계획한 여행이 없어요'), findsOneWidget);
   });
 
+  testWidgets('trip plan picks a restaurant from the place board', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(
+          sharedPlaces: [
+            SharedPlace(
+              id: 'place_ramen',
+              name: '골목 라멘',
+              address: '제주시 어딘가',
+              category: PlaceCategory.food,
+              provider: MapApiProvider.kakao,
+              createdByProfileId: 'youngwooUid',
+              interestedByProfileIds: {'youngwooUid'},
+            ),
+            SharedPlace(
+              id: 'place_cafe',
+              name: '바다 카페',
+              address: '서귀포 어딘가',
+              category: PlaceCategory.cafe,
+              provider: MapApiProvider.kakao,
+              createdByProfileId: 'minyoungUid',
+              interestedByProfileIds: {'minyoungUid'},
+            ),
+          ],
+        ),
+      ),
+    )..goTo(AlagagiRoute.trips);
+
+    controller.saveTrip(
+      title: '가을 제주',
+      destination: '제주도',
+      startDateKey: '2026-09-12',
+      endDateKey: '2026-09-13',
+    );
+    final tripId = controller.trips.single.id;
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripCardKey(tripId)));
+    await tester.pumpAndSettle();
+
+    await openTripItemForm(tester, TripItemKind.plan);
+    await tester.enterText(find.byKey(tripItemTitleFieldKey), '점심');
+
+    // 장소는 장소 보드에서 고른다.
+    await tester.ensureVisible(find.byKey(tripItemPlaceFieldKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripItemPlaceFieldKey));
+    await tester.pumpAndSettle();
+    expect(find.byKey(tripPlacePickerSheetKey), findsOneWidget);
+    expect(find.byKey(tripPlacePickerOptionKey('place_ramen')), findsOneWidget);
+    expect(find.byKey(tripPlacePickerOptionKey('place_cafe')), findsOneWidget);
+
+    // 분류로 좁힐 수 있다.
+    await tester.tap(find.byKey(tripPlacePickerCategoryKey('food')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(tripPlacePickerOptionKey('place_cafe')), findsNothing);
+
+    await tester.tap(find.byKey(tripPlacePickerOptionKey('place_ramen')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(tripPlacePickerSheetKey), findsNothing);
+    expect(find.textContaining('골목 라멘'), findsWidgets);
+
+    await tester.ensureVisible(find.byKey(tripItemDateButtonKey('2026-09-12')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripItemDateButtonKey('2026-09-12')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(tripItemSubmitButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripItemSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    final item = controller.tripItemsFor(tripId).single;
+    expect(item.placeId, 'place_ramen');
+
+    // 타임라인에도 장소가 함께 보인다.
+    await tester.ensureVisible(find.byKey(tripTimelineEntryKey(item.id)));
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byKey(tripTimelineEntryKey(item.id)),
+        matching: find.text('골목 라멘'),
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('saves a curiosity reply and a new question in the sheet', (
     tester,
   ) async {

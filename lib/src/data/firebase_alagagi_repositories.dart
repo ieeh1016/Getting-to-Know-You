@@ -395,6 +395,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         'transportMode': item.transportMode?.storageKey ?? '',
         'fromLabel': item.fromLabel ?? '',
         'toLabel': item.toLabel ?? '',
+        'placeId': item.placeId ?? '',
         'link': item.link ?? '',
         'checked': item.checked,
         'createdByProfileId': item.createdByProfileId,
@@ -1258,6 +1259,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     final transportMode = _readString(data, 'transportMode');
     final fromLabel = _readString(data, 'fromLabel');
     final toLabel = _readString(data, 'toLabel');
+    final placeId = _readString(data, 'placeId');
     final link = _readString(data, 'link');
 
     String? orNull(String? value) =>
@@ -1283,6 +1285,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           : tripTransportModeFromKey(transportMode),
       fromLabel: orNull(fromLabel),
       toLabel: orNull(toLabel),
+      placeId: orNull(placeId),
       link: link == null || link.isEmpty ? null : link,
       checked: data['checked'] == true,
       updatedAt: _readDateTime(data, 'updatedAt'),

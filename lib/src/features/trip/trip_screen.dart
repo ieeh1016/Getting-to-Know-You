@@ -6,6 +6,7 @@ import '../../data/trip_photo_picker.dart';
 import '../../domain/alagagi_controller.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
+import '../place/place_common.dart';
 import 'trip_photo_viewer.dart';
 import 'trip_sheets.dart';
 import 'trip_timeline.dart';
@@ -284,6 +285,7 @@ class _TripScreenState extends State<TripScreen> {
             widget.controller.tripStaysForNight(trip.id, dateKey),
         staysCheckingOut: (dateKey) =>
             widget.controller.tripStaysCheckingOut(trip.id, dateKey),
+        placeFor: widget.controller.placeForTripItem,
         onTapItem: (item) => _editItem(trip, item),
       ),
     ];
@@ -1285,6 +1287,29 @@ class _TripItemCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: sans(size: 12, color: AlagagiColors.muted),
+                    ),
+                  ],
+                  if (controller.placeForTripItem(item) != null) ...[
+                    const SizedBox(height: 5),
+                    Row(
+                      children: [
+                        Icon(
+                          placeCategoryIcon(
+                            controller.placeForTripItem(item)!.category,
+                          ),
+                          size: 13,
+                          color: AlagagiColors.sageDeep,
+                        ),
+                        const SizedBox(width: 5),
+                        Flexible(
+                          child: Text(
+                            controller.placeForTripItem(item)!.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: sans(size: 12, weight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                   if (item.note.isNotEmpty) ...[
