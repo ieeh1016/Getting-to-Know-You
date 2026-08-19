@@ -143,6 +143,7 @@ class _TripScreenState extends State<TripScreen> {
       trip: trip,
       kind: kind,
       initialDateKey: dateKey,
+      onOpenExternalLink: widget.onOpenExternalLink,
     );
     if (!mounted) {
       return;
@@ -183,6 +184,7 @@ class _TripScreenState extends State<TripScreen> {
       trip: trip,
       kind: item.kind,
       item: item,
+      onOpenExternalLink: widget.onOpenExternalLink,
     );
   }
 

@@ -15,6 +15,7 @@ import 'place_common.dart';
 Future<String?> showManualPlaceSheet(
   BuildContext context, {
   required AlagagiController controller,
+  required ValueChanged<String> onOpenExternalLink,
   String initialName = '',
 }) {
   return showModalBottomSheet<String>(
@@ -43,6 +44,7 @@ Future<String?> showManualPlaceSheet(
               controller: controller,
               sheetContext: sheetContext,
               initialName: initialName,
+              onOpenExternalLink: onOpenExternalLink,
             ),
           ),
         ),
@@ -55,11 +57,13 @@ class _ManualPlaceForm extends StatefulWidget {
   const _ManualPlaceForm({
     required this.controller,
     required this.sheetContext,
+    required this.onOpenExternalLink,
     this.initialName = '',
   });
 
   final AlagagiController controller;
   final BuildContext sheetContext;
+  final ValueChanged<String> onOpenExternalLink;
 
   /// 여행 폼에서 적던 제목을 그대로 옮겨 담는다.
   final String initialName;
@@ -85,6 +89,15 @@ class _ManualPlaceFormState extends State<_ManualPlaceForm> {
     _addressController = ImeSafeTextEditingController();
     _noteController = ImeSafeTextEditingController();
     _linkController = ImeSafeTextEditingController();
+    // 이름이나 주소를 적기 시작하면 지도로 찾아보기가 눌리게 된다.
+    _nameController.addListener(_handleQueryChanged);
+    _addressController.addListener(_handleQueryChanged);
+  }
+
+  void _handleQueryChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -92,9 +105,17 @@ class _ManualPlaceFormState extends State<_ManualPlaceForm> {
     _nameController.dispose();
     _addressController.dispose();
     _noteController.dispose();
+    _nameController.removeListener(_handleQueryChanged);
+    _addressController.removeListener(_handleQueryChanged);
     _linkController.dispose();
     super.dispose();
   }
+
+  /// 구글 지도에 넘길 검색어. 저장된 장소의 `googleMapsUrl`과 같은 규칙이다.
+  String get _mapQuery => [
+    _nameController.text.trim(),
+    _addressController.text.trim(),
+  ].where((part) => part.isNotEmpty).join(' ');
 
   void _submit() {
     final error = widget.controller.saveManualPlace(
@@ -202,11 +223,20 @@ class _ManualPlaceFormState extends State<_ManualPlaceForm> {
                   maxLength: 120,
                 ),
                 const SizedBox(height: 10),
+                // 이름만 적어도 구글 지도로 바로 찾아볼 수 있다. 맞는 곳인지
+                // 여기서 확인하고, 원하면 공유 링크를 아래 칸에 붙인다.
+                _OpenInMapsRow(
+                  enabled: _mapQuery.isNotEmpty,
+                  onOpen: () => widget.onOpenExternalLink(
+                    googleMapsSearchUrl(_mapQuery),
+                  ),
+                ),
+                const SizedBox(height: 10),
                 _ManualField(
                   fieldKey: placeManualLinkFieldKey,
                   controller: _linkController,
                   label: '지도 링크 (선택)',
-                  hint: '지도 앱에서 공유한 링크를 붙여넣기',
+                  hint: '안 적어도 이름과 주소로 찾아가요',
                   maxLength: 500,
                 ),
                 const SizedBox(height: 10),
@@ -258,6 +288,37 @@ class _ManualPlaceFormState extends State<_ManualPlaceForm> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// 적는 중에 구글 지도로 확인하는 줄.
+///
+/// 이 주소는 휴대폰에서 구글 지도 app이 있으면 app으로, 없으면 web으로 열린다.
+class _OpenInMapsRow extends StatelessWidget {
+  const _OpenInMapsRow({required this.enabled, required this.onOpen});
+
+  final bool enabled;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: OutlinedButton.icon(
+        key: placeManualOpenMapsButtonKey,
+        onPressed: enabled ? onOpen : null,
+        icon: const Icon(Icons.travel_explore_rounded, size: 16),
+        label: Text(enabled ? '구글 지도에서 찾아보기' : '이름을 적으면 지도에서 찾아볼 수 있어요'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AlagagiColors.sageDeep,
+          side: const BorderSide(color: AlagagiColors.line),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: sans(size: 12.5, weight: FontWeight.w700),
+        ),
+      ),
     );
   }
 }

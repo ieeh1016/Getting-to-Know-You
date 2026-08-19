@@ -492,6 +492,55 @@ void main() {
     expect(controller.tripPhotosFor(tripId), hasLength(1));
   });
 
+  testWidgets('a place being typed can be checked on google maps first', (
+    tester,
+  ) async {
+    final opened = <String>[];
+    final controller = buildController();
+    final tripId = seedTrip(controller);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(splashFactory: NoSplash.splashFactory),
+        home: AlagagiRoot(
+          controller: controller,
+          onOpenExternalLink: opened.add,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await openTripDetail(tester, controller, tripId);
+
+    await openItemForm(tester, TripItemKind.plan);
+    await tapInSheet(
+      tester,
+      tripItemFormSheetKey,
+      find.byKey(tripItemPlaceFieldKey),
+    );
+    await tester.tap(find.byKey(tripPlaceManualButtonKey));
+    await tester.pumpAndSettle();
+
+    // 이름을 적기 전에는 열 곳이 없다.
+    expect(find.byKey(placeManualOpenMapsButtonKey), findsOneWidget);
+    expect(find.text('이름을 적으면 지도에서 찾아볼 수 있어요'), findsOneWidget);
+
+    await tester.enterText(find.byKey(placeManualNameFieldKey), 'Ramen Nagi');
+    await tester.enterText(
+      find.byKey(placeManualAddressFieldKey),
+      'Shinjuku, Tokyo',
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(placeManualOpenMapsButtonKey));
+    await tester.pumpAndSettle();
+
+    // 저장하기 전에 그 자리에서 구글 지도로 확인한다.
+    expect(opened, hasLength(1));
+    expect(
+      opened.single,
+      'https://www.google.com/maps/search/?api=1'
+      '&query=Ramen%20Nagi%20Shinjuku%2C%20Tokyo',
+    );
+  });
+
   testWidgets('the meeting calendar shows which days a trip already holds', (
     tester,
   ) async {

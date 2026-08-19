@@ -581,6 +581,7 @@ class _KindOption extends StatelessWidget {
 Future<String?> showTripPlacePickerSheet(
   BuildContext context, {
   required AlagagiController controller,
+  required ValueChanged<String> onOpenExternalLink,
   String? selectedPlaceId,
   String draftTitle = '',
 }) {
@@ -594,6 +595,7 @@ Future<String?> showTripPlacePickerSheet(
       selectedPlaceId: selectedPlaceId,
       draftTitle: draftTitle,
       onPick: (placeId) => Navigator.of(sheetContext).pop(placeId),
+      onOpenExternalLink: onOpenExternalLink,
     ),
   );
 }
@@ -604,10 +606,12 @@ class _PlacePicker extends StatefulWidget {
     required this.selectedPlaceId,
     required this.draftTitle,
     required this.onPick,
+    required this.onOpenExternalLink,
   });
 
   final AlagagiController controller;
   final String? selectedPlaceId;
+  final ValueChanged<String> onOpenExternalLink;
 
   /// 폼에 적던 제목. 직접 담기로 넘어갈 때 그대로 옮긴다.
   final String draftTitle;
@@ -625,6 +629,7 @@ class _PlacePickerState extends State<_PlacePicker> {
     final created = await showManualPlaceSheet(
       context,
       controller: widget.controller,
+      onOpenExternalLink: widget.onOpenExternalLink,
       initialName: widget.draftTitle.trim(),
     );
     widget.controller.clearLastSavedPlaceId();
@@ -1069,6 +1074,7 @@ Future<TripItemKind?> showTripItemFormSheet(
   required AlagagiController controller,
   required Trip trip,
   required TripItemKind kind,
+  required ValueChanged<String> onOpenExternalLink,
   TripItem? item,
   String? initialDateKey,
 }) {
@@ -1085,6 +1091,7 @@ Future<TripItemKind?> showTripItemFormSheet(
       kind: kind,
       item: item,
       initialDateKey: initialDateKey,
+      onOpenExternalLink: onOpenExternalLink,
       sheetContext: sheetContext,
     ),
   );
@@ -1097,10 +1104,12 @@ class _TripItemForm extends StatefulWidget {
     required this.kind,
     required this.item,
     required this.sheetContext,
+    required this.onOpenExternalLink,
     this.initialDateKey,
   });
 
   final AlagagiController controller;
+  final ValueChanged<String> onOpenExternalLink;
   final Trip trip;
   final TripItemKind kind;
   final TripItem? item;
@@ -1699,6 +1708,7 @@ class _TripItemFormState extends State<_TripItemForm> {
           final picked = await showTripPlacePickerSheet(
             context,
             controller: widget.controller,
+            onOpenExternalLink: widget.onOpenExternalLink,
             selectedPlaceId: _placeId,
             draftTitle: _titleController.text,
           );

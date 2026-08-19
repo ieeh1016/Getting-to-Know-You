@@ -1985,6 +1985,20 @@ class MeetingPlaceLink {
   }
 }
 
+/// 구글 지도 검색 주소.
+///
+/// 휴대폰에서 이 주소를 열면 구글 지도 app이 있으면 app으로, 없으면 web으로
+/// 이어진다. 앱마다 다른 scheme을 쓰지 않아도 되는 유일한 방법이다.
+/// 카카오 검색은 국내만 되므로 해외 장소는 여기에 기댄다.
+String googleMapsSearchUrl(String query) {
+  final trimmed = query.trim();
+  if (trimmed.isEmpty) {
+    return 'https://www.google.com/maps';
+  }
+  return 'https://www.google.com/maps/search/?api=1'
+      '&query=${Uri.encodeComponent(trimmed)}';
+}
+
 class SharedPlace {
   const SharedPlace({
     required this.id,
@@ -2045,14 +2059,14 @@ class SharedPlace {
     final latitude = this.latitude;
     final longitude = this.longitude;
     if (latitude != null && longitude != null) {
+      // 좌표는 그대로 넘긴다. 쉼표를 %2C로 바꾸면 구글이 받기는 해도
+      // 문서에 적힌 형태가 아니고, 기존 링크와 모양이 달라진다.
       return 'https://www.google.com/maps/search/?api=1'
           '&query=$latitude,$longitude';
     }
-    final query = [name.trim(), address.trim()]
-        .where((part) => part.isNotEmpty)
-        .join(' ');
-    return 'https://www.google.com/maps/search/?api=1'
-        '&query=${Uri.encodeComponent(query)}';
+    return googleMapsSearchUrl(
+      [name.trim(), address.trim()].where((part) => part.isNotEmpty).join(' '),
+    );
   }
 
   MeetingPlaceLink? meetingPlanLinkFor(String dateKey) {

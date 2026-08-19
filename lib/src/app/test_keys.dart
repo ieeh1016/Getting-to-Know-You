@@ -163,6 +163,7 @@ const placeManualSheetKey = Key('place-manual-sheet');
 const placeManualNameFieldKey = Key('place-manual-name-field');
 const placeManualAddressFieldKey = Key('place-manual-address-field');
 const placeManualNoteFieldKey = Key('place-manual-note-field');
+const placeManualOpenMapsButtonKey = Key('place-manual-open-maps');
 const placeManualLinkFieldKey = Key('place-manual-link-field');
 const placeManualSubmitButtonKey = Key('place-manual-submit-button');
 Key placeManualCategoryButtonKey(String category) =>

@@ -97,7 +97,10 @@ class _PlaceBoardScreenState extends State<PlaceBoardScreen> {
         if (controller.state.placeDraftVisible)
           _PlaceDraftCard(controller: controller)
         else
-          _PlaceSearchEntryCard(controller: controller),
+          _PlaceSearchEntryCard(
+            controller: controller,
+            onOpenExternalLink: onOpenExternalLink,
+          ),
         const SizedBox(height: 18),
         Row(
           children: [
@@ -684,9 +687,13 @@ class _PlaceMapFallback extends StatelessWidget {
 }
 
 class _PlaceSearchEntryCard extends StatelessWidget {
-  const _PlaceSearchEntryCard({required this.controller});
+  const _PlaceSearchEntryCard({
+    required this.controller,
+    required this.onOpenExternalLink,
+  });
 
   final AlagagiController controller;
+  final ValueChanged<String> onOpenExternalLink;
 
   @override
   Widget build(BuildContext context) {
@@ -744,6 +751,7 @@ class _PlaceSearchEntryCard extends StatelessWidget {
               onPressed: () => showManualPlaceSheet(
                 context,
                 controller: controller,
+                onOpenExternalLink: onOpenExternalLink,
               ),
               icon: const Icon(Icons.edit_location_alt_outlined, size: 17),
               label: const Text('해외거나 검색에 없으면 직접 담기'),
