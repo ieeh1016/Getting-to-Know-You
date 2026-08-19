@@ -141,6 +141,7 @@ Key meetingPlanItemEditButtonKey(int index) =>
     Key('meeting-plan-item-edit-$index');
 Key meetingPlanItemDragHandleKey(int index) =>
     Key('meeting-plan-item-drag-$index');
+const meetingTripDayLinkKey = Key('meeting-trip-day-link');
 Key meetingTripDayIndicatorKey(String dateKey) =>
     Key('meeting-trip-day-$dateKey');
 Key meetingDayIndicatorKey(String dateKey) =>
@@ -227,6 +228,10 @@ const tripFormSheetKey = Key('trip-form-sheet');
 const tripNoteFieldKey = Key('trip-note-field');
 const tripNoteCardKey = Key('trip-note-card');
 Key tripItemNoteCueKey(String itemId) => Key('trip-item-note-cue-$itemId');
+Key tripItemLinkButtonKey(String itemId) => Key('trip-item-link-button-$itemId');
+Key tripPlaceMapButtonKey(String itemId) => Key('trip-place-map-$itemId');
+Key tripStayMapButtonKey(String itemId) => Key('trip-stay-map-$itemId');
+Key tripNextItemDotKey(String itemId) => Key('trip-next-item-$itemId');
 const tripCurrencyFieldKey = Key('trip-currency-field');
 const tripItemCostFieldKey = Key('trip-item-cost-field');
 const tripBudgetSummaryKey = Key('trip-budget-summary');
@@ -252,18 +257,43 @@ const tripItemAddButtonKey = Key('trip-item-add-button');
 const tripKindPickerSheetKey = Key('trip-kind-picker-sheet');
 const tripPackingSourceSheetKey = Key('trip-packing-source-sheet');
 const tripWishPickerSheetKey = Key('trip-wish-picker-sheet');
+const tripWishCloseButtonKey = Key('trip-wish-close-button');
 const tripItemWishFieldKey = Key('trip-item-wish-field');
 Key tripWishPickerOptionKey(String wishId) => Key('trip-wish-option-$wishId');
 const tripPackingCopyButtonKey = Key('trip-packing-copy-button');
+const tripPackingHiddenNoticeKey = Key('trip-packing-hidden-notice');
+Key tripPackingFilterButtonKey(String id) => Key('trip-packing-filter-$id');
 Key tripPackingSourceOptionKey(String tripId) =>
     Key('trip-packing-source-$tripId');
 const tripDeleteConfirmButtonKey = Key('trip-delete-confirm-button');
+const tripPhotoDeleteConfirmButtonKey = Key('trip-photo-delete-confirm-button');
+Key musicDeleteConfirmButtonKey(String noteId) =>
+    Key('music-delete-confirm-$noteId');
+Key musicCommentDeleteConfirmButtonKey(String commentId) =>
+    Key('music-comment-delete-confirm-$commentId');
+Key placeDeleteConfirmButtonKey(String placeId) =>
+    Key('place-delete-confirm-$placeId');
+Key wishDeleteConfirmButtonKey(String wishId) =>
+    Key('wish-delete-confirm-$wishId');
+Key stockStoryDeleteConfirmButtonKey(String storyId) =>
+    Key('stock-story-delete-confirm-$storyId');
+Key stockHoldingDeleteConfirmButtonKey(String holdingId) =>
+    Key('stock-holding-delete-confirm-$holdingId');
+Key improvementDeleteConfirmButtonKey(String postId) =>
+    Key('improvement-delete-confirm-$postId');
+Key profileSlotDeleteConfirmButtonKey(String slotId) =>
+    Key('profile-slot-delete-confirm-$slotId');
 Key tripKindPickerOptionKey(String kind) => Key('trip-kind-option-$kind');
 Key tripItemDeleteConfirmButtonKey(String itemId) =>
     Key('trip-item-delete-confirm-$itemId');
 const tripItemEndTimeFieldKey = Key('trip-item-end-time-field');
 const tripItemFromFieldKey = Key('trip-item-from-field');
 const tripItemToFieldKey = Key('trip-item-to-field');
+const tripItemRouteSwapButtonKey = Key('trip-item-route-swap');
+const tripItemFormErrorKey = Key('trip-item-form-error');
+const tripItemDraftRestoreKey = Key('trip-item-draft-restore');
+const tripItemDraftRestoreButtonKey = Key('trip-item-draft-restore-button');
+const tripItemDraftDismissButtonKey = Key('trip-item-draft-dismiss-button');
 const tripItemPlaceFieldKey = Key('trip-item-place-field');
 const tripItemLinkFieldKey = Key('trip-item-link-field');
 const tripPlacePickerSheetKey = Key('trip-place-picker-sheet');
@@ -272,6 +302,7 @@ const tripPhotoDayClearButtonKey = Key('trip-photo-day-clear');
 Key tripPhotoDaySheetOptionKey(String dateKey) =>
     Key('trip-photo-day-option-$dateKey');
 const tripPlacePickerClearButtonKey = Key('trip-place-picker-clear');
+const tripPlaceManualButtonKey = Key('trip-place-manual-button');
 Key tripPlacePickerCategoryKey(String category) =>
     Key('trip-place-category-$category');
 Key tripPlacePickerOptionKey(String placeId) =>
@@ -283,6 +314,7 @@ const tripEditActionKey = Key('trip-edit-action');
 const tripDeleteActionKey = Key('trip-delete-action');
 const tripDayRailKey = Key('trip-day-rail');
 Key tripDayJumpButtonKey(String dateKey) => Key('trip-day-jump-$dateKey');
+const tripDetailTitleKey = Key('trip-detail-title');
 const tripSaveStatusKey = Key('trip-save-status');
 const tripSaveRetryButtonKey = Key('trip-save-retry-button');
 const tripStatusNudgeKey = Key('trip-status-nudge');
@@ -297,6 +329,8 @@ Key tripPhotoDayButtonKey(String dateKey) => Key('trip-photo-day-$dateKey');
 Key tripPhotoDayTagButtonKey(String photoId) =>
     Key('trip-photo-day-tag-$photoId');
 Key tripTimelinePhotoKey(String photoId) => Key('trip-timeline-photo-$photoId');
+Key tripDayAddKey(String dateKey) => Key('trip-day-add-$dateKey');
+const tripTimelineLoadPhotosKey = Key('trip-timeline-load-photos');
 
 const tripPhotoAddButtonKey = Key('trip-photo-add-button');
 const tripPhotoGridKey = Key('trip-photo-grid');

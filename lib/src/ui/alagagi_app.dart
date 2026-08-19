@@ -243,7 +243,11 @@ class _AlagagiRootState extends State<AlagagiRoot> {
       AlagagiRoute.improvements => ImprovementBoardScreen(
         controller: _controller,
       ),
-      AlagagiRoute.trips => TripScreen(controller: _controller),
+      AlagagiRoute.trips => TripScreen(
+        controller: _controller,
+        onOpenExternalLink: widget.onOpenExternalLink ?? openExternalLink,
+        onRefreshSession: widget.onRefreshSession,
+      ),
       AlagagiRoute.profileCard => ProfileCardScreen(controller: _controller),
       AlagagiRoute.wishlist => WishlistScreen(controller: _controller),
       AlagagiRoute.memoryCards => MemoryCardsScreen(controller: _controller),

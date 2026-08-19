@@ -343,6 +343,155 @@ void main() {
     expect(find.byKey(tripBudgetSettlementKey), findsOneWidget);
   });
 
+  testWidgets('the new-trip calendar opens on this month, not last year', (
+    tester,
+  ) async {
+    final controller = buildController();
+    await pumpTrips(tester, controller);
+
+    await tester.tap(find.byKey(tripAddButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripStartDateFieldKey));
+    await tester.pumpAndSettle();
+
+    // 화살표를 열아홉 번 누르지 않고 오늘이 있는 달에서 열린다.
+    final now = DateTime.now();
+    expect(find.text('${now.year}년 ${now.month}월'), findsOneWidget);
+  });
+
+  testWidgets('the packing tab opens its own form without asking the kind', (
+    tester,
+  ) async {
+    final controller = buildController();
+    final tripId = seedTrip(controller);
+    await pumpTrips(tester, controller);
+    await openTripDetail(tester, controller, tripId);
+
+    await tester.tap(find.byKey(tripKindTabKey('packing')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(tripItemAddButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripItemAddButtonKey));
+    await tester.pumpAndSettle();
+
+    // 서 있는 자리가 곧 대답인 물음을 다시 묻지 않는다.
+    expect(find.byKey(tripKindPickerSheetKey), findsNothing);
+    expect(find.byKey(tripItemFormSheetKey), findsOneWidget);
+
+    Navigator.of(tester.element(find.byKey(tripItemFormSheetKey))).pop();
+    await tester.pumpAndSettle();
+
+    // 종류가 갈리는 일정 tab에서는 여전히 먼저 고른다.
+    await tester.tap(find.byKey(tripKindTabKey('timeline')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(tripItemAddButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripItemAddButtonKey));
+    await tester.pumpAndSettle();
+    expect(find.byKey(tripKindPickerSheetKey), findsOneWidget);
+  });
+
+  testWidgets('an empty day can be filled from its own row', (tester) async {
+    final controller = buildController();
+    final tripId = seedTrip(controller);
+    // 아무것도 없는 여행은 타임라인이 통째로 empty state라, 그 경우는 위쪽
+    // 담기 button이 맡는다. 여기서 보는 것은 '다른 날은 찼는데 이 날만 빈' 경우다.
+    controller.saveTripItem(
+      tripId: tripId,
+      kind: TripItemKind.plan,
+      title: '공항 도착',
+      dateKey: '2026-09-12',
+    );
+    await pumpTrips(tester, controller);
+    await openTripDetail(tester, controller, tripId);
+
+    await tester.ensureVisible(find.byKey(tripDayAddKey('2026-09-13')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripDayAddKey('2026-09-13')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(tripKindPickerOptionKey(TripItemKind.plan.storageKey)),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(tripItemTitleFieldKey), '성산일출봉');
+    await tester.tap(find.byKey(tripItemSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    // 폼에서 날짜를 다시 고르지 않아도 그 날에 담긴다.
+    expect(
+      controller
+          .tripItemsFor(tripId, kind: TripItemKind.plan)
+          .firstWhere((item) => item.title == '성산일출봉')
+          .dateKey,
+      '2026-09-13',
+    );
+  });
+
+  testWidgets('a saved link and place open outward from the trip', (
+    tester,
+  ) async {
+    final opened = <String>[];
+    final controller = buildController();
+    final tripId = seedTrip(controller);
+    controller.saveTripItem(
+      tripId: tripId,
+      kind: TripItemKind.stay,
+      title: '시내 호텔',
+      link: 'booking.com/abc',
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(splashFactory: NoSplash.splashFactory),
+        home: AlagagiRoot(
+          controller: controller,
+          onOpenExternalLink: opened.add,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await openTripDetail(tester, controller, tripId);
+
+    await tester.tap(find.byKey(tripKindTabKey('stay')));
+    await tester.pumpAndSettle();
+    final stay = controller
+        .tripItemsFor(tripId, kind: TripItemKind.stay)
+        .single;
+    await tester.ensureVisible(find.byKey(tripItemLinkButtonKey(stay.id)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripItemLinkButtonKey(stay.id)));
+    await tester.pumpAndSettle();
+
+    // scheme 없는 입력도 앱 안쪽이 아니라 밖으로 연다.
+    expect(opened, ['https://booking.com/abc']);
+  });
+
+  testWidgets('a photo is not deleted until it is confirmed', (tester) async {
+    final controller = buildController();
+    final tripId = seedTrip(controller);
+    controller.saveTripPhoto(
+      tripId: tripId,
+      imageDataUrl:
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    );
+    await pumpTrips(tester, controller);
+    await openTripDetail(tester, controller, tripId);
+
+    await tester.tap(find.byKey(tripKindTabKey('photos')));
+    await tester.pumpAndSettle();
+    final photo = controller.tripPhotosFor(tripId).single;
+    await tester.ensureVisible(find.byKey(tripPhotoCardKey(photo.id)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripPhotoCardKey(photo.id)));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(tripPhotoViewerDeleteButtonKey));
+    await tester.pumpAndSettle();
+    // 확인 sheet에서 그대로 두면 사진이 남는다.
+    await tester.tap(find.text('그대로 두기'));
+    await tester.pumpAndSettle();
+    expect(controller.tripPhotosFor(tripId), hasLength(1));
+  });
+
   testWidgets('the meeting calendar shows which days a trip already holds', (
     tester,
   ) async {

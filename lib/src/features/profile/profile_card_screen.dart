@@ -5,6 +5,7 @@ import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
 import '../../shared/readable_detail_sheet.dart';
 import '../../shared/text_editing_sync.dart';
+import '../../shared/confirm_sheet.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
@@ -70,7 +71,17 @@ class _ProfileCardScreenState extends State<ProfileCardScreen> {
     controller.restoreProfileSlot(slot.id);
   }
 
-  void _deleteSlot(ProfileSlot slot) {
+  Future<void> _deleteSlot(ProfileSlot slot) async {
+    final confirmed = await showAlagagiConfirmSheet(
+      context,
+      title: '${slot.label}을 지울까요?',
+      body: '지우면 되돌릴 수 없어요.',
+      confirmLabel: '지우기',
+      confirmKey: profileSlotDeleteConfirmButtonKey(slot.id),
+    );
+    if (!confirmed || !mounted) {
+      return;
+    }
     controller.deleteCustomProfileSlot(slot.id);
     if (_editingSlotId == slot.id) {
       _cancelEditing();

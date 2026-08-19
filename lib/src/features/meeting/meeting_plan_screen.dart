@@ -930,7 +930,12 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
         PlaceSaveStatus(controller: controller),
         const SizedBox(height: 10),
         if (linkedPlaces.isEmpty)
-          const AlagagiEmptyStateCard(text: '장소 탭에서 저장한 곳을 이 날 후보로 붙여볼 수 있어요.')
+          // 바로 아래에 붙이기 목록이 떠 있는데 다른 탭으로 보내면 안 된다.
+          AlagagiEmptyStateCard(
+            text: boardPlaces.isEmpty
+                ? '장소 탭에서 저장한 곳을 이 날 후보로 붙여볼 수 있어요.'
+                : '아래 목록에서 이 날 후보로 붙여볼 수 있어요.',
+          )
         else
           _MeetingPlanLinkedPlaceList(
             controller: controller,

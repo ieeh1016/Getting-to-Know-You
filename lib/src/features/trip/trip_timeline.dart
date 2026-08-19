@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
+import '../../shared/openable_link.dart';
 import '../../shared/readable_detail_sheet.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 import '../place/place_common.dart';
+import 'trip_format.dart';
 
 IconData tripItemKindIcon(TripItemKind kind) => switch (kind) {
   TripItemKind.stay => Icons.bed_outlined,
@@ -40,6 +42,14 @@ class TripTimeline extends StatelessWidget {
     required this.onTapItem,
     required this.onTapPhoto,
     required this.onReorder,
+    required this.onAddForDay,
+    required this.onOpenExternalLink,
+    required this.currencyLabel,
+    required this.nextItemId,
+    required this.photosLoaded,
+    required this.onLoadPhotos,
+    required this.showDoneToggle,
+    required this.onToggleDone,
   });
 
   final List<TripDay> days;
@@ -56,6 +66,28 @@ class TripTimeline extends StatelessWidget {
 
   /// (dateKey, oldIndex, newIndex)
   final void Function(String? dateKey, int oldIndex, int newIndex) onReorder;
+
+  /// 그 날 자리에서 바로 담기. 날짜를 폼에서 다시 고르지 않게 한다.
+  final void Function(String? dateKey) onAddForDay;
+
+  /// 예약 링크와 지도를 밖으로 여는 통로.
+  final ValueChanged<String> onOpenExternalLink;
+
+  /// 그 여행의 경비 단위.
+  final String currencyLabel;
+
+  /// 여행 중일 때 지금 다음에 오는 항목. 없으면 null.
+  final String? nextItemId;
+
+  /// 사진을 아직 읽지 않았으면 날짜별 띠 대신 불러오기 한 줄만 둔다.
+  /// 개수를 모르니 어느 날에 붙일지도 고를 수 없다.
+  final bool photosLoaded;
+  final VoidCallback onLoadPhotos;
+
+  /// 다녀온 여행에서만 계획에 `했다` 표시를 보여준다. 계획 중 화면을
+  /// 체크박스로 어지럽히지 않는다.
+  final bool showDoneToggle;
+  final ValueChanged<TripItem> onToggleDone;
 
   bool get _isEmpty =>
       days.every((day) => day.items.isEmpty) &&
@@ -95,6 +127,45 @@ class TripTimeline extends StatelessWidget {
             onTapItem: onTapItem,
             onTapPhoto: onTapPhoto,
             onReorder: onReorder,
+            onAddForDay: onAddForDay,
+            onOpenExternalLink: onOpenExternalLink,
+            currencyLabel: currencyLabel,
+            nextItemId: nextItemId,
+            showDoneToggle: showDoneToggle,
+            onToggleDone: onToggleDone,
+          ),
+        if (!photosLoaded)
+          Padding(
+            padding: const EdgeInsets.only(left: 30, top: 4),
+            child: InkWell(
+              key: tripTimelineLoadPhotosKey,
+              onTap: onLoadPhotos,
+              borderRadius: BorderRadius.circular(999),
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 40),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.photo_outlined,
+                      size: 14,
+                      color: AlagagiColors.sageDeep,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '이 여행 사진 불러오기',
+                      style: sans(
+                        size: 11.5,
+                        weight: FontWeight.w800,
+                        color: AlagagiColors.sageDeep,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
       ],
     );
@@ -114,6 +185,12 @@ class _TripTimelineDay extends StatelessWidget {
     required this.onTapItem,
     required this.onTapPhoto,
     required this.onReorder,
+    required this.onAddForDay,
+    required this.onOpenExternalLink,
+    required this.currencyLabel,
+    required this.nextItemId,
+    required this.showDoneToggle,
+    required this.onToggleDone,
   });
 
   final TripDay day;
@@ -127,6 +204,12 @@ class _TripTimelineDay extends StatelessWidget {
   final ValueChanged<TripItem> onTapItem;
   final ValueChanged<TripPhoto> onTapPhoto;
   final void Function(String? dateKey, int oldIndex, int newIndex) onReorder;
+  final void Function(String? dateKey) onAddForDay;
+  final ValueChanged<String> onOpenExternalLink;
+  final String currencyLabel;
+  final String? nextItemId;
+  final bool showDoneToggle;
+  final ValueChanged<TripItem> onToggleDone;
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +234,9 @@ class _TripTimelineDay extends StatelessWidget {
             dateKey: day.dateKey,
             stay: stay,
             mode: _StayBandMode.checkOut,
+            place: placeFor(stay),
             onTap: () => onTapItem(stay),
+            onOpenExternalLink: onOpenExternalLink,
           ),
         for (final stay in stays)
           _TripStayBand(
@@ -160,17 +245,11 @@ class _TripTimelineDay extends StatelessWidget {
             mode: stay.dateKey == day.dateKey
                 ? _StayBandMode.checkIn
                 : _StayBandMode.staying,
+            place: placeFor(stay),
             onTap: () => onTapItem(stay),
+            onOpenExternalLink: onOpenExternalLink,
           ),
-        if (isBlank)
-          Padding(
-            padding: const EdgeInsets.only(left: 34, bottom: 16),
-            child: Text(
-              '이날은 아직 비어 있어요',
-              style: sans(size: 12, color: AlagagiColors.muted),
-            ),
-          )
-        else if (day.items.isNotEmpty)
+        if (day.items.isNotEmpty)
           ReorderableListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -185,17 +264,98 @@ class _TripTimelineDay extends StatelessWidget {
               index: index,
               item: day.items[index],
               place: placeFor(day.items[index]),
-              isLastInDay:
-                  index == day.items.length - 1 && isLast && photos.isEmpty,
+              // 아래에 담기 줄이 늘 붙으므로 여기서 rail을 끊으면 담기 줄이
+              // 세로선 밖에 떠 보인다. 종단은 담기 줄이 그린다.
+              isLastInDay: false,
               onTap: () => onTapItem(day.items[index]),
+              currencyLabel: currencyLabel,
+              onOpenExternalLink: onOpenExternalLink,
+              isNext: day.items[index].id == nextItemId,
+              showDoneToggle: showDoneToggle,
+              onToggleDone: onToggleDone,
             ),
           ),
         if (photos.isNotEmpty) ...[
           _TripDayPhotoStrip(photos: photos, onTapPhoto: onTapPhoto),
           const SizedBox(height: 6),
         ],
+        // 그 날 끝에서 바로 담는다. 3일차 일정 하나 적으려고 맨 위로
+        // 올라갔다가 폼에서 날짜를 다시 고르게 하지 않는다.
+        _TripDayAddRow(
+          rowKey: tripDayAddKey(day.isUndated ? 'undated' : day.dateKey),
+          isBlank: isBlank,
+          drawsRail: !isLast,
+          onTap: () => onAddForDay(day.isUndated ? null : day.dateKey),
+        ),
         if (!isLast) const SizedBox(height: 8),
       ],
+    );
+  }
+}
+
+/// 하루 끝에 붙는 담기 줄. 비어 있는 날에는 비어 있다는 사실도 함께 읽힌다.
+class _TripDayAddRow extends StatelessWidget {
+  const _TripDayAddRow({
+    required this.rowKey,
+    required this.isBlank,
+    required this.drawsRail,
+    required this.onTap,
+  });
+
+  final Key rowKey;
+  final bool isBlank;
+
+  /// 마지막 날이 아니면 세로 rail 선이 다음 날로 이어져야 한다.
+  final bool drawsRail;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 30,
+            child: Center(
+              child: Container(
+                width: 1,
+                color: drawsRail ? AlagagiColors.line : Colors.transparent,
+              ),
+            ),
+          ),
+          Expanded(
+            child: InkWell(
+              key: rowKey,
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 44),
+                padding: const EdgeInsets.fromLTRB(4, 6, 8, 10),
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.add_rounded,
+                      size: 15,
+                      color: AlagagiColors.muted,
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        isBlank ? '이날은 아직 비어 있어요 · 담기' : '이 날에 담기',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: sans(size: 12, color: AlagagiColors.muted),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -211,13 +371,19 @@ class _TripStayBand extends StatelessWidget {
     required this.dateKey,
     required this.stay,
     required this.mode,
+    required this.place,
     required this.onTap,
+    required this.onOpenExternalLink,
   });
 
   final String dateKey;
   final TripItem stay;
   final _StayBandMode mode;
+
+  /// 붙여둔 장소. 공항이나 택시에서 실제로 보는 화면이 여기다.
+  final SharedPlace? place;
   final VoidCallback onTap;
+  final ValueChanged<String> onOpenExternalLink;
 
   String get _leadLabel => switch (mode) {
     _StayBandMode.checkIn => '체크인',
@@ -255,7 +421,10 @@ class _TripStayBand extends StatelessWidget {
             borderRadius: BorderRadius.circular(13),
           ),
           padding: const EdgeInsets.fromLTRB(11, 9, 11, 9),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+          Row(
             children: [
               const Icon(
                 Icons.bed_outlined,
@@ -298,6 +467,46 @@ class _TripStayBand extends StatelessWidget {
                   style: sans(size: 11, color: AlagagiColors.muted),
                 ),
               ],
+            ],
+          ),
+          // 주소를 같은 줄에 끼우면 390px에서 제목이 밀린다. 아래 줄로 푼다.
+          if (place != null) ...[
+            const SizedBox(height: 7),
+            if (place!.address.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(left: 23, bottom: 6),
+                child: Text(
+                  place!.address,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: sans(size: 12, height: 1.45, color: AlagagiColors.ink),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.only(left: 21),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: SizedBox(
+                  height: 32,
+                  child: OutlinedButton.icon(
+                    key: tripStayMapButtonKey(stay.id),
+                    onPressed: () => onOpenExternalLink(place!.googleMapsUrl),
+                    icon: const Icon(Icons.map_outlined, size: 13),
+                    label: const Text('지도'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AlagagiColors.sageDeep,
+                      side: const BorderSide(color: Color(0x339A7A2A)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 11),
+                      textStyle: sans(size: 11, weight: FontWeight.w800),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
             ],
           ),
         ),
@@ -412,6 +621,11 @@ class _TripTimelineEntry extends StatelessWidget {
     required this.place,
     required this.isLastInDay,
     required this.onTap,
+    required this.currencyLabel,
+    required this.onOpenExternalLink,
+    required this.isNext,
+    required this.showDoneToggle,
+    required this.onToggleDone,
   });
 
   final int index;
@@ -419,6 +633,18 @@ class _TripTimelineEntry extends StatelessWidget {
   final SharedPlace? place;
   final bool isLastInDay;
   final VoidCallback onTap;
+  final String currencyLabel;
+  final ValueChanged<String> onOpenExternalLink;
+
+  /// 여행 중일 때 지금 다음에 오는 항목인가.
+  final bool isNext;
+  final bool showDoneToggle;
+  final ValueChanged<TripItem> onToggleDone;
+
+  bool get _showsDone => showDoneToggle && item.kind.usesDoneToggle;
+
+  /// 열 수 없는 값이면 죽은 button을 만들지 않는다.
+  String? get _openableLink => normalizedOpenableLink(item.link ?? '');
 
   @override
   Widget build(BuildContext context) {
@@ -437,12 +663,17 @@ class _TripTimelineEntry extends StatelessWidget {
             child: Column(
               children: [
                 Container(
+                  key: isNext ? tripNextItemDotKey(item.id) : null,
                   width: 9,
                   height: 9,
                   margin: const EdgeInsets.only(top: 15),
                   decoration: BoxDecoration(
-                    color: AlagagiColors.paper,
-                    border: Border.all(color: AlagagiColors.sky, width: 2),
+                    // 지금 다음에 오는 것만 점을 채운다.
+                    color: isNext ? AlagagiColors.sageDeep : AlagagiColors.paper,
+                    border: Border.all(
+                      color: isNext ? AlagagiColors.sageDeep : AlagagiColors.sky,
+                      width: 2,
+                    ),
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -468,15 +699,37 @@ class _TripTimelineEntry extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      AlagagiSymbolMark(
-                        icon: icon,
-                        size: 30,
-                        iconSize: 15,
-                        tone: AlagagiColors.skyPanel,
-                        iconColor: AlagagiColors.sageDeep,
-                        radius: 11,
-                      ),
-                      const SizedBox(width: 10),
+                      // 다녀온 여행에서만 계획에 '했다'를 표시한다.
+                      if (_showsDone)
+                        SizedBox(
+                          width: 44,
+                          height: 44,
+                          child: InkWell(
+                            key: tripItemCheckButtonKey(item.id),
+                            onTap: () => onToggleDone(item),
+                            borderRadius: BorderRadius.circular(999),
+                            child: Icon(
+                              item.checked
+                                  ? Icons.check_circle_rounded
+                                  : Icons.circle_outlined,
+                              size: 20,
+                              color: item.checked
+                                  ? AlagagiColors.sageDeep
+                                  : AlagagiColors.muted,
+                            ),
+                          ),
+                        )
+                      else ...[
+                        AlagagiSymbolMark(
+                          icon: icon,
+                          size: 30,
+                          iconSize: 15,
+                          tone: AlagagiColors.skyPanel,
+                          iconColor: AlagagiColors.sageDeep,
+                          radius: 11,
+                        ),
+                        const SizedBox(width: 10),
+                      ],
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -488,6 +741,9 @@ class _TripTimelineEntry extends StatelessWidget {
                               style: sans(
                                 size: 13.5,
                                 weight: FontWeight.w700,
+                                color: _showsDone && item.checked
+                                    ? AlagagiColors.muted
+                                    : AlagagiColors.ink,
                               ),
                             ),
                             if (item.kind.usesRoute) _TripRouteLine(item: item),
@@ -522,6 +778,54 @@ class _TripTimelineEntry extends StatelessWidget {
                                   ),
                                 ),
                               ],
+                            ],
+                            if (item.cost > 0) ...[
+                              const SizedBox(height: 5),
+                              Text(
+                                '${formatTripAmount(item.cost)}$currencyLabel',
+                                style: sans(
+                                  size: 11.5,
+                                  weight: FontWeight.w700,
+                                  color: AlagagiColors.sageDeep,
+                                ),
+                              ),
+                            ],
+                            if (_openableLink != null) ...[
+                              const SizedBox(height: 6),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: SizedBox(
+                                  height: 32,
+                                  child: OutlinedButton.icon(
+                                    key: tripItemLinkButtonKey(item.id),
+                                    onPressed: () =>
+                                        onOpenExternalLink(_openableLink!),
+                                    icon: const Icon(
+                                      Icons.open_in_new_rounded,
+                                      size: 13,
+                                    ),
+                                    label: const Text('예약 열기'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: AlagagiColors.sageDeep,
+                                      side: const BorderSide(
+                                        color: Color(0x339A7A2A),
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 11,
+                                      ),
+                                      textStyle: sans(
+                                        size: 11,
+                                        weight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ],
                           ],
                         ),
@@ -663,33 +967,38 @@ class _TripPlaceLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 5),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            placeCategoryIcon(place.category),
-            size: 14,
-            color: AlagagiColors.sageDeep,
+          Row(
+            children: [
+              Icon(
+                placeCategoryIcon(place.category),
+                size: 14,
+                color: AlagagiColors.sageDeep,
+              ),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  place.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: sans(size: 12, weight: FontWeight.w700),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 5),
-          Flexible(
-            child: Text(
-              place.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: sans(size: 12, weight: FontWeight.w700),
-            ),
-          ),
-          if (place.address.isNotEmpty) ...[
-            const SizedBox(width: 6),
-            Flexible(
+          // 이름과 주소가 한 줄에서 폭을 나눠 가지면 둘 다 잘린다.
+          if (place.address.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 2, left: 19),
               child: Text(
                 place.address,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: sans(size: 11.5, color: AlagagiColors.muted),
+                style: sans(size: 11.5, height: 1.4, color: AlagagiColors.muted),
               ),
             ),
-          ],
         ],
       ),
     );
@@ -729,6 +1038,8 @@ class _TripDayPhotoStrip extends StatelessWidget {
                 child: Image.network(
                   photo.imageDataUrl,
                   fit: BoxFit.cover,
+                  // 72dp 띠에 원본 해상도를 디코딩할 이유가 없다.
+                  cacheWidth: 200,
                   errorBuilder: (context, error, stackTrace) => Container(
                     color: AlagagiColors.skyPanel,
                     alignment: Alignment.center,

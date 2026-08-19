@@ -5,6 +5,7 @@ import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
 import '../../shared/readable_detail_sheet.dart';
 import '../../shared/text_editing_sync.dart';
+import '../../shared/confirm_sheet.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
@@ -724,7 +725,12 @@ class _StockStoryCardState extends State<_StockStoryCard> {
                 alignment: Alignment.centerRight,
                 child: OutlinedButton.icon(
                   key: stockStoryDeleteButtonKey(story.id),
-                  onPressed: () => controller.deleteStockStory(story.id),
+                  onPressed: () => confirmThenDelete(
+                    context,
+                    title: '이 이야기를 지울까요?',
+                    confirmKey: stockStoryDeleteConfirmButtonKey(story.id),
+                    onConfirmed: () => controller.deleteStockStory(story.id),
+                  ),
                   icon: const Icon(Icons.delete_outline_rounded, size: 15),
                   label: const Text('삭제'),
                   style: OutlinedButton.styleFrom(
@@ -1596,7 +1602,15 @@ class _StockHoldingCardState extends State<_StockHoldingCard> {
                   ),
                   OutlinedButton.icon(
                     key: stockHoldingDeleteButtonKey(holding.id),
-                    onPressed: () => controller.deleteStockHolding(holding.id),
+                    onPressed: () => confirmThenDelete(
+                      context,
+                      title: '이 보유 기록을 지울까요?',
+                      confirmKey: stockHoldingDeleteConfirmButtonKey(
+                        holding.id,
+                      ),
+                      onConfirmed: () =>
+                          controller.deleteStockHolding(holding.id),
+                    ),
                     icon: const Icon(Icons.delete_outline_rounded, size: 15),
                     label: const Text('삭제'),
                     style: OutlinedButton.styleFrom(

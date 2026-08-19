@@ -3467,6 +3467,13 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   }
 
   @override
+  Future<void> saveTripItemOrder(
+    String spaceId,
+    String itemId,
+    int sortOrder,
+  ) async {}
+
+  @override
   Future<void> deleteTripItem(String spaceId, String itemId) async {
     deletedTripItems.add((spaceId: spaceId, itemId: itemId));
   }

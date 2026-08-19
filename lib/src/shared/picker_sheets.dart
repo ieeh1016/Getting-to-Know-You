@@ -134,8 +134,24 @@ class _MonthCalendarState extends State<_MonthCalendar> {
   @override
   void initState() {
     super.initState();
-    final anchor = widget.initialDate ?? widget.firstDate ?? DateTime.now();
+    final anchor = widget.initialDate ?? _todayWithinBounds();
     _visibleMonth = DateTime(anchor.year, anchor.month);
+  }
+
+  /// 고른 날이 없으면 오늘이 있는 달에서 연다. `firstDate`로 떨어지면
+  /// 새 여행의 `떠나는 날`이 지난 해 1월에서 열려 화살표를 열아홉 번
+  /// 눌러야 이번 달에 닿는다.
+  DateTime _todayWithinBounds() {
+    final today = DateTime.now();
+    final first = widget.firstDate;
+    final last = widget.lastDate;
+    if (first != null && today.isBefore(first)) {
+      return first;
+    }
+    if (last != null && today.isAfter(last)) {
+      return last;
+    }
+    return today;
   }
 
   bool _isSelectable(DateTime date) {

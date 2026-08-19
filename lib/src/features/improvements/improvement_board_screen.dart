@@ -5,6 +5,7 @@ import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
 import '../../shared/readable_detail_sheet.dart';
 import '../../shared/text_editing_sync.dart';
+import '../../shared/confirm_sheet.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
@@ -523,7 +524,13 @@ class _ImprovementPostCard extends StatelessWidget {
                   ),
                   OutlinedButton.icon(
                     key: improvementDeleteButtonKey(post.id),
-                    onPressed: () => controller.deleteImprovementPost(post.id),
+                    onPressed: () => confirmThenDelete(
+                      context,
+                      title: '이 건의를 지울까요?',
+                      confirmKey: improvementDeleteConfirmButtonKey(post.id),
+                      onConfirmed: () =>
+                          controller.deleteImprovementPost(post.id),
+                    ),
                     icon: const Icon(Icons.delete_outline_rounded, size: 15),
                     label: const Text('삭제'),
                     style: OutlinedButton.styleFrom(

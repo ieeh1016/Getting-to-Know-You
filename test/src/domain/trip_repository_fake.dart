@@ -28,6 +28,13 @@ class FakeTripRepository implements AlagagiDataRepository {
   Future<void> saveTripItem(String spaceId, TripItem item) async {}
 
   @override
+  Future<void> saveTripItemOrder(
+    String spaceId,
+    String itemId,
+    int sortOrder,
+  ) async {}
+
+  @override
   Future<void> saveTripPhoto(String spaceId, TripPhoto photo) async {}
 
   @override

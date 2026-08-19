@@ -4,6 +4,7 @@ import '../../app/app_shell.dart';
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
 import '../../shared/text_editing_sync.dart';
+import '../../shared/confirm_sheet.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 import '../../ui/kakao_map_panel.dart';
@@ -1772,7 +1773,12 @@ class _PlaceCard extends StatelessWidget {
                     key: placeDeleteButtonKey(place.id),
                     onPressed: placeBusy
                         ? null
-                        : () => controller.deletePlace(place.id),
+                        : () => confirmThenDelete(
+                            context,
+                            title: '${place.name}을 지울까요?',
+                            confirmKey: placeDeleteConfirmButtonKey(place.id),
+                            onConfirmed: () => controller.deletePlace(place.id),
+                          ),
                     icon: const Icon(Icons.delete_outline_rounded, size: 14),
                     label: const Text('삭제'),
                     style: OutlinedButton.styleFrom(

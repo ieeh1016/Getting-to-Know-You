@@ -1312,6 +1312,130 @@ void main() {
       expect(controller.tripCoveringDate('2026-09-13'), isNull);
     });
 
+    test('reordering a day does not stamp the items as updated', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-14',
+      );
+      final tripId = controller.lastSavedTripId!;
+      for (final title in ['아침', '점심', '저녁']) {
+        controller.saveTripItem(
+          tripId: tripId,
+          kind: TripItemKind.plan,
+          title: title,
+          dateKey: '2026-09-12',
+        );
+      }
+      final before = {
+        for (final item in controller.tripItemsFor(tripId))
+          item.id: item.updatedAt,
+      };
+
+      controller.reorderTripDayItems(tripId, '2026-09-12', 2, 0);
+
+      // 순서만 바꾼 것은 상대 홈에 '새로 도착한 것'을 만들지 않는다.
+      for (final item in controller.tripItemsFor(tripId)) {
+        expect(item.updatedAt, before[item.id]);
+      }
+      expect(
+        controller.tripItemsFor(tripId).map((item) => item.title).first,
+        '저녁',
+      );
+    });
+
+    test('a wish carried into a plan can be closed after the trip', () {
+      final controller = buildController();
+      controller.startWishDraft();
+      controller.setWishDraftKind(WishKind.place);
+      controller.updateWishDraftTitle('노천탕에서 하루');
+      controller.submitWishDraft();
+      final wishId = controller.visibleWishes.single.id;
+
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-14',
+      );
+      final tripId = controller.lastSavedTripId!;
+      controller.saveTripItem(
+        tripId: tripId,
+        kind: TripItemKind.plan,
+        title: '노천탕에서 하루',
+        wishId: wishId,
+      );
+      final planId = controller.tripItemsFor(tripId).single.id;
+
+      // 아직 했다고 표시하지 않았으면 닫을 것이 없다.
+      expect(controller.closableWishesForTrip(tripId), isEmpty);
+
+      controller.toggleTripItemCheck(planId);
+
+      expect(
+        controller.closableWishesForTrip(tripId).single.id,
+        wishId,
+      );
+      expect(controller.closeTripLinkedWishes(tripId), 1);
+      expect(controller.visibleWishes.single.done, isTrue);
+      // 이미 닫힌 것은 다시 세지 않는다.
+      expect(controller.closableWishesForTrip(tripId), isEmpty);
+    });
+
+    test('the next item today follows the clock, not the first row', () {
+      final controller = AlagagiController.forSession(
+        const AlagagiSession(
+          spaceId: 'main',
+          me: AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: true,
+          ),
+          partner: AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(),
+        ),
+        todayDateKey: '2026-09-13',
+      );
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-14',
+      );
+      final tripId = controller.lastSavedTripId!;
+      for (final entry in [('09:20', '공항 도착'), ('15:40', '성산일출봉')]) {
+        controller.saveTripItem(
+          tripId: tripId,
+          kind: TripItemKind.plan,
+          title: entry.$2,
+          dateKey: '2026-09-13',
+          timeLabel: entry.$1,
+        );
+      }
+
+      expect(
+        controller.nextTripItemToday(tripId, nowTimeLabel: '08:00')?.title,
+        '공항 도착',
+      );
+      expect(
+        controller.nextTripItemToday(tripId, nowTimeLabel: '12:00')?.title,
+        '성산일출봉',
+      );
+      // 오늘 시각이 전부 지났으면 마지막 것을 짚어준다.
+      expect(
+        controller.nextTripItemToday(tripId, nowTimeLabel: '23:00')?.title,
+        '성산일출봉',
+      );
+    });
+
     test('trip updates show up as unread activity for the partner', () {
       final controller = buildController();
       controller.saveTrip(

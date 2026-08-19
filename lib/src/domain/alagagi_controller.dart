@@ -34,6 +34,46 @@ enum UnreadActivityFeature {
   trips,
 }
 
+/// 닫힌 폼에 적던 내용. 기기 memory에만 잠깐 남고 Firestore에는 쓰지 않는다.
+class TripItemDraft {
+  const TripItemDraft({
+    required this.kind,
+    required this.title,
+    required this.note,
+    required this.link,
+    required this.cost,
+    required this.fromLabel,
+    required this.toLabel,
+    required this.dateKey,
+    required this.timeLabel,
+    required this.endDateKey,
+    required this.endTimeLabel,
+    required this.placeId,
+    required this.assigneeProfileId,
+    required this.paidByProfileId,
+    required this.transportMode,
+  });
+
+  final TripItemKind kind;
+  final String title;
+  final String note;
+  final String link;
+  final String cost;
+  final String fromLabel;
+  final String toLabel;
+  final String? dateKey;
+  final String? timeLabel;
+  final String? endDateKey;
+  final String? endTimeLabel;
+  final String? placeId;
+  final String? assigneeProfileId;
+  final String? paidByProfileId;
+  final TripTransportMode transportMode;
+
+  /// 되살릴 값이 있는가. 제목이나 메모가 없으면 되살릴 이유가 없다.
+  bool get hasContent => title.trim().isNotEmpty || note.trim().isNotEmpty;
+}
+
 /// 여행에서 누가 얼마 더 냈는지. 나누자는 말이 아니라 보이기만 한다.
 class TripSettlement {
   const TripSettlement({required this.payerProfileId, required this.amount});
@@ -392,6 +432,9 @@ abstract class AlagagiDataRepository {
   Future<void> deleteTrip(String spaceId, String tripId);
 
   Future<void> saveTripItem(String spaceId, TripItem item);
+
+  /// 순서만 쓴다. `updatedAt`을 건드리지 않아 상대 홈 알림을 만들지 않는다.
+  Future<void> saveTripItemOrder(String spaceId, String itemId, int sortOrder);
 
   Future<void> deleteTripItem(String spaceId, String itemId);
 
@@ -1318,6 +1361,7 @@ class TripItem {
     this.cost = 0,
     this.paidByProfileId,
     this.checked = false,
+    this.wishId,
     this.updatedAt,
     this.updatedByProfileId,
   });
@@ -1363,6 +1407,10 @@ class TripItem {
   /// 돈을 낸 사람. 정하지 않으면 누가 냈는지 적지 않은 것이다.
   final String? paidByProfileId;
   final bool checked;
+
+  /// `언젠가, 같이`에서 가져온 계획이면 그 위시의 id. 다녀온 뒤 그 위시를
+  /// 닫을지 물어볼 수 있게 남긴다.
+  final String? wishId;
   final DateTime? updatedAt;
   final String? updatedByProfileId;
 
@@ -1424,6 +1472,8 @@ class TripItem {
     String? paidByProfileId,
     bool clearPaidBy = false,
     bool? checked,
+    String? wishId,
+    bool clearWishId = false,
     DateTime? updatedAt,
     String? updatedByProfileId,
   }) {
@@ -1456,6 +1506,7 @@ class TripItem {
           ? null
           : paidByProfileId ?? this.paidByProfileId,
       checked: checked ?? this.checked,
+      wishId: clearWishId ? null : wishId ?? this.wishId,
       updatedAt: updatedAt ?? this.updatedAt,
       updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
     );
@@ -3359,31 +3410,92 @@ enum _FailedPersistenceAction { save, delete }
 enum _TripWriteKind { trip, item, photo }
 
 /// 다시 보낼 수 있게 보관하는 여행 write 한 건.
+enum _TripWriteOp { save, delete }
+
 class _PendingTripWrite {
-  const _PendingTripWrite._(this.kind, this.key, this._send);
+  const _PendingTripWrite._(
+    this.kind,
+    this.key,
+    this._send, {
+    this.op = _TripWriteOp.save,
+    this.feedback = '여행 내용을 저장했어요.',
+    this.restore,
+  });
 
   factory _PendingTripWrite.trip(Trip trip) => _PendingTripWrite._(
     _TripWriteKind.trip,
     'trip:${trip.id}',
     (repository, spaceId) => repository.saveTrip(spaceId, trip),
+    feedback: '여행을 저장했어요.',
   );
 
   factory _PendingTripWrite.item(TripItem item) => _PendingTripWrite._(
     _TripWriteKind.item,
     'item:${item.id}',
     (repository, spaceId) => repository.saveTripItem(spaceId, item),
+    feedback: '${item.kind.label}을 저장했어요.',
   );
 
-  factory _PendingTripWrite.photo(TripPhoto photo) => _PendingTripWrite._(
+  factory _PendingTripWrite.photo(TripPhoto photo, {required String feedback}) =>
+      _PendingTripWrite._(
+        _TripWriteKind.photo,
+        'photo:${photo.id}',
+        (repository, spaceId) => repository.saveTripPhoto(spaceId, photo),
+        feedback: feedback,
+      );
+
+  /// 순서는 알릴 내용이 아니다. `sortOrder`만 쓰고 `updatedAt`을 건드리지
+  /// 않아 상대 홈에 '새로 도착한 것'을 만들지 않는다.
+  factory _PendingTripWrite.itemOrder(String itemId, int sortOrder) =>
+      _PendingTripWrite._(
+        _TripWriteKind.item,
+        'item-order:$itemId',
+        (repository, spaceId) =>
+            repository.saveTripItemOrder(spaceId, itemId, sortOrder),
+        feedback: '순서를 저장했어요.',
+      );
+
+  factory _PendingTripWrite.deleteTrip(String tripId) => _PendingTripWrite._(
+    _TripWriteKind.trip,
+    'trip:$tripId',
+    (repository, spaceId) => repository.deleteTrip(spaceId, tripId),
+    op: _TripWriteOp.delete,
+    feedback: '여행을 지웠어요.',
+  );
+
+  factory _PendingTripWrite.deleteItem(
+    TripItem item, {
+    void Function()? restore,
+  }) => _PendingTripWrite._(
+    _TripWriteKind.item,
+    'item:${item.id}',
+    (repository, spaceId) => repository.deleteTripItem(spaceId, item.id),
+    op: _TripWriteOp.delete,
+    feedback: '${item.kind.label}을 지웠어요.',
+    restore: restore,
+  );
+
+  factory _PendingTripWrite.deletePhoto(
+    TripPhoto photo, {
+    void Function()? restore,
+  }) => _PendingTripWrite._(
     _TripWriteKind.photo,
     'photo:${photo.id}',
-    (repository, spaceId) => repository.saveTripPhoto(spaceId, photo),
+    (repository, spaceId) => repository.deleteTripPhoto(spaceId, photo.id),
+    op: _TripWriteOp.delete,
+    feedback: '사진을 지웠어요.',
+    restore: restore,
   );
 
   final _TripWriteKind kind;
 
   /// 같은 대상의 재시도가 쌓이지 않도록 구분하는 값.
   final String key;
+  final _TripWriteOp op;
+  final String feedback;
+
+  /// 실패했을 때 화면을 되돌리는 일. 여러 번 불려도 안전해야 한다.
+  final void Function()? restore;
   final Future<void> Function(AlagagiDataRepository, String) _send;
 
   Future<void> send(AlagagiDataRepository repository, String spaceId) =>
@@ -3495,7 +3607,9 @@ class AlagagiController extends ChangeNotifier {
 
   /// 사진을 읽어둔 여행. 여행 하나를 열 때 그 여행 것만 읽는다.
   final Set<String> _loadedPhotoTripIds = {};
-  bool _tripPhotosLoading = false;
+
+  /// 여행별로 진행 중인 사진 읽기.
+  final Map<String, Future<void>> _tripPhotoLoads = {};
   bool _tripPhotosFailed = false;
 
   /// 저장에 실패한 여행 write. `다시 시도`가 이 목록을 다시 흘려보낸다.
@@ -3943,13 +4057,25 @@ class AlagagiController extends ChangeNotifier {
       if (trip == null) {
         continue;
       }
+      // 체크된 항목을 '남겼어요'라고 부르면 무슨 일이 있었는지 어긋난다.
+      // 지금 상태에서 읽을 수 있는 만큼만 정확히 적는다.
+      final String description;
+      if (item.checked && item.kind.usesCheck) {
+        description =
+            '$partnerName님이 "${trip.title}"에서 "${item.title}"을 챙겼다고 표시했어요.';
+      } else if (item.checked && item.kind.usesDoneToggle) {
+        description =
+            '$partnerName님이 "${trip.title}"에서 "${item.title}"을 했다고 표시했어요.';
+      } else {
+        description =
+            '$partnerName님이 "${trip.title}"에 ${item.kind.label} "${item.title}"을 남겼어요.';
+      }
       _addUnreadActivity(
         activities,
         feature: UnreadActivityFeature.trips,
         id: 'trip-item-${item.id}',
         title: '여행 준비가 업데이트됐어요',
-        description:
-            '$partnerName님이 "${trip.title}"에 ${item.kind.label} "${item.title}"을 남겼어요.',
+        description: description,
         updatedAt: item.updatedAt,
         actorProfileId: item.updatedByProfileId ?? item.createdByProfileId,
       );
@@ -4448,6 +4574,21 @@ class AlagagiController extends ChangeNotifier {
 
   /// 화면이 D-day나 오늘 표시를 계산할 때 쓰는 오늘. test에서는 고정할 수 있다.
   String get todayDateKey => _currentDateKey();
+
+  /// 여행에서 쓰는 오늘. 기기의 로컬 날짜를 따른다.
+  ///
+  /// 오늘의 질문과 만남 달력은 둘이 한국에서 맞추는 것이라 KST를 지킨다.
+  /// 여행은 다르다. 파리 저녁 6시에 이미 내일이 되어 `다가오는 여행` 카드가
+  /// 사라지고 `다녀온 여행으로 옮길까요`가 뜨면 안 된다.
+  String get tripTodayDateKey =>
+      _todayDateKeyOverride ?? _dateKey(DateTime.now());
+
+  /// 지금 몇 시인지. 여행 안에서 쓰므로 이것도 기기 시각을 따른다.
+  String _currentTimeLabel() {
+    final now = DateTime.now();
+    String twoDigits(int value) => value.toString().padLeft(2, '0');
+    return '${twoDigits(now.hour)}:${twoDigits(now.minute)}';
+  }
 
   static String _todayDateKey() {
     final koreaNow = DateTime.now().toUtc().add(const Duration(hours: 9));
@@ -7773,9 +7914,21 @@ class AlagagiController extends ChangeNotifier {
       );
       _sharedPlaces.insert(0, place);
     }
+    // 방금 담은 곳을 부른 쪽이 바로 고를 수 있게 남긴다. 이름·주소가 겹쳐
+    // 기존 항목에 합쳐진 경우에도 그 id여야 한다.
+    _lastSavedPlaceId = place.id;
     _persistSharedPlace(place);
     notifyListeners();
     return null;
+  }
+
+  /// 마지막으로 담은 장소의 id.
+  String? _lastSavedPlaceId;
+
+  String? get lastSavedPlaceId => _lastSavedPlaceId;
+
+  void clearLastSavedPlaceId() {
+    _lastSavedPlaceId = null;
   }
 
   static bool _isSupportedPlaceLink(String value) {
@@ -7903,6 +8056,28 @@ class AlagagiController extends ChangeNotifier {
     return null;
   }
 
+  /// 닫힌 항목 폼의 draft. `tripId:kind` 하나씩만 들고 있고, 저장하면 지운다.
+  /// 화면을 다시 그릴 이유가 없으므로 state에 넣지 않는다.
+  final Map<String, TripItemDraft> _tripItemDrafts = {};
+
+  String _tripItemDraftKey(String tripId, TripItemKind kind) =>
+      '$tripId:${kind.storageKey}';
+
+  void rememberTripItemDraft(String tripId, TripItemDraft draft) {
+    if (!draft.hasContent) {
+      _tripItemDrafts.remove(_tripItemDraftKey(tripId, draft.kind));
+      return;
+    }
+    _tripItemDrafts[_tripItemDraftKey(tripId, draft.kind)] = draft;
+  }
+
+  TripItemDraft? tripItemDraftFor(String tripId, TripItemKind kind) =>
+      _tripItemDrafts[_tripItemDraftKey(tripId, kind)];
+
+  void clearTripItemDraft(String tripId, TripItemKind kind) {
+    _tripItemDrafts.remove(_tripItemDraftKey(tripId, kind));
+  }
+
   /// 준비물을 담아둔 다른 여행들. 가까운 여행부터 보여준다.
   List<Trip> tripsWithPackingExcept(String tripId) {
     final withPacking = _trips.where((trip) {
@@ -7963,7 +8138,7 @@ class AlagagiController extends ChangeNotifier {
 
   /// 여행 중일 때 오늘 잡혀 있는 일정. 홈에서 오늘 무엇이 있는지 바로 본다.
   List<TripItem> tripItemsForToday(String tripId) {
-    final today = todayDateKey;
+    final today = tripTodayDateKey;
     final scheduled = _tripItems
         .where(
           (item) =>
@@ -7974,6 +8149,63 @@ class AlagagiController extends ChangeNotifier {
         .toList();
     scheduled.sort(_compareTripItems);
     return List<TripItem>.unmodifiable(scheduled);
+  }
+
+  /// 다녀온 여행에서 `했다`로 표시된 계획에 걸린 위시들 중, 내가 닫을 수
+  /// 있고 아직 안 닫힌 것. 권한이 없는 위시를 목록에 넣으면 눌러도
+  /// 아무 일이 없는 것처럼 보인다.
+  List<WishItem> closableWishesForTrip(String tripId) {
+    final linkedIds = _tripItems
+        .where(
+          (item) =>
+              item.tripId == tripId &&
+              item.kind.usesDoneToggle &&
+              item.checked &&
+              item.wishId != null,
+        )
+        .map((item) => item.wishId!)
+        .toSet();
+    if (linkedIds.isEmpty) {
+      return const [];
+    }
+    return List<WishItem>.unmodifiable(
+      _wishes.where(
+        (wish) =>
+            linkedIds.contains(wish.id) &&
+            !wish.done &&
+            (wish.createdByProfileId == _state.me.id ||
+                wish.likedByProfileIds.contains(_state.me.id)),
+      ),
+    );
+  }
+
+  /// 위 목록을 한 번에 닫는다. 닫은 개수를 돌려준다.
+  int closeTripLinkedWishes(String tripId) {
+    final closable = closableWishesForTrip(tripId);
+    for (final wish in closable) {
+      toggleWishDone(wish.id);
+    }
+    return closable.length;
+  }
+
+  /// 여행 중 지금 시각 다음에 오는 항목. 화면을 그릴 때만 계산한다.
+  ///
+  /// 시각을 안 적은 항목은 `지금`과 견줄 수 없어 후보에서 뺀다.
+  /// 오늘 시각이 전부 지났으면 마지막 항목을 돌려준다.
+  TripItem? nextTripItemToday(String tripId, {String? nowTimeLabel}) {
+    final timed = tripItemsForToday(
+      tripId,
+    ).where((item) => item.timeLabel != null).toList();
+    if (timed.isEmpty) {
+      return null;
+    }
+    final now = nowTimeLabel ?? _currentTimeLabel();
+    for (final item in timed) {
+      if (item.timeLabel!.compareTo(now) >= 0) {
+        return item;
+      }
+    }
+    return timed.last;
   }
 
   /// 한 종류 안에서도 날짜별로 묶어 보여준다.
@@ -8111,52 +8343,67 @@ class AlagagiController extends ChangeNotifier {
 
   /// 여행은 만든 사람만 지울 수 있다.
   Future<bool> deleteTrip(String tripId) async {
-    // 사진을 읽지 않은 채 지우면 삭제할 목록이 비어 문서가 남는다.
-    if (!tripPhotosLoadedFor(tripId)) {
-      await ensureTripPhotosLoaded(tripId);
-    }
-    return _deleteTripNow(tripId);
-  }
-
-  bool _deleteTripNow(String tripId) {
     final index = _trips.indexWhere((trip) => trip.id == tripId);
     if (index < 0 || _trips[index].createdByProfileId != _state.me.id) {
       return false;
     }
-    final itemIds = _tripItems
-        .where((item) => item.tripId == tripId)
-        .map((item) => item.id)
-        .toList();
-    final photoIds = _tripPhotos
-        .where((photo) => photo.tripId == tripId)
-        .map((photo) => photo.id)
-        .toList();
-
+    // 목록에서 빼는 일이 먼저다. 사진을 읽고 나서 지우면 그동안 지운
+    // 여행이 목록에 그대로 남아 눌리지 않는 것처럼 보인다.
     _trips.removeAt(index);
-    _tripItems.removeWhere((item) => item.tripId == tripId);
-    _tripPhotos.removeWhere((photo) => photo.tripId == tripId);
     if (_pendingTripId == tripId) {
       _pendingTripId = null;
     }
     if (_lastSavedTripId == tripId) {
       _lastSavedTripId = null;
     }
+    notifyListeners();
 
+    // 진행 중인 읽기가 있으면 끝날 때까지 기다린다. 그래야 지울 목록이
+    // 완전해지고, 읽기가 나중에 끝나 지운 사진이 되살아나지 않는다.
+    final inFlight = _tripPhotoLoads[tripId];
+    if (inFlight != null) {
+      await inFlight;
+    }
+
+    // 지울 사진 목록을 확보한다. 읽지 않은 채 지우면 문서가 남는다.
     final repository = _repository;
     final spaceId = _spaceId;
-    if (repository != null && spaceId != null) {
-      // 항목과 사진을 남겨두면 화면에서만 사라지고 문서는 영원히 남는다.
-      // 사진은 문서 하나가 수백 KB라 지운 여행의 짐이 계속 쌓인다.
-      for (final itemId in itemIds) {
-        unawaited(repository.deleteTripItem(spaceId, itemId).catchError((_) {}));
-      }
-      for (final photoId in photoIds) {
-        unawaited(
-          repository.deleteTripPhoto(spaceId, photoId).catchError((_) {}),
+    if (repository != null &&
+        spaceId != null &&
+        !_loadedPhotoTripIds.contains(tripId)) {
+      try {
+        final photos = await repository.loadTripPhotos(spaceId, tripId);
+        final known = _tripPhotos.map((photo) => photo.id).toSet();
+        _tripPhotos.addAll(
+          photos.where((photo) => !known.contains(photo.id)),
         );
+      } catch (_) {
+        // 못 읽었으면 아는 것만 지운다. 실패는 재시도 큐에 남는다.
       }
-      unawaited(repository.deleteTrip(spaceId, tripId).catchError((_) {}));
     }
+
+    final removedItems = _tripItems
+        .where((item) => item.tripId == tripId)
+        .toList();
+    final removedPhotos = _tripPhotos
+        .where((photo) => photo.tripId == tripId)
+        .toList();
+
+    _tripItems.removeWhere((item) => item.tripId == tripId);
+    _tripPhotos.removeWhere((photo) => photo.tripId == tripId);
+    _loadedPhotoTripIds.remove(tripId);
+
+    // 항목과 사진을 남겨두면 화면에서만 사라지고 문서는 영원히 남는다.
+    // 사진은 문서 하나가 수백 KB라 지운 여행의 짐이 계속 쌓인다.
+    // 자식 하나가 실패했다고 여행을 되살리지는 않는다. 사라진 여행에
+    // 상대 항목만 붙어 되돌아오는 쪽이 더 나쁘다. 실패는 재시도 큐에 남는다.
+    for (final item in removedItems) {
+      _runTripWrite(_PendingTripWrite.deleteItem(item));
+    }
+    for (final photo in removedPhotos) {
+      _runTripWrite(_PendingTripWrite.deletePhoto(photo));
+    }
+    _runTripWrite(_PendingTripWrite.deleteTrip(tripId));
     notifyListeners();
     return true;
   }
@@ -8180,6 +8427,7 @@ class AlagagiController extends ChangeNotifier {
     String? assigneeProfileId,
     int cost = 0,
     String? paidByProfileId,
+    String? wishId,
   }) {
     final trip = tripById(tripId);
     if (trip == null) {
@@ -8275,6 +8523,15 @@ class AlagagiController extends ChangeNotifier {
       return '돈을 낸 사람은 둘 중 한 명이어야 해요.';
     }
 
+    // 위시 연결은 계획에만 둔다. 다른 종류로 바뀌면 끊는다.
+    final trimmedWishId = trimmedOrNull(wishId);
+    final resolvedWishId =
+        kind.usesDoneToggle &&
+            trimmedWishId != null &&
+            _wishes.any((wish) => wish.id == trimmedWishId)
+        ? trimmedWishId
+        : null;
+
     final now = DateTime.now();
     final existingIndex = itemId == null
         ? -1
@@ -8309,6 +8566,8 @@ class AlagagiController extends ChangeNotifier {
         paidByProfileId: trimmedPayer,
         clearPaidBy: trimmedPayer == null,
         checked: (kind.usesCheck || kind.usesDoneToggle) ? null : false,
+        wishId: resolvedWishId,
+        clearWishId: resolvedWishId == null,
         updatedAt: now,
         updatedByProfileId: _state.me.id,
       );
@@ -8334,6 +8593,7 @@ class AlagagiController extends ChangeNotifier {
         sortOrder: _nextTripItemOrder(tripId, resolvedDateKey),
         cost: cost,
         paidByProfileId: trimmedPayer,
+        wishId: resolvedWishId,
         updatedAt: now,
         updatedByProfileId: _state.me.id,
       );
@@ -8370,12 +8630,20 @@ class AlagagiController extends ChangeNotifier {
     if (index < 0 || _tripItems[index].createdByProfileId != _state.me.id) {
       return false;
     }
-    _tripItems.removeAt(index);
-    final repository = _repository;
-    final spaceId = _spaceId;
-    if (repository != null && spaceId != null) {
-      unawaited(repository.deleteTripItem(spaceId, itemId).catchError((_) {}));
-    }
+    final removed = _tripItems.removeAt(index);
+    _runTripWrite(
+      _PendingTripWrite.deleteItem(
+        removed,
+        // 여러 번 불려도 안전해야 한다. 재시도가 또 실패할 수 있다.
+        restore: () {
+          if (_tripItems.any((candidate) => candidate.id == removed.id)) {
+            return;
+          }
+          _tripItems.insert(index.clamp(0, _tripItems.length), removed);
+          notifyListeners();
+        },
+      ),
+    );
     notifyListeners();
     return true;
   }
@@ -8439,7 +8707,7 @@ class AlagagiController extends ChangeNotifier {
     );
   }
 
-  bool get tripPhotosLoading => _tripPhotosLoading;
+  bool get tripPhotosLoading => _tripPhotoLoads.isNotEmpty;
 
   /// 사진을 읽지 못했는지. 빈 여행과 실패를 같은 화면으로 보여주면 안 된다.
   bool get tripPhotosFailed => _tripPhotosFailed;
@@ -8451,8 +8719,15 @@ class AlagagiController extends ChangeNotifier {
   ///
   /// 예전에는 space의 사진을 통째로 받아, 여행이 쌓일수록 준비물 하나 보려고
   /// 들어가도 지난 여행 사진을 전부 내려받았다.
-  Future<void> ensureTripPhotosLoaded(String tripId, {bool force = false}) async {
-    if (_tripPhotosLoading) {
+  Future<void> ensureTripPhotosLoaded(
+    String tripId, {
+    bool force = false,
+  }) async {
+    // 전역 '로딩 중' 하나로 막으면 다른 여행을 열었을 때 조용히 건너뛰어
+    // 빈 여행처럼 보인다. 여행별로 진행 중인 읽기를 따로 들고 있는다.
+    final inFlight = _tripPhotoLoads[tripId];
+    if (inFlight != null) {
+      await inFlight;
       return;
     }
     if (!force && tripPhotosLoadedFor(tripId)) {
@@ -8463,9 +8738,23 @@ class AlagagiController extends ChangeNotifier {
     if (repository == null || spaceId == null) {
       return;
     }
-    _tripPhotosLoading = true;
+    final load = _loadTripPhotos(repository, spaceId, tripId);
+    _tripPhotoLoads[tripId] = load;
     _tripPhotosFailed = false;
     notifyListeners();
+    try {
+      await load;
+    } finally {
+      _tripPhotoLoads.remove(tripId);
+      notifyListeners();
+    }
+  }
+
+  Future<void> _loadTripPhotos(
+    AlagagiDataRepository repository,
+    String spaceId,
+    String tripId,
+  ) async {
     try {
       final photos = await repository.loadTripPhotos(spaceId, tripId);
       // 통째로 갈아끼우면, 방금 올려 아직 서버에 닿지 않은 사진이 사라진다.
@@ -8480,9 +8769,6 @@ class AlagagiController extends ChangeNotifier {
     } catch (_) {
       // 실패를 삼키면 빈 여행처럼 보인다. 화면이 구분할 수 있게 남긴다.
       _tripPhotosFailed = true;
-    } finally {
-      _tripPhotosLoading = false;
-      notifyListeners();
     }
   }
 
@@ -8503,7 +8789,7 @@ class AlagagiController extends ChangeNotifier {
 
   /// 여행이 오늘 기준으로 어디쯤인지. 카드에 D-day를 보여주는 데 쓴다.
   TripTiming tripTimingFor(Trip trip) {
-    final today = DateTime.tryParse(todayDateKey);
+    final today = DateTime.tryParse(tripTodayDateKey);
     final start = trip.startDate;
     final end = trip.endDate;
     if (today == null || start == null || end == null) {
@@ -8611,12 +8897,19 @@ class AlagagiController extends ChangeNotifier {
         _tripPhotos[index].createdByProfileId != _state.me.id) {
       return false;
     }
-    _tripPhotos.removeAt(index);
-    final repository = _repository;
-    final spaceId = _spaceId;
-    if (repository != null && spaceId != null) {
-      unawaited(repository.deleteTripPhoto(spaceId, photoId).catchError((_) {}));
-    }
+    final removed = _tripPhotos.removeAt(index);
+    _runTripWrite(
+      _PendingTripWrite.deletePhoto(
+        removed,
+        restore: () {
+          if (_tripPhotos.any((candidate) => candidate.id == removed.id)) {
+            return;
+          }
+          _tripPhotos.insert(index.clamp(0, _tripPhotos.length), removed);
+          notifyListeners();
+        },
+      ),
+    );
     notifyListeners();
     return true;
   }
@@ -8665,23 +8958,20 @@ class AlagagiController extends ChangeNotifier {
     final moved = items.removeAt(oldIndex);
     items.insert(newIndex, moved);
 
-    final now = DateTime.now();
+    // 순서만 바꾼 것은 상대에게 알릴 내용이 아니다. `updatedAt`을 찍으면
+    // 여섯 개를 정리한 것만으로 상대 홈 '새로 도착한 것'이 도배된다.
     for (var index = 0; index < items.length; index += 1) {
       final current = items[index];
       if (current.sortOrder == index) {
         continue;
       }
-      final updated = current.copyWith(
-        sortOrder: index,
-        updatedAt: now,
-        updatedByProfileId: _state.me.id,
-      );
+      final updated = current.copyWith(sortOrder: index);
       final position = _tripItems.indexWhere(
         (candidate) => candidate.id == current.id,
       );
       if (position >= 0) {
         _tripItems[position] = updated;
-        _persistTripItem(updated);
+        _runTripWrite(_PendingTripWrite.itemOrder(current.id, index));
       }
     }
     notifyListeners();
@@ -8817,28 +9107,23 @@ class AlagagiController extends ChangeNotifier {
   }
 
   void _persistTrip(Trip trip) {
-    _runTripWrite(
-      _PendingTripWrite.trip(trip),
-      feedback: '여행을 저장했어요.',
-    );
+    _runTripWrite(_PendingTripWrite.trip(trip));
   }
 
   void _persistTripItem(TripItem item) {
-    _runTripWrite(
-      _PendingTripWrite.item(item),
-      feedback: '${item.kind.label}을 저장했어요.',
-    );
+    _runTripWrite(_PendingTripWrite.item(item));
   }
 
   void _persistTripPhoto(TripPhoto photo, {required String feedback}) {
-    _runTripWrite(_PendingTripWrite.photo(photo), feedback: feedback);
+    _runTripWrite(_PendingTripWrite.photo(photo, feedback: feedback));
   }
 
   /// 여행 write 하나를 흘려보내고 결과를 상태로 남긴다.
   ///
   /// 실패를 조용히 삼키면 화면은 저장된 것처럼 보이고 다음 진입에 되돌아간다.
   /// 실패한 write는 모아두고 사용자가 다시 시도할 수 있게 한다.
-  void _runTripWrite(_PendingTripWrite write, {required String feedback}) {
+  void _runTripWrite(_PendingTripWrite write, {String? feedback}) {
+    final resolvedFeedback = feedback ?? write.feedback;
     final repository = _repository;
     final spaceId = _spaceId;
     if (repository == null || spaceId == null) {
@@ -8859,19 +9144,24 @@ class AlagagiController extends ChangeNotifier {
             if (_failedTripWrites.isEmpty) {
               _state = _state.copyWith(
                 tripSaveStatus: SaveStatus.saved,
-                tripSaveFeedback: feedback,
+                tripSaveFeedback: resolvedFeedback,
                 clearTripSaveError: true,
               );
               notifyListeners();
             }
           })
           .catchError((Object _) {
+            // 지운 것이 서버에 닿지 않았으면 화면에서도 되살려야 한다.
+            // 지운 줄 알고 나갔다가 다음에 되돌아와 있는 것이 제일 나쁘다.
+            write.restore?.call();
             _failedTripWrites
               ..removeWhere((pending) => pending.key == write.key)
               ..add(write);
             _state = _state.copyWith(
               tripSaveStatus: SaveStatus.failed,
-              tripSaveError: '여행 내용을 저장하지 못했어요. 다시 시도해 주세요.',
+              tripSaveError: write.op == _TripWriteOp.delete
+                  ? '여행 내용을 지우지 못했어요. 다시 시도해 주세요.'
+                  : '여행 내용을 저장하지 못했어요. 다시 시도해 주세요.',
               clearTripSaveFeedback: true,
             );
             notifyListeners();
@@ -8889,7 +9179,7 @@ class AlagagiController extends ChangeNotifier {
     final pending = List<_PendingTripWrite>.from(_failedTripWrites);
     _failedTripWrites.clear();
     for (final write in pending) {
-      _runTripWrite(write, feedback: '여행 내용을 저장했어요.');
+      _runTripWrite(write);
     }
   }
 

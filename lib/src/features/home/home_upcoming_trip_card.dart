@@ -29,12 +29,27 @@ class HomeUpcomingTripCard extends StatelessWidget {
     final todayItems = timing.phase == TripPhase.ongoing
         ? controller.tripItemsForToday(trip.id)
         : const <TripItem>[];
-    final todayLine = todayItems.isEmpty
-        ? null
-        : '오늘 '
-              '${todayItems.first.timeLabel == null ? '' : '${todayItems.first.timeLabel} '}'
-              '${todayItems.first.title}'
-              '${todayItems.length > 1 ? ' 외 ${todayItems.length - 1}개' : ''}';
+    // 오후 4시에도 '09:20 공항 도착'을 읽어주면 짚어주는 뜻이 없다.
+    // 지금 시각 다음에 오는 것을 먼저 본다.
+    final next = timing.phase == TripPhase.ongoing
+        ? controller.nextTripItemToday(trip.id)
+        : null;
+    final anchor = next ?? (todayItems.isEmpty ? null : todayItems.first);
+    final String? todayLine;
+    if (anchor == null) {
+      todayLine = null;
+    } else {
+      final remaining = todayItems.length - todayItems.indexOf(anchor) - 1;
+      final time = anchor.timeLabel == null ? '' : '${anchor.timeLabel} ';
+      final tail = remaining > 0 ? ' 외 $remaining개' : '';
+      // 남은 게 없으면 '다음'이 아니라 오늘 마지막이다.
+      final lead = next == null
+          ? '오늘'
+          : remaining > 0
+          ? '다음'
+          : '오늘 마지막';
+      todayLine = '$lead $time${anchor.title}$tail';
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

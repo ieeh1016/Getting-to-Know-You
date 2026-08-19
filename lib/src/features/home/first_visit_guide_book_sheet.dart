@@ -93,52 +93,12 @@ void showFirstVisitGuideBook(BuildContext context) {
                     ),
                   ),
                   Expanded(
-                    child: ListView(
+                    child: ListView.separated(
                       controller: scrollController,
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
-                      children: const [
-                        _GuideBookFeatureRow(
-                          icon: Icons.question_answer_outlined,
-                          title: '오늘의 질문',
-                          body: '답을 남기면 상대 답도 함께 열려요.',
-                          where: '홈',
-                        ),
-                        SizedBox(height: 8),
-                        _GuideBookFeatureRow(
-                          icon: Icons.calendar_month_outlined,
-                          title: '질문함과 기록',
-                          body: '지난 질문을 보고 늦게 답할 질문을 확인해요.',
-                          where: '질문',
-                        ),
-                        SizedBox(height: 8),
-                        _GuideBookFeatureRow(
-                          icon: Icons.music_note_outlined,
-                          title: '음악 노트',
-                          body: '요즘 듣는 곡과 짧은 메모를 남겨요.',
-                          where: '음악',
-                        ),
-                        SizedBox(height: 8),
-                        _GuideBookFeatureRow(
-                          icon: Icons.badge_outlined,
-                          title: '서로 노트',
-                          body: '취향과 대화 방식을 편한 질문부터 채워요.',
-                          where: '메뉴',
-                        ),
-                        SizedBox(height: 8),
-                        _GuideBookFeatureRow(
-                          icon: Icons.bookmark_add_outlined,
-                          title: '언젠가, 같이',
-                          body: '같이 해보고 싶은 일을 조용히 담아둬요.',
-                          where: '메뉴',
-                        ),
-                        SizedBox(height: 8),
-                        _GuideBookFeatureRow(
-                          icon: Icons.tune_rounded,
-                          title: '우리 선택',
-                          body: '둘 중 하나를 고르고 서로의 취향을 가볍게 봐요.',
-                          where: '메뉴',
-                        ),
-                      ],
+                      itemCount: _guideBookRows.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder: (_, index) => _guideBookRows[index],
                     ),
                   ),
                   Padding(
@@ -169,6 +129,72 @@ void showFirstVisitGuideBook(BuildContext context) {
     },
   );
 }
+
+
+/// 안내서는 실제로 있는 진입점만 가리킨다. where 값은 하단 tab 라벨이나
+/// `메뉴`와 글자 그대로 같아야 한다.
+const _guideBookRows = <_GuideBookFeatureRow>[
+  _GuideBookFeatureRow(
+    icon: Icons.question_answer_outlined,
+    title: '오늘의 질문',
+    body: '답을 남기면 상대 답도 함께 열려요.',
+    where: '홈',
+  ),
+  _GuideBookFeatureRow(
+    icon: Icons.calendar_month_outlined,
+    title: '질문함과 기록',
+    body: '지난 질문을 보고 늦게 답할 질문을 확인해요.',
+    where: '질문',
+  ),
+  _GuideBookFeatureRow(
+    icon: Icons.music_note_outlined,
+    title: '음악 노트',
+    body: '요즘 듣는 곡과 짧은 메모를 남겨요.',
+    where: '음악',
+  ),
+  _GuideBookFeatureRow(
+    icon: Icons.event_available_outlined,
+    title: '데이트',
+    body: '서로 되는 날을 달력에 남겨요.',
+    where: '데이트',
+  ),
+  _GuideBookFeatureRow(
+    icon: Icons.checklist_rounded,
+    title: '데이트 계획',
+    body: '정해진 날에 무엇을 할지 모아요.',
+    where: '계획',
+  ),
+  _GuideBookFeatureRow(
+    icon: Icons.place_outlined,
+    title: '장소 보드',
+    body: '가보고 싶은 곳을 함께 담아둬요.',
+    where: '장소',
+  ),
+  _GuideBookFeatureRow(
+    icon: Icons.luggage_outlined,
+    title: '여행 계획',
+    body: '숙소, 준비물, 일정을 한곳에 모아요.',
+    where: '메뉴',
+  ),
+  _GuideBookFeatureRow(
+    icon: Icons.bookmark_added_outlined,
+    title: '서로의 기억',
+    body: '잊고 싶지 않은 대화를 카드로 남겨요.',
+    where: '메뉴',
+  ),
+  _GuideBookFeatureRow(
+    icon: Icons.badge_outlined,
+    title: '서로 노트',
+    body: '취향과 대화 방식을 편한 질문부터 채워요.',
+    where: '메뉴',
+  ),
+  _GuideBookFeatureRow(
+    icon: Icons.bookmark_add_outlined,
+    title: '언젠가, 같이',
+    body: '같이 해보고 싶은 일을 조용히 담아둬요.',
+    where: '메뉴',
+  ),
+];
 
 class _GuideBookFeatureRow extends StatelessWidget {
   const _GuideBookFeatureRow({

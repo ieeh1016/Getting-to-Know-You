@@ -57,8 +57,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(tripItemAddButtonKey));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(tripKindPickerOptionKey(kind.storageKey)));
-    await tester.pumpAndSettle();
+    // 숙소/준비물 tab에서는 서 있는 자리가 곧 종류라 picker가 뜨지 않는다.
+    if (find.byKey(tripKindPickerSheetKey).evaluate().isNotEmpty) {
+      await tester.tap(find.byKey(tripKindPickerOptionKey(kind.storageKey)));
+      await tester.pumpAndSettle();
+    }
   }
 
   /// 달력 sheet를 열어 날짜를 고른다.
@@ -465,6 +468,9 @@ void main() {
     expect(find.text('챙긴 것 1 / 1'), findsOneWidget);
 
     // 계획을 담을 때는 여행 기간 안의 날짜만 고를 수 있다.
+    // 종류가 갈리는 일정 tab에서만 종류를 먼저 고른다.
+    await tester.tap(find.byKey(tripKindTabKey('timeline')));
+    await tester.pumpAndSettle();
     await openTripItemForm(tester, TripItemKind.plan);
     expect(find.byKey(tripItemDateButtonKey('2026-09-13')), findsOneWidget);
     expect(find.byKey(tripItemDateButtonKey('2026-09-20')), findsNothing);
@@ -952,14 +958,18 @@ void main() {
       '숙소 앞에서',
     );
 
-    // 지우면 남은 장수에 맞게 카운터가 줄어든다.
+    // 지우면 남은 장수에 맞게 카운터가 줄어든다. 사진도 확인을 거친다.
     await tester.tap(find.byKey(tripPhotoViewerDeleteButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripPhotoDeleteConfirmButtonKey));
     await tester.pumpAndSettle();
     expect(controller.tripPhotosFor(tripId), hasLength(1));
     expect(find.text('1 / 1'), findsOneWidget);
 
     // 마지막 한 장을 지우면 뷰어가 닫힌다.
     await tester.tap(find.byKey(tripPhotoViewerDeleteButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripPhotoDeleteConfirmButtonKey));
     await tester.pumpAndSettle();
     expect(find.byKey(tripPhotoViewerKey), findsNothing);
     expect(controller.tripPhotosFor(tripId), isEmpty);
@@ -1529,6 +1539,11 @@ void main() {
       find.byKey(improvementDeleteButtonKey('improvement_mine')),
     );
     await tester.pumpAndSettle();
+    // 지우기는 확인을 거친다.
+    await tester.tap(
+      find.byKey(improvementDeleteConfirmButtonKey('improvement_mine')),
+    );
+    await tester.pumpAndSettle();
 
     expect(find.byKey(improvementCardKey('improvement_mine')), findsNothing);
     expect(
@@ -2049,6 +2064,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(stockHoldingDeleteButtonKey('holding_mine_msft')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(stockHoldingDeleteConfirmButtonKey('holding_mine_msft')),
     );
     await tester.pumpAndSettle();
 
@@ -3243,6 +3262,10 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(profileSlotDeleteButtonKey(customSlot.id)));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(profileSlotDeleteConfirmButtonKey(customSlot.id)),
+    );
     await tester.pumpAndSettle();
 
     expect(
@@ -4985,6 +5008,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(musicCommentDeleteButtonKey('comment_mine')));
     await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(musicCommentDeleteConfirmButtonKey('comment_mine')),
+    );
+    await tester.pumpAndSettle();
 
     expect(find.text('다시 들은 감상'), findsNothing);
     expect(controller.musicCommentsForNote('music_mine'), hasLength(1));
@@ -5674,6 +5701,13 @@ class _FailingSaveRepository implements AlagagiDataRepository {
 
   @override
   Future<void> saveTripItem(String spaceId, TripItem item) async {}
+
+  @override
+  Future<void> saveTripItemOrder(
+    String spaceId,
+    String itemId,
+    int sortOrder,
+  ) async {}
 
   @override
   Future<void> deleteTripItem(String spaceId, String itemId) async {}

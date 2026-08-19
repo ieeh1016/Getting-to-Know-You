@@ -750,6 +750,9 @@ class _MeetingDetailCard extends StatelessWidget {
         partnerEntry?.canMeet == true &&
         sharedSlots.isNotEmpty;
     final showMeetingDayPanel = mutual || meetingDayEntry != null;
+    final tripOnDate = controller.tripCoveringDate(
+      controller.selectedMeetingDateKey,
+    );
     return AlagagiPaperCard(
       highlightedBorder: const Color(0x22A98B3C),
       child: Column(
@@ -768,10 +771,20 @@ class _MeetingDetailCard extends StatelessWidget {
               ),
             ],
           ),
+          // 짐가방 표시만 있고 어느 여행인지도, 들어갈 길도 없었다.
+          if (tripOnDate != null) ...[
+            const SizedBox(height: 10),
+            _MeetingTripDayLink(
+              trip: tripOnDate,
+              dateKey: controller.selectedMeetingDateKey,
+              onOpen: () => controller.openTrip(tripOnDate.id),
+            ),
+          ],
           const SizedBox(height: 12),
           _MeetingDateStatusPanel(
             mutual: mutual,
             alreadyMeetingDay: meetingDayEntry != null,
+            tripDay: tripOnDate != null,
             sharedSlots: sharedSlots,
           ),
           const SizedBox(height: 12),
@@ -893,11 +906,15 @@ class _MeetingDateStatusPanel extends StatelessWidget {
   const _MeetingDateStatusPanel({
     required this.mutual,
     required this.alreadyMeetingDay,
+    required this.tripDay,
     required this.sharedSlots,
   });
 
   final bool mutual;
   final bool alreadyMeetingDay;
+
+  /// 여행 기간에 든 날. 조율을 재촉할 자리가 아니다.
+  final bool tripDay;
   final Set<MeetingTimeSlot> sharedSlots;
 
   @override
@@ -906,14 +923,20 @@ class _MeetingDateStatusPanel extends StatelessWidget {
         ? '확정된 데이트'
         : mutual
         ? '서로 가능한 후보'
+        : tripDay
+        ? '여행 중인 날'
         : '조율 중인 날짜';
     final icon = alreadyMeetingDay
         ? Icons.favorite_rounded
         : mutual
         ? Icons.check_circle_rounded
+        : tripDay
+        ? Icons.luggage_outlined
         : Icons.tune_rounded;
     final slotLabel = sharedSlots.isEmpty
-        ? '겹치는 시간 없음'
+        ? (tripDay && !alreadyMeetingDay && !mutual
+              ? '이 날은 여행 일정이에요'
+              : '겹치는 시간 없음')
         : sharedSlots.map(meetingTimeSlotLabel).join(', ');
     return Container(
       decoration: BoxDecoration(
@@ -1660,6 +1683,68 @@ class _MeetingCandidateCard extends StatelessWidget {
                 ),
               ),
               const AlagagiSmallBadge(label: '보기'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 이 날이 어느 여행인지 알려주고 그 여행으로 들어가게 한다.
+class _MeetingTripDayLink extends StatelessWidget {
+  const _MeetingTripDayLink({
+    required this.trip,
+    required this.dateKey,
+    required this.onOpen,
+  });
+
+  final Trip trip;
+  final String dateKey;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final index = trip.dateKeys.indexOf(dateKey);
+    final label = index >= 0
+        ? '${trip.title} · ${index + 1}일차'
+        : '${trip.title} · ${trip.durationLabel}';
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: meetingTripDayLinkKey,
+        onTap: onOpen,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 44),
+          decoration: BoxDecoration(
+            color: AlagagiColors.skyPanel,
+            border: Border.all(color: AlagagiColors.line),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          padding: const EdgeInsets.fromLTRB(12, 9, 10, 9),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.luggage_outlined,
+                size: 15,
+                color: AlagagiColors.sageDeep,
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: sans(size: 12.5, weight: FontWeight.w700),
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: AlagagiColors.muted,
+              ),
             ],
           ),
         ),

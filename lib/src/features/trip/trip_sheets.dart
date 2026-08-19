@@ -6,6 +6,7 @@ import '../../shared/picker_sheets.dart';
 import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
+import '../place/manual_place_sheet.dart';
 import '../place/place_common.dart';
 import 'trip_form_fields.dart';
 import 'trip_timeline.dart';
@@ -21,11 +22,16 @@ Future<T?> _showFormSheet<T>(
   String? subtitle,
   required Widget Function(BuildContext sheetContext) builder,
   bool scrollBody = true,
+  bool keepsInput = false,
 }) {
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
+    // 적던 내용이 쌓이는 폼은 당겨 닫히지 않게 한다. drag dismiss는
+    // Navigator.pop을 직접 불러 막을 길이 없고, 손이 스쳐도 닫힌다.
+    // 닫기는 44px 닫기 button으로 한다.
+    enableDrag: !keepsInput,
     builder: (sheetContext) {
       return Padding(
         // 키보드가 올라와도 입력 칸이 가리지 않게 한다.
@@ -138,6 +144,7 @@ Future<String?> showTripFormSheet(
 }) {
   return _showFormSheet<String>(
     context,
+    keepsInput: true,
     sheetKey: tripFormSheetKey,
     title: trip == null ? '새 여행' : '여행 고치기',
     subtitle: trip == null ? '이름과 기간만 있으면 시작할 수 있어요' : null,
@@ -575,15 +582,17 @@ Future<String?> showTripPlacePickerSheet(
   BuildContext context, {
   required AlagagiController controller,
   String? selectedPlaceId,
+  String draftTitle = '',
 }) {
   return _showFormSheet<String>(
     context,
     sheetKey: tripPlacePickerSheetKey,
     title: '어디에서',
-    subtitle: '장소 보드에 담아둔 곳에서 고를 수 있어요',
+    subtitle: '보드에 없으면 직접 담아서 고를 수 있어요',
     builder: (sheetContext) => _PlacePicker(
       controller: controller,
       selectedPlaceId: selectedPlaceId,
+      draftTitle: draftTitle,
       onPick: (placeId) => Navigator.of(sheetContext).pop(placeId),
     ),
   );
@@ -593,11 +602,15 @@ class _PlacePicker extends StatefulWidget {
   const _PlacePicker({
     required this.controller,
     required this.selectedPlaceId,
+    required this.draftTitle,
     required this.onPick,
   });
 
   final AlagagiController controller;
   final String? selectedPlaceId;
+
+  /// 폼에 적던 제목. 직접 담기로 넘어갈 때 그대로 옮긴다.
+  final String draftTitle;
   final ValueChanged<String> onPick;
 
   @override
@@ -606,6 +619,43 @@ class _PlacePicker extends StatefulWidget {
 
 class _PlacePickerState extends State<_PlacePicker> {
   PlaceCategory? _category;
+
+  /// 카카오 검색은 국내만 된다. 해외 여행이면 거의 모든 장소가 이 경로다.
+  Future<void> _addManualPlace() async {
+    final created = await showManualPlaceSheet(
+      context,
+      controller: widget.controller,
+      initialName: widget.draftTitle.trim(),
+    );
+    widget.controller.clearLastSavedPlaceId();
+    if (created == null || !mounted) {
+      return;
+    }
+    widget.onPick(created);
+  }
+
+  Widget _manualRow() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: SizedBox(
+        height: 42,
+        child: OutlinedButton.icon(
+          key: tripPlaceManualButtonKey,
+          onPressed: _addManualPlace,
+          icon: const Icon(Icons.edit_location_alt_outlined, size: 15),
+          label: const Text('해외거나 검색에 없으면 직접 담기'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AlagagiColors.sageDeep,
+            side: const BorderSide(color: AlagagiColors.line),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            textStyle: sans(size: 12.5, weight: FontWeight.w700),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -617,10 +667,12 @@ class _PlacePickerState extends State<_PlacePicker> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AlagagiEmptyStateCard(
-            text: '장소 보드에 담아둔 곳이 아직 없어요. 장소 보드에서 먼저 담아두면 여기서 고를 수 있어요.',
+          const AlagagiEmptyStateCard(
+            text: '장소 보드에 담아둔 곳이 아직 없어요. 여기서 바로 담아도 돼요.',
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
+          _manualRow(),
+          const SizedBox(height: 4),
         ],
       );
     }
@@ -653,6 +705,7 @@ class _PlacePickerState extends State<_PlacePicker> {
           ),
         ),
         const SizedBox(height: 14),
+        _manualRow(),
         if (places.isEmpty)
           const AlagagiEmptyStateCard(text: '이 분류에는 담아둔 곳이 없어요.')
         else
@@ -1008,15 +1061,20 @@ Future<String?> showTripPackingSourceSheet(
 }
 
 /// 여행 항목을 만들거나 고친다. 종류에 따라 묻는 것이 달라진다.
-Future<void> showTripItemFormSheet(
+///
+/// 저장한 종류를 돌려준다. 폼 안에서 종류를 바꿔 저장할 수 있어, 부른 쪽이
+/// 처음 고른 종류를 그대로 믿으면 엉뚱한 tab을 연다.
+Future<TripItemKind?> showTripItemFormSheet(
   BuildContext context, {
   required AlagagiController controller,
   required Trip trip,
   required TripItemKind kind,
   TripItem? item,
+  String? initialDateKey,
 }) {
-  return _showFormSheet<void>(
+  return _showFormSheet<TripItemKind>(
     context,
+    keepsInput: true,
     sheetKey: tripItemFormSheetKey,
     title: item == null ? '${kind.label} 추가' : '${kind.label} 고치기',
     subtitle: trip.title,
@@ -1026,6 +1084,7 @@ Future<void> showTripItemFormSheet(
       trip: trip,
       kind: kind,
       item: item,
+      initialDateKey: initialDateKey,
       sheetContext: sheetContext,
     ),
   );
@@ -1038,6 +1097,7 @@ class _TripItemForm extends StatefulWidget {
     required this.kind,
     required this.item,
     required this.sheetContext,
+    this.initialDateKey,
   });
 
   final AlagagiController controller;
@@ -1045,6 +1105,9 @@ class _TripItemForm extends StatefulWidget {
   final TripItemKind kind;
   final TripItem? item;
   final BuildContext sheetContext;
+
+  /// 타임라인의 그 날에서 담기를 눌러 들어온 경우의 날짜.
+  final String? initialDateKey;
 
   @override
   State<_TripItemForm> createState() => _TripItemFormState();
@@ -1069,6 +1132,19 @@ class _TripItemFormState extends State<_TripItemForm> {
   String? _error;
   String? _keepAddingNotice;
 
+  /// 이어 적을 때 칸은 비우되, 시각 sheet는 방금 고른 자리 근처에서 연다.
+  String? _lastPickedTimeLabel;
+
+  /// `언젠가, 같이`에서 가져온 경우의 위시 id. 제목을 고쳐 다른 것이 되면 버린다.
+  String? _pickedWishId;
+  String _pickedWishTitle = '';
+
+  /// 지난번에 닫힌 폼에 남아 있던 내용. 자동으로 채우지 않는다.
+  /// 다른 항목을 적으려고 연 경우에는 방해가 되기 때문이다.
+  TripItemDraft? _restorableDraft;
+
+  bool _saved = false;
+
   @override
   void initState() {
     super.initState();
@@ -1077,7 +1153,9 @@ class _TripItemFormState extends State<_TripItemForm> {
     _noteController = ImeSafeTextEditingController(text: item?.note ?? '');
     _fromController = ImeSafeTextEditingController(text: item?.fromLabel ?? '');
     _toController = ImeSafeTextEditingController(text: item?.toLabel ?? '');
-    _dateKey = item?.dateKey;
+    // 고치는 중이면 원래 날짜를 지킨다. 들어온 날짜로 덮으면 목록에서
+    // 연 항목이 엉뚱한 날로 옮겨진다.
+    _dateKey = item == null ? widget.initialDateKey : item.dateKey;
     _endDateKey = item?.endDateKey;
     _timeLabel = item?.timeLabel;
     _endTimeLabel = item?.endTimeLabel;
@@ -1090,10 +1168,65 @@ class _TripItemFormState extends State<_TripItemForm> {
     _assigneeProfileId = item?.assigneeProfileId;
     _mode = item?.transportMode ?? TripTransportMode.flight;
     _kind = widget.kind;
+    _lastPickedTimeLabel = item?.timeLabel;
+    if (item == null) {
+      _restorableDraft = widget.controller.tripItemDraftFor(
+        widget.trip.id,
+        widget.kind,
+      );
+    }
+  }
+
+  TripItemDraft _currentDraft() => TripItemDraft(
+    kind: _kind,
+    title: _titleController.text,
+    note: _noteController.text,
+    link: _linkController.text,
+    cost: _costController.text,
+    fromLabel: _fromController.text,
+    toLabel: _toController.text,
+    dateKey: _dateKey,
+    timeLabel: _timeLabel,
+    endDateKey: _endDateKey,
+    endTimeLabel: _endTimeLabel,
+    placeId: _placeId,
+    assigneeProfileId: _assigneeProfileId,
+    paidByProfileId: _paidByProfileId,
+    transportMode: _mode,
+  );
+
+  void _restoreDraft() {
+    final draft = _restorableDraft;
+    if (draft == null) {
+      return;
+    }
+    setState(() {
+      _kind = draft.kind;
+      _titleController.text = draft.title;
+      _noteController.text = draft.note;
+      _linkController.text = draft.link;
+      _costController.text = draft.cost;
+      _fromController.text = draft.fromLabel;
+      _toController.text = draft.toLabel;
+      _dateKey = draft.dateKey;
+      _timeLabel = draft.timeLabel;
+      _endDateKey = draft.endDateKey;
+      _endTimeLabel = draft.endTimeLabel;
+      _placeId = draft.placeId;
+      _assigneeProfileId = draft.assigneeProfileId;
+      _paidByProfileId = draft.paidByProfileId;
+      _mode = draft.transportMode;
+      _restorableDraft = null;
+      _error = null;
+    });
   }
 
   @override
   void dispose() {
+    // 닫히면서 적던 내용을 기기 안에만 남긴다. 저장했으면 남길 이유가 없다.
+    if (widget.item == null && !_saved) {
+      widget.controller.rememberTripItemDraft(widget.trip.id, _currentDraft());
+    }
     _titleController.dispose();
     _noteController.dispose();
     _fromController.dispose();
@@ -1111,13 +1244,15 @@ class _TripItemFormState extends State<_TripItemForm> {
     final picked = await showAlagagiTimePicker(
       context,
       title: title,
-      initialLabel: current,
+      // 이어 적는 중이면 칸은 비어 있어도 손이 굴러갈 거리는 줄인다.
+      initialLabel: current ?? _lastPickedTimeLabel,
     );
     if (picked == null) {
       return;
     }
     setState(() {
       onPicked(picked);
+      _lastPickedTimeLabel = picked;
       _error = null;
     });
   }
@@ -1152,6 +1287,7 @@ class _TripItemFormState extends State<_TripItemForm> {
       paidByProfileId: _paidByProfileId,
       // 넘기지 않으면 controller가 기존 담당을 지운다.
       assigneeProfileId: _kind.usesCheck ? _assigneeProfileId : null,
+      wishId: _linkedWishId,
     );
   }
 
@@ -1161,7 +1297,9 @@ class _TripItemFormState extends State<_TripItemForm> {
       setState(() => _error = error);
       return;
     }
-    Navigator.of(widget.sheetContext).pop();
+    _saved = true;
+    widget.controller.clearTripItemDraft(widget.trip.id, widget.kind);
+    Navigator.of(widget.sheetContext).pop(_kind);
   }
 
   /// 준비물이나 계획은 보통 한 번에 여러 개를 적는다. 매번 sheet를 닫고
@@ -1172,20 +1310,43 @@ class _TripItemFormState extends State<_TripItemForm> {
       setState(() => _error = error);
       return;
     }
+    _saved = true;
+    widget.controller.clearTripItemDraft(widget.trip.id, widget.kind);
     final savedTitle = _titleController.text.trim();
+    // 이동을 이어 담는 건 거의 언제나 돌아오는 편이다. 두 칸을 비우면
+    // 방금 적은 값을 자리만 바꿔 다시 타이핑하게 된다.
+    final previousFrom = _fromController.text.trim();
+    final previousTo = _toController.text.trim();
+    final flipped =
+        _kind.usesRoute && (previousFrom.isNotEmpty || previousTo.isNotEmpty);
     setState(() {
       _titleController.text = '';
       _noteController.text = '';
       _linkController.text = '';
       _costController.text = '';
-      _fromController.text = '';
-      _toController.text = '';
+      _fromController.text = flipped ? previousTo : '';
+      _toController.text = flipped ? previousFrom : '';
       _placeId = null;
       _paidByProfileId = null;
       _timeLabel = null;
       _endTimeLabel = null;
+      _pickedWishId = null;
+      _pickedWishTitle = '';
       _error = null;
-      _keepAddingNotice = '\'$savedTitle\' 담았어요. 이어서 적어요.';
+      // 다구간 이동이면 뒤집힌 값이 틀릴 수 있다. 뒤집었다고 말해줘야
+      // 잘못 채워진 칸을 눈치챈다.
+      _keepAddingNotice = flipped
+          ? '\'$savedTitle\' 담았어요. 돌아오는 편으로 뒤집어 뒀어요.'
+          : '\'$savedTitle\' 담았어요. 이어서 적어요.';
+    });
+  }
+
+  void _swapRoute() {
+    final from = _fromController.text;
+    setState(() {
+      _fromController.text = _toController.text;
+      _toController.text = from;
+      _error = null;
     });
   }
 
@@ -1199,9 +1360,17 @@ class _TripItemFormState extends State<_TripItemForm> {
     }
     setState(() {
       _titleController.text = wish.title;
+      _pickedWishId = wish.id;
+      _pickedWishTitle = wish.title;
       _error = null;
     });
   }
+
+  /// 제목을 고쳐 다른 것이 되면 위시 연결을 끊는다.
+  String? get _linkedWishId =>
+      _titleController.text.trim() == _pickedWishTitle.trim()
+      ? _pickedWishId
+      : null;
 
   Future<void> _changeKind() async {
     final picked = await showTripKindPickerSheet(context);
@@ -1223,6 +1392,10 @@ class _TripItemFormState extends State<_TripItemForm> {
       if (!picked.usesPlace) {
         _placeId = null;
       }
+      if (!picked.usesDoneToggle) {
+        _pickedWishId = null;
+        _pickedWishTitle = '';
+      }
       _error = null;
     });
   }
@@ -1240,6 +1413,18 @@ class _TripItemFormState extends State<_TripItemForm> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+        // 자동으로 채우지 않는다. 다른 항목을 적으려고 연 경우에는 방해가 된다.
+        if (_restorableDraft != null) ...[
+          _DraftRestoreRow(
+            title: _restorableDraft!.title.trim(),
+            onRestore: _restoreDraft,
+            onDismiss: () {
+              widget.controller.clearTripItemDraft(widget.trip.id, _kind);
+              setState(() => _restorableDraft = null);
+            },
+          ),
+          const SizedBox(height: 10),
+        ],
         // 고르고 나서야 종류를 잘못 골랐다는 걸 아는 일이 잦다.
         TripPickerRow(
           rowKey: tripItemKindFieldKey,
@@ -1269,6 +1454,11 @@ class _TripItemFormState extends State<_TripItemForm> {
           hint: kind.usesRoute ? _mode.titleHint : kind.titleHint,
           maxLength: 80,
         ),
+        // 언제·몇 시가 제목 바로 다음에 온다. 키보드가 올라오면 sheet 본문이
+        // 300px 안팎으로 줄어, 가장 자주 채우는 칸이 아래에 있으면 항목마다
+        // 키보드를 내리고 스크롤하게 된다.
+        if (kind.usesDateRange) ..._stayFields(),
+        if (kind.usesRoute || kind == TripItemKind.plan) ..._scheduleFields(),
         const SizedBox(height: 10),
         TripTextField(
           fieldKey: tripItemNoteFieldKey,
@@ -1288,17 +1478,7 @@ class _TripItemFormState extends State<_TripItemForm> {
           maxLength: 500,
         ),
         if (kind.usesCheck) ..._assigneeFields(),
-        if (kind.usesDateRange) ..._stayFields(),
-        if (kind.usesRoute || kind == TripItemKind.plan) ..._scheduleFields(),
         ..._costFields(),
-        if (_keepAddingNotice != null) ...[
-          const SizedBox(height: 10),
-          _FormNotice(message: _keepAddingNotice!),
-        ],
-        if (_error != null) ...[
-          const SizedBox(height: 10),
-          _FormError(message: _error!),
-        ],
             ],
           ),
         ),
@@ -1308,6 +1488,16 @@ class _TripItemFormState extends State<_TripItemForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // 폼이 길어도 담기 결과는 button과 같은 고정 자리에 보인다.
+            // 스크롤 끝에 두면 화면 밖에 그려져 button이 고장난 것처럼 보인다.
+            if (_keepAddingNotice != null) ...[
+              _FormNotice(message: _keepAddingNotice!),
+              const SizedBox(height: 8),
+            ],
+            if (_error != null) ...[
+              _FormError(key: tripItemFormErrorKey, message: _error!),
+              const SizedBox(height: 8),
+            ],
             TripPrimaryButton(
               buttonKey: tripItemSubmitButtonKey,
               label: widget.item == null ? '${kind.label} 담기' : '고친 내용 저장하기',
@@ -1455,12 +1645,21 @@ class _TripItemFormState extends State<_TripItemForm> {
               maxLength: 40,
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 7),
-            child: Icon(
-              Icons.arrow_right_alt_rounded,
-              size: 18,
-              color: AlagagiColors.sageDeep,
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: tripItemRouteSwapButtonKey,
+              onTap: _swapRoute,
+              borderRadius: BorderRadius.circular(22),
+              child: const SizedBox(
+                width: 44,
+                height: 44,
+                child: Icon(
+                  Icons.swap_horiz_rounded,
+                  size: 18,
+                  color: AlagagiColors.sageDeep,
+                ),
+              ),
             ),
           ),
           Expanded(
@@ -1501,6 +1700,7 @@ class _TripItemFormState extends State<_TripItemForm> {
             context,
             controller: widget.controller,
             selectedPlaceId: _placeId,
+            draftTitle: _titleController.text,
           );
           if (picked == null) {
             return;
@@ -1658,6 +1858,72 @@ class _TripItemFormState extends State<_TripItemForm> {
   }
 }
 
+/// 닫힌 폼에 남아 있던 내용을 이어서 쓸지 묻는 줄.
+class _DraftRestoreRow extends StatelessWidget {
+  const _DraftRestoreRow({
+    required this.title,
+    required this.onRestore,
+    required this.onDismiss,
+  });
+
+  final String title;
+  final VoidCallback onRestore;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: tripItemDraftRestoreKey,
+      decoration: BoxDecoration(
+        color: AlagagiColors.skyPanel,
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(13),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 9, 8, 9),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title.isEmpty ? '적던 내용이 있어요' : '적던 내용이 있어요 · $title',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: sans(size: 12, height: 1.5, color: AlagagiColors.muted),
+            ),
+          ),
+          const SizedBox(width: 6),
+          SizedBox(
+            height: 34,
+            child: TextButton(
+              key: tripItemDraftRestoreButtonKey,
+              onPressed: onRestore,
+              style: TextButton.styleFrom(
+                foregroundColor: AlagagiColors.sageDeep,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                textStyle: sans(size: 12, weight: FontWeight.w800),
+              ),
+              child: const Text('이어서 쓰기'),
+            ),
+          ),
+          SizedBox(
+            width: 34,
+            height: 34,
+            child: IconButton(
+              key: tripItemDraftDismissButtonKey,
+              onPressed: onDismiss,
+              padding: EdgeInsets.zero,
+              icon: const Icon(
+                Icons.close_rounded,
+                size: 15,
+                color: AlagagiColors.muted,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// 계속 적기로 하나 담았을 때 조용히 알려주는 줄.
 class _FormNotice extends StatelessWidget {
   const _FormNotice({required this.message});
@@ -1699,7 +1965,7 @@ class _FormNotice extends StatelessWidget {
 }
 
 class _FormError extends StatelessWidget {
-  const _FormError({required this.message});
+  const _FormError({super.key, required this.message});
 
   final String message;
 

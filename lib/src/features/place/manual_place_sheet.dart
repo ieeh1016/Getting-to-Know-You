@@ -11,11 +11,13 @@ import 'place_common.dart';
 ///
 /// 카카오 검색은 국내만 다뤄 해외에서는 결과가 나오지 않는다. 이름만으로도
 /// 담을 수 있게 하고, 지도 앱에서 복사한 링크를 붙여두면 나중에 그 링크로 연다.
-Future<void> showManualPlaceSheet(
+/// 담은 장소의 id를 돌려준다. 여행 폼에서 부르면 그 자리에서 바로 고른다.
+Future<String?> showManualPlaceSheet(
   BuildContext context, {
   required AlagagiController controller,
+  String initialName = '',
 }) {
-  return showModalBottomSheet<void>(
+  return showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -40,6 +42,7 @@ Future<void> showManualPlaceSheet(
             child: _ManualPlaceForm(
               controller: controller,
               sheetContext: sheetContext,
+              initialName: initialName,
             ),
           ),
         ),
@@ -52,10 +55,14 @@ class _ManualPlaceForm extends StatefulWidget {
   const _ManualPlaceForm({
     required this.controller,
     required this.sheetContext,
+    this.initialName = '',
   });
 
   final AlagagiController controller;
   final BuildContext sheetContext;
+
+  /// 여행 폼에서 적던 제목을 그대로 옮겨 담는다.
+  final String initialName;
 
   @override
   State<_ManualPlaceForm> createState() => _ManualPlaceFormState();
@@ -72,7 +79,9 @@ class _ManualPlaceFormState extends State<_ManualPlaceForm> {
   @override
   void initState() {
     super.initState();
-    _nameController = ImeSafeTextEditingController();
+    _nameController = ImeSafeTextEditingController(
+      text: widget.initialName,
+    );
     _addressController = ImeSafeTextEditingController();
     _noteController = ImeSafeTextEditingController();
     _linkController = ImeSafeTextEditingController();
@@ -99,7 +108,7 @@ class _ManualPlaceFormState extends State<_ManualPlaceForm> {
       setState(() => _error = error);
       return;
     }
-    Navigator.of(widget.sheetContext).pop();
+    Navigator.of(widget.sheetContext).pop(widget.controller.lastSavedPlaceId);
   }
 
   @override

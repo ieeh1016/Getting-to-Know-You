@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
+import '../../shared/confirm_sheet.dart';
 import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_style.dart';
 
@@ -114,7 +115,22 @@ class _TripPhotoViewerState extends State<TripPhotoViewer> {
     });
   }
 
-  void _deleteCurrent(TripPhoto photo) {
+  Future<void> _deleteCurrent(TripPhoto photo) async {
+    // 가장 못 되살리는 것이 확인 없이 지워지고 있었다.
+    final confirmed = await showAlagagiConfirmSheet(
+      context,
+      title: '이 사진을 지울까요?',
+      body: '지우면 되돌릴 수 없어요.',
+      confirmLabel: '지우기',
+      confirmKey: tripPhotoDeleteConfirmButtonKey,
+    );
+    if (!confirmed || !mounted) {
+      return;
+    }
+    // 묻는 사이에 목록이 바뀌었을 수 있다.
+    if (!_photos.any((candidate) => candidate.id == photo.id)) {
+      return;
+    }
     final remaining = _photos.length - 1;
     widget.controller.deleteTripPhoto(photo.id);
     if (remaining <= 0) {

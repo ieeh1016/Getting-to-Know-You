@@ -402,6 +402,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         'cost': item.cost,
         'paidByProfileId': item.paidByProfileId ?? '',
         'link': item.link ?? '',
+        'wishId': item.wishId ?? '',
         'checked': item.checked,
         'createdByProfileId': item.createdByProfileId,
         'updatedByProfileId':
@@ -417,6 +418,18 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         targetId: item.tripId,
       ),
     );
+  }
+
+  /// 순서만 쓴다. `updatedAt`도 activity event도 남기지 않는다.
+  /// 순서를 정리한 것뿐인데 상대 홈이 '새로 도착한 것'으로 채워지면 안 된다.
+  @override
+  Future<void> saveTripItemOrder(String spaceId, String itemId, int sortOrder) {
+    return _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('tripItems')
+        .doc(itemId)
+        .set({'sortOrder': sortOrder}, SetOptions(merge: true));
   }
 
   @override
@@ -1308,6 +1321,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       cost: _readInt(data, 'cost') ?? 0,
       paidByProfileId: orNull(paidByProfileId),
       link: link == null || link.isEmpty ? null : link,
+      wishId: orNull(_readString(data, 'wishId')),
       checked: data['checked'] == true,
       updatedAt: _readDateTime(data, 'updatedAt'),
       updatedByProfileId: _readString(data, 'updatedByProfileId'),

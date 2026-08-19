@@ -591,6 +591,13 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
     }
 
+    // 여행을 지우면 그 안의 항목과 사진도 함께 지운다. 상대가 담은 것을
+    // 지우지 못하면 사라진 여행의 문서만 영원히 남는다.
+    function ownsParentTrip(spaceId, tripId) {
+      return exists(/databases/$(database)/documents/spaces/$(spaceId)/trips/$(tripId))
+        && get(/databases/$(database)/documents/spaces/$(spaceId)/trips/$(tripId)).data.createdByProfileId == request.auth.uid;
+    }
+
     function validTripItemShape(spaceId, itemId) {
       return request.resource.data.keys().hasOnly([
           'id',
@@ -611,6 +618,7 @@ service cloud.firestore {
           'cost',
           'paidByProfileId',
           'link',
+          'wishId',
           'checked',
           'createdByProfileId',
           'updatedByProfileId',
@@ -649,6 +657,8 @@ service cloud.firestore {
         && request.resource.data.cost <= 100000000
         && request.resource.data.paidByProfileId is string
         && request.resource.data.paidByProfileId.size() <= 120
+        && request.resource.data.wishId is string
+        && request.resource.data.wishId.size() <= 60
         && request.resource.data.link is string
         && request.resource.data.link.size() <= 500
         && request.resource.data.checked is bool
@@ -1642,7 +1652,10 @@ service cloud.firestore {
           && resource.data.createdByProfileId == request.auth.uid
           && request.resource.data.createdByProfileId == resource.data.createdByProfileId;
         allow delete: if isSpaceMember(spaceId)
-          && resource.data.createdByProfileId == request.auth.uid;
+          && (
+            resource.data.createdByProfileId == request.auth.uid
+            || ownsParentTrip(spaceId, resource.data.tripId)
+          );
       }
 
       match /tripItems/{itemId} {
@@ -1655,7 +1668,10 @@ service cloud.firestore {
           && request.resource.data.createdByProfileId == resource.data.createdByProfileId
           && request.resource.data.tripId == resource.data.tripId;
         allow delete: if isSpaceMember(spaceId)
-          && resource.data.createdByProfileId == request.auth.uid;
+          && (
+            resource.data.createdByProfileId == request.auth.uid
+            || ownsParentTrip(spaceId, resource.data.tripId)
+          );
       }
 
       match /memoryCards/{cardId} {

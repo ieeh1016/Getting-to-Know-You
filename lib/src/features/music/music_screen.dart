@@ -4,6 +4,8 @@ import '../../app/app_shell.dart';
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
 import '../../shared/text_editing_sync.dart';
+import '../../shared/openable_link.dart';
+import '../../shared/confirm_sheet.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
@@ -882,7 +884,7 @@ class _MusicNoteCard extends StatelessWidget {
     ].join('\n\n');
     final showReadableCue =
         note.link.trim().isNotEmpty || _showsCompactReadableCue(detailBody);
-    final openableLink = _normalizedOpenableLink(note.link);
+    final openableLink = normalizedOpenableLink(note.link);
     final listened = note.isListenedBy(controller.state.me.id);
     final commentCount = controller.musicCommentCountForNote(note.id);
     final latestComment = controller.latestMusicCommentForNote(note.id);
@@ -945,8 +947,13 @@ class _MusicNoteCard extends StatelessWidget {
                           message: '음악 노트 삭제',
                           child: IconButton(
                             key: musicDeleteButtonKey(note.id),
-                            onPressed: () =>
-                                controller.deleteMusicNote(note.id),
+                            onPressed: () => confirmThenDelete(
+                              context,
+                              title: '이 음악을 지울까요?',
+                              confirmKey: musicDeleteConfirmButtonKey(note.id),
+                              onConfirmed: () =>
+                                  controller.deleteMusicNote(note.id),
+                            ),
                             icon: const Icon(
                               Icons.delete_outline_rounded,
                               size: 17,
@@ -1297,7 +1304,7 @@ class _MusicNoteDetailSheet extends StatelessWidget {
     final creator = isMine
         ? controller.state.me.nickname
         : controller.state.partner.nickname;
-    final openableLink = _normalizedOpenableLink(note.link);
+    final openableLink = normalizedOpenableLink(note.link);
     final comments = controller.musicCommentsForNote(note.id);
     return DraggableScrollableSheet(
       initialChildSize: 0.72,
@@ -1695,8 +1702,15 @@ class _MusicCommentTile extends StatelessWidget {
                       message: '댓글 삭제',
                       child: IconButton(
                         key: musicCommentDeleteButtonKey(comment.id),
-                        onPressed: () =>
-                            controller.deleteMusicComment(comment.id),
+                        onPressed: () => confirmThenDelete(
+                          context,
+                          title: '이 댓글을 지울까요?',
+                          confirmKey: musicCommentDeleteConfirmButtonKey(
+                            comment.id,
+                          ),
+                          onConfirmed: () =>
+                              controller.deleteMusicComment(comment.id),
+                        ),
                         icon: const Icon(
                           Icons.delete_outline_rounded,
                           size: 15,
@@ -2100,23 +2114,3 @@ bool _showsCompactReadableCue(String body) {
   return body.trim().length > _compactReadablePreviewLength;
 }
 
-String? _normalizedOpenableLink(String rawLink) {
-  final trimmed = rawLink.trim();
-  if (trimmed.isEmpty) {
-    return null;
-  }
-
-  final hasScheme = RegExp(r'^[a-zA-Z][a-zA-Z0-9+.-]*:').hasMatch(trimmed);
-  final candidate = hasScheme ? trimmed : 'https://$trimmed';
-  final uri = Uri.tryParse(candidate);
-  if (uri == null || uri.host.trim().isEmpty) {
-    return null;
-  }
-
-  final scheme = uri.scheme.toLowerCase();
-  if (scheme != 'http' && scheme != 'https') {
-    return null;
-  }
-
-  return uri.toString();
-}

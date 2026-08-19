@@ -4,6 +4,7 @@ import '../../app/app_shell.dart';
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
 import '../../shared/text_editing_sync.dart';
+import '../../shared/confirm_sheet.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 
@@ -342,7 +343,12 @@ class _WishlistLane extends StatelessWidget {
               onInterest: () => controller.toggleWishLike(wish.id),
               onDone: () => controller.toggleWishDone(wish.id),
               onEdit: () => controller.startWishEdit(wish.id),
-              onDelete: () => controller.deleteWish(wish.id),
+              onDelete: () => confirmThenDelete(
+                context,
+                title: '${wish.title}을 지울까요?',
+                confirmKey: wishDeleteConfirmButtonKey(wish.id),
+                onConfirmed: () => controller.deleteWish(wish.id),
+              ),
             ),
             const SizedBox(height: 10),
           ],

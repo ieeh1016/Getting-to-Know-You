@@ -33,7 +33,7 @@
 - `spaces/{spaceId}/scheduleEntries/{dateKey_uid}`
 - `spaces/{spaceId}/sharedPlaces/{placeId}`
 - `spaces/{spaceId}/trips/{tripId}`
-- `spaces/{spaceId}/tripItems/{itemId}`
+- `spaces/{spaceId}/tripItems/{itemId}`: 순서만 바뀔 때는 `sortOrder` 한 필드만 merge로 쓰고 `updatedAt`을 갱신하지 않는다. 순서 정리는 상대에게 알릴 내용이 아니다. `wishId`는 `언젠가, 같이`에서 가져온 계획을 되짚기 위한 값이다.
 - `spaces/{spaceId}/tripPhotos/{photoId}`: 갤러리 사진을 줄여 담는 data URI. Cloud Storage 없이 Spark plan 안에서 다루기 위한 경로라 문서당 크기 상한이 있다. session 로딩에서 읽지 않고, 여행 **하나를 열 때 `tripId`로 걸러 그 여행 것만** 읽는다. 문서가 커서 매 접속마다 전부 받으면 전송량이 크게 든다.
 - `spaces/{spaceId}/diagnosticEvents/{eventId}`
 - `spaces/{spaceId}/curiosityCards/{cardId}`
@@ -49,6 +49,11 @@
 
 - Firestore local persistence를 켠다(`Settings(persistenceEnabled: true)`). 여행은 이 앱에서 유일하게 집 밖에서 쓰는 기능이라, 비행기나 로밍을 끈 해외에서 새로고침해도 마지막에 본 내용이 남아야 한다. 무료 플랜 범위 안이며 추가 write를 만들지 않는다.
 - 로그인은 됐는데 session을 읽지 못한 경우와 프로필 문서가 없는 경우는 다른 화면으로 보여준다. 연결 실패에 개발자용 Firebase 설정 안내를 띄우면 사용자가 할 수 있는 일이 없다. 연결 실패에는 다시 시도만 준다.
+
+## 삭제 권한
+
+- 여행 하위의 `tripItems`, `tripPhotos`는 만든 사람과 **부모 여행을 만든 사람**이 지울 수 있다. 여행을 지울 때 상대가 담은 것을 못 지우면 사라진 여행의 문서만 영원히 남는다. 자식을 먼저 지우고 여행을 마지막에 지운다. 부모를 먼저 지우면 규칙이 부모를 못 찾아 거절한다.
+- 그 밖의 collection은 만든 사람만 지운다.
 
 ## Rules Maintenance
 
