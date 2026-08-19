@@ -1395,6 +1395,9 @@ class TripPhoto {
 /// 사진 data URI 상한. Firestore 문서 한도(1MiB)와 목록 로딩 비용을 함께 본다.
 const kTripPhotoMaxDataUrlLength = 700000;
 
+/// 사진 설명 상한. UI, controller, `firestore.rules`가 같은 값을 쓴다.
+const kTripPhotoMaxCaptionLength = 200;
+
 /// 여행 하루. 타임라인은 이 묶음을 날짜순으로 이어 붙여 만든다.
 class TripDay {
   const TripDay({
@@ -7823,6 +7826,9 @@ class AlagagiController extends ChangeNotifier {
     if (imageDataUrl.length > kTripPhotoMaxDataUrlLength) {
       return '사진 용량이 너무 커요. 다른 사진으로 골라주세요.';
     }
+    if (caption.trim().length > kTripPhotoMaxCaptionLength) {
+      return '설명은 $kTripPhotoMaxCaptionLength자 안으로 적어주세요.';
+    }
     final resolvedDateKey = dateKey != null && trip.containsDateKey(dateKey)
         ? dateKey
         : null;
@@ -7842,6 +7848,39 @@ class AlagagiController extends ChangeNotifier {
     final spaceId = _spaceId;
     if (repository != null && spaceId != null) {
       unawaited(repository.saveTripPhoto(spaceId, photo).catchError((_) {}));
+    }
+    notifyListeners();
+    return null;
+  }
+
+  /// 사진 설명은 올린 사람만 고칠 수 있다.
+  String? updateTripPhotoCaption(String photoId, String caption) {
+    final index = _tripPhotos.indexWhere((photo) => photo.id == photoId);
+    if (index < 0) {
+      return '사진을 찾을 수 없어요.';
+    }
+    final existing = _tripPhotos[index];
+    if (existing.createdByProfileId != _state.me.id) {
+      return '올린 사람만 설명을 고칠 수 있어요.';
+    }
+    final trimmed = caption.trim();
+    if (trimmed.length > kTripPhotoMaxCaptionLength) {
+      return '설명은 $kTripPhotoMaxCaptionLength자 안으로 적어주세요.';
+    }
+    final updated = TripPhoto(
+      id: existing.id,
+      tripId: existing.tripId,
+      imageDataUrl: existing.imageDataUrl,
+      createdByProfileId: existing.createdByProfileId,
+      caption: trimmed,
+      dateKey: existing.dateKey,
+      updatedAt: existing.updatedAt,
+    );
+    _tripPhotos[index] = updated;
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository != null && spaceId != null) {
+      unawaited(repository.saveTripPhoto(spaceId, updated).catchError((_) {}));
     }
     notifyListeners();
     return null;

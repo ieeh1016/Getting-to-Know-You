@@ -740,9 +740,14 @@ void main() {
     expect(stay.stayNightCount, 2);
   });
 
-  testWidgets('trip photo tab shows saved photos and an owner-only delete', (
+  testWidgets('trip photo opens full screen and can be captioned and removed', (
     tester,
   ) async {
+    // 1x1 투명 PNG.
+    const tinyPng =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ'
+        'AAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
     final controller = AlagagiController.forSession(
       const AlagagiSession(
         spaceId: 'main',
@@ -785,23 +790,65 @@ void main() {
     expect(find.byKey(tripPhotoAddButtonKey), findsOneWidget);
     expect(find.textContaining('아직 담은 사진이 없어요'), findsOneWidget);
 
-    // 1x1 투명 PNG.
-    const tinyPng =
-        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ'
-        'AAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
-    controller.saveTripPhoto(
-      tripId: tripId,
-      imageDataUrl: tinyPng,
-      caption: '숙소 앞',
-    );
+    controller.saveTripPhoto(tripId: tripId, imageDataUrl: tinyPng);
+    controller.saveTripPhoto(tripId: tripId, imageDataUrl: tinyPng);
     await tester.pumpAndSettle();
 
-    final photo = controller.tripPhotosFor(tripId).single;
+    final photos = controller.tripPhotosFor(tripId);
+    expect(photos, hasLength(2));
     expect(find.byKey(tripPhotoGridKey), findsOneWidget);
-    expect(find.byKey(tripPhotoCardKey(photo.id)), findsOneWidget);
-    expect(find.text('숙소 앞'), findsOneWidget);
-    expect(find.byKey(tripPhotoDeleteButtonKey(photo.id)), findsOneWidget);
-    expect(find.text('사진 1'), findsOneWidget);
+    expect(find.byKey(tripPhotoCardKey(photos.first.id)), findsOneWidget);
+    expect(find.text('사진 2'), findsOneWidget);
+    // 지우기는 격자가 아니라 크게 열어본 화면에서 한다.
+    expect(find.byKey(tripPhotoViewerDeleteButtonKey), findsNothing);
+
+    // 조각을 누르면 화면 가득 열린다.
+    await tester.ensureVisible(find.byKey(tripPhotoCardKey(photos.first.id)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripPhotoCardKey(photos.first.id)));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(tripPhotoViewerKey), findsOneWidget);
+    expect(find.byKey(tripPhotoViewerPagerKey), findsOneWidget);
+    expect(find.byType(InteractiveViewer), findsWidgets);
+    expect(find.text('1 / 2'), findsOneWidget);
+
+    // 좌우로 넘길 수 있다.
+    await tester.fling(
+      find.byKey(tripPhotoViewerPagerKey),
+      const Offset(-320, 0),
+      1200,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('2 / 2'), findsOneWidget);
+
+    // 올린 사람은 설명을 바로 붙인다.
+    await tester.tap(find.byKey(tripPhotoViewerCaptionEditButtonKey));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(tripPhotoViewerCaptionFieldKey),
+      '숙소 앞에서',
+    );
+    await tester.tap(find.byKey(tripPhotoViewerCaptionSaveButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(
+      controller.tripPhotosFor(tripId).last.caption,
+      '숙소 앞에서',
+    );
+
+    // 지우면 남은 장수에 맞게 카운터가 줄어든다.
+    await tester.tap(find.byKey(tripPhotoViewerDeleteButtonKey));
+    await tester.pumpAndSettle();
+    expect(controller.tripPhotosFor(tripId), hasLength(1));
+    expect(find.text('1 / 1'), findsOneWidget);
+
+    // 마지막 한 장을 지우면 뷰어가 닫힌다.
+    await tester.tap(find.byKey(tripPhotoViewerDeleteButtonKey));
+    await tester.pumpAndSettle();
+    expect(find.byKey(tripPhotoViewerKey), findsNothing);
+    expect(controller.tripPhotosFor(tripId), isEmpty);
+    expect(find.textContaining('아직 담은 사진이 없어요'), findsOneWidget);
   });
 
   testWidgets('saves a curiosity reply and a new question in the sheet', (

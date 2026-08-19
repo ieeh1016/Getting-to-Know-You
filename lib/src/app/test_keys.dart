@@ -204,6 +204,17 @@ const tripItemFromFieldKey = Key('trip-item-from-field');
 const tripItemToFieldKey = Key('trip-item-to-field');
 const tripPhotoAddButtonKey = Key('trip-photo-add-button');
 const tripPhotoGridKey = Key('trip-photo-grid');
+const tripPhotoViewerKey = Key('trip-photo-viewer');
+const tripPhotoViewerPagerKey = Key('trip-photo-viewer-pager');
+const tripPhotoViewerCloseButtonKey = Key('trip-photo-viewer-close');
+const tripPhotoViewerCaptionFieldKey = Key('trip-photo-viewer-caption-field');
+const tripPhotoViewerCaptionSaveButtonKey = Key(
+  'trip-photo-viewer-caption-save',
+);
+const tripPhotoViewerCaptionEditButtonKey = Key(
+  'trip-photo-viewer-caption-edit',
+);
+const tripPhotoViewerDeleteButtonKey = Key('trip-photo-viewer-delete');
 Key tripTransportModeButtonKey(String mode) => Key('trip-transport-mode-$mode');
 Key tripStayBandKey(String dateKey) => Key('trip-stay-band-$dateKey');
 Key tripStayCheckOutDateButtonKey(String dateKey) =>

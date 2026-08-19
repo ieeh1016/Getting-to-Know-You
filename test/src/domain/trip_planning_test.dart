@@ -584,6 +584,87 @@ void main() {
       expect(item.timeLabel, isNull);
     });
 
+    test('only the uploader can caption a photo', () {
+      final owner = buildController();
+      owner.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-13',
+      );
+      final tripId = owner.trips.single.id;
+      owner.saveTripPhoto(
+        tripId: tripId,
+        imageDataUrl: 'data:image/jpeg;base64,AAAA',
+      );
+      final photo = owner.tripPhotosFor(tripId).single;
+
+      expect(owner.updateTripPhotoCaption(photo.id, '숙소 앞에서'), isNull);
+      expect(owner.tripPhotosFor(tripId).single.caption, '숙소 앞에서');
+
+      // 상대 화면에서는 같은 사진이라도 설명을 고칠 수 없다.
+      final partner = AlagagiController.forSession(
+        AlagagiSession(
+          spaceId: 'main',
+          me: const AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: true,
+          ),
+          partner: const AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            trips: owner.trips,
+            tripPhotos: owner.tripPhotosFor(tripId),
+          ),
+        ),
+      );
+
+      expect(partner.updateTripPhotoCaption(photo.id, '내가 고침'), isNotNull);
+      expect(partner.deleteTripPhoto(photo.id), isFalse);
+      expect(partner.tripPhotosFor(tripId).single.caption, '숙소 앞에서');
+    });
+
+    test('photo caption keeps the documented limit', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-13',
+      );
+      final tripId = controller.trips.single.id;
+      controller.saveTripPhoto(
+        tripId: tripId,
+        imageDataUrl: 'data:image/jpeg;base64,AAAA',
+      );
+      final photoId = controller.tripPhotosFor(tripId).single.id;
+
+      expect(
+        controller.updateTripPhotoCaption(
+          photoId,
+          '가' * kTripPhotoMaxCaptionLength,
+        ),
+        isNull,
+      );
+      expect(
+        controller.updateTripPhotoCaption(
+          photoId,
+          '가' * (kTripPhotoMaxCaptionLength + 1),
+        ),
+        isNotNull,
+      );
+      expect(
+        controller.tripPhotosFor(tripId).single.caption.length,
+        kTripPhotoMaxCaptionLength,
+      );
+    });
+
     test('only the creator can delete a trip or an item', () {
       final controller = buildController();
       controller.saveTrip(

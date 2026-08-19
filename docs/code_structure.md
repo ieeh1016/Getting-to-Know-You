@@ -71,6 +71,7 @@ lib/src/domain/
 - `lib/src/features/trip/trip_screen.dart`: 여행 목록, 여행 상세, 일정/숙소/이동/준비물/계획 tab과 항목 편집 form.
 - `lib/src/features/trip/trip_timeline.dart`: 날짜별 세로 rail 타임라인, 하루 header, 머무는 곳 띠, 이동 구간/경로 entry.
 - `lib/src/data/trip_photo_picker.dart`: 갤러리 사진 선택기. web은 file input + canvas 축소, 그 외는 미지원 stub.
+- `lib/src/features/trip/trip_photo_viewer.dart`: 전체 화면 사진 뷰어. 좌우 넘기기, 확대, 설명 편집, 삭제.
 
 ## Card Geometry
 

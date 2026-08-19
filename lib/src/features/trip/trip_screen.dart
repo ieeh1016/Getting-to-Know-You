@@ -7,6 +7,7 @@ import '../../domain/alagagi_controller.dart';
 import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
+import 'trip_photo_viewer.dart';
 import 'trip_timeline.dart';
 
 /// 여행 계획 화면. 여행 목록과 여행 하나의 상세를 같은 화면에서 전환한다.
@@ -463,71 +464,72 @@ class _TripScreenState extends State<TripScreen> {
 
   List<Widget> _buildPhotoTab(Trip trip) {
     final photos = widget.controller.tripPhotosFor(trip.id);
+    final supported = _photoPicker.isSupported;
 
     return [
-      AlagagiPaperCard(
-        compact: true,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '둘이 남긴 여행 사진',
+      // 담기 action은 한 줄로 줄이고 사진에 자리를 내준다.
+      Row(
+        children: [
+          Expanded(
+            child: Text(
+              photos.isEmpty
+                  ? '둘이 남긴 여행 사진'
+                  : '둘이 남긴 여행 사진 ${photos.length}장',
               style: sans(size: 13, weight: FontWeight.w800),
             ),
-            const SizedBox(height: 5),
-            Text(
-              _photoPicker.isSupported
-                  ? '단말기 갤러리에서 골라 담아요. 올릴 때 자동으로 줄여서 저장해요.'
-                  : '이 환경에서는 갤러리를 열 수 없어요. 휴대폰 브라우저에서 열어주세요.',
-              style: sans(size: 12, height: 1.5, color: AlagagiColors.muted),
+          ),
+          OutlinedButton.icon(
+            key: tripPhotoAddButtonKey,
+            onPressed: supported && !_photoBusy ? () => _pickPhoto(trip) : null,
+            icon: Icon(
+              _photoBusy
+                  ? Icons.hourglass_empty_rounded
+                  : Icons.add_photo_alternate_outlined,
+              size: 16,
             ),
-            if (_photoError != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                _photoError!,
-                style: sans(size: 12, color: const Color(0xFFB35A49)),
+            label: Text(_photoBusy ? '담는 중' : '사진 담기'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AlagagiColors.sageDeep,
+              side: const BorderSide(color: AlagagiColors.line),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
               ),
-            ],
-            const SizedBox(height: 11),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                key: tripPhotoAddButtonKey,
-                onPressed: _photoPicker.isSupported && !_photoBusy
-                    ? () => _pickPhoto(trip)
-                    : null,
-                icon: Icon(
-                  _photoBusy
-                      ? Icons.hourglass_empty_rounded
-                      : Icons.add_photo_alternate_outlined,
-                  size: 17,
-                ),
-                label: Text(_photoBusy ? '사진 담는 중' : '갤러리에서 사진 담기'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AlagagiColors.ink,
-                  foregroundColor: AlagagiColors.appBackground,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  textStyle: sans(size: 12, weight: FontWeight.w800),
-                ),
-              ),
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 13),
+              textStyle: sans(size: 12, weight: FontWeight.w700),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-      const SizedBox(height: 14),
+      if (!supported) ...[
+        const SizedBox(height: 8),
+        Text(
+          '이 환경에서는 갤러리를 열 수 없어요. 휴대폰 브라우저에서 열어주세요.',
+          style: sans(size: 12, height: 1.5, color: AlagagiColors.muted),
+        ),
+      ],
+      if (_photoError != null) ...[
+        const SizedBox(height: 8),
+        Text(
+          _photoError!,
+          style: sans(size: 12, color: const Color(0xFFB35A49)),
+        ),
+      ],
+      const SizedBox(height: 12),
       if (photos.isEmpty)
         const AlagagiEmptyStateCard(
           text: '아직 담은 사진이 없어요. 다녀와서 천천히 채워도 괜찮아요.',
         )
       else
-        _TripPhotoGrid(
+        _TripPhotoMosaic(
           photos: photos,
           myProfileId: widget.controller.state.me.id,
-          onDelete: (photoId) =>
-              setState(() => widget.controller.deleteTripPhoto(photoId)),
+          onOpen: (photo) => showTripPhotoViewer(
+            context,
+            controller: widget.controller,
+            tripId: trip.id,
+            initialPhotoId: photo.id,
+          ),
         ),
     ];
   }
@@ -924,37 +926,62 @@ class _TripDayPicker extends StatelessWidget {
   }
 }
 
-/// 담아둔 여행 사진 격자.
-class _TripPhotoGrid extends StatelessWidget {
-  const _TripPhotoGrid({
+/// 담아둔 여행 사진 배치.
+///
+/// 같은 크기 조각만 늘어놓으면 앨범이라기보다 목록에 가깝다. 가장 최근
+/// 사진을 넓게 두고 나머지를 두 칸으로 이어 붙여 앨범처럼 읽히게 한다.
+class _TripPhotoMosaic extends StatelessWidget {
+  const _TripPhotoMosaic({
     required this.photos,
     required this.myProfileId,
-    required this.onDelete,
+    required this.onOpen,
   });
+
+  static const double _gap = 8;
 
   final List<TripPhoto> photos;
   final String myProfileId;
-  final ValueChanged<String> onDelete;
+  final ValueChanged<TripPhoto> onOpen;
 
   @override
   Widget build(BuildContext context) {
+    final rest = photos.length > 1 ? photos.sublist(1) : const <TripPhoto>[];
+
     return LayoutBuilder(
       key: tripPhotoGridKey,
       builder: (context, constraints) {
-        final tileWidth = (constraints.maxWidth - 9) / 2;
-        return Wrap(
-          spacing: 9,
-          runSpacing: 9,
+        final width = constraints.maxWidth;
+        final tileWidth = (width - _gap) / 2;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (final photo in photos)
-              SizedBox(
-                width: tileWidth,
-                child: _TripPhotoTile(
-                  photo: photo,
-                  canDelete: photo.createdByProfileId == myProfileId,
-                  onDelete: () => onDelete(photo.id),
-                ),
+            _TripPhotoTile(
+              photo: photos.first,
+              mine: photos.first.createdByProfileId == myProfileId,
+              // 최근 사진은 넓게 두어 앨범의 표지처럼 읽히게 한다.
+              aspectRatio: 4 / 3,
+              onTap: () => onOpen(photos.first),
+            ),
+            if (rest.isNotEmpty) ...[
+              const SizedBox(height: _gap),
+              Wrap(
+                spacing: _gap,
+                runSpacing: _gap,
+                children: [
+                  for (final photo in rest)
+                    SizedBox(
+                      width: tileWidth,
+                      child: _TripPhotoTile(
+                        photo: photo,
+                        mine: photo.createdByProfileId == myProfileId,
+                        aspectRatio: 1,
+                        onTap: () => onOpen(photo),
+                      ),
+                    ),
+                ],
               ),
+            ],
           ],
         );
       },
@@ -965,81 +992,103 @@ class _TripPhotoGrid extends StatelessWidget {
 class _TripPhotoTile extends StatelessWidget {
   const _TripPhotoTile({
     required this.photo,
-    required this.canDelete,
-    required this.onDelete,
+    required this.mine,
+    required this.aspectRatio,
+    required this.onTap,
   });
 
   final TripPhoto photo;
-  final bool canDelete;
-  final VoidCallback onDelete;
+  final bool mine;
+  final double aspectRatio;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final radius = BorderRadius.circular(AlagagiCardGeometry.compactRadius);
+
+    return InkWell(
       key: tripPhotoCardKey(photo.id),
-      decoration: BoxDecoration(
-        color: AlagagiColors.paper,
-        border: Border.all(color: AlagagiColors.line),
-        borderRadius: BorderRadius.circular(AlagagiCardGeometry.compactRadius),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          AspectRatio(
-            aspectRatio: 1,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.network(
-                  photo.imageDataUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: AlagagiColors.skyPanel,
-                    alignment: Alignment.center,
-                    child: const Icon(
-                      Icons.image_not_supported_outlined,
-                      size: 20,
-                      color: AlagagiColors.muted,
-                    ),
+      onTap: onTap,
+      borderRadius: radius,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AlagagiColors.paper,
+          border: Border.all(color: AlagagiColors.line),
+          borderRadius: radius,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: AspectRatio(
+          aspectRatio: aspectRatio,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.network(
+                photo.imageDataUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: AlagagiColors.skyPanel,
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.image_not_supported_outlined,
+                    size: 20,
+                    color: AlagagiColors.muted,
                   ),
                 ),
-                if (canDelete)
-                  Positioned(
-                    top: 4,
-                    right: 4,
-                    child: Material(
-                      color: Colors.black.withValues(alpha: 0.42),
-                      shape: const CircleBorder(),
-                      child: InkWell(
-                        key: tripPhotoDeleteButtonKey(photo.id),
-                        customBorder: const CircleBorder(),
-                        onTap: onDelete,
-                        child: const Padding(
-                          padding: EdgeInsets.all(5),
-                          child: Icon(
-                            Icons.close_rounded,
-                            size: 15,
-                            color: Colors.white,
-                          ),
-                        ),
+              ),
+              // 설명은 조각 높이를 흔들지 않도록 사진 위에 얹는다.
+              if (photo.caption.isNotEmpty)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0x00000000), Color(0x99000000)],
+                      ),
+                    ),
+                    padding: const EdgeInsets.fromLTRB(10, 16, 10, 8),
+                    child: Text(
+                      photo.caption,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: sans(
+                        size: 11.5,
+                        height: 1.4,
+                        weight: FontWeight.w600,
+                        color: Colors.white,
                       ),
                     ),
                   ),
-              ],
-            ),
+                ),
+              if (mine)
+                Positioned(
+                  top: 7,
+                  right: 7,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.38),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 3,
+                    ),
+                    child: Text(
+                      '내가 담음',
+                      style: sans(
+                        size: 9.5,
+                        weight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
-          if (photo.caption.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(9, 7, 9, 9),
-              child: Text(
-                photo.caption,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: sans(size: 11.5, color: AlagagiColors.muted),
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }
