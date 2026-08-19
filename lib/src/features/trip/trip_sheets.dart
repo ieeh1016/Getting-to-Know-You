@@ -173,7 +173,6 @@ class _TripFormState extends State<_TripForm> {
   late final ImeSafeTextEditingController _titleController;
   late final ImeSafeTextEditingController _destinationController;
   late final ImeSafeTextEditingController _noteController;
-  late final ImeSafeTextEditingController _currencyController;
   String? _startDateKey;
   String? _endDateKey;
   String? _error;
@@ -190,9 +189,6 @@ class _TripFormState extends State<_TripForm> {
     _noteController = ImeSafeTextEditingController(
       text: widget.trip?.note ?? '',
     );
-    _currencyController = ImeSafeTextEditingController(
-      text: widget.trip?.currencyLabel ?? '원',
-    );
     _startDateKey = widget.trip?.startDateKey;
     _endDateKey = widget.trip?.endDateKey;
   }
@@ -202,7 +198,6 @@ class _TripFormState extends State<_TripForm> {
     _titleController.dispose();
     _destinationController.dispose();
     _noteController.dispose();
-    _currencyController.dispose();
     super.dispose();
   }
 
@@ -254,7 +249,6 @@ class _TripFormState extends State<_TripForm> {
       startDateKey: _startDateKey ?? '',
       endDateKey: _endDateKey ?? '',
       note: _noteController.text,
-      currencyLabel: _currencyController.text,
     );
     if (error != null) {
       setState(() => _error = error);
@@ -344,14 +338,6 @@ class _TripFormState extends State<_TripForm> {
           hint: '같이 기억해둘 것',
           maxLength: 500,
           maxLines: 3,
-        ),
-        const SizedBox(height: 10),
-        TripTextField(
-          fieldKey: tripCurrencyFieldKey,
-          controller: _currencyController,
-          label: '경비 단위',
-          hint: '원, 엔, USD',
-          maxLength: 8,
         ),
         if (_error != null) ...[
           const SizedBox(height: 10),
@@ -932,72 +918,6 @@ class _PhotoDayOption extends StatelessWidget {
   }
 }
 
-/// 위시리스트에서 여행 계획으로 옮겨 담는다. `언젠가, 같이`에 적어둔 것을
-/// 여행에서 다시 손으로 옮겨 적게 하면 둘 중 하나는 잊힌다.
-Future<WishItem?> showTripWishPickerSheet(
-  BuildContext context, {
-  required AlagagiController controller,
-}) {
-  final wishes = controller.wishesForTripPlan();
-
-  return _showFormSheet<WishItem>(
-    context,
-    sheetKey: tripWishPickerSheetKey,
-    title: '언젠가, 같이에서 가져오기',
-    subtitle: '적어둔 것을 이 여행 계획으로 옮겨요',
-    builder: (sheetContext) => Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (wishes.isEmpty)
-          const AlagagiEmptyStateCard(
-            text: '아직 담아둔 것이 없어요. 언젠가, 같이에서 먼저 적어두면 여기서 고를 수 있어요.',
-          )
-        else
-          for (final wish in wishes) ...[
-            InkWell(
-              key: tripWishPickerOptionKey(wish.id),
-              onTap: () => Navigator.of(sheetContext).pop(wish),
-              borderRadius: BorderRadius.circular(15),
-              child: Container(
-                constraints: const BoxConstraints(minHeight: 54),
-                decoration: BoxDecoration(
-                  color: AlagagiColors.paper,
-                  border: Border.all(color: AlagagiColors.line),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                padding: const EdgeInsets.fromLTRB(13, 10, 13, 10),
-                child: Row(
-                  children: [
-                    Text(wish.icon, style: const TextStyle(fontSize: 17)),
-                    const SizedBox(width: 11),
-                    Expanded(
-                      child: Text(
-                        wish.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: sans(size: 13, weight: FontWeight.w700),
-                      ),
-                    ),
-                    if (wish.isMutual)
-                      Text(
-                        '둘 다',
-                        style: sans(
-                          size: 11,
-                          weight: FontWeight.w800,
-                          color: AlagagiColors.sageDeep,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-      ],
-    ),
-  );
-}
-
 /// 준비물을 지난 여행에서 통째로 가져온다. 챙길 것은 여행마다 크게 다르지
 /// 않아, 매번 처음부터 적게 하면 꼭 하나씩 빠뜨린다.
 Future<String?> showTripPackingSourceSheet(
@@ -1133,8 +1053,6 @@ class _TripItemFormState extends State<_TripItemForm> {
   String? _endTimeLabel;
   String? _placeId;
   late final ImeSafeTextEditingController _linkController;
-  late final ImeSafeTextEditingController _costController;
-  String? _paidByProfileId;
   String? _assigneeProfileId;
   late TripTransportMode _mode;
   late TripItemKind _kind;
@@ -1143,10 +1061,6 @@ class _TripItemFormState extends State<_TripItemForm> {
 
   /// 이어 적을 때 칸은 비우되, 시각 sheet는 방금 고른 자리 근처에서 연다.
   String? _lastPickedTimeLabel;
-
-  /// `언젠가, 같이`에서 가져온 경우의 위시 id. 제목을 고쳐 다른 것이 되면 버린다.
-  String? _pickedWishId;
-  String _pickedWishTitle = '';
 
   /// 지난번에 닫힌 폼에 남아 있던 내용. 자동으로 채우지 않는다.
   /// 다른 항목을 적으려고 연 경우에는 방해가 되기 때문이다.
@@ -1170,10 +1084,6 @@ class _TripItemFormState extends State<_TripItemForm> {
     _endTimeLabel = item?.endTimeLabel;
     _placeId = item?.placeId;
     _linkController = ImeSafeTextEditingController(text: item?.link ?? '');
-    _costController = ImeSafeTextEditingController(
-      text: (item?.cost ?? 0) == 0 ? '' : '${item!.cost}',
-    );
-    _paidByProfileId = item?.paidByProfileId;
     _assigneeProfileId = item?.assigneeProfileId;
     _mode = item?.transportMode ?? TripTransportMode.flight;
     _kind = widget.kind;
@@ -1191,7 +1101,6 @@ class _TripItemFormState extends State<_TripItemForm> {
     title: _titleController.text,
     note: _noteController.text,
     link: _linkController.text,
-    cost: _costController.text,
     fromLabel: _fromController.text,
     toLabel: _toController.text,
     dateKey: _dateKey,
@@ -1200,7 +1109,6 @@ class _TripItemFormState extends State<_TripItemForm> {
     endTimeLabel: _endTimeLabel,
     placeId: _placeId,
     assigneeProfileId: _assigneeProfileId,
-    paidByProfileId: _paidByProfileId,
     transportMode: _mode,
   );
 
@@ -1214,7 +1122,6 @@ class _TripItemFormState extends State<_TripItemForm> {
       _titleController.text = draft.title;
       _noteController.text = draft.note;
       _linkController.text = draft.link;
-      _costController.text = draft.cost;
       _fromController.text = draft.fromLabel;
       _toController.text = draft.toLabel;
       _dateKey = draft.dateKey;
@@ -1223,7 +1130,6 @@ class _TripItemFormState extends State<_TripItemForm> {
       _endTimeLabel = draft.endTimeLabel;
       _placeId = draft.placeId;
       _assigneeProfileId = draft.assigneeProfileId;
-      _paidByProfileId = draft.paidByProfileId;
       _mode = draft.transportMode;
       _restorableDraft = null;
       _error = null;
@@ -1241,7 +1147,6 @@ class _TripItemFormState extends State<_TripItemForm> {
     _fromController.dispose();
     _toController.dispose();
     _linkController.dispose();
-    _costController.dispose();
     super.dispose();
   }
 
@@ -1292,11 +1197,8 @@ class _TripItemFormState extends State<_TripItemForm> {
       toLabel: _toController.text,
       placeId: _placeId,
       link: _linkController.text,
-      cost: int.tryParse(_costController.text.replaceAll(',', '').trim()) ?? 0,
-      paidByProfileId: _paidByProfileId,
       // 넘기지 않으면 controller가 기존 담당을 지운다.
       assigneeProfileId: _kind.usesCheck ? _assigneeProfileId : null,
-      wishId: _linkedWishId,
     );
   }
 
@@ -1332,15 +1234,11 @@ class _TripItemFormState extends State<_TripItemForm> {
       _titleController.text = '';
       _noteController.text = '';
       _linkController.text = '';
-      _costController.text = '';
       _fromController.text = flipped ? previousTo : '';
       _toController.text = flipped ? previousFrom : '';
       _placeId = null;
-      _paidByProfileId = null;
       _timeLabel = null;
       _endTimeLabel = null;
-      _pickedWishId = null;
-      _pickedWishTitle = '';
       _error = null;
       // 다구간 이동이면 뒤집힌 값이 틀릴 수 있다. 뒤집었다고 말해줘야
       // 잘못 채워진 칸을 눈치챈다.
@@ -1358,28 +1256,6 @@ class _TripItemFormState extends State<_TripItemForm> {
       _error = null;
     });
   }
-
-  Future<void> _pickWish() async {
-    final wish = await showTripWishPickerSheet(
-      context,
-      controller: widget.controller,
-    );
-    if (wish == null || !mounted) {
-      return;
-    }
-    setState(() {
-      _titleController.text = wish.title;
-      _pickedWishId = wish.id;
-      _pickedWishTitle = wish.title;
-      _error = null;
-    });
-  }
-
-  /// 제목을 고쳐 다른 것이 되면 위시 연결을 끊는다.
-  String? get _linkedWishId =>
-      _titleController.text.trim() == _pickedWishTitle.trim()
-      ? _pickedWishId
-      : null;
 
   Future<void> _changeKind() async {
     final picked = await showTripKindPickerSheet(context);
@@ -1400,10 +1276,6 @@ class _TripItemFormState extends State<_TripItemForm> {
       }
       if (!picked.usesPlace) {
         _placeId = null;
-      }
-      if (!picked.usesDoneToggle) {
-        _pickedWishId = null;
-        _pickedWishTitle = '';
       }
       _error = null;
     });
@@ -1444,17 +1316,6 @@ class _TripItemFormState extends State<_TripItemForm> {
           onTap: _changeKind,
         ),
         const SizedBox(height: 10),
-        if (kind == TripItemKind.plan && widget.item == null) ...[
-          TripPickerRow(
-            rowKey: tripItemWishFieldKey,
-            label: '언젠가, 같이에서',
-            value: null,
-            placeholder: '적어둔 것에서 가져오기',
-            icon: Icons.bookmark_border_rounded,
-            onTap: _pickWish,
-          ),
-          const SizedBox(height: 10),
-        ],
         if (kind.usesRoute) ..._routeFields(),
         TripTextField(
           fieldKey: tripItemTitleFieldKey,
@@ -1487,7 +1348,6 @@ class _TripItemFormState extends State<_TripItemForm> {
           maxLength: 500,
         ),
         if (kind.usesCheck) ..._assigneeFields(),
-        ..._costFields(),
             ],
           ),
         ),
@@ -1579,47 +1439,6 @@ class _TripItemFormState extends State<_TripItemForm> {
                   : kTripSharedAssigneeId;
             }),
           ),
-        ],
-      ),
-    ];
-  }
-
-  /// 항목에 든 돈과 낸 사람. 적지 않아도 된다.
-  List<Widget> _costFields() {
-    final me = widget.controller.state.me;
-    final partner = widget.controller.state.partner;
-
-    return [
-      const SizedBox(height: 12),
-      TripTextField(
-        fieldKey: tripItemCostFieldKey,
-        controller: _costController,
-        label: '든 돈 (선택, ${widget.trip.currencyLabel})',
-        hint: '숫자만',
-        maxLength: 12,
-        keyboardType: TextInputType.number,
-      ),
-      const SizedBox(height: 9),
-      const TripFieldLabel(text: '누가 냈나요 (선택)'),
-      const SizedBox(height: 8),
-      Wrap(
-        spacing: 7,
-        runSpacing: 7,
-        children: [
-          for (final profile in [me, partner])
-            AlagagiFilterPill(
-              key: tripItemPayerButtonKey(
-                widget.item?.id ?? 'draft',
-                profile.id,
-              ),
-              label: profile.nickname,
-              selected: _paidByProfileId == profile.id,
-              onTap: () => setState(() {
-                _paidByProfileId = _paidByProfileId == profile.id
-                    ? null
-                    : profile.id;
-              }),
-            ),
         ],
       ),
     ];

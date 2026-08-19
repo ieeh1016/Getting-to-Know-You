@@ -289,60 +289,6 @@ void main() {
     );
   });
 
-  testWidgets('a wish can be carried into a trip plan', (tester) async {
-    final controller = buildController();
-    final tripId = seedTrip(controller);
-    controller.startWishDraft();
-    controller.setWishDraftKind(WishKind.place);
-    controller.updateWishDraftTitle('노천탕 있는 곳에서 하루');
-    controller.submitWishDraft();
-    await pumpTrips(tester, controller);
-    await openTripDetail(tester, controller, tripId);
-
-    await openItemForm(tester, TripItemKind.plan);
-    await tester.tap(find.byKey(tripItemWishFieldKey));
-    await tester.pumpAndSettle();
-
-    final wishId = controller.wishesForTripPlan().single.id;
-    await tester.tap(find.byKey(tripWishPickerOptionKey(wishId)));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(tripItemSubmitButtonKey));
-    await tester.pumpAndSettle();
-
-    expect(
-      controller.tripItemsFor(tripId, kind: TripItemKind.plan).single.title,
-      '노천탕 있는 곳에서 하루',
-    );
-  });
-
-  testWidgets('the budget card names what nobody was credited for', (
-    tester,
-  ) async {
-    final controller = buildController();
-    final tripId = seedTrip(controller);
-    controller.saveTripItem(
-      tripId: tripId,
-      kind: TripItemKind.plan,
-      title: '숙소값',
-      cost: 120000,
-      paidByProfileId: 'youngwooUid',
-    );
-    controller.saveTripItem(
-      tripId: tripId,
-      kind: TripItemKind.plan,
-      title: '기념품',
-      cost: 20000,
-    );
-    await pumpTrips(tester, controller);
-    await openTripDetail(tester, controller, tripId);
-
-    await tester.ensureVisible(find.byKey(tripBudgetSummaryKey));
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(tripBudgetUnattributedKey), findsOneWidget);
-    expect(find.byKey(tripBudgetSettlementKey), findsOneWidget);
-  });
-
   testWidgets('the new-trip calendar opens on this month, not last year', (
     tester,
   ) async {

@@ -41,7 +41,6 @@ class TripItemDraft {
     required this.title,
     required this.note,
     required this.link,
-    required this.cost,
     required this.fromLabel,
     required this.toLabel,
     required this.dateKey,
@@ -50,7 +49,6 @@ class TripItemDraft {
     required this.endTimeLabel,
     required this.placeId,
     required this.assigneeProfileId,
-    required this.paidByProfileId,
     required this.transportMode,
   });
 
@@ -58,7 +56,6 @@ class TripItemDraft {
   final String title;
   final String note;
   final String link;
-  final String cost;
   final String fromLabel;
   final String toLabel;
   final String? dateKey;
@@ -67,19 +64,10 @@ class TripItemDraft {
   final String? endTimeLabel;
   final String? placeId;
   final String? assigneeProfileId;
-  final String? paidByProfileId;
   final TripTransportMode transportMode;
 
   /// 되살릴 값이 있는가. 제목이나 메모가 없으면 되살릴 이유가 없다.
   bool get hasContent => title.trim().isNotEmpty || note.trim().isNotEmpty;
-}
-
-/// 여행에서 누가 얼마 더 냈는지. 나누자는 말이 아니라 보이기만 한다.
-class TripSettlement {
-  const TripSettlement({required this.payerProfileId, required this.amount});
-
-  final String payerProfileId;
-  final int amount;
 }
 
 enum ArchiveFilter { all, bothAnswered, similar }
@@ -1259,7 +1247,6 @@ class Trip {
     required this.createdByProfileId,
     this.status = TripStatus.planning,
     this.note = '',
-    this.currencyLabel = '원',
     this.updatedAt,
     this.updatedByProfileId,
   });
@@ -1273,8 +1260,6 @@ class Trip {
   final TripStatus status;
   final String note;
 
-  /// 경비를 적을 때 붙이는 단위. 해외 여행이면 `엔`, `USD`처럼 바꾼다.
-  final String currencyLabel;
   final DateTime? updatedAt;
   final String? updatedByProfileId;
 
@@ -1319,7 +1304,6 @@ class Trip {
     String? endDateKey,
     TripStatus? status,
     String? note,
-    String? currencyLabel,
     DateTime? updatedAt,
     String? updatedByProfileId,
   }) {
@@ -1332,7 +1316,6 @@ class Trip {
       createdByProfileId: createdByProfileId,
       status: status ?? this.status,
       note: note ?? this.note,
-      currencyLabel: currencyLabel ?? this.currencyLabel,
       updatedAt: updatedAt ?? this.updatedAt,
       updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
     );
@@ -1358,10 +1341,7 @@ class TripItem {
     this.link,
     this.assigneeProfileId,
     this.sortOrder = 0,
-    this.cost = 0,
-    this.paidByProfileId,
     this.checked = false,
-    this.wishId,
     this.updatedAt,
     this.updatedByProfileId,
   });
@@ -1401,16 +1381,8 @@ class TripItem {
   /// 같은 날 같은 시각일 때의 순서. 사용자가 끌어서 바꾼 값이다.
   final int sortOrder;
 
-  /// 이 항목에 든 돈. 0이면 적지 않은 것이다. 단위는 여행의 `currencyLabel`이다.
-  final int cost;
-
-  /// 돈을 낸 사람. 정하지 않으면 누가 냈는지 적지 않은 것이다.
-  final String? paidByProfileId;
   final bool checked;
 
-  /// `언젠가, 같이`에서 가져온 계획이면 그 위시의 id. 다녀온 뒤 그 위시를
-  /// 닫을지 물어볼 수 있게 남긴다.
-  final String? wishId;
   final DateTime? updatedAt;
   final String? updatedByProfileId;
 
@@ -1468,12 +1440,7 @@ class TripItem {
     String? assigneeProfileId,
     bool clearAssignee = false,
     int? sortOrder,
-    int? cost,
-    String? paidByProfileId,
-    bool clearPaidBy = false,
     bool? checked,
-    String? wishId,
-    bool clearWishId = false,
     DateTime? updatedAt,
     String? updatedByProfileId,
   }) {
@@ -1501,12 +1468,7 @@ class TripItem {
           ? null
           : assigneeProfileId ?? this.assigneeProfileId,
       sortOrder: sortOrder ?? this.sortOrder,
-      cost: cost ?? this.cost,
-      paidByProfileId: clearPaidBy
-          ? null
-          : paidByProfileId ?? this.paidByProfileId,
       checked: checked ?? this.checked,
-      wishId: clearWishId ? null : wishId ?? this.wishId,
       updatedAt: updatedAt ?? this.updatedAt,
       updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
     );
@@ -8042,19 +8004,6 @@ class AlagagiController extends ChangeNotifier {
     return List<TripDay>.unmodifiable(days);
   }
 
-  /// 여행 계획에 담을 만한 위시. 아직 안 한 것만 고른다.
-  List<WishItem> wishesForTripPlan() {
-    final open = _wishes.where((wish) => !wish.done).toList();
-    // 둘 다 하고 싶다고 한 것부터 눈에 들어와야 한다.
-    open.sort((first, second) {
-      if (first.isMutual != second.isMutual) {
-        return first.isMutual ? -1 : 1;
-      }
-      return first.title.compareTo(second.title);
-    });
-    return List<WishItem>.unmodifiable(open);
-  }
-
   /// 이 날 잡혀 있는 여행. 만남 달력이 여행 기간과 겹치는 날을 알아야
   /// 같은 날에 두 가지를 잡아두지 않는다.
   Trip? tripCoveringDate(String dateKey) {
@@ -8165,43 +8114,6 @@ class AlagagiController extends ChangeNotifier {
     return List<TripItem>.unmodifiable(scheduled);
   }
 
-  /// 다녀온 여행에서 `했다`로 표시된 계획에 걸린 위시들 중, 내가 닫을 수
-  /// 있고 아직 안 닫힌 것. 권한이 없는 위시를 목록에 넣으면 눌러도
-  /// 아무 일이 없는 것처럼 보인다.
-  List<WishItem> closableWishesForTrip(String tripId) {
-    final linkedIds = _tripItems
-        .where(
-          (item) =>
-              item.tripId == tripId &&
-              item.kind.usesDoneToggle &&
-              item.checked &&
-              item.wishId != null,
-        )
-        .map((item) => item.wishId!)
-        .toSet();
-    if (linkedIds.isEmpty) {
-      return const [];
-    }
-    return List<WishItem>.unmodifiable(
-      _wishes.where(
-        (wish) =>
-            linkedIds.contains(wish.id) &&
-            !wish.done &&
-            (wish.createdByProfileId == _state.me.id ||
-                wish.likedByProfileIds.contains(_state.me.id)),
-      ),
-    );
-  }
-
-  /// 위 목록을 한 번에 닫는다. 닫은 개수를 돌려준다.
-  int closeTripLinkedWishes(String tripId) {
-    final closable = closableWishesForTrip(tripId);
-    for (final wish in closable) {
-      toggleWishDone(wish.id);
-    }
-    return closable.length;
-  }
-
   /// 여행 중 지금 시각 다음에 오는 항목. 화면을 그릴 때만 계산한다.
   ///
   /// 시각을 안 적은 항목은 `지금`과 견줄 수 없어 후보에서 뺀다.
@@ -8273,7 +8185,6 @@ class AlagagiController extends ChangeNotifier {
     required String startDateKey,
     required String endDateKey,
     String note = '',
-    String currencyLabel = '원',
     TripStatus? status,
   }) {
     final trimmedTitle = title.trim();
@@ -8291,12 +8202,6 @@ class AlagagiController extends ChangeNotifier {
     if (note.trim().length > 500) {
       return '메모는 500자 안으로 남겨주세요.';
     }
-    final trimmedCurrency = currencyLabel.trim();
-    if (trimmedCurrency.length > 8) {
-      return '통화 단위는 8자 안으로 적어주세요.';
-    }
-    final resolvedCurrency = trimmedCurrency.isEmpty ? '원' : trimmedCurrency;
-
     final now = DateTime.now();
     final existingIndex = tripId == null
         ? -1
@@ -8309,7 +8214,6 @@ class AlagagiController extends ChangeNotifier {
         startDateKey: startDateKey,
         endDateKey: endDateKey,
         note: note.trim(),
-        currencyLabel: resolvedCurrency,
         status: status,
         updatedAt: now,
         updatedByProfileId: _state.me.id,
@@ -8325,7 +8229,6 @@ class AlagagiController extends ChangeNotifier {
         createdByProfileId: _state.me.id,
         status: status ?? TripStatus.planning,
         note: note.trim(),
-        currencyLabel: resolvedCurrency,
         updatedAt: now,
         updatedByProfileId: _state.me.id,
       );
@@ -8439,9 +8342,6 @@ class AlagagiController extends ChangeNotifier {
     String? placeId,
     String? link,
     String? assigneeProfileId,
-    int cost = 0,
-    String? paidByProfileId,
-    String? wishId,
   }) {
     final trip = tripById(tripId);
     if (trip == null) {
@@ -8524,28 +8424,6 @@ class AlagagiController extends ChangeNotifier {
       return '담당은 둘 중 한 사람이거나 함께여야 해요.';
     }
 
-    if (cost < 0) {
-      return '금액은 0보다 작을 수 없어요.';
-    }
-    if (cost > 100000000) {
-      return '금액이 너무 커요.';
-    }
-    final trimmedPayer = trimmedOrNull(paidByProfileId);
-    if (trimmedPayer != null &&
-        trimmedPayer != _state.me.id &&
-        trimmedPayer != _state.partner.id) {
-      return '돈을 낸 사람은 둘 중 한 명이어야 해요.';
-    }
-
-    // 위시 연결은 계획에만 둔다. 다른 종류로 바뀌면 끊는다.
-    final trimmedWishId = trimmedOrNull(wishId);
-    final resolvedWishId =
-        kind.usesDoneToggle &&
-            trimmedWishId != null &&
-            _wishes.any((wish) => wish.id == trimmedWishId)
-        ? trimmedWishId
-        : null;
-
     final now = DateTime.now();
     final existingIndex = itemId == null
         ? -1
@@ -8576,12 +8454,7 @@ class AlagagiController extends ChangeNotifier {
         clearLink: resolvedLink == null,
         assigneeProfileId: trimmedAssignee,
         clearAssignee: trimmedAssignee == null,
-        cost: cost,
-        paidByProfileId: trimmedPayer,
-        clearPaidBy: trimmedPayer == null,
         checked: (kind.usesCheck || kind.usesDoneToggle) ? null : false,
-        wishId: resolvedWishId,
-        clearWishId: resolvedWishId == null,
         updatedAt: now,
         updatedByProfileId: _state.me.id,
       );
@@ -8605,9 +8478,6 @@ class AlagagiController extends ChangeNotifier {
         link: resolvedLink,
         assigneeProfileId: trimmedAssignee,
         sortOrder: _nextTripItemOrder(tripId, resolvedDateKey),
-        cost: cost,
-        paidByProfileId: trimmedPayer,
-        wishId: resolvedWishId,
         updatedAt: now,
         updatedByProfileId: _state.me.id,
       );
@@ -8663,63 +8533,6 @@ class AlagagiController extends ChangeNotifier {
   }
 
   // --- Trip photos ---
-
-  /// 여행에 든 돈 합계.
-  int tripTotalCost(String tripId) {
-    var total = 0;
-    for (final item in _tripItems) {
-      if (item.tripId == tripId) {
-        total += item.cost;
-      }
-    }
-    return total;
-  }
-
-  /// 사람별로 낸 돈. 누가 냈는지 적지 않은 금액은 빠진다.
-  Map<String, int> tripCostByPayer(String tripId) {
-    final totals = <String, int>{};
-    for (final item in _tripItems) {
-      final payer = item.paidByProfileId;
-      if (item.tripId != tripId || payer == null || item.cost == 0) {
-        continue;
-      }
-      totals[payer] = (totals[payer] ?? 0) + item.cost;
-    }
-    return Map<String, int>.unmodifiable(totals);
-  }
-
-  /// 낸 사람을 적지 않은 금액. 합계와 사람별 합이 안 맞는 이유가 여기 있다.
-  int tripUnattributedCost(String tripId) {
-    var total = 0;
-    for (final item in _tripItems) {
-      if (item.tripId != tripId || item.cost == 0) {
-        continue;
-      }
-      if (item.paidByProfileId == null) {
-        total += item.cost;
-      }
-    }
-    return total;
-  }
-
-  /// 둘 사이 차액. 적힌 것만으로 셈하고, 정산을 재촉하지는 않는다.
-  /// 낸 사람이 적힌 금액이 한쪽뿐이면 그 사람이 그만큼 더 낸 것으로 본다.
-  TripSettlement? tripSettlement(String tripId) {
-    final byPayer = tripCostByPayer(tripId);
-    if (byPayer.isEmpty) {
-      return null;
-    }
-    final mine = byPayer[_state.me.id] ?? 0;
-    final theirs = byPayer[_state.partner.id] ?? 0;
-    final gap = (mine - theirs).abs();
-    if (gap == 0) {
-      return null;
-    }
-    return TripSettlement(
-      payerProfileId: mine > theirs ? _state.me.id : _state.partner.id,
-      amount: gap,
-    );
-  }
 
   bool get tripPhotosLoading => _tripPhotoLoads.isNotEmpty;
 

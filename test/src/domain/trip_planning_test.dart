@@ -1006,79 +1006,6 @@ void main() {
       expect(controller.upcomingTrip?.title, '초가을');
     });
 
-    test('costs add up and split by who paid', () {
-      final controller = buildController();
-      controller.saveTrip(
-        title: '가을 제주',
-        destination: '제주도',
-        startDateKey: '2026-09-12',
-        endDateKey: '2026-09-13',
-        currencyLabel: '엔',
-      );
-      final tripId = controller.trips.single.id;
-
-      controller.saveTripItem(
-        tripId: tripId,
-        kind: TripItemKind.plan,
-        title: '점심',
-        cost: 3000,
-        paidByProfileId: 'youngwooUid',
-      );
-      controller.saveTripItem(
-        tripId: tripId,
-        kind: TripItemKind.plan,
-        title: '저녁',
-        cost: 5000,
-        paidByProfileId: 'minyoungUid',
-      );
-      // 누가 냈는지 적지 않은 금액은 합계에만 들어간다.
-      controller.saveTripItem(
-        tripId: tripId,
-        kind: TripItemKind.plan,
-        title: '교통',
-        cost: 1000,
-      );
-
-      expect(controller.trips.single.currencyLabel, '엔');
-      expect(controller.tripTotalCost(tripId), 9000);
-      expect(controller.tripCostByPayer(tripId), {
-        'youngwooUid': 3000,
-        'minyoungUid': 5000,
-      });
-    });
-
-    test('a negative cost and an outside payer are rejected', () {
-      final controller = buildController();
-      controller.saveTrip(
-        title: '가을 제주',
-        destination: '제주도',
-        startDateKey: '2026-09-12',
-        endDateKey: '2026-09-13',
-      );
-      final tripId = controller.trips.single.id;
-
-      expect(
-        controller.saveTripItem(
-          tripId: tripId,
-          kind: TripItemKind.plan,
-          title: '점심',
-          cost: -1,
-        ),
-        isNotNull,
-      );
-      expect(
-        controller.saveTripItem(
-          tripId: tripId,
-          kind: TripItemKind.plan,
-          title: '점심',
-          cost: 1000,
-          paidByProfileId: 'strangerUid',
-        ),
-        isNotNull,
-      );
-      expect(controller.tripItemsFor(tripId), isEmpty);
-    });
-
     test('a trip note is saved with the trip', () {
       final controller = buildController();
 
@@ -1172,65 +1099,6 @@ void main() {
       expect(controller.consumePendingTripId(), tripId);
       // 목록으로 나갔다 돌아올 때 같은 여행이 다시 열리면 안 된다.
       expect(controller.consumePendingTripId(), isNull);
-    });
-
-    test('budget separates what nobody was credited for', () {
-      final controller = buildController();
-      controller.saveTrip(
-        title: '가을 제주',
-        destination: '제주도',
-        startDateKey: '2026-09-12',
-        endDateKey: '2026-09-14',
-      );
-      final tripId = controller.trips.single.id;
-      controller.saveTripItem(
-        tripId: tripId,
-        kind: TripItemKind.plan,
-        title: '저녁',
-        cost: 40000,
-        paidByProfileId: 'youngwooUid',
-      );
-      controller.saveTripItem(
-        tripId: tripId,
-        kind: TripItemKind.plan,
-        title: '기념품',
-        cost: 10000,
-      );
-
-      expect(controller.tripTotalCost(tripId), 50000);
-      expect(controller.tripUnattributedCost(tripId), 10000);
-    });
-
-    test('settlement shows who paid more without asking for money back', () {
-      final controller = buildController();
-      controller.saveTrip(
-        title: '가을 제주',
-        destination: '제주도',
-        startDateKey: '2026-09-12',
-        endDateKey: '2026-09-14',
-      );
-      final tripId = controller.trips.single.id;
-
-      expect(controller.tripSettlement(tripId), isNull);
-
-      controller.saveTripItem(
-        tripId: tripId,
-        kind: TripItemKind.plan,
-        title: '숙소값',
-        cost: 120000,
-        paidByProfileId: 'youngwooUid',
-      );
-      controller.saveTripItem(
-        tripId: tripId,
-        kind: TripItemKind.plan,
-        title: '렌트카',
-        cost: 80000,
-        paidByProfileId: 'minyoungUid',
-      );
-
-      final settlement = controller.tripSettlement(tripId)!;
-      expect(settlement.payerProfileId, 'youngwooUid');
-      expect(settlement.amount, 40000);
     });
 
     test('packing can be copied from a past trip without the checks', () {
@@ -1344,44 +1212,6 @@ void main() {
         controller.tripItemsFor(tripId).map((item) => item.title).first,
         '저녁',
       );
-    });
-
-    test('a wish carried into a plan can be closed after the trip', () {
-      final controller = buildController();
-      controller.startWishDraft();
-      controller.setWishDraftKind(WishKind.place);
-      controller.updateWishDraftTitle('노천탕에서 하루');
-      controller.submitWishDraft();
-      final wishId = controller.visibleWishes.single.id;
-
-      controller.saveTrip(
-        title: '가을 제주',
-        destination: '제주도',
-        startDateKey: '2026-09-12',
-        endDateKey: '2026-09-14',
-      );
-      final tripId = controller.lastSavedTripId!;
-      controller.saveTripItem(
-        tripId: tripId,
-        kind: TripItemKind.plan,
-        title: '노천탕에서 하루',
-        wishId: wishId,
-      );
-      final planId = controller.tripItemsFor(tripId).single.id;
-
-      // 아직 했다고 표시하지 않았으면 닫을 것이 없다.
-      expect(controller.closableWishesForTrip(tripId), isEmpty);
-
-      controller.toggleTripItemCheck(planId);
-
-      expect(
-        controller.closableWishesForTrip(tripId).single.id,
-        wishId,
-      );
-      expect(controller.closeTripLinkedWishes(tripId), 1);
-      expect(controller.visibleWishes.single.done, isTrue);
-      // 이미 닫힌 것은 다시 세지 않는다.
-      expect(controller.closableWishesForTrip(tripId), isEmpty);
     });
 
     test('the next item today follows the clock, not the first row', () {

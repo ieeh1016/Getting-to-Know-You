@@ -347,7 +347,6 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         'endDateKey': trip.endDateKey,
         'status': trip.status.storageKey,
         'note': trip.note,
-        'currencyLabel': trip.currencyLabel,
         'createdByProfileId': trip.createdByProfileId,
         'updatedByProfileId':
             trip.updatedByProfileId ?? trip.createdByProfileId,
@@ -399,10 +398,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         'placeId': item.placeId ?? '',
         'assigneeProfileId': item.assigneeProfileId ?? '',
         'sortOrder': item.sortOrder,
-        'cost': item.cost,
-        'paidByProfileId': item.paidByProfileId ?? '',
         'link': item.link ?? '',
-        'wishId': item.wishId ?? '',
         'checked': item.checked,
         'createdByProfileId': item.createdByProfileId,
         'updatedByProfileId':
@@ -1264,7 +1260,6 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           ? TripStatus.done
           : TripStatus.planning,
       note: _readString(data, 'note') ?? '',
-      currencyLabel: _readString(data, 'currencyLabel') ?? '원',
       updatedAt: _readDateTime(data, 'updatedAt'),
       updatedByProfileId: _readString(data, 'updatedByProfileId'),
     );
@@ -1289,7 +1284,6 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     final toLabel = _readString(data, 'toLabel');
     final placeId = _readString(data, 'placeId');
     final assigneeProfileId = _readString(data, 'assigneeProfileId');
-    final paidByProfileId = _readString(data, 'paidByProfileId');
     final link = _readString(data, 'link');
 
     String? orNull(String? value) =>
@@ -1318,10 +1312,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       placeId: orNull(placeId),
       assigneeProfileId: orNull(assigneeProfileId),
       sortOrder: _readInt(data, 'sortOrder') ?? 0,
-      cost: _readInt(data, 'cost') ?? 0,
-      paidByProfileId: orNull(paidByProfileId),
       link: link == null || link.isEmpty ? null : link,
-      wishId: orNull(_readString(data, 'wishId')),
       checked: data['checked'] == true,
       updatedAt: _readDateTime(data, 'updatedAt'),
       updatedByProfileId: _readString(data, 'updatedByProfileId'),

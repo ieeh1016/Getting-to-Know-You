@@ -7,7 +7,6 @@ import '../../shared/readable_detail_sheet.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 import '../place/place_common.dart';
-import 'trip_format.dart';
 
 IconData tripItemKindIcon(TripItemKind kind) => switch (kind) {
   TripItemKind.stay => Icons.bed_outlined,
@@ -44,7 +43,6 @@ class TripTimeline extends StatelessWidget {
     required this.onReorder,
     required this.onAddForDay,
     required this.onOpenExternalLink,
-    required this.currencyLabel,
     required this.nextItemId,
     required this.photosLoaded,
     required this.onLoadPhotos,
@@ -72,9 +70,6 @@ class TripTimeline extends StatelessWidget {
 
   /// 예약 링크와 지도를 밖으로 여는 통로.
   final ValueChanged<String> onOpenExternalLink;
-
-  /// 그 여행의 경비 단위.
-  final String currencyLabel;
 
   /// 여행 중일 때 지금 다음에 오는 항목. 없으면 null.
   final String? nextItemId;
@@ -129,7 +124,6 @@ class TripTimeline extends StatelessWidget {
             onReorder: onReorder,
             onAddForDay: onAddForDay,
             onOpenExternalLink: onOpenExternalLink,
-            currencyLabel: currencyLabel,
             nextItemId: nextItemId,
             showDoneToggle: showDoneToggle,
             onToggleDone: onToggleDone,
@@ -187,7 +181,6 @@ class _TripTimelineDay extends StatelessWidget {
     required this.onReorder,
     required this.onAddForDay,
     required this.onOpenExternalLink,
-    required this.currencyLabel,
     required this.nextItemId,
     required this.showDoneToggle,
     required this.onToggleDone,
@@ -206,7 +199,6 @@ class _TripTimelineDay extends StatelessWidget {
   final void Function(String? dateKey, int oldIndex, int newIndex) onReorder;
   final void Function(String? dateKey) onAddForDay;
   final ValueChanged<String> onOpenExternalLink;
-  final String currencyLabel;
   final String? nextItemId;
   final bool showDoneToggle;
   final ValueChanged<TripItem> onToggleDone;
@@ -268,8 +260,7 @@ class _TripTimelineDay extends StatelessWidget {
               // 세로선 밖에 떠 보인다. 종단은 담기 줄이 그린다.
               isLastInDay: false,
               onTap: () => onTapItem(day.items[index]),
-              currencyLabel: currencyLabel,
-              onOpenExternalLink: onOpenExternalLink,
+                onOpenExternalLink: onOpenExternalLink,
               isNext: day.items[index].id == nextItemId,
               showDoneToggle: showDoneToggle,
               onToggleDone: onToggleDone,
@@ -621,7 +612,6 @@ class _TripTimelineEntry extends StatelessWidget {
     required this.place,
     required this.isLastInDay,
     required this.onTap,
-    required this.currencyLabel,
     required this.onOpenExternalLink,
     required this.isNext,
     required this.showDoneToggle,
@@ -633,7 +623,6 @@ class _TripTimelineEntry extends StatelessWidget {
   final SharedPlace? place;
   final bool isLastInDay;
   final VoidCallback onTap;
-  final String currencyLabel;
   final ValueChanged<String> onOpenExternalLink;
 
   /// 여행 중일 때 지금 다음에 오는 항목인가.
@@ -778,17 +767,6 @@ class _TripTimelineEntry extends StatelessWidget {
                                   ),
                                 ),
                               ],
-                            ],
-                            if (item.cost > 0) ...[
-                              const SizedBox(height: 5),
-                              Text(
-                                '${formatTripAmount(item.cost)}$currencyLabel',
-                                style: sans(
-                                  size: 11.5,
-                                  weight: FontWeight.w700,
-                                  color: AlagagiColors.sageDeep,
-                                ),
-                              ),
                             ],
                             if (_openableLink != null) ...[
                               const SizedBox(height: 6),

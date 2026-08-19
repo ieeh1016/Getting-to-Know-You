@@ -12,7 +12,6 @@ import '../../shared/readable_detail_sheet.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 import '../place/place_common.dart';
-import 'trip_format.dart';
 import 'trip_photo_viewer.dart';
 import 'trip_sheets.dart';
 import 'trip_timeline.dart';
@@ -415,21 +414,6 @@ class _TripScreenState extends State<TripScreen> {
         const SizedBox(height: 10),
         _TripNoteCard(title: trip.title, note: trip.note.trim()),
       ],
-      if (widget.controller.tripTotalCost(trip.id) > 0) ...[
-        const SizedBox(height: 10),
-        _TripBudgetCard(trip: trip, controller: widget.controller),
-      ],
-      // 다녀와서 '했다'로 표시한 계획이 위시에서 열린 채 남아 있다.
-      if (widget.controller.closableWishesForTrip(trip.id).isNotEmpty) ...[
-        const SizedBox(height: 10),
-        _TripWishCloseRow(
-          count: widget.controller.closableWishesForTrip(trip.id).length,
-          onClose: () => setState(() {
-            final closed = widget.controller.closeTripLinkedWishes(trip.id);
-            _packingNotice = '언젠가, 같이에서 $closed개 닫았어요.';
-          }),
-        ),
-      ],
       if (widget.controller.tripNeedsStatusNudge(trip)) ...[
         const SizedBox(height: 12),
         _TripStatusNudge(
@@ -577,7 +561,6 @@ class _TripScreenState extends State<TripScreen> {
         ),
         onAddForDay: (dateKey) => _addItem(trip, dateKey: dateKey),
         onOpenExternalLink: widget.onOpenExternalLink,
-        currencyLabel: trip.currencyLabel,
         nextItemId:
             widget.controller.tripTimingFor(trip).phase == TripPhase.ongoing
             ? widget.controller.nextTripItemToday(trip.id)?.id
@@ -643,7 +626,6 @@ class _TripScreenState extends State<TripScreen> {
             _TripItemCard(
               item: stay,
               controller: widget.controller,
-              currencyLabel: trip.currencyLabel,
               onOpenExternalLink: widget.onOpenExternalLink,
               onEdit: () => _editItem(trip, stay),
               onDelete: () => _confirmItemDelete(stay),
@@ -744,7 +726,6 @@ class _TripScreenState extends State<TripScreen> {
           _TripItemCard(
             item: item,
             controller: widget.controller,
-            currencyLabel: trip.currencyLabel,
             onOpenExternalLink: widget.onOpenExternalLink,
             onEdit: () => _editItem(trip, item),
             onDelete: () => _confirmItemDelete(item),
@@ -1193,101 +1174,6 @@ class _TripNoteCard extends StatelessWidget {
   }
 }
 
-/// 여행에 든 돈 요약. 낸 사람을 적은 것만 사람별로 나눈다.
-class _TripBudgetCard extends StatelessWidget {
-  const _TripBudgetCard({required this.trip, required this.controller});
-
-  final Trip trip;
-  final AlagagiController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final total = controller.tripTotalCost(trip.id);
-    final byPayer = controller.tripCostByPayer(trip.id);
-    final unattributed = controller.tripUnattributedCost(trip.id);
-    final settlement = controller.tripSettlement(trip.id);
-    final me = controller.state.me;
-    final partner = controller.state.partner;
-
-    return AlagagiPaperCard(
-      key: tripBudgetSummaryKey,
-      compact: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.receipt_long_outlined,
-                size: 16,
-                color: AlagagiColors.sageDeep,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '든 돈',
-                  style: sans(size: 12.5, weight: FontWeight.w800),
-                ),
-              ),
-              Text(
-                '${formatTripAmount(total)}${trip.currencyLabel}',
-                style: serif(context, size: 16, weight: FontWeight.w800),
-              ),
-            ],
-          ),
-          if (byPayer.isNotEmpty || unattributed > 0) ...[
-            const SizedBox(height: 9),
-            Wrap(
-              spacing: 12,
-              runSpacing: 6,
-              children: [
-                for (final profile in [me, partner])
-                  if ((byPayer[profile.id] ?? 0) > 0)
-                    Text(
-                      '${profile.nickname} '
-                      '${formatTripAmount(byPayer[profile.id]!)}'
-                      '${trip.currencyLabel}',
-                      style: sans(size: 11.5, color: AlagagiColors.muted),
-                    ),
-                // 합계와 사람별 합이 안 맞아 보이는 이유를 남긴다.
-                if (unattributed > 0)
-                  Text(
-                    key: tripBudgetUnattributedKey,
-                    '아직 안 적음 '
-                    '${formatTripAmount(unattributed)}${trip.currencyLabel}',
-                    style: sans(size: 11.5, color: AlagagiColors.muted),
-                  ),
-              ],
-            ),
-          ],
-          if (settlement != null) ...[
-            const SizedBox(height: 9),
-            Container(
-              key: tripBudgetSettlementKey,
-              decoration: BoxDecoration(
-                color: AlagagiColors.skyPanel,
-                borderRadius: BorderRadius.circular(11),
-              ),
-              padding: const EdgeInsets.fromLTRB(11, 8, 11, 8),
-              child: Text(
-                // 정산을 재촉하지 않는다. 사실만 적는다.
-                '${settlement.payerProfileId == me.id ? me.nickname : partner.nickname}'
-                '이(가) ${formatTripAmount(settlement.amount)}'
-                '${trip.currencyLabel} 더 냈어요',
-                style: sans(
-                  size: 11.5,
-                  weight: FontWeight.w700,
-                  color: AlagagiColors.sageDeep,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
 /// 목록 맨 위의 만들기 줄. 버튼 하나보다 다음 행동이 또렷하다.
 class _AddTripBanner extends StatelessWidget {
   const _AddTripBanner({required this.onTap});
@@ -1455,55 +1341,6 @@ class _TripDetailHeader extends StatelessWidget {
                   onTap: () => controller.setTripStatus(trip.id, status),
                 ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 다녀온 뒤 `언젠가, 같이`에 열려 있는 것을 함께 닫아준다.
-class _TripWishCloseRow extends StatelessWidget {
-  const _TripWishCloseRow({required this.count, required this.onClose});
-
-  final int count;
-  final VoidCallback onClose;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlagagiPaperCard(
-      compact: true,
-      child: Row(
-        children: [
-          const Icon(
-            Icons.bookmark_added_outlined,
-            size: 16,
-            color: AlagagiColors.sageDeep,
-          ),
-          const SizedBox(width: 9),
-          Expanded(
-            child: Text(
-              '언젠가, 같이에 $count개가 아직 열려 있어요',
-              style: sans(size: 12.5, height: 1.5, color: AlagagiColors.ink),
-            ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            height: 36,
-            child: OutlinedButton(
-              key: tripWishCloseButtonKey,
-              onPressed: onClose,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AlagagiColors.sageDeep,
-                side: const BorderSide(color: AlagagiColors.line),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                textStyle: sans(size: 12, weight: FontWeight.w800),
-              ),
-              child: const Text('함께 닫기'),
-            ),
           ),
         ],
       ),
@@ -2341,7 +2178,6 @@ class _TripItemCard extends StatelessWidget {
     required this.controller,
     required this.onEdit,
     required this.onDelete,
-    required this.currencyLabel,
     required this.onOpenExternalLink,
     this.onAssign,
   });
@@ -2354,8 +2190,6 @@ class _TripItemCard extends StatelessWidget {
   /// 준비물에서만 쓴다. 챙길 사람을 고르는 콜백이다.
   final ValueChanged<String?>? onAssign;
 
-  /// 그 여행의 경비 단위. 항목 금액을 카드에서 바로 읽게 한다.
-  final String currencyLabel;
   final ValueChanged<String> onOpenExternalLink;
 
   @override
@@ -2485,18 +2319,6 @@ class _TripItemCard extends StatelessWidget {
                       icon: Icons.map_outlined,
                       label: '지도',
                       onPressed: () => onOpenExternalLink(place.googleMapsUrl),
-                    ),
-                  ],
-                  // 적어둔 금액을 열어봐야만 알 수 있으면 적어둔 뜻이 없다.
-                  if (item.cost > 0) ...[
-                    const SizedBox(height: 5),
-                    Text(
-                      '${formatTripAmount(item.cost)}$currencyLabel',
-                      style: sans(
-                        size: 12,
-                        weight: FontWeight.w700,
-                        color: AlagagiColors.sageDeep,
-                      ),
                     ),
                   ],
                   if (item.note.isNotEmpty) ...[
