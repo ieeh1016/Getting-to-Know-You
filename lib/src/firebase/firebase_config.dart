@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 class FirebaseConfig {
@@ -36,5 +37,10 @@ Future<bool> initializeFirebaseIfConfigured() async {
     return false;
   }
   await Firebase.initializeApp(options: FirebaseConfig.options);
+  // 여행은 이 앱에서 유일하게 집 밖에서 쓰는 기능이다. 비행기나 로밍을 끈
+  // 해외에서 새로고침해도 마지막에 본 내용이 남아야 한다. 무료 플랜 범위다.
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+  );
   return true;
 }

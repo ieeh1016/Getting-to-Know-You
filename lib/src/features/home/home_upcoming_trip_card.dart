@@ -26,6 +26,15 @@ class HomeUpcomingTripCard extends StatelessWidget {
       kind: TripItemKind.packing,
     );
     final checked = controller.tripPackingCheckedCount(trip.id);
+    final todayItems = timing.phase == TripPhase.ongoing
+        ? controller.tripItemsForToday(trip.id)
+        : const <TripItem>[];
+    final todayLine = todayItems.isEmpty
+        ? null
+        : '오늘 '
+              '${todayItems.first.timeLabel == null ? '' : '${todayItems.first.timeLabel} '}'
+              '${todayItems.first.title}'
+              '${todayItems.length > 1 ? ' 외 ${todayItems.length - 1}개' : ''}';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -34,7 +43,7 @@ class HomeUpcomingTripCard extends StatelessWidget {
         const SizedBox(height: 10),
         InkWell(
           key: homeUpcomingTripCardKey,
-          onTap: () => controller.goTo(AlagagiRoute.trips),
+          onTap: () => controller.openTrip(trip.id),
           borderRadius: BorderRadius.circular(AlagagiCardGeometry.radius),
           child: AlagagiPaperCard(
             child: Row(
@@ -82,7 +91,21 @@ class HomeUpcomingTripCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: sans(size: 12, color: AlagagiColors.muted),
                       ),
-                      if (packing.isNotEmpty) ...[
+                      // 여행 중이면 남은 날 수보다 오늘 무엇이 있는지가 급하다.
+                      if (todayLine != null) ...[
+                        const SizedBox(height: 5),
+                        Text(
+                          key: homeTripTodayLineKey,
+                          todayLine,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: sans(
+                            size: 11.5,
+                            weight: FontWeight.w700,
+                            color: AlagagiColors.sageDeep,
+                          ),
+                        ),
+                      ] else if (packing.isNotEmpty) ...[
                         const SizedBox(height: 5),
                         Text(
                           '챙긴 것 $checked / ${packing.length}',

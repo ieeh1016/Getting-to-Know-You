@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
+import '../../shared/readable_detail_sheet.dart';
 import '../../shared/ui_components.dart';
 import '../../shared/ui_style.dart';
 import '../place/place_common.dart';
@@ -35,7 +36,7 @@ class TripTimeline extends StatelessWidget {
     required this.placeFor,
     required this.photosForDate,
     required this.todayDateKey,
-    required this.todayAnchorKey,
+    required this.anchorKeyFor,
     required this.onTapItem,
     required this.onTapPhoto,
     required this.onReorder,
@@ -48,8 +49,8 @@ class TripTimeline extends StatelessWidget {
   final List<TripPhoto> Function(String dateKey) photosForDate;
   final String todayDateKey;
 
-  /// 여행 중이면 이 자리로 스크롤해 오늘부터 보이게 한다.
-  final GlobalKey todayAnchorKey;
+  /// 날짜 이동 pill과 '오늘' 자동 스크롤이 잡을 자리.
+  final GlobalKey? Function(TripDay day) anchorKeyFor;
   final ValueChanged<TripItem> onTapItem;
   final ValueChanged<TripPhoto> onTapPhoto;
 
@@ -90,10 +91,7 @@ class TripTimeline extends StatelessWidget {
                 : photosForDate(days[index].dateKey),
             isToday: !days[index].isUndated &&
                 days[index].dateKey == todayDateKey,
-            anchorKey: !days[index].isUndated &&
-                    days[index].dateKey == todayDateKey
-                ? todayAnchorKey
-                : null,
+            anchorKey: anchorKeyFor(days[index]),
             onTapItem: onTapItem,
             onTapPhoto: onTapPhoto,
             onReorder: onReorder,
@@ -506,6 +504,24 @@ class _TripTimelineEntry extends StatelessWidget {
                                   color: AlagagiColors.muted,
                                 ),
                               ),
+                              // 두 줄에서 잘린 메모는 잘린 줄 모르고 지나친다.
+                              if (showsReadableCue(item.note)) ...[
+                                const SizedBox(height: 6),
+                                InkWell(
+                                  key: tripItemNoteCueKey(item.id),
+                                  onTap: () => showReadableDetailSheet(
+                                    context,
+                                    label: item.kind.label,
+                                    title: item.title,
+                                    body: item.note,
+                                  ),
+                                  borderRadius: BorderRadius.circular(999),
+                                  child: const Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: AlagagiFullTextCue(),
+                                  ),
+                                ),
+                              ],
                             ],
                           ],
                         ),

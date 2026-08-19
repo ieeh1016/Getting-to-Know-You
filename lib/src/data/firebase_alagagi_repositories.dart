@@ -430,11 +430,12 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
   }
 
   @override
-  Future<List<TripPhoto>> loadTripPhotos(String spaceId) async {
+  Future<List<TripPhoto>> loadTripPhotos(String spaceId, String tripId) async {
     final snapshot = await _firestore
         .collection('spaces')
         .doc(spaceId)
         .collection('tripPhotos')
+        .where('tripId', isEqualTo: tripId)
         .get();
     return snapshot.docs
         .map((doc) => _tripPhotoFromData(doc.data(), fallbackId: doc.id))

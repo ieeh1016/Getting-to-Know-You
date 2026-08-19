@@ -241,6 +241,34 @@ void main() {
       expect(find.textContaining('missingUid'), findsOneWidget);
     });
 
+    testWidgets('a failed session read reads as a connection problem', (
+      tester,
+    ) async {
+      final auth = FakeAlagagiAuthRepository(
+        initialUser: const AlagagiAuthUser(
+          uid: 'youngwooUid',
+          loginId: 'youngwoo',
+          email: 'youngwoo@gettoknow.local',
+        ),
+      );
+      final data = FakeAlagagiDataRepository(sessionLoadFails: true);
+
+      await tester.pumpWidget(
+        AlagagiApp(
+          firebaseEnabled: true,
+          authRepository: auth,
+          dataRepository: data,
+          firstVisitGuideStore: _seenGuideStore(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 연결 문제에 개발자용 Firebase 설정 안내를 띄우면 할 수 있는 일이 없다.
+      expect(find.text('지금은 연결이 안 돼요'), findsOneWidget);
+      expect(find.text('Firebase Console 설정이 필요해요'), findsNothing);
+      expect(find.byKey(connectionRetryButtonKey), findsOneWidget);
+    });
+
     testWidgets('logout returns to login', (tester) async {
       final auth = FakeAlagagiAuthRepository(
         initialUser: const AlagagiAuthUser(
@@ -515,9 +543,15 @@ class FakeAlagagiPushNotificationService
 }
 
 class FakeAlagagiDataRepository implements AlagagiDataRepository {
-  FakeAlagagiDataRepository({this.sessionsByUid = const {}});
+  FakeAlagagiDataRepository({
+    this.sessionsByUid = const {},
+    this.sessionLoadFails = false,
+  });
 
   final Map<String, AlagagiSession> sessionsByUid;
+
+  /// 연결이 끊긴 상황. 프로필 문서가 없는 것과는 다른 실패다.
+  final bool sessionLoadFails;
   final List<AlagagiAuthUser> loadedUsers = [];
   final List<WishItem> savedWishes = [];
   final List<MemoryCard> savedMemoryCards = [];
@@ -536,6 +570,9 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   @override
   Future<AlagagiSession?> loadSession(AlagagiAuthUser user) async {
     loadedUsers.add(user);
+    if (sessionLoadFails) {
+      throw Exception('offline');
+    }
     return sessionsByUid[user.uid];
   }
 
@@ -588,7 +625,8 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   Future<void> deleteTripItem(String spaceId, String itemId) async {}
 
   @override
-  Future<List<TripPhoto>> loadTripPhotos(String spaceId) async => const [];
+  Future<List<TripPhoto>> loadTripPhotos(String spaceId, String tripId) async =>
+      const [];
 
   @override
   Future<void> saveTripPhoto(String spaceId, TripPhoto photo) async {}

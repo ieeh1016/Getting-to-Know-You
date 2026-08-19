@@ -10,5 +10,7 @@ class UnsupportedTripPhotoPicker implements TripPhotoPicker {
   bool get isSupported => false;
 
   @override
-  Future<PickedTripPhoto?> pickImage() async => null;
+  Future<List<PickedTripPhoto>> pickImages({
+    int max = maxTripPhotoPickCount,
+  }) async => const [];
 }

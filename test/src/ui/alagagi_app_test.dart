@@ -434,19 +434,17 @@ void main() {
     await tester.tap(find.byKey(tripSubmitButtonKey));
     await tester.pumpAndSettle();
 
-    // 저장하면 sheet가 닫히고 목록으로 돌아온다.
+    // 저장하면 sheet가 닫히고, 방금 만든 여행 안으로 바로 들어간다.
     expect(find.byKey(tripFormSheetKey), findsNothing);
     expect(controller.trips, hasLength(1));
     final tripId = controller.trips.single.id;
-    expect(find.byKey(tripCardKey(tripId)), findsOneWidget);
+    expect(find.byKey(tripCardKey(tripId)), findsNothing);
+    expect(find.byKey(tripKindTabKey('timeline')), findsOneWidget);
     expect(find.textContaining('2박 3일'), findsWidgets);
     // 표지에 D-day가 붙는다.
     expect(find.textContaining('D-'), findsWidgets);
     expect(find.textContaining('%'), findsNothing);
     expect(find.textContaining('달성'), findsNothing);
-
-    await tester.tap(find.byKey(tripCardKey(tripId)));
-    await tester.pumpAndSettle();
 
     await openTripItemForm(tester, TripItemKind.packing);
     await tester.enterText(find.byKey(tripItemTitleFieldKey), '충전기');
@@ -1209,10 +1207,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('여행 2일차'), findsWidgets);
 
+    // 홈 카드는 목록이 아니라 그 여행 안으로 바로 들어간다.
     await tester.tap(find.byKey(homeUpcomingTripCardKey));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(tripCardKey(tripId)));
-    await tester.pumpAndSettle();
+    expect(find.byKey(tripCardKey(tripId)), findsNothing);
 
     // 여행 중이면 오늘이 어느 날인지 표시된다.
     expect(find.byKey(tripTodayMarkerKey('2026-09-13')), findsOneWidget);
@@ -5681,7 +5679,8 @@ class _FailingSaveRepository implements AlagagiDataRepository {
   Future<void> deleteTripItem(String spaceId, String itemId) async {}
 
   @override
-  Future<List<TripPhoto>> loadTripPhotos(String spaceId) async => const [];
+  Future<List<TripPhoto>> loadTripPhotos(String spaceId, String tripId) async =>
+      const [];
 
   @override
   Future<void> saveTripPhoto(String spaceId, TripPhoto photo) async {}

@@ -618,6 +618,9 @@ void showHomeMenuSheet({
                   icon: Icons.luggage_outlined,
                   title: '여행 계획',
                   subtitle: '숙소, 이동, 준비물, 계획을 한곳에 모으기',
+                  badgeCount: controller.unreadCountForFeature(
+                    UnreadActivityFeature.trips,
+                  ),
                   onTap: () {
                     Navigator.of(sheetContext).pop();
                     controller.goTo(AlagagiRoute.trips);

@@ -284,6 +284,11 @@ class _MeetingCalendar extends StatelessWidget {
       for (var day = 1; day <= daysInMonth; day++)
         DateTime(selectedDate.year, selectedDate.month, day),
     ];
+    final hasTripDay = cells.any(
+      (date) =>
+          date != null &&
+          controller.tripCoveringDate(dateKeyForUi(date)) != null,
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -387,6 +392,7 @@ class _MeetingCalendar extends StatelessWidget {
                 day: date.day,
                 selected: selected,
                 meetingDay: meetingDay,
+                tripDay: controller.tripCoveringDate(dateKey) != null,
                 mutual: mutual,
                 busy: busy,
                 hasMyEntry: hasMyEntry,
@@ -400,12 +406,28 @@ class _MeetingCalendar extends StatelessWidget {
           Wrap(
             spacing: 10,
             runSpacing: 8,
-            children: const [
-              _LegendDot(color: AlagagiColors.sky, label: '만나는 날'),
-              _LegendDot(color: AlagagiColors.sageDeep, label: '서로 가능'),
-              _LegendDot(color: AlagagiColors.sage, label: '내 입력'),
-              _LegendDot(color: Color(0xFFC99B3C), label: '내 상세 일정'),
-              _LegendDot(color: Color(0xFFB18472), label: '상대 표시'),
+            children: [
+              const _LegendDot(color: AlagagiColors.sky, label: '만나는 날'),
+              const _LegendDot(color: AlagagiColors.sageDeep, label: '서로 가능'),
+              const _LegendDot(color: AlagagiColors.sage, label: '내 입력'),
+              const _LegendDot(color: Color(0xFFC99B3C), label: '내 상세 일정'),
+              const _LegendDot(color: Color(0xFFB18472), label: '상대 표시'),
+              if (hasTripDay)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.luggage_outlined,
+                      size: 11,
+                      color: AlagagiColors.sageDeep,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      '여행 중',
+                      style: sans(size: 10.5, color: AlagagiColors.muted),
+                    ),
+                  ],
+                ),
             ],
           ),
         ],
@@ -478,6 +500,7 @@ class _MeetingDateCell extends StatelessWidget {
     required this.day,
     required this.selected,
     required this.meetingDay,
+    required this.tripDay,
     required this.mutual,
     required this.busy,
     required this.hasMyEntry,
@@ -490,6 +513,9 @@ class _MeetingDateCell extends StatelessWidget {
   final int day;
   final bool selected;
   final bool meetingDay;
+
+  /// 여행 기간에 든 날. 여기에 만남을 또 잡으면 하루가 겹친다.
+  final bool tripDay;
   final bool mutual;
   final bool busy;
   final bool hasMyEntry;
@@ -579,6 +605,22 @@ class _MeetingDateCell extends StatelessWidget {
                   ),
                 ),
               ),
+              if (tripDay)
+                Positioned(
+                  top: 3,
+                  right: 4,
+                  child: Semantics(
+                    label: '여행 중인 날',
+                    child: Icon(
+                      key: meetingTripDayIndicatorKey(dateKey),
+                      Icons.luggage_outlined,
+                      size: 10,
+                      color: selected
+                          ? const Color(0xFFF8EABD)
+                          : AlagagiColors.sageDeep,
+                    ),
+                  ),
+                ),
               if (meetingDay)
                 Positioned(
                   bottom: 5,

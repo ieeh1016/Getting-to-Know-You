@@ -1107,7 +1107,7 @@ void main() {
       );
     });
 
-    test('only the creator can delete a trip or an item', () {
+    test('only the creator can delete a trip or an item', () async {
       final controller = buildController();
       controller.saveTrip(
         title: '가을 제주',
@@ -1117,9 +1117,9 @@ void main() {
       );
       final tripId = controller.trips.single.id;
 
-      expect(controller.deleteTrip('missing_trip'), isFalse);
+      expect(await controller.deleteTrip('missing_trip'), isFalse);
       expect(controller.deleteTripItem('missing_item'), isFalse);
-      expect(controller.deleteTrip(tripId), isTrue);
+      expect(await controller.deleteTrip(tripId), isTrue);
       expect(controller.trips, isEmpty);
     });
 
@@ -1139,6 +1139,193 @@ void main() {
 
       expect(controller.tripsWithStatus(TripStatus.done), hasLength(1));
       expect(controller.tripsWithStatus(TripStatus.planning), isEmpty);
+    });
+
+    test('saving a trip remembers which one so the screen can open it', () {
+      final controller = buildController();
+
+      expect(controller.lastSavedTripId, isNull);
+
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-14',
+      );
+
+      expect(controller.lastSavedTripId, controller.trips.single.id);
+    });
+
+    test('openTrip hands the trip over once and then forgets it', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-14',
+      );
+      final tripId = controller.trips.single.id;
+
+      controller.openTrip(tripId);
+
+      expect(controller.state.route, AlagagiRoute.trips);
+      expect(controller.consumePendingTripId(), tripId);
+      // 목록으로 나갔다 돌아올 때 같은 여행이 다시 열리면 안 된다.
+      expect(controller.consumePendingTripId(), isNull);
+    });
+
+    test('budget separates what nobody was credited for', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-14',
+      );
+      final tripId = controller.trips.single.id;
+      controller.saveTripItem(
+        tripId: tripId,
+        kind: TripItemKind.plan,
+        title: '저녁',
+        cost: 40000,
+        paidByProfileId: 'youngwooUid',
+      );
+      controller.saveTripItem(
+        tripId: tripId,
+        kind: TripItemKind.plan,
+        title: '기념품',
+        cost: 10000,
+      );
+
+      expect(controller.tripTotalCost(tripId), 50000);
+      expect(controller.tripUnattributedCost(tripId), 10000);
+    });
+
+    test('settlement shows who paid more without asking for money back', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-14',
+      );
+      final tripId = controller.trips.single.id;
+
+      expect(controller.tripSettlement(tripId), isNull);
+
+      controller.saveTripItem(
+        tripId: tripId,
+        kind: TripItemKind.plan,
+        title: '숙소값',
+        cost: 120000,
+        paidByProfileId: 'youngwooUid',
+      );
+      controller.saveTripItem(
+        tripId: tripId,
+        kind: TripItemKind.plan,
+        title: '렌트카',
+        cost: 80000,
+        paidByProfileId: 'minyoungUid',
+      );
+
+      final settlement = controller.tripSettlement(tripId)!;
+      expect(settlement.payerProfileId, 'youngwooUid');
+      expect(settlement.amount, 40000);
+    });
+
+    test('packing can be copied from a past trip without the checks', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '지난 강릉',
+        destination: '강릉',
+        startDateKey: '2026-05-02',
+        endDateKey: '2026-05-03',
+      );
+      final pastTripId = controller.trips.single.id;
+      controller.saveTripItem(
+        tripId: pastTripId,
+        kind: TripItemKind.packing,
+        title: '충전기',
+      );
+      controller.saveTripItem(
+        tripId: pastTripId,
+        kind: TripItemKind.packing,
+        title: '우산',
+      );
+      final charger = controller
+          .tripItemsFor(pastTripId, kind: TripItemKind.packing)
+          .firstWhere((item) => item.title == '충전기');
+      controller.toggleTripItemCheck(charger.id);
+
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-14',
+      );
+      final tripId = controller.lastSavedTripId!;
+      controller.saveTripItem(
+        tripId: tripId,
+        kind: TripItemKind.packing,
+        title: '우산',
+      );
+
+      expect(controller.tripsWithPackingExcept(tripId), hasLength(1));
+
+      final copied = controller.copyTripPacking(
+        fromTripId: pastTripId,
+        toTripId: tripId,
+      );
+
+      // 이미 있는 '우산'은 건너뛴다.
+      expect(copied, 1);
+      final packing = controller.tripItemsFor(
+        tripId,
+        kind: TripItemKind.packing,
+      );
+      expect(packing.map((item) => item.title), containsAll(['우산', '충전기']));
+      // 챙긴 표시는 지난 여행의 것이다. 옮기지 않는다.
+      expect(packing.every((item) => !item.checked), isTrue);
+
+      // 다시 눌러도 늘어나지 않는다.
+      expect(
+        controller.copyTripPacking(fromTripId: pastTripId, toTripId: tripId),
+        0,
+      );
+    });
+
+    test('a planning trip claims its days on the meeting calendar', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-14',
+      );
+      final tripId = controller.trips.single.id;
+
+      expect(controller.tripCoveringDate('2026-09-13')?.id, tripId);
+      expect(controller.tripCoveringDate('2026-09-15'), isNull);
+
+      // 다녀온 여행은 앞으로의 달력을 더 막지 않는다.
+      controller.setTripStatus(tripId, TripStatus.done);
+      expect(controller.tripCoveringDate('2026-09-13'), isNull);
+    });
+
+    test('trip updates show up as unread activity for the partner', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-14',
+      );
+
+      // 내가 적은 것은 나에게 새 소식이 아니다.
+      expect(
+        controller.unreadCountForFeature(UnreadActivityFeature.trips),
+        0,
+      );
     });
   });
 }

@@ -130,12 +130,13 @@ Future<T?> _showFormSheet<T>(
 }
 
 /// 여행을 만들거나 고친다.
-Future<void> showTripFormSheet(
+/// 저장한 여행의 id를 돌려준다. 새로 만든 여행이면 곧바로 그 여행을 열 수 있다.
+Future<String?> showTripFormSheet(
   BuildContext context, {
   required AlagagiController controller,
   Trip? trip,
 }) {
-  return _showFormSheet<void>(
+  return _showFormSheet<String>(
     context,
     sheetKey: tripFormSheetKey,
     title: trip == null ? '새 여행' : '여행 고치기',
@@ -252,7 +253,7 @@ class _TripFormState extends State<_TripForm> {
       setState(() => _error = error);
       return;
     }
-    Navigator.of(widget.sheetContext).pop();
+    Navigator.of(widget.sheetContext).pop(widget.controller.lastSavedTripId);
   }
 
   @override
@@ -873,6 +874,139 @@ class _PhotoDayOption extends StatelessWidget {
   }
 }
 
+/// 위시리스트에서 여행 계획으로 옮겨 담는다. `언젠가, 같이`에 적어둔 것을
+/// 여행에서 다시 손으로 옮겨 적게 하면 둘 중 하나는 잊힌다.
+Future<WishItem?> showTripWishPickerSheet(
+  BuildContext context, {
+  required AlagagiController controller,
+}) {
+  final wishes = controller.wishesForTripPlan();
+
+  return _showFormSheet<WishItem>(
+    context,
+    sheetKey: tripWishPickerSheetKey,
+    title: '언젠가, 같이에서 가져오기',
+    subtitle: '적어둔 것을 이 여행 계획으로 옮겨요',
+    builder: (sheetContext) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (wishes.isEmpty)
+          const AlagagiEmptyStateCard(
+            text: '아직 담아둔 것이 없어요. 언젠가, 같이에서 먼저 적어두면 여기서 고를 수 있어요.',
+          )
+        else
+          for (final wish in wishes) ...[
+            InkWell(
+              key: tripWishPickerOptionKey(wish.id),
+              onTap: () => Navigator.of(sheetContext).pop(wish),
+              borderRadius: BorderRadius.circular(15),
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 54),
+                decoration: BoxDecoration(
+                  color: AlagagiColors.paper,
+                  border: Border.all(color: AlagagiColors.line),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                padding: const EdgeInsets.fromLTRB(13, 10, 13, 10),
+                child: Row(
+                  children: [
+                    Text(wish.icon, style: const TextStyle(fontSize: 17)),
+                    const SizedBox(width: 11),
+                    Expanded(
+                      child: Text(
+                        wish.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: sans(size: 13, weight: FontWeight.w700),
+                      ),
+                    ),
+                    if (wish.isMutual)
+                      Text(
+                        '둘 다',
+                        style: sans(
+                          size: 11,
+                          weight: FontWeight.w800,
+                          color: AlagagiColors.sageDeep,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+      ],
+    ),
+  );
+}
+
+/// 준비물을 지난 여행에서 통째로 가져온다. 챙길 것은 여행마다 크게 다르지
+/// 않아, 매번 처음부터 적게 하면 꼭 하나씩 빠뜨린다.
+Future<String?> showTripPackingSourceSheet(
+  BuildContext context, {
+  required AlagagiController controller,
+  required String tripId,
+}) {
+  final sources = controller.tripsWithPackingExcept(tripId);
+
+  return _showFormSheet<String>(
+    context,
+    sheetKey: tripPackingSourceSheetKey,
+    title: '지난 여행에서 가져오기',
+    subtitle: '챙긴 표시는 빼고 목록만 가져와요',
+    builder: (sheetContext) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final trip in sources) ...[
+          InkWell(
+            key: tripPackingSourceOptionKey(trip.id),
+            onTap: () => Navigator.of(sheetContext).pop(trip.id),
+            borderRadius: BorderRadius.circular(15),
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 56),
+              decoration: BoxDecoration(
+                color: AlagagiColors.paper,
+                border: Border.all(color: AlagagiColors.line),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          trip.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: sans(size: 13, weight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '준비물 '
+                          '${controller.tripItemsFor(trip.id, kind: TripItemKind.packing).length}개',
+                          style: sans(size: 11.5, color: AlagagiColors.muted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    size: 19,
+                    color: AlagagiColors.muted,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ],
+    ),
+  );
+}
+
 /// 여행 항목을 만들거나 고친다. 종류에 따라 묻는 것이 달라진다.
 Future<void> showTripItemFormSheet(
   BuildContext context, {
@@ -929,8 +1063,11 @@ class _TripItemFormState extends State<_TripItemForm> {
   late final ImeSafeTextEditingController _linkController;
   late final ImeSafeTextEditingController _costController;
   String? _paidByProfileId;
+  String? _assigneeProfileId;
   late TripTransportMode _mode;
+  late TripItemKind _kind;
   String? _error;
+  String? _keepAddingNotice;
 
   @override
   void initState() {
@@ -950,7 +1087,9 @@ class _TripItemFormState extends State<_TripItemForm> {
       text: (item?.cost ?? 0) == 0 ? '' : '${item!.cost}',
     );
     _paidByProfileId = item?.paidByProfileId;
+    _assigneeProfileId = item?.assigneeProfileId;
     _mode = item?.transportMode ?? TripTransportMode.flight;
+    _kind = widget.kind;
   }
 
   @override
@@ -993,25 +1132,31 @@ class _TripItemFormState extends State<_TripItemForm> {
     return nights < 0 ? 0 : nights;
   }
 
-  void _submit() {
-    final error = widget.controller.saveTripItem(
+  String? _save() {
+    return widget.controller.saveTripItem(
       tripId: widget.trip.id,
       itemId: widget.item?.id,
-      kind: widget.kind,
+      kind: _kind,
       title: _titleController.text,
       note: _noteController.text,
       dateKey: _dateKey,
       timeLabel: _timeLabel,
-      endDateKey: widget.kind.usesDateRange ? _endDateKey : null,
+      endDateKey: _kind.usesDateRange ? _endDateKey : null,
       endTimeLabel: _endTimeLabel,
-      transportMode: widget.kind.usesRoute ? _mode : null,
+      transportMode: _kind.usesRoute ? _mode : null,
       fromLabel: _fromController.text,
       toLabel: _toController.text,
       placeId: _placeId,
       link: _linkController.text,
       cost: int.tryParse(_costController.text.replaceAll(',', '').trim()) ?? 0,
       paidByProfileId: _paidByProfileId,
+      // 넘기지 않으면 controller가 기존 담당을 지운다.
+      assigneeProfileId: _kind.usesCheck ? _assigneeProfileId : null,
     );
+  }
+
+  void _submit() {
+    final error = _save();
     if (error != null) {
       setState(() => _error = error);
       return;
@@ -1019,9 +1164,72 @@ class _TripItemFormState extends State<_TripItemForm> {
     Navigator.of(widget.sheetContext).pop();
   }
 
+  /// 준비물이나 계획은 보통 한 번에 여러 개를 적는다. 매번 sheet를 닫고
+  /// 다시 여는 대신, 날짜와 종류는 남긴 채 내용만 비운다.
+  void _submitAndKeepAdding() {
+    final error = _save();
+    if (error != null) {
+      setState(() => _error = error);
+      return;
+    }
+    final savedTitle = _titleController.text.trim();
+    setState(() {
+      _titleController.text = '';
+      _noteController.text = '';
+      _linkController.text = '';
+      _costController.text = '';
+      _fromController.text = '';
+      _toController.text = '';
+      _placeId = null;
+      _paidByProfileId = null;
+      _timeLabel = null;
+      _endTimeLabel = null;
+      _error = null;
+      _keepAddingNotice = '\'$savedTitle\' 담았어요. 이어서 적어요.';
+    });
+  }
+
+  Future<void> _pickWish() async {
+    final wish = await showTripWishPickerSheet(
+      context,
+      controller: widget.controller,
+    );
+    if (wish == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _titleController.text = wish.title;
+      _error = null;
+    });
+  }
+
+  Future<void> _changeKind() async {
+    final picked = await showTripKindPickerSheet(context);
+    if (picked == null || !mounted || picked == _kind) {
+      return;
+    }
+    setState(() {
+      _kind = picked;
+      // 종류가 바뀌면 앞 종류에서만 쓰던 값은 흐름에 맞지 않는다.
+      if (!picked.usesDateRange) {
+        _endDateKey = null;
+      }
+      if (!picked.usesRoute) {
+        _endTimeLabel = null;
+      }
+      if (!picked.usesCheck) {
+        _assigneeProfileId = null;
+      }
+      if (!picked.usesPlace) {
+        _placeId = null;
+      }
+      _error = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final kind = widget.kind;
+    final kind = _kind;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -1032,6 +1240,27 @@ class _TripItemFormState extends State<_TripItemForm> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+        // 고르고 나서야 종류를 잘못 골랐다는 걸 아는 일이 잦다.
+        TripPickerRow(
+          rowKey: tripItemKindFieldKey,
+          label: '종류',
+          value: kind.label,
+          placeholder: '종류 고르기',
+          icon: Icons.unfold_more_rounded,
+          onTap: _changeKind,
+        ),
+        const SizedBox(height: 10),
+        if (kind == TripItemKind.plan && widget.item == null) ...[
+          TripPickerRow(
+            rowKey: tripItemWishFieldKey,
+            label: '언젠가, 같이에서',
+            value: null,
+            placeholder: '적어둔 것에서 가져오기',
+            icon: Icons.bookmark_border_rounded,
+            onTap: _pickWish,
+          ),
+          const SizedBox(height: 10),
+        ],
         if (kind.usesRoute) ..._routeFields(),
         TripTextField(
           fieldKey: tripItemTitleFieldKey,
@@ -1058,9 +1287,14 @@ class _TripItemFormState extends State<_TripItemForm> {
           hint: '예약 페이지나 지도 링크',
           maxLength: 500,
         ),
+        if (kind.usesCheck) ..._assigneeFields(),
         if (kind.usesDateRange) ..._stayFields(),
         if (kind.usesRoute || kind == TripItemKind.plan) ..._scheduleFields(),
         ..._costFields(),
+        if (_keepAddingNotice != null) ...[
+          const SizedBox(height: 10),
+          _FormNotice(message: _keepAddingNotice!),
+        ],
         if (_error != null) ...[
           const SizedBox(height: 10),
           _FormError(message: _error!),
@@ -1071,14 +1305,84 @@ class _TripItemFormState extends State<_TripItemForm> {
       ),
       Padding(
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
-        child: TripPrimaryButton(
-          buttonKey: tripItemSubmitButtonKey,
-          label: widget.item == null ? '${kind.label} 담기' : '고친 내용 저장하기',
-          onPressed: _submit,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TripPrimaryButton(
+              buttonKey: tripItemSubmitButtonKey,
+              label: widget.item == null ? '${kind.label} 담기' : '고친 내용 저장하기',
+              onPressed: _submit,
+            ),
+            if (widget.item == null) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 44,
+                child: OutlinedButton(
+                  key: tripItemKeepAddingButtonKey,
+                  onPressed: _submitAndKeepAdding,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AlagagiColors.sageDeep,
+                    side: const BorderSide(color: AlagagiColors.line),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    textStyle: sans(size: 12.5, weight: FontWeight.w700),
+                  ),
+                  child: const Text('담고 계속 적기'),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
       ],
     );
+  }
+
+  /// 준비물을 누가 챙길지. 목록에서도 바꿀 수 있지만 담을 때 함께 정할 수 있어야
+  /// 하고, 무엇보다 폼이 값을 들고 있지 않으면 저장할 때 기존 담당이 지워진다.
+  List<Widget> _assigneeFields() {
+    final me = widget.controller.state.me;
+    final partner = widget.controller.state.partner;
+
+    return [
+      const SizedBox(height: 12),
+      const TripFieldLabel(text: '누가 챙길까요 (선택)'),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 7,
+        runSpacing: 7,
+        children: [
+          for (final profile in [me, partner])
+            AlagagiFilterPill(
+              key: tripItemAssigneeButtonKey(
+                widget.item?.id ?? 'draft',
+                profile.id,
+              ),
+              label: profile.nickname,
+              selected: _assigneeProfileId == profile.id,
+              onTap: () => setState(() {
+                _assigneeProfileId = _assigneeProfileId == profile.id
+                    ? null
+                    : profile.id;
+              }),
+            ),
+          AlagagiFilterPill(
+            key: tripItemAssigneeButtonKey(
+              widget.item?.id ?? 'draft',
+              kTripSharedAssigneeId,
+            ),
+            label: '함께',
+            selected: _assigneeProfileId == kTripSharedAssigneeId,
+            onTap: () => setState(() {
+              _assigneeProfileId = _assigneeProfileId == kTripSharedAssigneeId
+                  ? null
+                  : kTripSharedAssigneeId;
+            }),
+          ),
+        ],
+      ),
+    ];
   }
 
   /// 항목에 든 돈과 낸 사람. 적지 않아도 된다.
@@ -1219,6 +1523,8 @@ class _TripItemFormState extends State<_TripItemForm> {
         trip: widget.trip,
         selectedDateKey: _dateKey,
         keyBuilder: tripItemDateButtonKey,
+        // 숙소는 알아보는 중일 때가 많다. 날짜가 정해지기 전에도 담아둔다.
+        allowsUndecided: true,
         onSelected: (dateKey) => setState(() {
           _dateKey = dateKey;
           final end = _endDateKey;
@@ -1241,6 +1547,8 @@ class _TripItemFormState extends State<_TripItemForm> {
             current: _timeLabel,
             onPicked: (value) => _timeLabel = value,
           ),
+          clearKey: tripItemTimeClearButtonKey,
+          onClear: () => setState(() => _timeLabel = null),
         ),
         const SizedBox(height: 12),
         const TripFieldLabel(text: '체크아웃'),
@@ -1268,6 +1576,8 @@ class _TripItemFormState extends State<_TripItemForm> {
               current: _endTimeLabel,
               onPicked: (value) => _endTimeLabel = value,
             ),
+            clearKey: tripItemEndTimeClearButtonKey,
+            onClear: () => setState(() => _endTimeLabel = null),
           ),
         ],
         if (_nightPreview > 0) ...[
@@ -1286,7 +1596,7 @@ class _TripItemFormState extends State<_TripItemForm> {
   }
 
   List<Widget> _scheduleFields() {
-    final kind = widget.kind;
+    final kind = _kind;
 
     return [
       const SizedBox(height: 12),
@@ -1318,6 +1628,8 @@ class _TripItemFormState extends State<_TripItemForm> {
                   current: _timeLabel,
                   onPicked: (value) => _timeLabel = value,
                 ),
+                clearKey: tripItemTimeClearButtonKey,
+                onClear: () => setState(() => _timeLabel = null),
               ),
             ),
             if (kind.usesRoute) ...[
@@ -1334,6 +1646,8 @@ class _TripItemFormState extends State<_TripItemForm> {
                     current: _endTimeLabel,
                     onPicked: (value) => _endTimeLabel = value,
                   ),
+                  clearKey: tripItemEndTimeClearButtonKey,
+                  onClear: () => setState(() => _endTimeLabel = null),
                 ),
               ),
             ],
@@ -1341,6 +1655,46 @@ class _TripItemFormState extends State<_TripItemForm> {
         ),
       ],
     ];
+  }
+}
+
+/// 계속 적기로 하나 담았을 때 조용히 알려주는 줄.
+class _FormNotice extends StatelessWidget {
+  const _FormNotice({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: tripItemKeepAddingNoticeKey,
+      decoration: BoxDecoration(
+        color: AlagagiColors.skyPanel,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.check_circle_outline_rounded,
+            size: 16,
+            color: AlagagiColors.sageDeep,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: sans(
+                size: 12,
+                height: 1.5,
+                weight: FontWeight.w700,
+                color: AlagagiColors.sageDeep,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

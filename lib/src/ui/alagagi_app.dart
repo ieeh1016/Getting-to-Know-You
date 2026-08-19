@@ -745,6 +745,19 @@ class _SessionGateState extends State<_SessionGate> {
           return const _PhoneShell(child: LoadingScreen());
         }
 
+        // 연결 실패와 '프로필 문서가 없음'은 다른 상황이다. 둘을 같은 화면으로
+        // 보여주면 비행기 안에서 개발자용 Firebase 안내를 읽게 된다.
+        if (snapshot.hasError) {
+          return _PhoneShell(
+            child: ConnectionUnavailableScreen(
+              onRetry: () => setState(() {
+                _sessionFuture = widget.dataRepository.loadSession(widget.user);
+              }),
+              onSignOut: widget.authRepository.signOut,
+            ),
+          );
+        }
+
         final session = snapshot.data;
         if (session == null) {
           return _PhoneShell(

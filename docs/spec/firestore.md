@@ -34,7 +34,7 @@
 - `spaces/{spaceId}/sharedPlaces/{placeId}`
 - `spaces/{spaceId}/trips/{tripId}`
 - `spaces/{spaceId}/tripItems/{itemId}`
-- `spaces/{spaceId}/tripPhotos/{photoId}`: 갤러리 사진을 줄여 담는 data URI. Cloud Storage 없이 Spark plan 안에서 다루기 위한 경로라 문서당 크기 상한이 있다. session 로딩에서 읽지 않고 여행 화면 진입 시에만 읽는다. 문서가 커서 매 접속마다 전부 받으면 전송량이 크게 든다.
+- `spaces/{spaceId}/tripPhotos/{photoId}`: 갤러리 사진을 줄여 담는 data URI. Cloud Storage 없이 Spark plan 안에서 다루기 위한 경로라 문서당 크기 상한이 있다. session 로딩에서 읽지 않고, 여행 **하나를 열 때 `tripId`로 걸러 그 여행 것만** 읽는다. 문서가 커서 매 접속마다 전부 받으면 전송량이 크게 든다.
 - `spaces/{spaceId}/diagnosticEvents/{eventId}`
 - `spaces/{spaceId}/curiosityCards/{cardId}`
 - `spaces/{spaceId}/stockStories/{storyId}`
@@ -44,6 +44,11 @@
 - `spaces/{spaceId}/notificationEvents/{eventId}`: Cloud Functions idempotency log 휴면 경로. client read/write 없음.
 - `users/{uid}/notificationSettings/push`
 - `users/{uid}/notificationTokens/{tokenId}`
+
+## 오프라인
+
+- Firestore local persistence를 켠다(`Settings(persistenceEnabled: true)`). 여행은 이 앱에서 유일하게 집 밖에서 쓰는 기능이라, 비행기나 로밍을 끈 해외에서 새로고침해도 마지막에 본 내용이 남아야 한다. 무료 플랜 범위 안이며 추가 write를 만들지 않는다.
+- 로그인은 됐는데 session을 읽지 못한 경우와 프로필 문서가 없는 경우는 다른 화면으로 보여준다. 연결 실패에 개발자용 Firebase 설정 안내를 띄우면 사용자가 할 수 있는 일이 없다. 연결 실패에는 다시 시도만 준다.
 
 ## Rules Maintenance
 

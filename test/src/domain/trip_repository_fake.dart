@@ -9,14 +9,16 @@ class FakeTripRepository implements AlagagiDataRepository {
   final List<TripPhoto> photos;
 
   int loadPhotoCallCount = 0;
+  final List<String> loadedPhotoTripIds = [];
   final List<String> deletedTripIds = [];
   final List<String> deletedItemIds = [];
   final List<String> deletedPhotoIds = [];
 
   @override
-  Future<List<TripPhoto>> loadTripPhotos(String spaceId) async {
+  Future<List<TripPhoto>> loadTripPhotos(String spaceId, String tripId) async {
     loadPhotoCallCount += 1;
-    return photos;
+    loadedPhotoTripIds.add(tripId);
+    return photos.where((photo) => photo.tripId == tripId).toList();
   }
 
   @override

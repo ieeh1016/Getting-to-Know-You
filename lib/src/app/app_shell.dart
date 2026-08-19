@@ -11,12 +11,20 @@ class AlagagiScreenScroll extends StatelessWidget {
     this.bottomNavigation,
     this.onRefresh,
     this.padding = const EdgeInsets.fromLTRB(28, 34, 28, 112),
+    this.pinnedHeader,
+    this.pinnedHeaderHeight,
   });
 
   final List<Widget> children;
   final Widget? bottomNavigation;
   final Future<void> Function()? onRefresh;
   final EdgeInsets padding;
+
+  /// 스크롤해도 위에 붙어 있는 줄. 긴 화면에서 tab이나 날짜 이동을
+  /// 다시 찾아 올라가지 않게 한다. [children] 중 이 줄보다 위에 올 것은
+  /// [AlagagiPinnedScrollHeader]로 감싸 표시한다.
+  final Widget? pinnedHeader;
+  final double? pinnedHeaderHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -27,19 +35,66 @@ class AlagagiScreenScroll extends StatelessWidget {
         : padding.bottom;
     final effectivePadding = padding.copyWith(bottom: bottomPadding);
 
-    final scrollable = ListView(
-      padding: EdgeInsets.zero,
-      physics: onRefresh == null ? null : const AlwaysScrollableScrollPhysics(),
-      children: [
-        Padding(
-          padding: effectivePadding,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: children,
+    final Widget scrollable;
+    final header = pinnedHeader;
+    if (header == null) {
+      scrollable = ListView(
+        padding: EdgeInsets.zero,
+        physics: onRefresh == null
+            ? null
+            : const AlwaysScrollableScrollPhysics(),
+        children: [
+          Padding(
+            padding: effectivePadding,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: children,
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    } else {
+      final splitIndex = children.indexWhere(
+        (child) => child is AlagagiPinnedScrollHeader,
+      );
+      final above = splitIndex < 0 ? children : children.sublist(0, splitIndex);
+      final below = splitIndex < 0
+          ? const <Widget>[]
+          : children.sublist(splitIndex + 1);
+      scrollable = CustomScrollView(
+        physics: onRefresh == null
+            ? null
+            : const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: effectivePadding.copyWith(bottom: 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: above,
+              ),
+            ),
+          ),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _PinnedRowDelegate(
+              height: pinnedHeaderHeight ?? 62,
+              horizontalPadding: effectivePadding.left,
+              child: header,
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: effectivePadding.copyWith(top: 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: below,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
     final refreshable = onRefresh == null
         ? scrollable
         : RefreshIndicator(
@@ -60,6 +115,55 @@ class AlagagiScreenScroll extends StatelessWidget {
       ],
     );
   }
+}
+
+/// [AlagagiScreenScroll.children] 안에서 고정 줄이 들어갈 자리를 표시한다.
+/// 이 표시 위의 children은 스크롤과 함께 올라가고, 아래는 고정 줄 밑으로 흐른다.
+class AlagagiPinnedScrollHeader extends StatelessWidget {
+  const AlagagiPinnedScrollHeader({super.key});
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
+}
+
+class _PinnedRowDelegate extends SliverPersistentHeaderDelegate {
+  const _PinnedRowDelegate({
+    required this.child,
+    required this.height,
+    required this.horizontalPadding,
+  });
+
+  final Widget child;
+  final double height;
+  final double horizontalPadding;
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    // 붙어 있는 동안 아래 내용이 비쳐 보이면 글자가 겹쳐 읽힌다.
+    return Container(
+      height: height,
+      color: AlagagiColors.appBackground,
+      padding: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 0),
+      alignment: Alignment.center,
+      child: child,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_PinnedRowDelegate oldDelegate) =>
+      oldDelegate.child != child ||
+      oldDelegate.height != height ||
+      oldDelegate.horizontalPadding != horizontalPadding;
 }
 
 class AlagagiBottomNav extends StatelessWidget {

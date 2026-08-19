@@ -31,6 +31,15 @@ enum UnreadActivityFeature {
   music,
   improvements,
   memoryCards,
+  trips,
+}
+
+/// 여행에서 누가 얼마 더 냈는지. 나누자는 말이 아니라 보이기만 한다.
+class TripSettlement {
+  const TripSettlement({required this.payerProfileId, required this.amount});
+
+  final String payerProfileId;
+  final int amount;
 }
 
 enum ArchiveFilter { all, bothAnswered, similar }
@@ -388,7 +397,7 @@ abstract class AlagagiDataRepository {
 
   /// 여행 사진은 session 로딩에 넣지 않는다. 문서 하나가 수백 KB라 앱을 열
   /// 때마다 전부 받으면 홈 진입이 느려지고 전송량도 크게 든다.
-  Future<List<TripPhoto>> loadTripPhotos(String spaceId);
+  Future<List<TripPhoto>> loadTripPhotos(String spaceId, String tripId);
 
   Future<void> saveTripPhoto(String spaceId, TripPhoto photo);
 
@@ -2421,6 +2430,7 @@ extension UnreadActivityFeatureMeta on UnreadActivityFeature {
       UnreadActivityFeature.music => 'music',
       UnreadActivityFeature.improvements => 'improvements',
       UnreadActivityFeature.memoryCards => 'memoryCards',
+      UnreadActivityFeature.trips => 'trips',
     };
   }
 
@@ -2435,6 +2445,7 @@ extension UnreadActivityFeatureMeta on UnreadActivityFeature {
       UnreadActivityFeature.music => '음악 노트',
       UnreadActivityFeature.improvements => '건의함',
       UnreadActivityFeature.memoryCards => '서로의 기억',
+      UnreadActivityFeature.trips => '여행 계획',
     };
   }
 
@@ -2449,6 +2460,7 @@ extension UnreadActivityFeatureMeta on UnreadActivityFeature {
       UnreadActivityFeature.music => AlagagiRoute.music,
       UnreadActivityFeature.improvements => AlagagiRoute.improvements,
       UnreadActivityFeature.memoryCards => AlagagiRoute.memoryCards,
+      UnreadActivityFeature.trips => AlagagiRoute.trips,
     };
   }
 }
@@ -2639,6 +2651,9 @@ class AlagagiState {
     this.placeDraftAddress = '',
     this.placeDraftNote = '',
     this.placeDraftCategory = PlaceCategory.cafe,
+    this.tripSaveStatus = SaveStatus.idle,
+    this.tripSaveFeedback,
+    this.tripSaveError,
     this.placeDraftProvider = MapApiProvider.kakao,
     this.placeDraftProviderPlaceId = '',
     this.placeDraftLatitude,
@@ -2777,6 +2792,11 @@ class AlagagiState {
   final String placeDraftAddress;
   final String placeDraftNote;
   final PlaceCategory placeDraftCategory;
+  /// 여행 저장 상태. 다른 기능과 같은 채널을 여행에도 둔다. 이게 없으면
+  /// write가 실패해도 화면은 성공한 것처럼 보이고 다음 진입에 조용히 되돌아간다.
+  final SaveStatus tripSaveStatus;
+  final String? tripSaveFeedback;
+  final String? tripSaveError;
   final MapApiProvider placeDraftProvider;
   final String placeDraftProviderPlaceId;
   final double? placeDraftLatitude;
@@ -2929,6 +2949,11 @@ class AlagagiState {
     String? placeDraftAddress,
     String? placeDraftNote,
     PlaceCategory? placeDraftCategory,
+    SaveStatus? tripSaveStatus,
+    String? tripSaveFeedback,
+    bool clearTripSaveFeedback = false,
+    String? tripSaveError,
+    bool clearTripSaveError = false,
     MapApiProvider? placeDraftProvider,
     String? placeDraftProviderPlaceId,
     double? placeDraftLatitude,
@@ -3143,6 +3168,13 @@ class AlagagiState {
       placeDraftAddress: placeDraftAddress ?? this.placeDraftAddress,
       placeDraftNote: placeDraftNote ?? this.placeDraftNote,
       placeDraftCategory: placeDraftCategory ?? this.placeDraftCategory,
+      tripSaveStatus: tripSaveStatus ?? this.tripSaveStatus,
+      tripSaveFeedback: clearTripSaveFeedback
+          ? null
+          : tripSaveFeedback ?? this.tripSaveFeedback,
+      tripSaveError: clearTripSaveError
+          ? null
+          : tripSaveError ?? this.tripSaveError,
       placeDraftProvider: placeDraftProvider ?? this.placeDraftProvider,
       placeDraftProviderPlaceId:
           placeDraftProviderPlaceId ?? this.placeDraftProviderPlaceId,
@@ -3324,6 +3356,40 @@ class AlagagiState {
 
 enum _FailedPersistenceAction { save, delete }
 
+enum _TripWriteKind { trip, item, photo }
+
+/// 다시 보낼 수 있게 보관하는 여행 write 한 건.
+class _PendingTripWrite {
+  const _PendingTripWrite._(this.kind, this.key, this._send);
+
+  factory _PendingTripWrite.trip(Trip trip) => _PendingTripWrite._(
+    _TripWriteKind.trip,
+    'trip:${trip.id}',
+    (repository, spaceId) => repository.saveTrip(spaceId, trip),
+  );
+
+  factory _PendingTripWrite.item(TripItem item) => _PendingTripWrite._(
+    _TripWriteKind.item,
+    'item:${item.id}',
+    (repository, spaceId) => repository.saveTripItem(spaceId, item),
+  );
+
+  factory _PendingTripWrite.photo(TripPhoto photo) => _PendingTripWrite._(
+    _TripWriteKind.photo,
+    'photo:${photo.id}',
+    (repository, spaceId) => repository.saveTripPhoto(spaceId, photo),
+  );
+
+  final _TripWriteKind kind;
+
+  /// 같은 대상의 재시도가 쌓이지 않도록 구분하는 값.
+  final String key;
+  final Future<void> Function(AlagagiDataRepository, String) _send;
+
+  Future<void> send(AlagagiDataRepository repository, String spaceId) =>
+      _send(repository, spaceId);
+}
+
 class AlagagiController extends ChangeNotifier {
   AlagagiController({
     AlagagiDataRepository? repository,
@@ -3427,9 +3493,13 @@ class AlagagiController extends ChangeNotifier {
   final List<TripItem> _tripItems = [];
   final List<TripPhoto> _tripPhotos = [];
 
-  /// 사진을 한 번이라도 읽었는지. 여행 화면에 들어갈 때만 읽는다.
-  bool _tripPhotosLoaded = false;
+  /// 사진을 읽어둔 여행. 여행 하나를 열 때 그 여행 것만 읽는다.
+  final Set<String> _loadedPhotoTripIds = {};
   bool _tripPhotosLoading = false;
+  bool _tripPhotosFailed = false;
+
+  /// 저장에 실패한 여행 write. `다시 시도`가 이 목록을 다시 흘려보낸다.
+  final List<_PendingTripWrite> _failedTripWrites = [];
   final List<MusicNote> _musicNotes = [];
   final List<MusicNoteComment> _musicNoteComments = [];
   final List<ScheduleEntry> _scheduleEntries = [];
@@ -3857,6 +3927,33 @@ class AlagagiController extends ChangeNotifier {
         actorProfileId: post.createdByProfileId,
       );
     }
+    for (final trip in _trips) {
+      _addUnreadActivity(
+        activities,
+        feature: UnreadActivityFeature.trips,
+        id: 'trip-${trip.id}',
+        title: '여행 계획이 업데이트됐어요',
+        description: '$partnerName님이 "${trip.title}"을 정리했어요.',
+        updatedAt: trip.updatedAt,
+        actorProfileId: trip.updatedByProfileId ?? trip.createdByProfileId,
+      );
+    }
+    for (final item in _tripItems) {
+      final trip = tripById(item.tripId);
+      if (trip == null) {
+        continue;
+      }
+      _addUnreadActivity(
+        activities,
+        feature: UnreadActivityFeature.trips,
+        id: 'trip-item-${item.id}',
+        title: '여행 준비가 업데이트됐어요',
+        description:
+            '$partnerName님이 "${trip.title}"에 ${item.kind.label} "${item.title}"을 남겼어요.',
+        updatedAt: item.updatedAt,
+        actorProfileId: item.updatedByProfileId ?? item.createdByProfileId,
+      );
+    }
     activities.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     return List<UnreadActivity>.unmodifiable(activities);
   }
@@ -4159,11 +4256,18 @@ class AlagagiController extends ChangeNotifier {
     _tripItems
       ..clear()
       ..addAll(data.tripItems);
-    _tripPhotos
-      ..clear()
-      ..addAll(data.tripPhotos);
-    // test fixture나 demo가 사진을 미리 넣어준 경우에는 다시 읽지 않는다.
-    _tripPhotosLoaded = data.tripPhotos.isNotEmpty || _repository == null;
+    // session 로딩은 사진을 싣지 않는다. 이미 읽어둔 사진을 여기서 비우면
+    // 화면에 머무는 동안 갱신이 돌 때 사진이 사라진 채로 남는다.
+    if (data.tripPhotos.isNotEmpty) {
+      _tripPhotos
+        ..clear()
+        ..addAll(data.tripPhotos);
+      _loadedPhotoTripIds
+        ..clear()
+        ..addAll(data.tripPhotos.map((photo) => photo.tripId));
+    } else if (_repository == null) {
+      _tripPhotos.clear();
+    }
 
     _myAnswersByQuestionId.clear();
     _partnerAnswersByQuestionId.clear();
@@ -6581,6 +6685,10 @@ class AlagagiController extends ChangeNotifier {
         ..._memoryCards.map((card) => card.updatedAt),
         ..._memoryCardResponses.map((response) => response.updatedAt),
       ]),
+      UnreadActivityFeature.trips => _latestTimestamp([
+        ..._trips.map((trip) => trip.updatedAt),
+        ..._tripItems.map((item) => item.updatedAt),
+      ]),
     };
   }
 
@@ -6629,6 +6737,7 @@ class AlagagiController extends ChangeNotifier {
       AlagagiRoute.music => UnreadActivityFeature.music,
       AlagagiRoute.improvements => UnreadActivityFeature.improvements,
       AlagagiRoute.memoryCards => UnreadActivityFeature.memoryCards,
+      AlagagiRoute.trips => UnreadActivityFeature.trips,
       _ => null,
     };
   }
@@ -7497,6 +7606,28 @@ class AlagagiController extends ChangeNotifier {
 
   List<Trip> get trips => List<Trip>.unmodifiable(_trips);
 
+  /// 홈 카드처럼 화면 밖에서 여행 하나를 지목해 열 때 쓴다.
+  String? _pendingTripId;
+
+  /// 마지막으로 저장한 여행의 id. 새로 만든 뒤 그 여행으로 바로 들어가려고 둔다.
+  String? _lastSavedTripId;
+
+  String? get lastSavedTripId => _lastSavedTripId;
+
+  /// 여행 화면으로 가면서 이 여행을 펼쳐 달라고 표시한다.
+  void openTrip(String tripId) {
+    _pendingTripId = tripId;
+    goTo(AlagagiRoute.trips);
+  }
+
+  /// 화면이 한 번 읽고 나면 지운다. 목록으로 나갔다가 돌아올 때
+  /// 같은 여행이 다시 열리면 뒤로 가기가 먹지 않는 것처럼 보인다.
+  String? consumePendingTripId() {
+    final tripId = _pendingTripId;
+    _pendingTripId = null;
+    return tripId;
+  }
+
   List<Trip> tripsWithStatus(TripStatus status) =>
       List<Trip>.unmodifiable(_trips.where((trip) => trip.status == status));
 
@@ -7744,6 +7875,107 @@ class AlagagiController extends ChangeNotifier {
     return List<TripDay>.unmodifiable(days);
   }
 
+  /// 여행 계획에 담을 만한 위시. 아직 안 한 것만 고른다.
+  List<WishItem> wishesForTripPlan() {
+    final open = _wishes.where((wish) => !wish.done).toList();
+    // 둘 다 하고 싶다고 한 것부터 눈에 들어와야 한다.
+    open.sort((first, second) {
+      if (first.isMutual != second.isMutual) {
+        return first.isMutual ? -1 : 1;
+      }
+      return first.title.compareTo(second.title);
+    });
+    return List<WishItem>.unmodifiable(open);
+  }
+
+  /// 이 날 잡혀 있는 여행. 만남 달력이 여행 기간과 겹치는 날을 알아야
+  /// 같은 날에 두 가지를 잡아두지 않는다.
+  Trip? tripCoveringDate(String dateKey) {
+    for (final trip in _trips) {
+      if (trip.status != TripStatus.planning) {
+        continue;
+      }
+      if (dateKey.compareTo(trip.startDateKey) >= 0 &&
+          dateKey.compareTo(trip.endDateKey) <= 0) {
+        return trip;
+      }
+    }
+    return null;
+  }
+
+  /// 준비물을 담아둔 다른 여행들. 가까운 여행부터 보여준다.
+  List<Trip> tripsWithPackingExcept(String tripId) {
+    final withPacking = _trips.where((trip) {
+      if (trip.id == tripId) {
+        return false;
+      }
+      return _tripItems.any(
+        (item) => item.tripId == trip.id && item.kind == TripItemKind.packing,
+      );
+    }).toList();
+    withPacking.sort(
+      (first, second) => second.startDateKey.compareTo(first.startDateKey),
+    );
+    return List<Trip>.unmodifiable(withPacking);
+  }
+
+  /// 지난 여행의 준비물을 그대로 가져온다. 챙긴 표시는 옮기지 않고,
+  /// 이미 같은 이름이 있으면 건너뛴다. 담은 개수를 돌려준다.
+  int copyTripPacking({required String fromTripId, required String toTripId}) {
+    final target = tripById(toTripId);
+    if (target == null || fromTripId == toTripId) {
+      return 0;
+    }
+    final existing = _tripItems
+        .where(
+          (item) =>
+              item.tripId == toTripId && item.kind == TripItemKind.packing,
+        )
+        .map((item) => item.title.trim())
+        .toSet();
+    final source = _tripItems
+        .where(
+          (item) =>
+              item.tripId == fromTripId && item.kind == TripItemKind.packing,
+        )
+        .toList();
+    source.sort((first, second) => first.sortOrder.compareTo(second.sortOrder));
+
+    var copied = 0;
+    for (final item in source) {
+      if (existing.contains(item.title.trim())) {
+        continue;
+      }
+      final error = saveTripItem(
+        tripId: toTripId,
+        kind: TripItemKind.packing,
+        title: item.title,
+        note: item.note,
+        assigneeProfileId: item.assigneeProfileId,
+      );
+      if (error == null) {
+        existing.add(item.title.trim());
+        copied += 1;
+      }
+    }
+    return copied;
+  }
+
+  /// 여행 중일 때 오늘 잡혀 있는 일정. 홈에서 오늘 무엇이 있는지 바로 본다.
+  List<TripItem> tripItemsForToday(String tripId) {
+    final today = todayDateKey;
+    final scheduled = _tripItems
+        .where(
+          (item) =>
+              item.tripId == tripId &&
+              item.kind.appearsOnTimeline &&
+              item.dateKey == today,
+        )
+        .toList();
+    scheduled.sort(_compareTripItems);
+    return List<TripItem>.unmodifiable(scheduled);
+  }
+
   /// 한 종류 안에서도 날짜별로 묶어 보여준다.
   List<TripDay> tripDaysForKind(String tripId, TripItemKind kind) {
     final trip = tripById(tripId);
@@ -7856,6 +8088,7 @@ class AlagagiController extends ChangeNotifier {
     _sortTrips();
     _dropTripItemDatesOutsideTrip(trip);
     _persistTrip(trip);
+    _lastSavedTripId = trip.id;
     notifyListeners();
     return null;
   }
@@ -7877,7 +8110,15 @@ class AlagagiController extends ChangeNotifier {
   }
 
   /// 여행은 만든 사람만 지울 수 있다.
-  bool deleteTrip(String tripId) {
+  Future<bool> deleteTrip(String tripId) async {
+    // 사진을 읽지 않은 채 지우면 삭제할 목록이 비어 문서가 남는다.
+    if (!tripPhotosLoadedFor(tripId)) {
+      await ensureTripPhotosLoaded(tripId);
+    }
+    return _deleteTripNow(tripId);
+  }
+
+  bool _deleteTripNow(String tripId) {
     final index = _trips.indexWhere((trip) => trip.id == tripId);
     if (index < 0 || _trips[index].createdByProfileId != _state.me.id) {
       return false;
@@ -7894,6 +8135,12 @@ class AlagagiController extends ChangeNotifier {
     _trips.removeAt(index);
     _tripItems.removeWhere((item) => item.tripId == tripId);
     _tripPhotos.removeWhere((photo) => photo.tripId == tripId);
+    if (_pendingTripId == tripId) {
+      _pendingTripId = null;
+    }
+    if (_lastSavedTripId == tripId) {
+      _lastSavedTripId = null;
+    }
 
     final repository = _repository;
     final spaceId = _spaceId;
@@ -8159,29 +8406,80 @@ class AlagagiController extends ChangeNotifier {
     return Map<String, int>.unmodifiable(totals);
   }
 
+  /// 낸 사람을 적지 않은 금액. 합계와 사람별 합이 안 맞는 이유가 여기 있다.
+  int tripUnattributedCost(String tripId) {
+    var total = 0;
+    for (final item in _tripItems) {
+      if (item.tripId != tripId || item.cost == 0) {
+        continue;
+      }
+      if (item.paidByProfileId == null) {
+        total += item.cost;
+      }
+    }
+    return total;
+  }
+
+  /// 둘 사이 차액. 적힌 것만으로 셈하고, 정산을 재촉하지는 않는다.
+  /// 낸 사람이 적힌 금액이 한쪽뿐이면 그 사람이 그만큼 더 낸 것으로 본다.
+  TripSettlement? tripSettlement(String tripId) {
+    final byPayer = tripCostByPayer(tripId);
+    if (byPayer.isEmpty) {
+      return null;
+    }
+    final mine = byPayer[_state.me.id] ?? 0;
+    final theirs = byPayer[_state.partner.id] ?? 0;
+    final gap = (mine - theirs).abs();
+    if (gap == 0) {
+      return null;
+    }
+    return TripSettlement(
+      payerProfileId: mine > theirs ? _state.me.id : _state.partner.id,
+      amount: gap,
+    );
+  }
+
   bool get tripPhotosLoading => _tripPhotosLoading;
 
-  /// 여행 화면에 들어갈 때 한 번만 사진을 읽는다.
-  Future<void> ensureTripPhotosLoaded() async {
-    if (_tripPhotosLoaded || _tripPhotosLoading) {
+  /// 사진을 읽지 못했는지. 빈 여행과 실패를 같은 화면으로 보여주면 안 된다.
+  bool get tripPhotosFailed => _tripPhotosFailed;
+
+  bool tripPhotosLoadedFor(String tripId) =>
+      _repository == null || _loadedPhotoTripIds.contains(tripId);
+
+  /// 여행 하나를 열 때 그 여행의 사진만 읽는다.
+  ///
+  /// 예전에는 space의 사진을 통째로 받아, 여행이 쌓일수록 준비물 하나 보려고
+  /// 들어가도 지난 여행 사진을 전부 내려받았다.
+  Future<void> ensureTripPhotosLoaded(String tripId, {bool force = false}) async {
+    if (_tripPhotosLoading) {
+      return;
+    }
+    if (!force && tripPhotosLoadedFor(tripId)) {
       return;
     }
     final repository = _repository;
     final spaceId = _spaceId;
     if (repository == null || spaceId == null) {
-      _tripPhotosLoaded = true;
       return;
     }
     _tripPhotosLoading = true;
+    _tripPhotosFailed = false;
     notifyListeners();
     try {
-      final photos = await repository.loadTripPhotos(spaceId);
+      final photos = await repository.loadTripPhotos(spaceId, tripId);
+      // 통째로 갈아끼우면, 방금 올려 아직 서버에 닿지 않은 사진이 사라진다.
+      // id로 합치고 서버 쪽을 우선한다.
+      final loadedIds = photos.map((photo) => photo.id).toSet();
       _tripPhotos
-        ..clear()
+        ..removeWhere(
+          (photo) => photo.tripId == tripId && loadedIds.contains(photo.id),
+        )
         ..addAll(photos);
-      _tripPhotosLoaded = true;
+      _loadedPhotoTripIds.add(tripId);
     } catch (_) {
-      // 실패해도 화면은 열려야 한다. 다음 진입에서 다시 시도한다.
+      // 실패를 삼키면 빈 여행처럼 보인다. 화면이 구분할 수 있게 남긴다.
+      _tripPhotosFailed = true;
     } finally {
       _tripPhotosLoading = false;
       notifyListeners();
@@ -8267,7 +8565,7 @@ class AlagagiController extends ChangeNotifier {
     final repository = _repository;
     final spaceId = _spaceId;
     if (repository != null && spaceId != null) {
-      unawaited(repository.saveTripPhoto(spaceId, photo).catchError((_) {}));
+      _persistTripPhoto(photo, feedback: '사진을 담았어요.');
     }
     notifyListeners();
     return null;
@@ -8300,7 +8598,7 @@ class AlagagiController extends ChangeNotifier {
     final repository = _repository;
     final spaceId = _spaceId;
     if (repository != null && spaceId != null) {
-      unawaited(repository.saveTripPhoto(spaceId, updated).catchError((_) {}));
+      _persistTripPhoto(updated, feedback: '사진 설명을 저장했어요.');
     }
     notifyListeners();
     return null;
@@ -8444,9 +8742,7 @@ class AlagagiController extends ChangeNotifier {
     final repository = _repository;
     final spaceId = _spaceId;
     if (repository != null && spaceId != null) {
-      unawaited(
-        repository.saveTripPhoto(spaceId, _tripPhotos[index]).catchError((_) {}),
-      );
+      _persistTripPhoto(_tripPhotos[index], feedback: '사진 날짜를 정했어요.');
     }
     notifyListeners();
     return null;
@@ -8521,21 +8817,93 @@ class AlagagiController extends ChangeNotifier {
   }
 
   void _persistTrip(Trip trip) {
-    final repository = _repository;
-    final spaceId = _spaceId;
-    if (repository == null || spaceId == null) {
-      return;
-    }
-    unawaited(repository.saveTrip(spaceId, trip).catchError((_) {}));
+    _runTripWrite(
+      _PendingTripWrite.trip(trip),
+      feedback: '여행을 저장했어요.',
+    );
   }
 
   void _persistTripItem(TripItem item) {
+    _runTripWrite(
+      _PendingTripWrite.item(item),
+      feedback: '${item.kind.label}을 저장했어요.',
+    );
+  }
+
+  void _persistTripPhoto(TripPhoto photo, {required String feedback}) {
+    _runTripWrite(_PendingTripWrite.photo(photo), feedback: feedback);
+  }
+
+  /// 여행 write 하나를 흘려보내고 결과를 상태로 남긴다.
+  ///
+  /// 실패를 조용히 삼키면 화면은 저장된 것처럼 보이고 다음 진입에 되돌아간다.
+  /// 실패한 write는 모아두고 사용자가 다시 시도할 수 있게 한다.
+  void _runTripWrite(_PendingTripWrite write, {required String feedback}) {
     final repository = _repository;
     final spaceId = _spaceId;
     if (repository == null || spaceId == null) {
       return;
     }
-    unawaited(repository.saveTripItem(spaceId, item).catchError((_) {}));
+    _state = _state.copyWith(
+      tripSaveStatus: SaveStatus.saving,
+      clearTripSaveError: true,
+      clearTripSaveFeedback: true,
+    );
+    notifyListeners();
+
+    unawaited(
+      write
+          .send(repository, spaceId)
+          .then<void>((_) {
+            _failedTripWrites.removeWhere((pending) => pending.key == write.key);
+            if (_failedTripWrites.isEmpty) {
+              _state = _state.copyWith(
+                tripSaveStatus: SaveStatus.saved,
+                tripSaveFeedback: feedback,
+                clearTripSaveError: true,
+              );
+              notifyListeners();
+            }
+          })
+          .catchError((Object _) {
+            _failedTripWrites
+              ..removeWhere((pending) => pending.key == write.key)
+              ..add(write);
+            _state = _state.copyWith(
+              tripSaveStatus: SaveStatus.failed,
+              tripSaveError: '여행 내용을 저장하지 못했어요. 다시 시도해 주세요.',
+              clearTripSaveFeedback: true,
+            );
+            notifyListeners();
+          }),
+    );
+  }
+
+  bool get hasFailedTripWrites => _failedTripWrites.isNotEmpty;
+
+  /// 실패한 여행 write를 한 번에 다시 보낸다.
+  void retryTripSaves() {
+    if (_failedTripWrites.isEmpty) {
+      return;
+    }
+    final pending = List<_PendingTripWrite>.from(_failedTripWrites);
+    _failedTripWrites.clear();
+    for (final write in pending) {
+      _runTripWrite(write, feedback: '여행 내용을 저장했어요.');
+    }
+  }
+
+  /// 저장 안내를 사용자가 확인하면 지운다.
+  void clearTripSaveFeedback() {
+    if (_state.tripSaveFeedback == null && _state.tripSaveError == null) {
+      return;
+    }
+    _state = _state.copyWith(
+      tripSaveStatus: SaveStatus.idle,
+      clearTripSaveFeedback: true,
+      clearTripSaveError: true,
+    );
+    notifyListeners();
   }
 
   void setProfileCardTab(ProfileCardTab tab) {

@@ -266,6 +266,62 @@ class FirebaseSetupRequiredScreen extends StatelessWidget {
   }
 }
 
+/// 로그인은 됐는데 세션을 못 읽어온 경우. 설정 문제가 아니라 연결 문제다.
+class ConnectionUnavailableScreen extends StatelessWidget {
+  const ConnectionUnavailableScreen({
+    super.key,
+    required this.onRetry,
+    required this.onSignOut,
+  });
+
+  final VoidCallback onRetry;
+  final VoidCallback onSignOut;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlagagiScreenScroll(
+      padding: const EdgeInsets.fromLTRB(28, 34, 28, 34),
+      children: [
+        const SizedBox(height: 40),
+        Icon(
+          Icons.cloud_off_rounded,
+          size: 38,
+          color: AlagagiColors.muted.withValues(alpha: 0.7),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          '지금은 연결이 안 돼요',
+          textAlign: TextAlign.center,
+          style: serif(context, size: 22, weight: FontWeight.w800, height: 1.4),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          '인터넷이 돌아오면 다시 이어져요. 기다렸다가 다시 시도해 주세요.',
+          textAlign: TextAlign.center,
+          style: sans(size: 13, color: AlagagiColors.muted, height: 1.6),
+        ),
+        const SizedBox(height: 22),
+        AlagagiPrimaryButton(
+          key: connectionRetryButtonKey,
+          label: '다시 시도',
+          onPressed: onRetry,
+          color: AlagagiColors.sageDeep,
+        ),
+        const SizedBox(height: 10),
+        Center(
+          child: TextButton(
+            onPressed: onSignOut,
+            child: Text(
+              '로그인 화면으로',
+              style: sans(size: 12.5, color: AlagagiColors.muted),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class InviteScreen extends StatefulWidget {
   const InviteScreen({super.key, required this.controller});
 

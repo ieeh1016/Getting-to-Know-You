@@ -15,6 +15,8 @@ class TripPickerRow extends StatelessWidget {
     required this.placeholder,
     required this.icon,
     required this.onTap,
+    this.onClear,
+    this.clearKey,
   });
 
   final Key rowKey;
@@ -23,6 +25,11 @@ class TripPickerRow extends StatelessWidget {
   final String placeholder;
   final IconData icon;
   final VoidCallback onTap;
+
+  /// 값이 있을 때만 보이는 지우기. 한번 고른 시각을 되돌릴 길이 없으면
+  /// 항목을 지웠다가 다시 담는 수밖에 없다.
+  final VoidCallback? onClear;
+  final Key? clearKey;
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +68,22 @@ class TripPickerRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
-                Icon(icon, size: 15, color: AlagagiColors.sageDeep),
+                if (filled && onClear != null)
+                  InkWell(
+                    key: clearKey,
+                    onTap: onClear,
+                    borderRadius: BorderRadius.circular(9),
+                    child: const Padding(
+                      padding: EdgeInsets.all(3),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 15,
+                        color: AlagagiColors.muted,
+                      ),
+                    ),
+                  )
+                else
+                  Icon(icon, size: 15, color: AlagagiColors.sageDeep),
               ],
             ),
           ],

@@ -43,13 +43,14 @@ void main() {
     expect(repository.loadPhotoCallCount, 0);
     expect(controller.tripPhotosFor('trip_1'), isEmpty);
 
-    await controller.ensureTripPhotosLoaded();
+    await controller.ensureTripPhotosLoaded('trip_1');
 
     expect(repository.loadPhotoCallCount, 1);
+    expect(repository.loadedPhotoTripIds, ['trip_1']);
     expect(controller.tripPhotosFor('trip_1'), hasLength(1));
 
     // 두 번째 진입에서는 다시 읽지 않는다.
-    await controller.ensureTripPhotosLoaded();
+    await controller.ensureTripPhotosLoaded('trip_1');
     expect(repository.loadPhotoCallCount, 1);
   });
 
@@ -76,7 +77,7 @@ void main() {
     final itemId = controller.tripItemsFor(tripId).single.id;
     final photoId = controller.tripPhotosFor(tripId).single.id;
 
-    expect(controller.deleteTrip(tripId), isTrue);
+    expect(await controller.deleteTrip(tripId), isTrue);
     await Future<void>.delayed(Duration.zero);
 
     // 남겨두면 화면에서만 사라지고 문서는 영원히 쌓인다.

@@ -9,11 +9,15 @@ import '../../shared/ui_style.dart';
 ///
 /// 격자의 작은 조각으로만 보이면 정작 사진을 볼 수가 없다. 좌우로 넘기고
 /// 손가락으로 확대할 수 있어야 사진을 담아둔 의미가 산다.
+/// [visiblePhotoIds]는 방금 보고 있던 목록의 순서 그대로다. 넘기면 뷰어도
+/// 그 범위만 넘긴다. 날짜로 걸러 보다가 뷰어에서 전체가 나오면 어디까지가
+/// 오늘 사진인지 알 수 없다.
 Future<void> showTripPhotoViewer(
   BuildContext context, {
   required AlagagiController controller,
   required String tripId,
   required String initialPhotoId,
+  List<String>? visiblePhotoIds,
 }) {
   return Navigator.of(context).push<void>(
     PageRouteBuilder<void>(
@@ -23,6 +27,7 @@ Future<void> showTripPhotoViewer(
         controller: controller,
         tripId: tripId,
         initialPhotoId: initialPhotoId,
+        visiblePhotoIds: visiblePhotoIds,
       ),
       transitionsBuilder: (_, animation, _, child) =>
           FadeTransition(opacity: animation, child: child),
@@ -36,11 +41,13 @@ class TripPhotoViewer extends StatefulWidget {
     required this.controller,
     required this.tripId,
     required this.initialPhotoId,
+    this.visiblePhotoIds,
   });
 
   final AlagagiController controller;
   final String tripId;
   final String initialPhotoId;
+  final List<String>? visiblePhotoIds;
 
   @override
   State<TripPhotoViewer> createState() => _TripPhotoViewerState();
@@ -54,8 +61,18 @@ class _TripPhotoViewerState extends State<TripPhotoViewer> {
   bool _editingCaption = false;
   String? _captionError;
 
-  List<TripPhoto> get _photos =>
-      widget.controller.tripPhotosFor(widget.tripId);
+  List<TripPhoto> get _photos {
+    final all = widget.controller.tripPhotosFor(widget.tripId);
+    final order = widget.visiblePhotoIds;
+    if (order == null) {
+      return all;
+    }
+    final byId = {for (final photo in all) photo.id: photo};
+    return [
+      for (final id in order)
+        if (byId[id] != null) byId[id]!,
+    ];
+  }
 
   @override
   void initState() {

@@ -21,24 +21,40 @@ class BrowserTripPhotoPicker implements TripPhotoPicker {
   bool get isSupported => true;
 
   @override
-  Future<PickedTripPhoto?> pickImage() async {
+  Future<List<PickedTripPhoto>> pickImages({
+    int max = maxTripPhotoPickCount,
+  }) async {
     final input = html.FileUploadInputElement()
       ..accept = 'image/*'
-      ..multiple = false;
+      ..multiple = true;
     input.click();
 
-    await input.onChange.first;
+    // 취소하면 change가 오지 않는다. cancel과 창 복귀를 함께 기다리지 않으면
+    // future가 끝나지 않아 담기 button이 눌린 상태로 굳는다.
+    await Future.any<void>([
+      input.onChange.first,
+      input.on['cancel'].first,
+      html.window.onFocus.first.then((_) async {
+        // focus가 돌아온 직후에는 change가 아직 도착하지 않았을 수 있다.
+        await Future<void>.delayed(const Duration(milliseconds: 400));
+      }),
+    ]);
+
     final files = input.files;
     if (files == null || files.isEmpty) {
-      return null;
+      return const [];
     }
 
-    final dataUrl = await _readAsDataUrl(files.first);
-    if (dataUrl == null) {
-      return null;
+    final picked = <PickedTripPhoto>[];
+    for (final file in files.take(max)) {
+      final dataUrl = await _readAsDataUrl(file);
+      if (dataUrl == null) {
+        continue;
+      }
+      final resized = await _downscale(dataUrl);
+      picked.add(PickedTripPhoto(dataUrl: resized ?? dataUrl));
     }
-    final resized = await _downscale(dataUrl);
-    return PickedTripPhoto(dataUrl: resized ?? dataUrl);
+    return picked;
   }
 
   Future<String?> _readAsDataUrl(html.File file) async {
