@@ -20,6 +20,7 @@ Future<T?> _showFormSheet<T>(
   required String title,
   String? subtitle,
   required Widget Function(BuildContext sheetContext) builder,
+  bool scrollBody = true,
 }) {
   return showModalBottomSheet<T>(
     context: context,
@@ -109,11 +110,15 @@ Future<T?> _showFormSheet<T>(
                     ],
                   ),
                 ),
+                // 폼이 길면 저장 button이 화면 밖으로 밀린다. 그런 sheet는
+                // 스스로 스크롤 영역과 고정 footer를 나눠 배치한다.
                 Flexible(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(18, 4, 18, 16),
-                    child: builder(sheetContext),
-                  ),
+                  child: scrollBody
+                      ? SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(18, 4, 18, 16),
+                          child: builder(sheetContext),
+                        )
+                      : builder(sheetContext),
                 ),
               ],
             ),
@@ -135,6 +140,7 @@ Future<void> showTripFormSheet(
     sheetKey: tripFormSheetKey,
     title: trip == null ? '새 여행' : '여행 고치기',
     subtitle: trip == null ? '이름과 기간만 있으면 시작할 수 있어요' : null,
+    scrollBody: false,
     builder: (sheetContext) =>
         _TripForm(controller: controller, trip: trip, sheetContext: sheetContext),
   );
@@ -158,6 +164,8 @@ class _TripForm extends StatefulWidget {
 class _TripFormState extends State<_TripForm> {
   late final ImeSafeTextEditingController _titleController;
   late final ImeSafeTextEditingController _destinationController;
+  late final ImeSafeTextEditingController _noteController;
+  late final ImeSafeTextEditingController _currencyController;
   String? _startDateKey;
   String? _endDateKey;
   String? _error;
@@ -171,6 +179,12 @@ class _TripFormState extends State<_TripForm> {
     _destinationController = ImeSafeTextEditingController(
       text: widget.trip?.destination ?? '',
     );
+    _noteController = ImeSafeTextEditingController(
+      text: widget.trip?.note ?? '',
+    );
+    _currencyController = ImeSafeTextEditingController(
+      text: widget.trip?.currencyLabel ?? '원',
+    );
     _startDateKey = widget.trip?.startDateKey;
     _endDateKey = widget.trip?.endDateKey;
   }
@@ -179,6 +193,8 @@ class _TripFormState extends State<_TripForm> {
   void dispose() {
     _titleController.dispose();
     _destinationController.dispose();
+    _noteController.dispose();
+    _currencyController.dispose();
     super.dispose();
   }
 
@@ -229,6 +245,8 @@ class _TripFormState extends State<_TripForm> {
       destination: _destinationController.text,
       startDateKey: _startDateKey ?? '',
       endDateKey: _endDateKey ?? '',
+      note: _noteController.text,
+      currencyLabel: _currencyController.text,
     );
     if (error != null) {
       setState(() => _error = error);
@@ -240,8 +258,14 @@ class _TripFormState extends State<_TripForm> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
       children: [
+        Flexible(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(18, 4, 18, 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
         TripTextField(
           fieldKey: tripTitleFieldKey,
           controller: _titleController,
@@ -304,16 +328,39 @@ class _TripFormState extends State<_TripForm> {
             ],
           ),
         ],
+        const SizedBox(height: 10),
+        TripTextField(
+          fieldKey: tripNoteFieldKey,
+          controller: _noteController,
+          label: '메모 (선택)',
+          hint: '같이 기억해둘 것',
+          maxLength: 500,
+          maxLines: 3,
+        ),
+        const SizedBox(height: 10),
+        TripTextField(
+          fieldKey: tripCurrencyFieldKey,
+          controller: _currencyController,
+          label: '경비 단위',
+          hint: '원, 엔, USD',
+          maxLength: 8,
+        ),
         if (_error != null) ...[
           const SizedBox(height: 10),
           _FormError(message: _error!),
         ],
-        const SizedBox(height: 16),
-        TripPrimaryButton(
+            ],
+          ),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
+        child: TripPrimaryButton(
           buttonKey: tripSubmitButtonKey,
           label: widget.trip == null ? '여행 만들기' : '고친 내용 저장하기',
           onPressed: _submit,
         ),
+      ),
       ],
     );
   }
@@ -839,6 +886,7 @@ Future<void> showTripItemFormSheet(
     sheetKey: tripItemFormSheetKey,
     title: item == null ? '${kind.label} 추가' : '${kind.label} 고치기',
     subtitle: trip.title,
+    scrollBody: false,
     builder: (sheetContext) => _TripItemForm(
       controller: controller,
       trip: trip,
@@ -879,6 +927,8 @@ class _TripItemFormState extends State<_TripItemForm> {
   String? _endTimeLabel;
   String? _placeId;
   late final ImeSafeTextEditingController _linkController;
+  late final ImeSafeTextEditingController _costController;
+  String? _paidByProfileId;
   late TripTransportMode _mode;
   String? _error;
 
@@ -896,6 +946,10 @@ class _TripItemFormState extends State<_TripItemForm> {
     _endTimeLabel = item?.endTimeLabel;
     _placeId = item?.placeId;
     _linkController = ImeSafeTextEditingController(text: item?.link ?? '');
+    _costController = ImeSafeTextEditingController(
+      text: (item?.cost ?? 0) == 0 ? '' : '${item!.cost}',
+    );
+    _paidByProfileId = item?.paidByProfileId;
     _mode = item?.transportMode ?? TripTransportMode.flight;
   }
 
@@ -906,6 +960,7 @@ class _TripItemFormState extends State<_TripItemForm> {
     _fromController.dispose();
     _toController.dispose();
     _linkController.dispose();
+    _costController.dispose();
     super.dispose();
   }
 
@@ -954,6 +1009,8 @@ class _TripItemFormState extends State<_TripItemForm> {
       toLabel: _toController.text,
       placeId: _placeId,
       link: _linkController.text,
+      cost: int.tryParse(_costController.text.replaceAll(',', '').trim()) ?? 0,
+      paidByProfileId: _paidByProfileId,
     );
     if (error != null) {
       setState(() => _error = error);
@@ -967,8 +1024,14 @@ class _TripItemFormState extends State<_TripItemForm> {
     final kind = widget.kind;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
       children: [
+        Flexible(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(18, 4, 18, 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
         if (kind.usesRoute) ..._routeFields(),
         TripTextField(
           fieldKey: tripItemTitleFieldKey,
@@ -997,18 +1060,66 @@ class _TripItemFormState extends State<_TripItemForm> {
         ),
         if (kind.usesDateRange) ..._stayFields(),
         if (kind.usesRoute || kind == TripItemKind.plan) ..._scheduleFields(),
+        ..._costFields(),
         if (_error != null) ...[
           const SizedBox(height: 10),
           _FormError(message: _error!),
         ],
-        const SizedBox(height: 16),
-        TripPrimaryButton(
+            ],
+          ),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
+        child: TripPrimaryButton(
           buttonKey: tripItemSubmitButtonKey,
           label: widget.item == null ? '${kind.label} 담기' : '고친 내용 저장하기',
           onPressed: _submit,
         ),
+      ),
       ],
     );
+  }
+
+  /// 항목에 든 돈과 낸 사람. 적지 않아도 된다.
+  List<Widget> _costFields() {
+    final me = widget.controller.state.me;
+    final partner = widget.controller.state.partner;
+
+    return [
+      const SizedBox(height: 12),
+      TripTextField(
+        fieldKey: tripItemCostFieldKey,
+        controller: _costController,
+        label: '든 돈 (선택, ${widget.trip.currencyLabel})',
+        hint: '숫자만',
+        maxLength: 12,
+        keyboardType: TextInputType.number,
+      ),
+      const SizedBox(height: 9),
+      const TripFieldLabel(text: '누가 냈나요 (선택)'),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 7,
+        runSpacing: 7,
+        children: [
+          for (final profile in [me, partner])
+            AlagagiFilterPill(
+              key: tripItemPayerButtonKey(
+                widget.item?.id ?? 'draft',
+                profile.id,
+              ),
+              label: profile.nickname,
+              selected: _paidByProfileId == profile.id,
+              onTap: () => setState(() {
+                _paidByProfileId = _paidByProfileId == profile.id
+                    ? null
+                    : profile.id;
+              }),
+            ),
+        ],
+      ),
+    ];
   }
 
   List<Widget> _routeFields() {

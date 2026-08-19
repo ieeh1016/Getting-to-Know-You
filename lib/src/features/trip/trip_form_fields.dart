@@ -140,6 +140,7 @@ class TripTextField extends StatelessWidget {
     required this.hint,
     required this.maxLength,
     this.maxLines = 1,
+    this.keyboardType,
   });
 
   final Key fieldKey;
@@ -148,6 +149,7 @@ class TripTextField extends StatelessWidget {
   final String hint;
   final int maxLength;
   final int maxLines;
+  final TextInputType? keyboardType;
 
   @override
   Widget build(BuildContext context) {
@@ -164,6 +166,7 @@ class TripTextField extends StatelessWidget {
         maxLength: maxLength,
         minLines: maxLines,
         maxLines: maxLines,
+        keyboardType: keyboardType,
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,

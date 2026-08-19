@@ -347,6 +347,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         'endDateKey': trip.endDateKey,
         'status': trip.status.storageKey,
         'note': trip.note,
+        'currencyLabel': trip.currencyLabel,
         'createdByProfileId': trip.createdByProfileId,
         'updatedByProfileId':
             trip.updatedByProfileId ?? trip.createdByProfileId,
@@ -398,6 +399,8 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         'placeId': item.placeId ?? '',
         'assigneeProfileId': item.assigneeProfileId ?? '',
         'sortOrder': item.sortOrder,
+        'cost': item.cost,
+        'paidByProfileId': item.paidByProfileId ?? '',
         'link': item.link ?? '',
         'checked': item.checked,
         'createdByProfileId': item.createdByProfileId,
@@ -424,6 +427,19 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         .collection('tripItems')
         .doc(itemId)
         .delete();
+  }
+
+  @override
+  Future<List<TripPhoto>> loadTripPhotos(String spaceId) async {
+    final snapshot = await _firestore
+        .collection('spaces')
+        .doc(spaceId)
+        .collection('tripPhotos')
+        .get();
+    return snapshot.docs
+        .map((doc) => _tripPhotoFromData(doc.data(), fallbackId: doc.id))
+        .nonNulls
+        .toList();
   }
 
   @override
@@ -1033,7 +1049,6 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     final wishesSnapshot = await space.collection('wishes').get();
     final tripsSnapshot = await space.collection('trips').get();
     final tripItemsSnapshot = await space.collection('tripItems').get();
-    final tripPhotosSnapshot = await space.collection('tripPhotos').get();
     final sharedMemoryCardsSnapshot = await space
         .collection('memoryCards')
         .where('visibility', isEqualTo: 'shared')
@@ -1103,10 +1118,6 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           .toList(),
       tripItems: tripItemsSnapshot.docs
           .map((doc) => _tripItemFromData(doc.data(), fallbackId: doc.id))
-          .nonNulls
-          .toList(),
-      tripPhotos: tripPhotosSnapshot.docs
-          .map((doc) => _tripPhotoFromData(doc.data(), fallbackId: doc.id))
           .nonNulls
           .toList(),
       memoryCards: [
@@ -1239,6 +1250,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
           ? TripStatus.done
           : TripStatus.planning,
       note: _readString(data, 'note') ?? '',
+      currencyLabel: _readString(data, 'currencyLabel') ?? '원',
       updatedAt: _readDateTime(data, 'updatedAt'),
       updatedByProfileId: _readString(data, 'updatedByProfileId'),
     );
@@ -1263,6 +1275,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     final toLabel = _readString(data, 'toLabel');
     final placeId = _readString(data, 'placeId');
     final assigneeProfileId = _readString(data, 'assigneeProfileId');
+    final paidByProfileId = _readString(data, 'paidByProfileId');
     final link = _readString(data, 'link');
 
     String? orNull(String? value) =>
@@ -1291,6 +1304,8 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
       placeId: orNull(placeId),
       assigneeProfileId: orNull(assigneeProfileId),
       sortOrder: _readInt(data, 'sortOrder') ?? 0,
+      cost: _readInt(data, 'cost') ?? 0,
+      paidByProfileId: orNull(paidByProfileId),
       link: link == null || link.isEmpty ? null : link,
       checked: data['checked'] == true,
       updatedAt: _readDateTime(data, 'updatedAt'),

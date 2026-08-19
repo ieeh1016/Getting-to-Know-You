@@ -221,6 +221,16 @@ Key timePickerMinuteButtonKey(int minute) => Key('time-picker-minute-$minute');
 
 const tripsScreenKey = Key('trips-screen');
 const tripFormSheetKey = Key('trip-form-sheet');
+const tripNoteFieldKey = Key('trip-note-field');
+const tripCurrencyFieldKey = Key('trip-currency-field');
+const tripItemCostFieldKey = Key('trip-item-cost-field');
+const tripBudgetSummaryKey = Key('trip-budget-summary');
+const tripPhotoLoadingKey = Key('trip-photo-loading');
+const tripPhotoSortButtonKey = Key('trip-photo-sort-button');
+const tripListSearchFieldKey = Key('trip-list-search-field');
+Key tripItemPayerButtonKey(String itemId, String profileId) =>
+    Key('trip-item-payer-$itemId-$profileId');
+Key tripStayDayGroupKey(String dateKey) => Key('trip-stay-day-$dateKey');
 const tripItemFormSheetKey = Key('trip-item-form-sheet');
 const tripAddButtonKey = Key('trip-add-button');
 const tripItemAddButtonKey = Key('trip-item-add-button');

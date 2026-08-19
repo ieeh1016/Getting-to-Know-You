@@ -537,6 +537,7 @@ service cloud.firestore {
           'endDateKey',
           'status',
           'note',
+          'currencyLabel',
           'createdByProfileId',
           'updatedByProfileId',
           'updatedAt'
@@ -555,6 +556,9 @@ service cloud.firestore {
         && request.resource.data.status in ['planning', 'done']
         && request.resource.data.note is string
         && request.resource.data.note.size() <= 500
+        && request.resource.data.currencyLabel is string
+        && request.resource.data.currencyLabel.size() > 0
+        && request.resource.data.currencyLabel.size() <= 8
         && request.resource.data.createdByProfileId is string
         && request.resource.data.createdByProfileId in get(/databases/$(database)/documents/spaces/$(spaceId)).data.memberIds
         && request.resource.data.updatedByProfileId == request.auth.uid
@@ -604,6 +608,8 @@ service cloud.firestore {
           'placeId',
           'assigneeProfileId',
           'sortOrder',
+          'cost',
+          'paidByProfileId',
           'link',
           'checked',
           'createdByProfileId',
@@ -638,6 +644,11 @@ service cloud.firestore {
         && request.resource.data.sortOrder is int
         && request.resource.data.sortOrder >= 0
         && request.resource.data.sortOrder <= 999
+        && request.resource.data.cost is int
+        && request.resource.data.cost >= 0
+        && request.resource.data.cost <= 100000000
+        && request.resource.data.paidByProfileId is string
+        && request.resource.data.paidByProfileId.size() <= 120
         && request.resource.data.link is string
         && request.resource.data.link.size() <= 500
         && request.resource.data.checked is bool

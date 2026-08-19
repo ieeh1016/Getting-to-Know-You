@@ -35,6 +35,7 @@ class TripTimeline extends StatelessWidget {
     required this.placeFor,
     required this.photosForDate,
     required this.todayDateKey,
+    required this.todayAnchorKey,
     required this.onTapItem,
     required this.onTapPhoto,
     required this.onReorder,
@@ -46,6 +47,9 @@ class TripTimeline extends StatelessWidget {
   final SharedPlace? Function(TripItem item) placeFor;
   final List<TripPhoto> Function(String dateKey) photosForDate;
   final String todayDateKey;
+
+  /// 여행 중이면 이 자리로 스크롤해 오늘부터 보이게 한다.
+  final GlobalKey todayAnchorKey;
   final ValueChanged<TripItem> onTapItem;
   final ValueChanged<TripPhoto> onTapPhoto;
 
@@ -86,6 +90,10 @@ class TripTimeline extends StatelessWidget {
                 : photosForDate(days[index].dateKey),
             isToday: !days[index].isUndated &&
                 days[index].dateKey == todayDateKey,
+            anchorKey: !days[index].isUndated &&
+                    days[index].dateKey == todayDateKey
+                ? todayAnchorKey
+                : null,
             onTapItem: onTapItem,
             onTapPhoto: onTapPhoto,
             onReorder: onReorder,
@@ -104,6 +112,7 @@ class _TripTimelineDay extends StatelessWidget {
     required this.placeFor,
     required this.photos,
     required this.isToday,
+    required this.anchorKey,
     required this.onTapItem,
     required this.onTapPhoto,
     required this.onReorder,
@@ -116,6 +125,7 @@ class _TripTimelineDay extends StatelessWidget {
   final SharedPlace? Function(TripItem item) placeFor;
   final List<TripPhoto> photos;
   final bool isToday;
+  final GlobalKey? anchorKey;
   final ValueChanged<TripItem> onTapItem;
   final ValueChanged<TripPhoto> onTapPhoto;
   final void Function(String? dateKey, int oldIndex, int newIndex) onReorder;
@@ -132,6 +142,7 @@ class _TripTimelineDay extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _TripDayHeader(
+          key: anchorKey,
           day: day,
           entryCount: day.items.length,
           isToday: isToday,
@@ -299,6 +310,7 @@ class _TripStayBand extends StatelessWidget {
 
 class _TripDayHeader extends StatelessWidget {
   const _TripDayHeader({
+    super.key,
     required this.day,
     required this.entryCount,
     required this.isToday,

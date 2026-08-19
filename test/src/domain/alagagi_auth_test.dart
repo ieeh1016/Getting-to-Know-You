@@ -3472,6 +3472,9 @@ class RecordingAlagagiRepository implements AlagagiDataRepository {
   }
 
   @override
+  Future<List<TripPhoto>> loadTripPhotos(String spaceId) async => const [];
+
+  @override
   Future<void> saveTripPhoto(String spaceId, TripPhoto photo) async {
     savedTripPhotos.add((spaceId: spaceId, photo: photo));
   }

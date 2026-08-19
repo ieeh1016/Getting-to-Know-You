@@ -34,7 +34,7 @@
 - `spaces/{spaceId}/sharedPlaces/{placeId}`
 - `spaces/{spaceId}/trips/{tripId}`
 - `spaces/{spaceId}/tripItems/{itemId}`
-- `spaces/{spaceId}/tripPhotos/{photoId}`: 갤러리 사진을 줄여 담는 data URI. Cloud Storage 없이 Spark plan 안에서 다루기 위한 경로라 문서당 크기 상한이 있다.
+- `spaces/{spaceId}/tripPhotos/{photoId}`: 갤러리 사진을 줄여 담는 data URI. Cloud Storage 없이 Spark plan 안에서 다루기 위한 경로라 문서당 크기 상한이 있다. session 로딩에서 읽지 않고 여행 화면 진입 시에만 읽는다. 문서가 커서 매 접속마다 전부 받으면 전송량이 크게 든다.
 - `spaces/{spaceId}/diagnosticEvents/{eventId}`
 - `spaces/{spaceId}/curiosityCards/{cardId}`
 - `spaces/{spaceId}/stockStories/{storyId}`

@@ -12,6 +12,34 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// sheet 안은 자체 스크롤 영역이라 바깥 ensureVisible로는 닿지 않는다.
+  Future<void> tapInSheet(
+    WidgetTester tester,
+    Key sheetKey,
+    Finder target,
+  ) async {
+    final scrollable = find.descendant(
+      of: find.byKey(sheetKey),
+      matching: find.byType(Scrollable),
+    );
+    if (scrollable.evaluate().isNotEmpty) {
+      await tester.scrollUntilVisible(target, 80, scrollable: scrollable.first);
+      // 고정된 저장 button이 sheet 아래를 덮고 있어, 목록의 마지막 줄은
+      // 보이더라도 눌리지 않는다. 조금 더 굴려 button 위로 올린다.
+      final viewportHeight = tester.view.physicalSize.height /
+          tester.view.devicePixelRatio;
+      for (var attempt = 0; attempt < 4; attempt += 1) {
+        if (tester.getCenter(target).dy < viewportHeight - 130) {
+          break;
+        }
+        await tester.drag(scrollable.first, const Offset(0, -80));
+        await tester.pumpAndSettle();
+      }
+    }
+    await tester.tap(target);
+    await tester.pumpAndSettle();
+  }
+
   /// 여행 만들기 sheet를 연다.
   Future<void> openTripForm(WidgetTester tester) async {
     await tester.ensureVisible(find.byKey(tripAddButtonKey));
@@ -393,8 +421,6 @@ void main() {
     await tester.enterText(find.byKey(tripDestinationFieldKey), '제주도');
 
     // 날짜를 고르기 전에는 저장할 수 없다.
-    await tester.ensureVisible(find.byKey(tripSubmitButtonKey));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(tripSubmitButtonKey));
     await tester.pumpAndSettle();
     expect(controller.trips, isEmpty);
@@ -405,8 +431,6 @@ void main() {
     // 고른 기간을 저장 전에 되짚어준다.
     expect(find.text('2박 3일'), findsWidgets);
 
-    await tester.ensureVisible(find.byKey(tripSubmitButtonKey));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(tripSubmitButtonKey));
     await tester.pumpAndSettle();
 
@@ -426,8 +450,6 @@ void main() {
 
     await openTripItemForm(tester, TripItemKind.packing);
     await tester.enterText(find.byKey(tripItemTitleFieldKey), '충전기');
-    await tester.ensureVisible(find.byKey(tripItemSubmitButtonKey));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(tripItemSubmitButtonKey));
     await tester.pumpAndSettle();
 
@@ -564,8 +586,6 @@ void main() {
     );
 
     await pickTripTime(tester, tripItemTimeFieldKey, 7, 40);
-    await tester.ensureVisible(find.byKey(tripItemSubmitButtonKey));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(tripItemSubmitButtonKey));
     await tester.pumpAndSettle();
 
@@ -741,14 +761,13 @@ void main() {
     await tester.enterText(find.byKey(tripItemFromFieldKey), '서울역');
     await tester.enterText(find.byKey(tripItemToFieldKey), '강릉역');
     await tester.enterText(find.byKey(tripItemTitleFieldKey), 'KTX 101');
-    await tester.ensureVisible(find.byKey(tripItemDateButtonKey('2026-09-12')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(tripItemDateButtonKey('2026-09-12')));
-    await tester.pumpAndSettle();
+    await tapInSheet(
+      tester,
+      tripItemFormSheetKey,
+      find.byKey(tripItemDateButtonKey('2026-09-12')),
+    );
     await pickTripTime(tester, tripItemTimeFieldKey, 8, 20);
     await pickTripTime(tester, tripItemEndTimeFieldKey, 10, 45);
-    await tester.ensureVisible(find.byKey(tripItemSubmitButtonKey));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(tripItemSubmitButtonKey));
     await tester.pumpAndSettle();
 
@@ -805,10 +824,11 @@ void main() {
     expect(find.byKey(tripStayCheckOutDateButtonKey('2026-09-13')), findsNothing);
 
     await tester.enterText(find.byKey(tripItemTitleFieldKey), '오션뷰 호텔');
-    await tester.ensureVisible(find.byKey(tripItemDateButtonKey('2026-09-12')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(tripItemDateButtonKey('2026-09-12')));
-    await tester.pumpAndSettle();
+    await tapInSheet(
+      tester,
+      tripItemFormSheetKey,
+      find.byKey(tripItemDateButtonKey('2026-09-12')),
+    );
 
     // 체크아웃은 체크인 다음 날부터만 고를 수 있다.
     expect(
@@ -820,17 +840,14 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.ensureVisible(
+    await tapInSheet(
+      tester,
+      tripItemFormSheetKey,
       find.byKey(tripStayCheckOutDateButtonKey('2026-09-14')),
     );
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(tripStayCheckOutDateButtonKey('2026-09-14')));
-    await tester.pumpAndSettle();
 
     expect(find.text('2박 머물러요'), findsOneWidget);
 
-    await tester.ensureVisible(find.byKey(tripItemSubmitButtonKey));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(tripItemSubmitButtonKey));
     await tester.pumpAndSettle();
 
@@ -1093,10 +1110,7 @@ void main() {
     await tester.enterText(find.byKey(tripItemTitleFieldKey), '점심');
 
     // 장소는 장소 보드에서 고른다.
-    await tester.ensureVisible(find.byKey(tripItemPlaceFieldKey));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(tripItemPlaceFieldKey));
-    await tester.pumpAndSettle();
+    await tapInSheet(tester, tripItemFormSheetKey, find.byKey(tripItemPlaceFieldKey));
     expect(find.byKey(tripPlacePickerSheetKey), findsOneWidget);
     expect(find.byKey(tripPlacePickerOptionKey('place_ramen')), findsOneWidget);
     expect(find.byKey(tripPlacePickerOptionKey('place_cafe')), findsOneWidget);
@@ -1111,12 +1125,11 @@ void main() {
     expect(find.byKey(tripPlacePickerSheetKey), findsNothing);
     expect(find.textContaining('골목 라멘'), findsWidgets);
 
-    await tester.ensureVisible(find.byKey(tripItemDateButtonKey('2026-09-12')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(tripItemDateButtonKey('2026-09-12')));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.byKey(tripItemSubmitButtonKey));
-    await tester.pumpAndSettle();
+    await tapInSheet(
+      tester,
+      tripItemFormSheetKey,
+      find.byKey(tripItemDateButtonKey('2026-09-12')),
+    );
     await tester.tap(find.byKey(tripItemSubmitButtonKey));
     await tester.pumpAndSettle();
 
@@ -1242,6 +1255,8 @@ void main() {
     expect(find.text('함께'), findsWidgets);
 
     // 사진을 여행 날짜에 묶는다.
+    await tester.ensureVisible(find.byKey(tripKindTabKey('photos')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(tripKindTabKey('photos')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(tripPhotoDayTagButtonKey(photoId)));
@@ -1254,6 +1269,8 @@ void main() {
     expect(controller.tripPhotosFor(tripId).single.dateKey, '2026-09-13');
 
     // 묶은 사진은 그날 타임라인에도 함께 보인다.
+    await tester.ensureVisible(find.byKey(tripKindTabKey('timeline')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(tripKindTabKey('timeline')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(tripTimelinePhotoKey(photoId)));
@@ -5662,6 +5679,9 @@ class _FailingSaveRepository implements AlagagiDataRepository {
 
   @override
   Future<void> deleteTripItem(String spaceId, String itemId) async {}
+
+  @override
+  Future<List<TripPhoto>> loadTripPhotos(String spaceId) async => const [];
 
   @override
   Future<void> saveTripPhoto(String spaceId, TripPhoto photo) async {}

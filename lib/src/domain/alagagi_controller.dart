@@ -386,6 +386,10 @@ abstract class AlagagiDataRepository {
 
   Future<void> deleteTripItem(String spaceId, String itemId);
 
+  /// 여행 사진은 session 로딩에 넣지 않는다. 문서 하나가 수백 KB라 앱을 열
+  /// 때마다 전부 받으면 홈 진입이 느려지고 전송량도 크게 든다.
+  Future<List<TripPhoto>> loadTripPhotos(String spaceId);
+
   Future<void> saveTripPhoto(String spaceId, TripPhoto photo);
 
   Future<void> deleteTripPhoto(String spaceId, String photoId);
@@ -1143,6 +1147,12 @@ extension TripItemKindMeta on TripItemKind {
 
   bool get usesCheck => this == TripItemKind.packing;
 
+  /// 다녀온 뒤 `했다`를 표시할 수 있는 종류인지.
+  ///
+  /// 준비물의 체크가 `챙겼다`라면 계획의 체크는 `했다`다. 표시가 없으면
+  /// 다녀온 뒤에도 타임라인이 계획인지 기록인지 구분되지 않는다.
+  bool get usesDoneToggle => this == TripItemKind.plan;
+
   /// 숙소는 하룻밤을 통째로 차지하므로 하루 안의 시각 흐름에 끼우지 않고
   /// 그날 머무는 곳으로 따로 보여준다. 준비물은 시간과 무관한 목록이다.
   bool get appearsOnTimeline =>
@@ -1197,6 +1207,7 @@ class Trip {
     required this.createdByProfileId,
     this.status = TripStatus.planning,
     this.note = '',
+    this.currencyLabel = '원',
     this.updatedAt,
     this.updatedByProfileId,
   });
@@ -1209,6 +1220,9 @@ class Trip {
   final String createdByProfileId;
   final TripStatus status;
   final String note;
+
+  /// 경비를 적을 때 붙이는 단위. 해외 여행이면 `엔`, `USD`처럼 바꾼다.
+  final String currencyLabel;
   final DateTime? updatedAt;
   final String? updatedByProfileId;
 
@@ -1253,6 +1267,7 @@ class Trip {
     String? endDateKey,
     TripStatus? status,
     String? note,
+    String? currencyLabel,
     DateTime? updatedAt,
     String? updatedByProfileId,
   }) {
@@ -1265,6 +1280,7 @@ class Trip {
       createdByProfileId: createdByProfileId,
       status: status ?? this.status,
       note: note ?? this.note,
+      currencyLabel: currencyLabel ?? this.currencyLabel,
       updatedAt: updatedAt ?? this.updatedAt,
       updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
     );
@@ -1290,6 +1306,8 @@ class TripItem {
     this.link,
     this.assigneeProfileId,
     this.sortOrder = 0,
+    this.cost = 0,
+    this.paidByProfileId,
     this.checked = false,
     this.updatedAt,
     this.updatedByProfileId,
@@ -1329,6 +1347,12 @@ class TripItem {
 
   /// 같은 날 같은 시각일 때의 순서. 사용자가 끌어서 바꾼 값이다.
   final int sortOrder;
+
+  /// 이 항목에 든 돈. 0이면 적지 않은 것이다. 단위는 여행의 `currencyLabel`이다.
+  final int cost;
+
+  /// 돈을 낸 사람. 정하지 않으면 누가 냈는지 적지 않은 것이다.
+  final String? paidByProfileId;
   final bool checked;
   final DateTime? updatedAt;
   final String? updatedByProfileId;
@@ -1387,6 +1411,9 @@ class TripItem {
     String? assigneeProfileId,
     bool clearAssignee = false,
     int? sortOrder,
+    int? cost,
+    String? paidByProfileId,
+    bool clearPaidBy = false,
     bool? checked,
     DateTime? updatedAt,
     String? updatedByProfileId,
@@ -1415,6 +1442,10 @@ class TripItem {
           ? null
           : assigneeProfileId ?? this.assigneeProfileId,
       sortOrder: sortOrder ?? this.sortOrder,
+      cost: cost ?? this.cost,
+      paidByProfileId: clearPaidBy
+          ? null
+          : paidByProfileId ?? this.paidByProfileId,
       checked: checked ?? this.checked,
       updatedAt: updatedAt ?? this.updatedAt,
       updatedByProfileId: updatedByProfileId ?? this.updatedByProfileId,
@@ -3395,6 +3426,10 @@ class AlagagiController extends ChangeNotifier {
   final List<Trip> _trips = [];
   final List<TripItem> _tripItems = [];
   final List<TripPhoto> _tripPhotos = [];
+
+  /// 사진을 한 번이라도 읽었는지. 여행 화면에 들어갈 때만 읽는다.
+  bool _tripPhotosLoaded = false;
+  bool _tripPhotosLoading = false;
   final List<MusicNote> _musicNotes = [];
   final List<MusicNoteComment> _musicNoteComments = [];
   final List<ScheduleEntry> _scheduleEntries = [];
@@ -4127,6 +4162,8 @@ class AlagagiController extends ChangeNotifier {
     _tripPhotos
       ..clear()
       ..addAll(data.tripPhotos);
+    // test fixture나 demo가 사진을 미리 넣어준 경우에는 다시 읽지 않는다.
+    _tripPhotosLoaded = data.tripPhotos.isNotEmpty || _repository == null;
 
     _myAnswersByQuestionId.clear();
     _partnerAnswersByQuestionId.clear();
@@ -7758,6 +7795,7 @@ class AlagagiController extends ChangeNotifier {
     required String startDateKey,
     required String endDateKey,
     String note = '',
+    String currencyLabel = '원',
     TripStatus? status,
   }) {
     final trimmedTitle = title.trim();
@@ -7772,6 +7810,14 @@ class AlagagiController extends ChangeNotifier {
     if (end.isBefore(start)) {
       return '돌아오는 날은 떠나는 날보다 앞설 수 없어요.';
     }
+    if (note.trim().length > 500) {
+      return '메모는 500자 안으로 남겨주세요.';
+    }
+    final trimmedCurrency = currencyLabel.trim();
+    if (trimmedCurrency.length > 8) {
+      return '통화 단위는 8자 안으로 적어주세요.';
+    }
+    final resolvedCurrency = trimmedCurrency.isEmpty ? '원' : trimmedCurrency;
 
     final now = DateTime.now();
     final existingIndex = tripId == null
@@ -7785,6 +7831,7 @@ class AlagagiController extends ChangeNotifier {
         startDateKey: startDateKey,
         endDateKey: endDateKey,
         note: note.trim(),
+        currencyLabel: resolvedCurrency,
         status: status,
         updatedAt: now,
         updatedByProfileId: _state.me.id,
@@ -7800,6 +7847,7 @@ class AlagagiController extends ChangeNotifier {
         createdByProfileId: _state.me.id,
         status: status ?? TripStatus.planning,
         note: note.trim(),
+        currencyLabel: resolvedCurrency,
         updatedAt: now,
         updatedByProfileId: _state.me.id,
       );
@@ -7834,12 +7882,32 @@ class AlagagiController extends ChangeNotifier {
     if (index < 0 || _trips[index].createdByProfileId != _state.me.id) {
       return false;
     }
+    final itemIds = _tripItems
+        .where((item) => item.tripId == tripId)
+        .map((item) => item.id)
+        .toList();
+    final photoIds = _tripPhotos
+        .where((photo) => photo.tripId == tripId)
+        .map((photo) => photo.id)
+        .toList();
+
     _trips.removeAt(index);
     _tripItems.removeWhere((item) => item.tripId == tripId);
     _tripPhotos.removeWhere((photo) => photo.tripId == tripId);
+
     final repository = _repository;
     final spaceId = _spaceId;
     if (repository != null && spaceId != null) {
+      // 항목과 사진을 남겨두면 화면에서만 사라지고 문서는 영원히 남는다.
+      // 사진은 문서 하나가 수백 KB라 지운 여행의 짐이 계속 쌓인다.
+      for (final itemId in itemIds) {
+        unawaited(repository.deleteTripItem(spaceId, itemId).catchError((_) {}));
+      }
+      for (final photoId in photoIds) {
+        unawaited(
+          repository.deleteTripPhoto(spaceId, photoId).catchError((_) {}),
+        );
+      }
       unawaited(repository.deleteTrip(spaceId, tripId).catchError((_) {}));
     }
     notifyListeners();
@@ -7863,6 +7931,8 @@ class AlagagiController extends ChangeNotifier {
     String? placeId,
     String? link,
     String? assigneeProfileId,
+    int cost = 0,
+    String? paidByProfileId,
   }) {
     final trip = tripById(tripId);
     if (trip == null) {
@@ -7945,6 +8015,19 @@ class AlagagiController extends ChangeNotifier {
       return '담당은 둘 중 한 사람이거나 함께여야 해요.';
     }
 
+    if (cost < 0) {
+      return '금액은 0보다 작을 수 없어요.';
+    }
+    if (cost > 100000000) {
+      return '금액이 너무 커요.';
+    }
+    final trimmedPayer = trimmedOrNull(paidByProfileId);
+    if (trimmedPayer != null &&
+        trimmedPayer != _state.me.id &&
+        trimmedPayer != _state.partner.id) {
+      return '돈을 낸 사람은 둘 중 한 명이어야 해요.';
+    }
+
     final now = DateTime.now();
     final existingIndex = itemId == null
         ? -1
@@ -7975,7 +8058,10 @@ class AlagagiController extends ChangeNotifier {
         clearLink: resolvedLink == null,
         assigneeProfileId: trimmedAssignee,
         clearAssignee: trimmedAssignee == null,
-        checked: kind.usesCheck ? null : false,
+        cost: cost,
+        paidByProfileId: trimmedPayer,
+        clearPaidBy: trimmedPayer == null,
+        checked: (kind.usesCheck || kind.usesDoneToggle) ? null : false,
         updatedAt: now,
         updatedByProfileId: _state.me.id,
       );
@@ -7999,6 +8085,8 @@ class AlagagiController extends ChangeNotifier {
         link: resolvedLink,
         assigneeProfileId: trimmedAssignee,
         sortOrder: _nextTripItemOrder(tripId, resolvedDateKey),
+        cost: cost,
+        paidByProfileId: trimmedPayer,
         updatedAt: now,
         updatedByProfileId: _state.me.id,
       );
@@ -8012,7 +8100,11 @@ class AlagagiController extends ChangeNotifier {
   /// 체크는 준비물 항목에만 있다.
   void toggleTripItemCheck(String itemId) {
     final index = _tripItems.indexWhere((item) => item.id == itemId);
-    if (index < 0 || !_tripItems[index].kind.usesCheck) {
+    if (index < 0) {
+      return;
+    }
+    final kind = _tripItems[index].kind;
+    if (!kind.usesCheck && !kind.usesDoneToggle) {
       return;
     }
     final item = _tripItems[index].copyWith(
@@ -8042,6 +8134,59 @@ class AlagagiController extends ChangeNotifier {
   }
 
   // --- Trip photos ---
+
+  /// 여행에 든 돈 합계.
+  int tripTotalCost(String tripId) {
+    var total = 0;
+    for (final item in _tripItems) {
+      if (item.tripId == tripId) {
+        total += item.cost;
+      }
+    }
+    return total;
+  }
+
+  /// 사람별로 낸 돈. 누가 냈는지 적지 않은 금액은 빠진다.
+  Map<String, int> tripCostByPayer(String tripId) {
+    final totals = <String, int>{};
+    for (final item in _tripItems) {
+      final payer = item.paidByProfileId;
+      if (item.tripId != tripId || payer == null || item.cost == 0) {
+        continue;
+      }
+      totals[payer] = (totals[payer] ?? 0) + item.cost;
+    }
+    return Map<String, int>.unmodifiable(totals);
+  }
+
+  bool get tripPhotosLoading => _tripPhotosLoading;
+
+  /// 여행 화면에 들어갈 때 한 번만 사진을 읽는다.
+  Future<void> ensureTripPhotosLoaded() async {
+    if (_tripPhotosLoaded || _tripPhotosLoading) {
+      return;
+    }
+    final repository = _repository;
+    final spaceId = _spaceId;
+    if (repository == null || spaceId == null) {
+      _tripPhotosLoaded = true;
+      return;
+    }
+    _tripPhotosLoading = true;
+    notifyListeners();
+    try {
+      final photos = await repository.loadTripPhotos(spaceId);
+      _tripPhotos
+        ..clear()
+        ..addAll(photos);
+      _tripPhotosLoaded = true;
+    } catch (_) {
+      // 실패해도 화면은 열려야 한다. 다음 진입에서 다시 시도한다.
+    } finally {
+      _tripPhotosLoading = false;
+      notifyListeners();
+    }
+  }
 
   List<TripPhoto> tripPhotosFor(String tripId) {
     final photos = _tripPhotos

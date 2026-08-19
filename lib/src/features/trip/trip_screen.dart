@@ -49,6 +49,9 @@ class _TripScreenState extends State<TripScreen> {
   String? _photoError;
   String? _photoDayFilter;
   bool _photoBusy = false;
+  bool _photoNewestFirst = true;
+  String _tripQuery = '';
+  final GlobalKey _todayAnchorKey = GlobalKey();
 
   late final TripPhotoPicker _photoPicker;
 
@@ -56,6 +59,10 @@ class _TripScreenState extends State<TripScreen> {
   void initState() {
     super.initState();
     _photoPicker = createDefaultTripPhotoPicker();
+    // 사진은 여기 들어올 때만 읽는다. session 로딩에 넣으면 홈 진입이 느려진다.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.controller.ensureTripPhotosLoaded();
+    });
   }
 
   Future<void> _openTripForm({Trip? trip}) {
@@ -173,8 +180,20 @@ class _TripScreenState extends State<TripScreen> {
   }
 
   List<Widget> _buildTripList() {
-    final planning = widget.controller.tripsWithStatus(TripStatus.planning);
-    final done = widget.controller.tripsWithStatus(TripStatus.done);
+    final query = _tripQuery.trim().toLowerCase();
+    bool matches(Trip trip) =>
+        query.isEmpty ||
+        trip.title.toLowerCase().contains(query) ||
+        trip.destination.toLowerCase().contains(query);
+    final planning = widget.controller
+        .tripsWithStatus(TripStatus.planning)
+        .where(matches)
+        .toList();
+    final done = widget.controller
+        .tripsWithStatus(TripStatus.done)
+        .where(matches)
+        .toList();
+    final totalTrips = widget.controller.trips.length;
 
     return [
       Text(
@@ -183,10 +202,20 @@ class _TripScreenState extends State<TripScreen> {
       ),
       const SizedBox(height: 14),
       _AddTripBanner(onTap: () => _openTripForm()),
+      // 여행이 쌓이면 목록만으로는 찾기 어렵다.
+      if (totalTrips >= 5) ...[
+        const SizedBox(height: 12),
+        _TripSearchField(
+          value: _tripQuery,
+          onChanged: (value) => setState(() => _tripQuery = value),
+        ),
+      ],
       const SizedBox(height: 18),
       if (planning.isEmpty && done.isEmpty)
-        const AlagagiEmptyStateCard(
-          text: '아직 계획한 여행이 없어요. 가고 싶은 곳이 생기면 하나 만들어봐요.',
+        AlagagiEmptyStateCard(
+          text: query.isEmpty
+              ? '아직 계획한 여행이 없어요. 가고 싶은 곳이 생기면 하나 만들어봐요.'
+              : '\'$_tripQuery\'와 맞는 여행이 없어요.',
         ),
       if (planning.isNotEmpty) ...[
         const AlagagiSectionLabel('계획 중'),
@@ -195,10 +224,13 @@ class _TripScreenState extends State<TripScreen> {
           _TripCard(
             trip: trip,
             controller: widget.controller,
-            onOpen: () => setState(() {
-              _openTripId = trip.id;
-              _tab = TripDetailTab.timeline;
-            }),
+            onOpen: () {
+              setState(() {
+                _openTripId = trip.id;
+                _tab = TripDetailTab.timeline;
+              });
+              _scrollToTodayIfOngoing(trip);
+            },
           ),
           const SizedBox(height: 11),
         ],
@@ -211,10 +243,13 @@ class _TripScreenState extends State<TripScreen> {
           _TripCard(
             trip: trip,
             controller: widget.controller,
-            onOpen: () => setState(() {
-              _openTripId = trip.id;
-              _tab = TripDetailTab.timeline;
-            }),
+            onOpen: () {
+              setState(() {
+                _openTripId = trip.id;
+                _tab = TripDetailTab.timeline;
+              });
+              _scrollToTodayIfOngoing(trip);
+            },
           ),
           const SizedBox(height: 11),
         ],
@@ -229,6 +264,14 @@ class _TripScreenState extends State<TripScreen> {
         controller: widget.controller,
         onMore: () => _openTripActions(trip),
       ),
+      if (trip.note.trim().isNotEmpty) ...[
+        const SizedBox(height: 10),
+        _TripNoteCard(note: trip.note.trim()),
+      ],
+      if (widget.controller.tripTotalCost(trip.id) > 0) ...[
+        const SizedBox(height: 10),
+        _TripBudgetCard(trip: trip, controller: widget.controller),
+      ],
       if (widget.controller.tripNeedsStatusNudge(trip)) ...[
         const SizedBox(height: 12),
         _TripStatusNudge(
@@ -262,6 +305,24 @@ class _TripScreenState extends State<TripScreen> {
   }
 
   /// 여행 정보 고치기와 지우기를 한곳에 모은다.
+  /// 여행 중이면 1일차부터 훑지 않도록 오늘 자리에서 열어준다.
+  void _scrollToTodayIfOngoing(Trip trip) {
+    if (widget.controller.tripTimingFor(trip).phase != TripPhase.ongoing) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = _todayAnchorKey.currentContext;
+      if (context == null) {
+        return;
+      }
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 260),
+        alignment: 0.1,
+      );
+    });
+  }
+
   Future<void> _openTripActions(Trip trip) async {
     final action = await showTripActionsSheet(
       context,
@@ -329,6 +390,7 @@ class _TripScreenState extends State<TripScreen> {
         photosForDate: (dateKey) =>
             widget.controller.tripPhotosForDate(trip.id, dateKey),
         todayDateKey: widget.controller.todayDateKey,
+        todayAnchorKey: _todayAnchorKey,
         onTapItem: (item) => _editItem(trip, item),
         onTapPhoto: (photo) => showTripPhotoViewer(
           context,
@@ -349,24 +411,79 @@ class _TripScreenState extends State<TripScreen> {
   }
 
   List<Widget> _buildStayTab(Trip trip) {
+    // 여러 숙소를 옮겨 다니면 체크인 날짜로 묶어야 흐름이 읽힌다.
+    final days = widget.controller.tripDaysForKind(trip.id, TripItemKind.stay);
     final stays = widget.controller.tripItemsFor(
       trip.id,
       kind: TripItemKind.stay,
     );
+    final undated = stays.where((stay) => stay.dateKey == null).toList();
 
     return [
       if (stays.isEmpty)
         AlagagiEmptyStateCard(text: TripItemKind.stay.emptyText)
-      else
-        for (final stay in stays) ...[
-          _TripItemCard(
-            item: stay,
-            controller: widget.controller,
-            onEdit: () => _editItem(trip, stay),
-            onDelete: () => _confirmItemDelete(stay),
+      else ...[
+        for (final day in days) ...[
+          Padding(
+            key: tripStayDayGroupKey(day.isUndated ? 'undated' : day.dateKey),
+            padding: const EdgeInsets.only(bottom: 9),
+            child: Row(
+              children: [
+                Text(
+                  day.dayLabel,
+                  style: sans(
+                    size: 11,
+                    weight: FontWeight.w800,
+                    color: AlagagiColors.sageDeep,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    day.dateLabel,
+                    style: sans(size: 12, color: AlagagiColors.muted),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 9),
+          for (final stay in day.items) ...[
+            _TripItemCard(
+              item: stay,
+              controller: widget.controller,
+              onEdit: () => _editItem(trip, stay),
+              onDelete: () => _confirmItemDelete(stay),
+            ),
+            const SizedBox(height: 9),
+          ],
+          const SizedBox(height: 6),
         ],
+        if (undated.isNotEmpty) ...[
+          Padding(
+            key: tripStayDayGroupKey('undated'),
+            padding: const EdgeInsets.only(bottom: 9),
+            child: Text(
+              '날짜 미정',
+              style: sans(
+                size: 11,
+                weight: FontWeight.w800,
+                color: AlagagiColors.sageDeep,
+                letterSpacing: 1.1,
+              ),
+            ),
+          ),
+          for (final stay in undated) ...[
+            _TripItemCard(
+              item: stay,
+              controller: widget.controller,
+              onEdit: () => _editItem(trip, stay),
+              onDelete: () => _confirmItemDelete(stay),
+            ),
+            const SizedBox(height: 9),
+          ],
+        ],
+      ],
     ];
   }
 
@@ -404,7 +521,25 @@ class _TripScreenState extends State<TripScreen> {
   }
 
   List<Widget> _buildPhotoTab(Trip trip) {
-    final photos = widget.controller.tripPhotosFor(trip.id);
+    final loaded = widget.controller.tripPhotosFor(trip.id);
+    final photos = _photoNewestFirst
+        ? loaded
+        : (loaded.toList()
+            ..sort((first, second) {
+              // 날짜를 붙인 사진을 먼저, 그 안에서 이른 날짜부터 본다.
+              final firstDate = first.dateKey;
+              final secondDate = second.dateKey;
+              if (firstDate == secondDate) {
+                return 0;
+              }
+              if (firstDate == null) {
+                return 1;
+              }
+              if (secondDate == null) {
+                return -1;
+              }
+              return firstDate.compareTo(secondDate);
+            }));
     final supported = _photoPicker.isSupported;
 
     return [
@@ -460,6 +595,17 @@ class _TripScreenState extends State<TripScreen> {
         ),
       ],
       if (photos.isNotEmpty) ...[
+        const SizedBox(height: 10),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: AlagagiFilterPill(
+            key: tripPhotoSortButtonKey,
+            label: _photoNewestFirst ? '최근 담은 순' : '여행 날짜 순',
+            selected: !_photoNewestFirst,
+            onTap: () =>
+                setState(() => _photoNewestFirst = !_photoNewestFirst),
+          ),
+        ),
         const SizedBox(height: 12),
         _PhotoDayFilter(
           trip: trip,
@@ -468,7 +614,12 @@ class _TripScreenState extends State<TripScreen> {
         ),
       ],
       const SizedBox(height: 12),
-      if (photos.isEmpty)
+      if (widget.controller.tripPhotosLoading)
+        const AlagagiEmptyStateCard(
+          key: tripPhotoLoadingKey,
+          text: '사진을 불러오는 중이에요.',
+        )
+      else if (photos.isEmpty)
         const AlagagiEmptyStateCard(
           text: '아직 담은 사진이 없어요. 다녀와서 천천히 채워도 괜찮아요.',
         )
@@ -489,6 +640,205 @@ class _TripScreenState extends State<TripScreen> {
           ),
         ),
     ];
+  }
+}
+
+/// 오늘 기준 위치를 강조하는 뱃지.
+///
+/// 밝은 종이 카드 위에 놓이므로 흰 글씨를 쓰면 보이지 않는다. accent 면에
+/// 배경색 글씨를 얹어 대비를 확보한다.
+class _TripPhaseBadge extends StatelessWidget {
+  const _TripPhaseBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AlagagiColors.sageDeep,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      child: Text(
+        label,
+        style: sans(
+          size: 10.5,
+          weight: FontWeight.w800,
+          color: AlagagiColors.appBackground,
+        ),
+      ),
+    );
+  }
+}
+
+/// 여행이 쌓였을 때 이름이나 목적지로 찾는다.
+class _TripSearchField extends StatefulWidget {
+  const _TripSearchField({required this.value, required this.onChanged});
+
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<_TripSearchField> createState() => _TripSearchFieldState();
+}
+
+class _TripSearchFieldState extends State<_TripSearchField> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AlagagiColors.paper,
+        border: Border.all(color: AlagagiColors.line),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 13),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.search_rounded,
+            size: 17,
+            color: AlagagiColors.muted,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              key: tripListSearchFieldKey,
+              controller: _controller,
+              onChanged: widget.onChanged,
+              decoration: InputDecoration(
+                hintText: '여행 이름이나 목적지로 찾기',
+                hintStyle: sans(size: 12.5, color: AlagagiColors.muted),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              style: sans(size: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 여행 전체에 남겨둔 메모.
+class _TripNoteCard extends StatelessWidget {
+  const _TripNoteCard({required this.note});
+
+  final String note;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlagagiPaperCard(
+      compact: true,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.sticky_note_2_outlined,
+            size: 16,
+            color: AlagagiColors.sageDeep,
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              note,
+              style: sans(size: 12.5, height: 1.65, color: AlagagiColors.ink),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 여행에 든 돈 요약. 낸 사람을 적은 것만 사람별로 나눈다.
+class _TripBudgetCard extends StatelessWidget {
+  const _TripBudgetCard({required this.trip, required this.controller});
+
+  final Trip trip;
+  final AlagagiController controller;
+
+  static String _formatAmount(int amount) {
+    final digits = amount.toString();
+    final buffer = StringBuffer();
+    for (var index = 0; index < digits.length; index += 1) {
+      if (index > 0 && (digits.length - index) % 3 == 0) {
+        buffer.write(',');
+      }
+      buffer.write(digits[index]);
+    }
+    return buffer.toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final total = controller.tripTotalCost(trip.id);
+    final byPayer = controller.tripCostByPayer(trip.id);
+    final me = controller.state.me;
+    final partner = controller.state.partner;
+
+    return AlagagiPaperCard(
+      key: tripBudgetSummaryKey,
+      compact: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.receipt_long_outlined,
+                size: 16,
+                color: AlagagiColors.sageDeep,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '든 돈',
+                  style: sans(size: 12.5, weight: FontWeight.w800),
+                ),
+              ),
+              Text(
+                '${_formatAmount(total)}${trip.currencyLabel}',
+                style: serif(context, size: 16, weight: FontWeight.w800),
+              ),
+            ],
+          ),
+          if (byPayer.isNotEmpty) ...[
+            const SizedBox(height: 9),
+            Wrap(
+              spacing: 12,
+              runSpacing: 6,
+              children: [
+                for (final profile in [me, partner])
+                  if ((byPayer[profile.id] ?? 0) > 0)
+                    Text(
+                      '${profile.nickname} '
+                      '${_formatAmount(byPayer[profile.id]!)}'
+                      '${trip.currencyLabel}',
+                      style: sans(size: 11.5, color: AlagagiColors.muted),
+                    ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 
@@ -607,7 +957,7 @@ class _TripDetailHeader extends StatelessWidget {
                   spacing: 6,
                   runSpacing: 6,
                   children: [
-                    AlagagiSmallBadge(label: timing.label, dark: true),
+                    _TripPhaseBadge(label: timing.label),
                     AlagagiSmallBadge(label: trip.durationLabel),
                     if (trip.destination.isNotEmpty)
                       AlagagiSmallBadge(label: trip.destination),

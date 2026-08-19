@@ -158,7 +158,7 @@ void main() {
       expect(controller.tripItemsFor(tripId).single.dateKey, isNull);
     });
 
-    test('check state only toggles for packing items', () {
+    test('check state toggles for packing and plan, not for stay', () {
       final controller = buildController();
       controller.saveTrip(
         title: '가을 제주',
@@ -185,8 +185,20 @@ void main() {
           .tripItemsFor(tripId, kind: TripItemKind.plan)
           .single;
 
+      controller.saveTripItem(
+        tripId: tripId,
+        kind: TripItemKind.stay,
+        title: '호텔',
+      );
+      final stay = controller
+          .tripItemsFor(tripId, kind: TripItemKind.stay)
+          .single;
+
       controller.toggleTripItemCheck(packing.id);
+      // 계획도 다녀온 뒤 `했다`를 표시할 수 있어야 한다.
       controller.toggleTripItemCheck(plan.id);
+      // 숙소는 체크할 대상이 아니다.
+      controller.toggleTripItemCheck(stay.id);
 
       expect(
         controller.tripItemsFor(tripId, kind: TripItemKind.packing).single
@@ -195,6 +207,10 @@ void main() {
       );
       expect(
         controller.tripItemsFor(tripId, kind: TripItemKind.plan).single.checked,
+        isTrue,
+      );
+      expect(
+        controller.tripItemsFor(tripId, kind: TripItemKind.stay).single.checked,
         isFalse,
       );
       expect(controller.tripPackingCheckedCount(tripId), 1);
@@ -988,6 +1004,107 @@ void main() {
       );
 
       expect(controller.upcomingTrip?.title, '초가을');
+    });
+
+    test('costs add up and split by who paid', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-13',
+        currencyLabel: '엔',
+      );
+      final tripId = controller.trips.single.id;
+
+      controller.saveTripItem(
+        tripId: tripId,
+        kind: TripItemKind.plan,
+        title: '점심',
+        cost: 3000,
+        paidByProfileId: 'youngwooUid',
+      );
+      controller.saveTripItem(
+        tripId: tripId,
+        kind: TripItemKind.plan,
+        title: '저녁',
+        cost: 5000,
+        paidByProfileId: 'minyoungUid',
+      );
+      // 누가 냈는지 적지 않은 금액은 합계에만 들어간다.
+      controller.saveTripItem(
+        tripId: tripId,
+        kind: TripItemKind.plan,
+        title: '교통',
+        cost: 1000,
+      );
+
+      expect(controller.trips.single.currencyLabel, '엔');
+      expect(controller.tripTotalCost(tripId), 9000);
+      expect(controller.tripCostByPayer(tripId), {
+        'youngwooUid': 3000,
+        'minyoungUid': 5000,
+      });
+    });
+
+    test('a negative cost and an outside payer are rejected', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-13',
+      );
+      final tripId = controller.trips.single.id;
+
+      expect(
+        controller.saveTripItem(
+          tripId: tripId,
+          kind: TripItemKind.plan,
+          title: '점심',
+          cost: -1,
+        ),
+        isNotNull,
+      );
+      expect(
+        controller.saveTripItem(
+          tripId: tripId,
+          kind: TripItemKind.plan,
+          title: '점심',
+          cost: 1000,
+          paidByProfileId: 'strangerUid',
+        ),
+        isNotNull,
+      );
+      expect(controller.tripItemsFor(tripId), isEmpty);
+    });
+
+    test('a trip note is saved with the trip', () {
+      final controller = buildController();
+
+      expect(
+        controller.saveTrip(
+          title: '가을 제주',
+          destination: '제주도',
+          startDateKey: '2026-09-12',
+          endDateKey: '2026-09-13',
+          note: '여권 만료일 확인하기',
+        ),
+        isNull,
+      );
+      expect(controller.trips.single.note, '여권 만료일 확인하기');
+
+      expect(
+        controller.saveTrip(
+          tripId: controller.trips.single.id,
+          title: '가을 제주',
+          destination: '제주도',
+          startDateKey: '2026-09-12',
+          endDateKey: '2026-09-13',
+          note: '가' * 501,
+        ),
+        isNotNull,
+      );
     });
 
     test('only the creator can delete a trip or an item', () {

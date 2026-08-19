@@ -588,6 +588,9 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   Future<void> deleteTripItem(String spaceId, String itemId) async {}
 
   @override
+  Future<List<TripPhoto>> loadTripPhotos(String spaceId) async => const [];
+
+  @override
   Future<void> saveTripPhoto(String spaceId, TripPhoto photo) async {}
 
   @override
