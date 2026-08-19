@@ -12,6 +12,27 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// 여행 만들기 sheet를 연다.
+  Future<void> openTripForm(WidgetTester tester) async {
+    await tester.ensureVisible(find.byKey(tripAddButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripAddButtonKey));
+    await tester.pumpAndSettle();
+  }
+
+  /// 항목 추가 sheet를 종류까지 골라서 연다.
+  Future<void> openTripItemForm(
+    WidgetTester tester,
+    TripItemKind kind,
+  ) async {
+    await tester.ensureVisible(find.byKey(tripItemAddButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripItemAddButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripKindPickerOptionKey(kind.storageKey)));
+    await tester.pumpAndSettle();
+  }
+
   /// 달력 sheet를 열어 날짜를 고른다.
   Future<void> pickTripDate(
     WidgetTester tester,
@@ -363,8 +384,10 @@ void main() {
     expect(find.byKey(tripsScreenKey), findsOneWidget);
     expect(find.textContaining('아직 계획한 여행이 없어요'), findsOneWidget);
 
-    await tester.tap(find.byKey(tripDraftToggleButtonKey));
-    await tester.pumpAndSettle();
+    // 입력은 목록 위에 펼쳐두지 않고 sheet로 올라온다.
+    expect(find.byKey(tripFormSheetKey), findsNothing);
+    await openTripForm(tester);
+    expect(find.byKey(tripFormSheetKey), findsOneWidget);
 
     await tester.enterText(find.byKey(tripTitleFieldKey), '가을 제주');
     await tester.enterText(find.byKey(tripDestinationFieldKey), '제주도');
@@ -387,23 +410,21 @@ void main() {
     await tester.tap(find.byKey(tripSubmitButtonKey));
     await tester.pumpAndSettle();
 
+    // 저장하면 sheet가 닫히고 목록으로 돌아온다.
+    expect(find.byKey(tripFormSheetKey), findsNothing);
     expect(controller.trips, hasLength(1));
     final tripId = controller.trips.single.id;
     expect(find.byKey(tripCardKey(tripId)), findsOneWidget);
-    expect(find.text('2박 3일'), findsWidgets);
+    expect(find.textContaining('2박 3일'), findsWidgets);
+    // 표지에 D-day가 붙는다.
+    expect(find.textContaining('D-'), findsWidgets);
     expect(find.textContaining('%'), findsNothing);
     expect(find.textContaining('달성'), findsNothing);
 
-    await tester.ensureVisible(find.byKey(tripOpenButtonKey(tripId)));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(tripOpenButtonKey(tripId)));
+    await tester.tap(find.byKey(tripCardKey(tripId)));
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.byKey(tripKindTabKey('packing')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(tripKindTabKey('packing')));
-    await tester.pumpAndSettle();
-
+    await openTripItemForm(tester, TripItemKind.packing);
     await tester.enterText(find.byKey(tripItemTitleFieldKey), '충전기');
     await tester.ensureVisible(find.byKey(tripItemSubmitButtonKey));
     await tester.pumpAndSettle();
@@ -423,14 +444,20 @@ void main() {
 
     expect(find.text('챙긴 것 1 / 1'), findsOneWidget);
 
-    await tester.ensureVisible(find.byKey(tripKindTabKey('plan')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(tripKindTabKey('plan')));
-    await tester.pumpAndSettle();
-
+    // 계획을 담을 때는 여행 기간 안의 날짜만 고를 수 있다.
+    await openTripItemForm(tester, TripItemKind.plan);
     expect(find.byKey(tripItemDateButtonKey('2026-09-13')), findsOneWidget);
     expect(find.byKey(tripItemDateButtonKey('2026-09-20')), findsNothing);
+    await tester.tap(find.byKey(tripItemTitleFieldKey));
+    await tester.pumpAndSettle();
+    Navigator.of(tester.element(find.byKey(tripItemFormSheetKey))).pop();
+    await tester.pumpAndSettle();
+
+    // 준비물은 시간 흐름이 아니라 일정 탭에 오지 않는다.
+    await tester.tap(find.byKey(tripKindTabKey('timeline')));
+    await tester.pumpAndSettle();
     expect(find.byKey(tripItemCheckButtonKey(packingItem.id)), findsNothing);
+    expect(find.text('충전기'), findsNothing);
   });
 
   testWidgets('trip timeline orders a day by time and opens an item to edit', (
@@ -487,7 +514,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(tripOpenButtonKey(tripId)));
+    await tester.tap(find.byKey(tripCardKey(tripId)));
     await tester.pumpAndSettle();
 
     // 상세를 열면 일정 타임라인이 기본 탭이다.
@@ -518,10 +545,13 @@ void main() {
     // 준비물은 시간 흐름이 아니라 타임라인에 오지 않는다.
     expect(find.text('충전기'), findsNothing);
 
-    // 타임라인 항목을 누르면 해당 종류 탭에서 바로 고칠 수 있다.
+    // 타임라인 항목을 누르면 그 자리에서 고치는 sheet가 열린다.
+    await tester.ensureVisible(find.byKey(tripTimelineEntryKey(departure.id)));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(tripTimelineEntryKey(departure.id)));
     await tester.pumpAndSettle();
 
+    expect(find.byKey(tripItemFormSheetKey), findsOneWidget);
     expect(find.text('이동 고치기'), findsOneWidget);
     expect(find.text('고친 내용 저장하기'), findsOneWidget);
     // 고쳐 열면 원래 시각이 그대로 들어와 있다.
@@ -550,8 +580,18 @@ void main() {
       hasLength(1),
     );
 
-    // 종류 탭도 날짜 묶음 헤더를 보여준다.
-    expect(find.byKey(tripDayGroupKey('2026-09-12')), findsOneWidget);
+    // sheet가 닫히고 타임라인이 갱신된 시각으로 다시 그려진다.
+    expect(find.byKey(tripItemFormSheetKey), findsNothing);
+    await tester.ensureVisible(find.byKey(tripTimelineEntryKey(departure.id)));
+    await tester.pumpAndSettle();
+    // 이 항목은 도착 시각이 없어 출발 시각만 보인다.
+    expect(
+      find.descendant(
+        of: find.byKey(tripTimelineEntryKey(departure.id)),
+        matching: find.text('07:40'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('trip stay sits above the day instead of inside the time flow', (
@@ -609,7 +649,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(tripOpenButtonKey(tripId)));
+    await tester.tap(find.byKey(tripCardKey(tripId)));
     await tester.pumpAndSettle();
 
     final stay = controller
@@ -686,13 +726,10 @@ void main() {
       MaterialApp(home: AlagagiRoot(controller: controller)),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(tripOpenButtonKey(tripId)));
+    await tester.tap(find.byKey(tripCardKey(tripId)));
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.byKey(tripKindTabKey('transport')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(tripKindTabKey('transport')));
-    await tester.pumpAndSettle();
+    await openTripItemForm(tester, TripItemKind.transport);
 
     // 수단을 고르면 편명 예시 문구가 따라 바뀐다.
     await tester.ensureVisible(find.byKey(tripTransportModeButtonKey('train')));
@@ -759,13 +796,10 @@ void main() {
       MaterialApp(home: AlagagiRoot(controller: controller)),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(tripOpenButtonKey(tripId)));
+    await tester.tap(find.byKey(tripCardKey(tripId)));
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.byKey(tripKindTabKey('stay')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(tripKindTabKey('stay')));
-    await tester.pumpAndSettle();
+    await openTripItemForm(tester, TripItemKind.stay);
 
     // 체크인을 고르기 전에는 체크아웃 선택지가 없다.
     expect(find.byKey(tripStayCheckOutDateButtonKey('2026-09-13')), findsNothing);
@@ -847,11 +881,9 @@ void main() {
       MaterialApp(home: AlagagiRoot(controller: controller)),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(tripOpenButtonKey(tripId)));
+    await tester.tap(find.byKey(tripCardKey(tripId)));
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.byKey(tripKindTabKey('photos')));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(tripKindTabKey('photos')));
     await tester.pumpAndSettle();
 
@@ -917,6 +949,81 @@ void main() {
     expect(find.byKey(tripPhotoViewerKey), findsNothing);
     expect(controller.tripPhotosFor(tripId), isEmpty);
     expect(find.textContaining('아직 담은 사진이 없어요'), findsOneWidget);
+  });
+
+  testWidgets('trip deletes ask for confirmation before removing anything', (
+    tester,
+  ) async {
+    final controller = AlagagiController.forSession(
+      const AlagagiSession(
+        spaceId: 'main',
+        me: AppProfile(
+          id: 'youngwooUid',
+          nickname: '영우',
+          avatar: '🌿',
+          isMe: true,
+        ),
+        partner: AppProfile(
+          id: 'minyoungUid',
+          nickname: '민영',
+          avatar: '🪻',
+          isMe: false,
+        ),
+        data: AlagagiSpaceData(),
+      ),
+    )..goTo(AlagagiRoute.trips);
+
+    controller.saveTrip(
+      title: '가을 제주',
+      destination: '제주도',
+      startDateKey: '2026-09-12',
+      endDateKey: '2026-09-13',
+    );
+    final tripId = controller.trips.single.id;
+    controller.saveTripItem(
+      tripId: tripId,
+      kind: TripItemKind.packing,
+      title: '충전기',
+    );
+    final item = controller.tripItemsFor(tripId).single;
+
+    await tester.pumpWidget(
+      MaterialApp(home: AlagagiRoot(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripCardKey(tripId)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripKindTabKey('packing')));
+    await tester.pumpAndSettle();
+
+    // 항목 지우기는 확인을 거친다.
+    await tester.ensureVisible(find.byIcon(Icons.delete_outline_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.delete_outline_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('그대로 두기'), findsOneWidget);
+
+    await tester.tap(find.text('그대로 두기'));
+    await tester.pumpAndSettle();
+    expect(controller.tripItemsFor(tripId), hasLength(1));
+
+    await tester.tap(find.byIcon(Icons.delete_outline_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripItemDeleteConfirmButtonKey(item.id)));
+    await tester.pumpAndSettle();
+    expect(controller.tripItemsFor(tripId), isEmpty);
+
+    // 여행 지우기도 마찬가지다.
+    await tester.ensureVisible(find.text('여행 지우기'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('여행 지우기'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('담아둔 일정과 사진도 함께 사라져요'), findsOneWidget);
+
+    await tester.tap(find.byKey(tripDeleteConfirmButtonKey));
+    await tester.pumpAndSettle();
+    expect(controller.trips, isEmpty);
+    expect(find.textContaining('아직 계획한 여행이 없어요'), findsOneWidget);
   });
 
   testWidgets('saves a curiosity reply and a new question in the sheet', (

@@ -72,12 +72,20 @@ lib/src/domain/
 - `lib/src/features/trip/trip_timeline.dart`: 날짜별 세로 rail 타임라인, 하루 header, 머무는 곳 띠, 이동 구간/경로 entry.
 - `lib/src/data/trip_photo_picker.dart`: 갤러리 사진 선택기. web은 file input + canvas 축소, 그 외는 미지원 stub.
 - `lib/src/features/trip/trip_photo_viewer.dart`: 전체 화면 사진 뷰어. 좌우 넘기기, 확대, 설명 편집, 삭제.
+- `lib/src/features/trip/trip_sheets.dart`: 여행/항목 입력 bottom sheet와 종류 선택 sheet.
+- `lib/src/features/trip/trip_form_fields.dart`: 여행 화면과 sheet가 함께 쓰는 입력 조각(text field, picker row, 일차 선택, 주 action).
 
 ## Input Pickers
 
 - 날짜와 시각은 `lib/src/shared/picker_sheets.dart`의 `showAlagagiDatePicker`, `showAlagagiTimePicker`로 고른다.
 - 새 화면에서 날짜/시각을 받을 때 text field로 직접 받지 않는다. 형식 검증을 화면마다 새로 만들게 되고 입력이 번거롭다.
 - 고르는 값을 보여주는 자리는 `_PickerRow`처럼 label + 현재 값 + icon 구조를 유지한다.
+
+## Touch Targets
+
+- web으로 배포하지만 손가락으로 쓰는 앱이다. hover에 기대는 표현을 쓰지 않는다.
+- 누르는 요소는 44px 이상으로 잡는다. tooltip을 유일한 설명으로 쓰지 않는다.
+- 되돌릴 수 없는 동작은 확인 sheet를 거친다.
 
 ## Card Geometry
 

@@ -209,6 +209,15 @@ Key timePickerHourButtonKey(int hour) => Key('time-picker-hour-$hour');
 Key timePickerMinuteButtonKey(int minute) => Key('time-picker-minute-$minute');
 
 const tripsScreenKey = Key('trips-screen');
+const tripFormSheetKey = Key('trip-form-sheet');
+const tripItemFormSheetKey = Key('trip-item-form-sheet');
+const tripAddButtonKey = Key('trip-add-button');
+const tripItemAddButtonKey = Key('trip-item-add-button');
+const tripKindPickerSheetKey = Key('trip-kind-picker-sheet');
+const tripDeleteConfirmButtonKey = Key('trip-delete-confirm-button');
+Key tripKindPickerOptionKey(String kind) => Key('trip-kind-option-$kind');
+Key tripItemDeleteConfirmButtonKey(String itemId) =>
+    Key('trip-item-delete-confirm-$itemId');
 const tripItemEndTimeFieldKey = Key('trip-item-end-time-field');
 const tripItemFromFieldKey = Key('trip-item-from-field');
 const tripItemToFieldKey = Key('trip-item-to-field');

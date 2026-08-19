@@ -1153,6 +1153,32 @@ extension TripItemKindMeta on TripItemKind {
 
 const tripItemKindOptions = TripItemKind.values;
 
+enum TripPhase { upcoming, ongoing, past }
+
+/// 오늘 기준 여행의 위치.
+class TripTiming {
+  const TripTiming({
+    required this.phase,
+    required this.daysUntilStart,
+    this.dayNumber = 0,
+  });
+
+  final TripPhase phase;
+
+  /// 시작까지 남은 날. 이미 시작했으면 0이다.
+  final int daysUntilStart;
+
+  /// 여행 중일 때 오늘이 며칠째인지.
+  final int dayNumber;
+
+  /// `D-12`, `여행 2일차`, `다녀온 여행`.
+  String get label => switch (phase) {
+    TripPhase.upcoming => daysUntilStart == 0 ? 'D-DAY' : 'D-$daysUntilStart',
+    TripPhase.ongoing => '여행 $dayNumber일차',
+    TripPhase.past => '다녀온 여행',
+  };
+}
+
 class Trip {
   const Trip({
     required this.id,
@@ -4213,6 +4239,9 @@ class AlagagiController extends ChangeNotifier {
   }
 
   String _currentDateKey() => _todayDateKeyOverride ?? _todayDateKey();
+
+  /// 화면이 D-day나 오늘 표시를 계산할 때 쓰는 오늘. test에서는 고정할 수 있다.
+  String get todayDateKey => _currentDateKey();
 
   static String _todayDateKey() {
     final koreaNow = DateTime.now().toUtc().add(const Duration(hours: 9));
@@ -7805,6 +7834,30 @@ class AlagagiController extends ChangeNotifier {
       return secondAt.compareTo(firstAt);
     });
     return List<TripPhoto>.unmodifiable(photos);
+  }
+
+  /// 여행이 오늘 기준으로 어디쯤인지. 카드에 D-day를 보여주는 데 쓴다.
+  TripTiming tripTimingFor(Trip trip) {
+    final today = DateTime.tryParse(todayDateKey);
+    final start = trip.startDate;
+    final end = trip.endDate;
+    if (today == null || start == null || end == null) {
+      return const TripTiming(phase: TripPhase.upcoming, daysUntilStart: 0);
+    }
+    if (today.isBefore(start)) {
+      return TripTiming(
+        phase: TripPhase.upcoming,
+        daysUntilStart: start.difference(today).inDays,
+      );
+    }
+    if (!today.isAfter(end)) {
+      return TripTiming(
+        phase: TripPhase.ongoing,
+        daysUntilStart: 0,
+        dayNumber: today.difference(start).inDays + 1,
+      );
+    }
+    return const TripTiming(phase: TripPhase.past, daysUntilStart: 0);
   }
 
   int tripPhotoCount(String tripId) => tripPhotosFor(tripId).length;
