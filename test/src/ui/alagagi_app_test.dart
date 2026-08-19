@@ -1013,10 +1013,15 @@ void main() {
     await tester.pumpAndSettle();
     expect(controller.tripItemsFor(tripId), isEmpty);
 
-    // 여행 지우기도 마찬가지다.
-    await tester.ensureVisible(find.text('여행 지우기'));
+    // 여행 관리는 맨몸 text가 아니라 sheet 한 장으로 모여 있다.
+    await tester.ensureVisible(find.byKey(tripMoreButtonKey));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('여행 지우기'));
+    await tester.tap(find.byKey(tripMoreButtonKey));
+    await tester.pumpAndSettle();
+    expect(find.byKey(tripMoreSheetKey), findsOneWidget);
+    expect(find.byKey(tripEditActionKey), findsOneWidget);
+
+    await tester.tap(find.byKey(tripDeleteActionKey));
     await tester.pumpAndSettle();
     expect(find.textContaining('담아둔 일정과 사진도 함께 사라져요'), findsOneWidget);
 
@@ -1221,6 +1226,20 @@ void main() {
           .assigneeProfileId,
       'minyoungUid',
     );
+
+    // 둘 다 챙겨야 하는 것은 `함께`로 둘 수 있다.
+    await tester.tap(
+      find.byKey(tripItemAssigneeButtonKey(packing.id, kTripSharedAssigneeId)),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      controller
+          .tripItemsFor(tripId, kind: TripItemKind.packing)
+          .single
+          .assigneeProfileId,
+      kTripSharedAssigneeId,
+    );
+    expect(find.text('함께'), findsWidgets);
 
     // 사진을 여행 날짜에 묶는다.
     await tester.tap(find.byKey(tripKindTabKey('photos')));

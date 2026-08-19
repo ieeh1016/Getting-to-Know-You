@@ -234,6 +234,10 @@ Key tripPlacePickerCategoryKey(String category) =>
 Key tripPlacePickerOptionKey(String placeId) =>
     Key('trip-place-option-$placeId');
 
+const tripMoreButtonKey = Key('trip-more-button');
+const tripMoreSheetKey = Key('trip-more-sheet');
+const tripEditActionKey = Key('trip-edit-action');
+const tripDeleteActionKey = Key('trip-delete-action');
 const tripStatusNudgeKey = Key('trip-status-nudge');
 const tripStatusNudgeConfirmButtonKey = Key('trip-status-nudge-confirm');
 const homeUpcomingTripCardKey = Key('home-upcoming-trip-card');

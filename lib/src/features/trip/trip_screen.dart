@@ -227,15 +227,7 @@ class _TripScreenState extends State<TripScreen> {
       _TripDetailHeader(
         trip: trip,
         controller: widget.controller,
-        onEdit: () => _openTripForm(trip: trip),
-        onDelete: () async {
-          final confirmed = await _confirmTripDelete(trip);
-          if (!confirmed || !mounted) {
-            return;
-          }
-          widget.controller.deleteTrip(trip.id);
-          setState(() => _openTripId = null);
-        },
+        onMore: () => _openTripActions(trip),
       ),
       if (widget.controller.tripNeedsStatusNudge(trip)) ...[
         const SizedBox(height: 12),
@@ -267,6 +259,27 @@ class _TripScreenState extends State<TripScreen> {
         TripDetailTab.photos => _buildPhotoTab(trip),
       },
     ];
+  }
+
+  /// 여행 정보 고치기와 지우기를 한곳에 모은다.
+  Future<void> _openTripActions(Trip trip) async {
+    final action = await showTripActionsSheet(
+      context,
+      canDelete: trip.createdByProfileId == widget.controller.state.me.id,
+    );
+    if (action == null || !mounted) {
+      return;
+    }
+    if (action == TripAction.edit) {
+      await _openTripForm(trip: trip);
+      return;
+    }
+    final confirmed = await _confirmTripDelete(trip);
+    if (!confirmed || !mounted) {
+      return;
+    }
+    widget.controller.deleteTrip(trip.id);
+    setState(() => _openTripId = null);
   }
 
   Future<bool> _confirmTripDelete(Trip trip) async {
@@ -571,14 +584,12 @@ class _TripDetailHeader extends StatelessWidget {
   const _TripDetailHeader({
     required this.trip,
     required this.controller,
-    required this.onEdit,
-    required this.onDelete,
+    required this.onMore,
   });
 
   final Trip trip;
   final AlagagiController controller;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback onMore;
 
   @override
   Widget build(BuildContext context) {
@@ -588,14 +599,38 @@ class _TripDetailHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AlagagiSmallBadge(label: timing.label, dark: true),
-              AlagagiSmallBadge(label: trip.durationLabel),
-              if (trip.destination.isNotEmpty)
-                AlagagiSmallBadge(label: trip.destination),
+              Expanded(
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    AlagagiSmallBadge(label: timing.label, dark: true),
+                    AlagagiSmallBadge(label: trip.durationLabel),
+                    if (trip.destination.isNotEmpty)
+                      AlagagiSmallBadge(label: trip.destination),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // 고치기와 지우기를 맨몸 text로 두면 눌러야 하는 것인지
+              // 읽히지 않는다. 한 자리로 모아 sheet에서 고르게 한다.
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: IconButton(
+                  key: tripMoreButtonKey,
+                  onPressed: onMore,
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(
+                    Icons.more_horiz_rounded,
+                    size: 20,
+                    color: AlagagiColors.muted,
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 11),
@@ -617,54 +652,7 @@ class _TripDetailHeader extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              _HeaderAction(label: '여행 정보 고치기', onTap: onEdit),
-              if (trip.createdByProfileId == controller.state.me.id) ...[
-                const SizedBox(width: 4),
-                _HeaderAction(
-                  label: '여행 지우기',
-                  color: const Color(0xFFB35A49),
-                  onTap: onDelete,
-                ),
-              ],
-            ],
-          ),
         ],
-      ),
-    );
-  }
-}
-
-class _HeaderAction extends StatelessWidget {
-  const _HeaderAction({
-    required this.label,
-    required this.onTap,
-    this.color,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 44),
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: Text(
-          label,
-          style: sans(
-            size: 12.5,
-            weight: FontWeight.w700,
-            color: color ?? AlagagiColors.sageDeep,
-          ),
-        ),
       ),
     );
   }
@@ -1138,10 +1126,17 @@ class _AssigneeRow extends StatelessWidget {
         for (final profile in [me, partner])
           AlagagiFilterPill(
             key: tripItemAssigneeButtonKey(item.id, profile.id),
-            label: profile.isMe ? '내가' : '${profile.nickname}이',
+            label: profile.nickname,
             selected: item.assigneeProfileId == profile.id,
             onTap: () => onAssign(profile.id),
           ),
+        // 둘 다 챙겨야 하는 것도 있다.
+        AlagagiFilterPill(
+          key: tripItemAssigneeButtonKey(item.id, kTripSharedAssigneeId),
+          label: '함께',
+          selected: item.assigneeProfileId == kTripSharedAssigneeId,
+          onTap: () => onAssign(kTripSharedAssigneeId),
+        ),
       ],
     );
   }

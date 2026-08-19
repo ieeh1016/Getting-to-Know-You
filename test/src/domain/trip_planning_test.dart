@@ -800,7 +800,7 @@ void main() {
       );
     });
 
-    test('packing items can be assigned to one of us and unassigned', () {
+    test('packing items can be assigned to one of us, to both, or nobody', () {
       final controller = buildController();
       controller.saveTrip(
         title: '가을 제주',
@@ -829,11 +829,59 @@ void main() {
         isNull,
       );
 
-      // 우리 둘이 아닌 사람은 담당이 될 수 없다.
+      // 둘 다 챙겨야 하는 것은 `함께`로 둔다.
+      controller.setTripItemAssignee(item.id, kTripSharedAssigneeId);
+      expect(
+        controller.tripItemsFor(tripId).single.assigneeProfileId,
+        kTripSharedAssigneeId,
+      );
+
+      controller.setTripItemAssignee(item.id, kTripSharedAssigneeId);
+      expect(
+        controller.tripItemsFor(tripId).single.assigneeProfileId,
+        isNull,
+      );
+
+      // 우리 둘도 `함께`도 아닌 값은 담당이 될 수 없다.
       controller.setTripItemAssignee(item.id, 'strangerUid');
       expect(
         controller.tripItemsFor(tripId).single.assigneeProfileId,
         isNull,
+      );
+    });
+
+    test('a shared assignee can be set when the item is created', () {
+      final controller = buildController();
+      controller.saveTrip(
+        title: '가을 제주',
+        destination: '제주도',
+        startDateKey: '2026-09-12',
+        endDateKey: '2026-09-13',
+      );
+      final tripId = controller.trips.single.id;
+
+      expect(
+        controller.saveTripItem(
+          tripId: tripId,
+          kind: TripItemKind.packing,
+          title: '우산',
+          assigneeProfileId: kTripSharedAssigneeId,
+        ),
+        isNull,
+      );
+      expect(
+        controller.tripItemsFor(tripId).single.assigneeProfileId,
+        kTripSharedAssigneeId,
+      );
+
+      expect(
+        controller.saveTripItem(
+          tripId: tripId,
+          kind: TripItemKind.packing,
+          title: '여권',
+          assigneeProfileId: 'strangerUid',
+        ),
+        isNotNull,
       );
     });
 

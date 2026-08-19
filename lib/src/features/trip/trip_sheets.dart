@@ -319,6 +319,119 @@ class _TripFormState extends State<_TripForm> {
   }
 }
 
+/// 여행 상세에서 고를 수 있는 관리 동작.
+enum TripAction { edit, delete }
+
+/// 여행 정보 고치기와 지우기를 sheet 한 장으로 모은다.
+Future<TripAction?> showTripActionsSheet(
+  BuildContext context, {
+  required bool canDelete,
+}) {
+  return _showFormSheet<TripAction>(
+    context,
+    sheetKey: tripMoreSheetKey,
+    title: '이 여행',
+    builder: (sheetContext) => Column(
+      children: [
+        _ActionRow(
+          rowKey: tripEditActionKey,
+          icon: Icons.edit_outlined,
+          label: '여행 정보 고치기',
+          hint: '이름, 목적지, 기간을 바꿔요',
+          onTap: () => Navigator.of(sheetContext).pop(TripAction.edit),
+        ),
+        if (canDelete) ...[
+          const SizedBox(height: 8),
+          _ActionRow(
+            rowKey: tripDeleteActionKey,
+            icon: Icons.delete_outline_rounded,
+            label: '여행 지우기',
+            hint: '담아둔 일정과 사진도 함께 사라져요',
+            danger: true,
+            onTap: () => Navigator.of(sheetContext).pop(TripAction.delete),
+          ),
+        ],
+      ],
+    ),
+  );
+}
+
+class _ActionRow extends StatelessWidget {
+  const _ActionRow({
+    required this.rowKey,
+    required this.icon,
+    required this.label,
+    required this.hint,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  final Key rowKey;
+  final IconData icon;
+  final String label;
+  final String hint;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    final tone = danger ? const Color(0xFFB35A49) : AlagagiColors.sageDeep;
+
+    return InkWell(
+      key: rowKey,
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 60),
+        decoration: BoxDecoration(
+          color: AlagagiColors.paper,
+          border: Border.all(color: AlagagiColors.line),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: const EdgeInsets.fromLTRB(13, 11, 13, 11),
+        child: Row(
+          children: [
+            AlagagiSymbolMark(
+              icon: icon,
+              size: 34,
+              iconSize: 17,
+              tone: AlagagiColors.skyPanel,
+              iconColor: tone,
+              radius: 12,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: sans(
+                      size: 13.5,
+                      weight: FontWeight.w800,
+                      color: danger ? tone : AlagagiColors.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    hint,
+                    style: sans(size: 11.5, color: AlagagiColors.muted),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: AlagagiColors.muted,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// 무엇을 추가할지 먼저 고른다. 종류마다 물어보는 것이 달라서다.
 Future<TripItemKind?> showTripKindPickerSheet(BuildContext context) {
   return _showFormSheet<TripItemKind>(

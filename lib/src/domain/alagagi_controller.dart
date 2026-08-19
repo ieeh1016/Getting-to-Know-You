@@ -1450,6 +1450,12 @@ const kTripPhotoMaxDataUrlLength = 700000;
 /// 사진 설명 상한. UI, controller, `firestore.rules`가 같은 값을 쓴다.
 const kTripPhotoMaxCaptionLength = 200;
 
+/// 준비물을 둘이 함께 챙길 때 쓰는 담당 값.
+///
+/// member uid와 같은 자리에 담기지만 사람이 아니다. uid와 겹치지 않도록
+/// Firebase uid에 쓰이지 않는 형태로 둔다.
+const kTripSharedAssigneeId = 'both';
+
 /// 여행 하루. 타임라인은 이 묶음을 날짜순으로 이어 붙여 만든다.
 class TripDay {
   const TripDay({
@@ -7792,10 +7798,8 @@ class AlagagiController extends ChangeNotifier {
     final trimmedAssignee = kind.usesCheck
         ? trimmedOrNull(assigneeProfileId)
         : null;
-    if (trimmedAssignee != null &&
-        trimmedAssignee != _state.me.id &&
-        trimmedAssignee != _state.partner.id) {
-      return '둘 중 한 사람만 고를 수 있어요.';
+    if (trimmedAssignee != null && !_isValidTripAssignee(trimmedAssignee)) {
+      return '담당은 둘 중 한 사람이거나 함께여야 해요.';
     }
 
     final now = DateTime.now();
@@ -8097,6 +8101,13 @@ class AlagagiController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 담당은 우리 둘 중 하나이거나 `함께`다.
+  bool _isValidTripAssignee(String value) {
+    return value == _state.me.id ||
+        value == _state.partner.id ||
+        value == kTripSharedAssigneeId;
+  }
+
   /// 준비물을 챙길 사람을 바꾼다. 같은 사람을 다시 고르면 담당을 지운다.
   void setTripItemAssignee(String itemId, String? profileId) {
     final index = _tripItems.indexWhere((item) => item.id == itemId);
@@ -8105,7 +8116,7 @@ class AlagagiController extends ChangeNotifier {
     }
     final current = _tripItems[index];
     final next = current.assigneeProfileId == profileId ? null : profileId;
-    if (next != null && next != _state.me.id && next != _state.partner.id) {
+    if (next != null && !_isValidTripAssignee(next)) {
       return;
     }
     final updated = current.copyWith(
