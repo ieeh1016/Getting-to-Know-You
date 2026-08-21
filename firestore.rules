@@ -1258,9 +1258,17 @@ service cloud.firestore {
     function validNewSharedPlace(spaceId, placeId) {
       return validSharedPlace(spaceId, placeId)
         && request.resource.data.createdByProfileId == request.auth.uid
-        && request.resource.data.providerPlaceId.size() > 0
-        && request.resource.data.latitude is number
-        && request.resource.data.longitude is number
+        // 카카오 검색으로 담은 곳은 늘 id와 좌표가 따라온다. 직접 담은
+        // 곳에는 둘 다 없다. 해외 여행은 거의 전부 이 경로라, 좌표를
+        // 무조건 요구하면 직접 담기가 통째로 막힌다.
+        && (
+          request.resource.data.provider != 'kakao'
+          || (
+            request.resource.data.providerPlaceId.size() > 0
+            && request.resource.data.latitude is number
+            && request.resource.data.longitude is number
+          )
+        )
         && request.resource.data.interestedByProfileIds.size() == 1
         && request.auth.uid in request.resource.data.interestedByProfileIds
         && (
@@ -1292,6 +1300,7 @@ service cloud.firestore {
           'latitude',
           'longitude',
           'note',
+          'mapLink',
           'meetingPlanLinks',
           'updatedByProfileId',
           'updatedAt'

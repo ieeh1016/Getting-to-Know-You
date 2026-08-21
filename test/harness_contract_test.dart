@@ -62,6 +62,63 @@ void main() {
     );
   });
 
+  test('shared place rules let a hand-added place be created and edited', () {
+    final rules = File('firestore.rules').readAsStringSync();
+    final createRule = rules.substring(
+      rules.indexOf('function validNewSharedPlace'),
+      rules.indexOf('function validSharedPlaceOwnerEdit'),
+    );
+
+    // 직접 담은 장소에는 좌표도 provider id도 없다. 카카오 시절 조건을
+    // 무조건 걸어두면 해외 장소가 통째로 permission-denied가 된다.
+    expect(
+      createRule,
+      contains("request.resource.data.provider != 'kakao'"),
+      reason:
+          'validNewSharedPlace must only demand coordinates and a provider id '
+          'from Kakao places. A hand-added place has neither.',
+    );
+    final kakaoBranch = createRule.substring(
+      createRule.indexOf("request.resource.data.provider != 'kakao'"),
+      createRule.indexOf(
+        'request.resource.data.interestedByProfileIds.size() == 1',
+      ),
+    );
+    for (final demand in [
+      'request.resource.data.providerPlaceId.size() > 0',
+      'request.resource.data.latitude is number',
+      'request.resource.data.longitude is number',
+    ]) {
+      expect(
+        kakaoBranch,
+        contains(demand),
+        reason:
+            'A hand-added place cannot satisfy "$demand". It must sit inside '
+            'the Kakao-only branch, not be a top-level requirement.',
+      );
+      expect(
+        demand.allMatches(createRule).length,
+        1,
+        reason:
+            '"$demand" must appear only inside the Kakao-only branch of '
+            'validNewSharedPlace.',
+      );
+    }
+
+    // 지도 링크는 직접 담은 장소의 유일한 위치 정보다. 고칠 수 있어야 한다.
+    final ownerEditRule = rules.substring(
+      rules.indexOf('function validSharedPlaceOwnerEdit'),
+      rules.indexOf('function validSharedPlaceInterestUpdate'),
+    );
+    expect(
+      ownerEditRule,
+      contains("'mapLink'"),
+      reason:
+          'saveSharedPlace writes mapLink, so an owner edit that changes it '
+          'must be allowed.',
+    );
+  });
+
   test('shared place rules allow legacy map metadata normalization', () {
     final rules = File('firestore.rules').readAsStringSync();
 
