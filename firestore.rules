@@ -1170,8 +1170,17 @@ service cloud.firestore {
         && request.resource.data.provider in ['kakao', 'manual']
         && request.resource.data.providerPlaceId is string
         && request.resource.data.providerPlaceId.size() <= 80
-        && request.resource.data.mapLink is string
-        && request.resource.data.mapLink.size() <= 500
+        // `mapLink`는 장소 보드가 생긴 뒤에 추가된 필드다. 그 전에 담은
+        // 문서에는 아예 없어서, 무조건 읽으면 규칙 평가 자체가 오류가 된다.
+        // Firestore는 오류를 거부로 처리하므로 뒤에 오는 `||` 갈래도
+        // 함께 죽는다. 그래서 옛 장소는 계획에 붙이는 것조차 막혔다.
+        && (
+          !request.resource.data.keys().hasAny(['mapLink'])
+          || (
+            request.resource.data.mapLink is string
+            && request.resource.data.mapLink.size() <= 500
+          )
+        )
         && (
           request.resource.data.latitude == null
           || request.resource.data.latitude is number

@@ -105,6 +105,21 @@ void main() {
       );
     }
 
+    // 장소 보드보다 나중에 생긴 필드는 옛 문서에 없다. 무조건 읽으면
+    // 규칙 평가가 오류가 되고, Firestore는 오류를 거부로 처리해 `||`의
+    // 뒤 갈래까지 함께 죽는다. 옛 장소가 계획에 붙지 않던 이유다.
+    final baseRule = rules.substring(
+      rules.indexOf('function validSharedPlace(spaceId, placeId)'),
+      rules.indexOf('function validNewSharedPlace'),
+    );
+    expect(
+      baseRule,
+      contains("!request.resource.data.keys().hasAny(['mapLink'])"),
+      reason:
+          'mapLink was added after the place board shipped, so validSharedPlace '
+          'must tolerate documents that never had it.',
+    );
+
     // 지도 링크는 직접 담은 장소의 유일한 위치 정보다. 고칠 수 있어야 한다.
     final ownerEditRule = rules.substring(
       rules.indexOf('function validSharedPlaceOwnerEdit'),
