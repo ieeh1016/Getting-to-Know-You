@@ -242,6 +242,7 @@ const tripListSearchFieldKey = Key('trip-list-search-field');
 Key tripStayDayGroupKey(String dateKey) => Key('trip-stay-day-$dateKey');
 const tripItemFormSheetKey = Key('trip-item-form-sheet');
 const tripItemKindFieldKey = Key('trip-item-kind-field');
+const tripItemFormDeleteButtonKey = Key('trip-item-form-delete-button');
 const tripItemKeepAddingButtonKey = Key('trip-item-keep-adding-button');
 const tripItemKeepAddingNoticeKey = Key('trip-item-keep-adding-notice');
 const tripItemTimeClearButtonKey = Key('trip-item-time-clear');

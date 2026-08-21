@@ -4,9 +4,12 @@ import 'package:minyoung_pick/src/domain/alagagi_controller.dart';
 ///
 /// 나머지 member는 이 test에서 부르지 않으므로 `noSuchMethod`로 넘긴다.
 class FakeTripRepository implements AlagagiDataRepository {
-  FakeTripRepository({this.photos = const []});
+  FakeTripRepository({this.photos = const [], this.failOrderWrites = false});
 
   final List<TripPhoto> photos;
+
+  /// 순서 저장만 계속 실패하는 상황. 규칙이 막던 실제 상황을 흉내낸다.
+  final bool failOrderWrites;
 
   int loadPhotoCallCount = 0;
   final List<String> loadedPhotoTripIds = [];
@@ -32,7 +35,11 @@ class FakeTripRepository implements AlagagiDataRepository {
     String spaceId,
     String itemId,
     int sortOrder,
-  ) async {}
+  ) async {
+    if (failOrderWrites) {
+      throw StateError('order write rejected');
+    }
+  }
 
   @override
   Future<void> saveTripPhoto(String spaceId, TripPhoto photo) async {}

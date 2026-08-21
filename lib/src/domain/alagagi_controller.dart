@@ -8958,7 +8958,9 @@ class AlagagiController extends ChangeNotifier {
     }
     _state = _state.copyWith(
       tripSaveStatus: SaveStatus.saving,
-      clearTripSaveError: true,
+      // 아직 실패한 write가 남아 있으면 안내를 지우면 안 된다. 지우면
+      // 다시 시도할 button까지 사라져 되돌릴 길이 없어진다.
+      clearTripSaveError: _failedTripWrites.isEmpty,
       clearTripSaveFeedback: true,
     );
     notifyListeners();
@@ -8974,8 +8976,16 @@ class AlagagiController extends ChangeNotifier {
                 tripSaveFeedback: resolvedFeedback,
                 clearTripSaveError: true,
               );
-              notifyListeners();
+            } else {
+              // 이번 것은 됐지만 아직 못 보낸 것이 남았다. 저장했다고 말하면
+              // 거짓이고, 아무 말도 안 하면 화면이 영원히 조용해진다.
+              _state = _state.copyWith(
+                tripSaveStatus: SaveStatus.failed,
+                tripSaveError: '여행 내용 일부를 저장하지 못했어요. 다시 시도해 주세요.',
+                clearTripSaveFeedback: true,
+              );
             }
+            notifyListeners();
           })
           .catchError((Object _) {
             // 지운 것이 서버에 닿지 않았으면 화면에서도 되살려야 한다.

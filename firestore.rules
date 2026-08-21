@@ -466,6 +466,16 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/spaces/$(spaceId)/trips/$(tripId)).data.createdByProfileId == request.auth.uid;
     }
 
+    // 순서만 바꾸는 쓰기. `updatedAt`을 새로 찍지 않으므로 일반 update 검사를
+    // 통과할 수 없다. 순서 정리를 상대 홈의 '새로 도착한 것'으로 만들지 않으려면
+    // 이 한 갈래를 따로 열어야 한다. 바뀌는 키가 sortOrder 하나뿐임을 확인한다.
+    function isTripItemOrderOnlyUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sortOrder'])
+        && request.resource.data.sortOrder is int
+        && request.resource.data.sortOrder >= 0
+        && request.resource.data.sortOrder <= 999;
+    }
+
     function validTripItemShape(spaceId, itemId) {
       return request.resource.data.keys().hasOnly([
           'id',
@@ -1551,7 +1561,10 @@ service cloud.firestore {
           && validTripItemShape(spaceId, itemId)
           && request.resource.data.createdByProfileId == request.auth.uid;
         allow update: if isSpaceMember(spaceId)
-          && validTripItemShape(spaceId, itemId)
+          && (
+            isTripItemOrderOnlyUpdate()
+            || validTripItemShape(spaceId, itemId)
+          )
           && request.resource.data.createdByProfileId == resource.data.createdByProfileId
           && request.resource.data.tripId == resource.data.tripId;
         allow delete: if isSpaceMember(spaceId)

@@ -216,6 +216,41 @@ void main() {
     );
   });
 
+  testWidgets('a plan can be deleted from the sheet it opens in', (
+    tester,
+  ) async {
+    final controller = buildController();
+    final tripId = seedTrip(controller);
+    controller.saveTripItem(
+      tripId: tripId,
+      kind: TripItemKind.plan,
+      title: '성산일출봉',
+      dateKey: '2026-09-12',
+    );
+    await pumpTrips(tester, controller);
+    await openTripDetail(tester, controller, tripId);
+
+    final item = controller
+        .tripItemsFor(tripId, kind: TripItemKind.plan)
+        .single;
+    await tester.ensureVisible(find.byKey(tripTimelineEntryKey(item.id)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripTimelineEntryKey(item.id)));
+    await tester.pumpAndSettle();
+
+    // 계획과 이동은 타임라인에만 있어 지울 길이 없었다.
+    await tapInSheet(
+      tester,
+      tripItemFormSheetKey,
+      find.byKey(tripItemFormDeleteButtonKey),
+    );
+    await tester.tap(find.byKey(tripItemDeleteConfirmButtonKey(item.id)));
+    await tester.pumpAndSettle();
+
+    expect(controller.tripItemsFor(tripId, kind: TripItemKind.plan), isEmpty);
+    expect(find.byKey(tripItemFormSheetKey), findsNothing);
+  });
+
   testWidgets('a picked time can be cleared again', (tester) async {
     final controller = buildController();
     final tripId = seedTrip(controller);

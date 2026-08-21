@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
+import '../../shared/confirm_sheet.dart';
 import '../../shared/picker_sheets.dart';
 import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_components.dart';
@@ -1391,11 +1392,56 @@ class _TripItemFormState extends State<_TripItemForm> {
                 ),
               ),
             ],
+            // 계획과 이동은 타임라인에만 있고, 거기에는 지우기가 없었다.
+            // 담은 것을 지울 길은 종류와 상관없이 항상 있어야 한다.
+            if (widget.item != null && _canDelete) ...[
+              const SizedBox(height: 4),
+              SizedBox(
+                height: 44,
+                child: TextButton.icon(
+                  key: tripItemFormDeleteButtonKey,
+                  onPressed: _confirmDelete,
+                  icon: const Icon(Icons.delete_outline_rounded, size: 16),
+                  label: Text('${_kind.label} 지우기'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFFB35A49),
+                    textStyle: sans(size: 12.5, weight: FontWeight.w700),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
       ],
     );
+  }
+
+  /// 담은 사람만 지울 수 있다. 목록 카드의 지우기와 같은 기준이다.
+  bool get _canDelete =>
+      widget.item?.createdByProfileId == widget.controller.state.me.id;
+
+  Future<void> _confirmDelete() async {
+    final item = widget.item;
+    if (item == null) {
+      return;
+    }
+    // 확인 sheet를 기다리는 동안 이 sheet가 사라질 수 있다. Navigator를
+    // 미리 잡아둔다.
+    final navigator = Navigator.of(widget.sheetContext);
+    final confirmed = await showAlagagiConfirmSheet(
+      context,
+      title: '${item.title}을 지울까요?',
+      body: '지우면 되돌릴 수 없어요.',
+      confirmLabel: '지우기',
+      confirmKey: tripItemDeleteConfirmButtonKey(item.id),
+    );
+    if (!confirmed || !mounted) {
+      return;
+    }
+    widget.controller.deleteTripItem(item.id);
+    _saved = true;
+    navigator.pop(_kind);
   }
 
   /// 준비물을 누가 챙길지. 목록에서도 바꿀 수 있지만 담을 때 함께 정할 수 있어야

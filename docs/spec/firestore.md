@@ -33,7 +33,7 @@
 - `spaces/{spaceId}/scheduleEntries/{dateKey_uid}`
 - `spaces/{spaceId}/sharedPlaces/{placeId}`
 - `spaces/{spaceId}/trips/{tripId}`
-- `spaces/{spaceId}/tripItems/{itemId}`: 순서만 바뀔 때는 `sortOrder` 한 필드만 merge로 쓰고 `updatedAt`을 갱신하지 않는다. 순서 정리는 상대에게 알릴 내용이 아니다. `cost`, `paidByProfileId`, `wishId`와 여행 문서의 `currencyLabel`은 더 이상 쓰지 않는다. 이미 저장된 문서에 남아 있어 규칙의 허용 키 목록에서 빼면 그 문서들이 수정되지 않으므로, 키는 남기고 값이 있을 때만 검사한다.
+- `spaces/{spaceId}/tripItems/{itemId}`: 순서만 바뀔 때는 `sortOrder` 한 필드만 merge로 쓰고 `updatedAt`을 갱신하지 않는다. 순서 정리는 상대에게 알릴 내용이 아니다. 규칙은 모든 항목 update에 `updatedAt == request.time`을 요구하므로, 바뀌는 키가 `sortOrder` 하나뿐인 update를 따로 허용한다. `cost`, `paidByProfileId`, `wishId`와 여행 문서의 `currencyLabel`은 더 이상 쓰지 않는다. 이미 저장된 문서에 남아 있어 규칙의 허용 키 목록에서 빼면 그 문서들이 수정되지 않으므로, 키는 남기고 값이 있을 때만 검사한다.
 - `spaces/{spaceId}/tripPhotos/{photoId}`: 갤러리 사진을 줄여 담는 data URI. Cloud Storage 없이 Spark plan 안에서 다루기 위한 경로라 문서당 크기 상한이 있다. session 로딩에서 읽지 않고, 여행 **하나를 열 때 `tripId`로 걸러 그 여행 것만** 읽는다. 문서가 커서 매 접속마다 전부 받으면 전송량이 크게 든다.
 - `spaces/{spaceId}/diagnosticEvents/{eventId}`
 - `spaces/{spaceId}/curiosityCards/{cardId}`
