@@ -56,9 +56,17 @@
 - 사진 문서의 `caption`만 올린 사람이 아니면 바꿀 수 없다. 남의 말을 고치는 것과 정리하는 것은 다르다. `dateKey`로 묶는 것은 둘 다 한다.
 - 그 밖의 collection은 만든 사람만 지운다.
 
+## Rules 평가 한도
+
+- Firestore는 요청 하나에 표현식 **1000개**까지만 평가한다. 넘으면 데이터가 맞아도 `permission-denied`가 된다.
+- 큰 검사 함수를 `||`로 여러 개 이어 붙이면 이 한도에 걸린다. 통과할 갈래가 뒤에 있어도 앞 갈래를 다 평가하다가 터진다. 공통 검사는 한 번만 부르고, 갈래별 차이는 값싼 모양 검사로만 가른다.
+- 없는 key를 읽으면 평가가 오류가 되고, Firestore는 오류를 거부로 처리한다. `||` 앞 갈래에서 오류가 나면 뒤 갈래도 함께 죽는다. 나중에 생긴 필드는 `keys().hasAny([...])`로 있을 때만 검사한다.
+- 규칙을 고치면 `./scripts/check_firestore_rules_behavior.sh`로 emulator에 올려 실제 쓰기를 통과시켜 본다. 파일 비교만으로는 이런 것이 잡히지 않는다.
+
 ## Rules Maintenance
 
 - `firestore.rules`가 바뀌면 [`../firebase_setup.md`](../firebase_setup.md)를 함께 갱신한다.
+- 규칙 변경은 `tools/firestore_rules_test`의 emulator test로 실제 쓰기를 확인한다. CI가 배포 전에 같은 script를 돌린다.
 - practical한 범위에서 rules는 ownership, string bounds, list bounds, allowed enum value를 검증해야 한다.
 - intended valid write를 허용하고 obvious cross-user write를 거절하기 전까지 feature는 완료된 것이 아니다.
 - collection, owner field, cross-feature reference를 추가하면 [`domain_model.md`](domain_model.md)를 갱신한다.

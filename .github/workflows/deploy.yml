@@ -38,6 +38,19 @@ jobs:
       - name: Check Firestore rules sync
         run: ./scripts/check_firestore_rules_sync.sh
 
+      # 규칙 파일이 문서와 같은지만 보면, 규칙이 실제 쓰기를 거부하는 상태가
+      # 그대로 배포된다. emulator에 올려 실제 쓰기로 확인한 뒤에 배포한다.
+      - name: Setup Java for Firestore emulator
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Check Firestore rules behavior
+        run: ./scripts/check_firestore_rules_behavior.sh
+        env:
+          FIREBASE_TOOLS_VERSION: latest
+
       - name: Analyze
         run: dart analyze
 

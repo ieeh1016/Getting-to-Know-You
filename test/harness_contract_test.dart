@@ -55,10 +55,16 @@ void main() {
       contains('request.resource.data.updatedByProfileId == request.auth.uid'),
     );
     expect(rules, contains('request.resource.data.updatedAt == request.time'));
-    expect(rules, contains('function validSharedPlaceMeetingLinkUpdate'));
+    expect(rules, contains('function sharedPlaceMeetingLinkShape'));
+    expect(rules, contains('sharedPlaceMeetingLinkShape()'));
+    // 큰 검사를 갈래마다 다시 부르면 표현식 1000개 한도를 넘어 거부된다.
     expect(
-      rules,
-      contains('validSharedPlaceMeetingLinkUpdate(spaceId, placeId)'),
+      'return validSharedPlace(spaceId, placeId)'.allMatches(rules).length,
+      2,
+      reason:
+          'validSharedPlace must be called once for the patch-free path and '
+          'once for the full path. Calling it per branch blows the 1000 '
+          'expression limit and denies every write.',
     );
   });
 
@@ -66,7 +72,7 @@ void main() {
     final rules = File('firestore.rules').readAsStringSync();
     final createRule = rules.substring(
       rules.indexOf('function validNewSharedPlace'),
-      rules.indexOf('function validSharedPlaceOwnerEdit'),
+      rules.indexOf('function sharedPlaceOwnerEditShape'),
     );
 
     // 직접 담은 장소에는 좌표도 provider id도 없다. 카카오 시절 조건을
@@ -122,8 +128,8 @@ void main() {
 
     // 지도 링크는 직접 담은 장소의 유일한 위치 정보다. 고칠 수 있어야 한다.
     final ownerEditRule = rules.substring(
-      rules.indexOf('function validSharedPlaceOwnerEdit'),
-      rules.indexOf('function validSharedPlaceInterestUpdate'),
+      rules.indexOf('function sharedPlaceOwnerEditShape'),
+      rules.indexOf('function sharedPlaceInterestShape'),
     );
     expect(
       ownerEditRule,

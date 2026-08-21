@@ -1292,11 +1292,8 @@ service cloud.firestore {
         );
     }
 
-    function validSharedPlaceOwnerEdit(spaceId, placeId) {
-      return validSharedPlace(spaceId, placeId)
-        && resource.data.createdByProfileId == request.auth.uid
-        && request.resource.data.id == resource.data.id
-        && request.resource.data.createdByProfileId == resource.data.createdByProfileId
+    function sharedPlaceOwnerEditShape() {
+      return resource.data.createdByProfileId == request.auth.uid
         && request.resource.data.interestedByProfileIds == resource.data.interestedByProfileIds
         && request.resource.data.linkedDateKey == resource.data.linkedDateKey
         && requestSharedPlaceMeetingPlanLinks() == existingSharedPlaceMeetingPlanLinks()
@@ -1316,9 +1313,8 @@ service cloud.firestore {
         ]);
     }
 
-    function validSharedPlaceInterestUpdate(spaceId, placeId) {
-      return validSharedPlace(spaceId, placeId)
-        && requestSharedPlaceMeetingPlanLinks() == existingSharedPlaceMeetingPlanLinks()
+    function sharedPlaceInterestShape() {
+      return requestSharedPlaceMeetingPlanLinks() == existingSharedPlaceMeetingPlanLinks()
         && preservesOrNormalizesSharedPlaceMapFields()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'interestedByProfileIds',
@@ -1336,15 +1332,12 @@ service cloud.firestore {
         );
     }
 
-    function validSharedPlaceMeetingLinkUpdate(spaceId, placeId) {
-      return validSharedPlace(spaceId, placeId)
-        && request.resource.data.id == resource.data.id
-        && request.resource.data.name == resource.data.name
+    function sharedPlaceMeetingLinkShape() {
+      return request.resource.data.name == resource.data.name
         && request.resource.data.address == resource.data.address
         && request.resource.data.category == resource.data.category
         && preservesOrNormalizesSharedPlaceMapFields()
         && request.resource.data.note == resource.data.note
-        && request.resource.data.createdByProfileId == resource.data.createdByProfileId
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'interestedByProfileIds',
           'linkedDateKey',
@@ -1357,6 +1350,21 @@ service cloud.firestore {
           'updatedAt'
         ])
         && request.auth.uid in request.resource.data.interestedByProfileIds;
+    }
+
+    // 규칙은 요청 하나에 표현식 1000개까지만 평가한다. 아래 세 모양은
+    // 저마다 `validSharedPlace`를 다시 부르곤 했는데, 그러면 셋을 이어 붙인
+    // 것만으로 한도를 넘어 데이터와 상관없이 거부됐다. 큰 검사는 한 번만
+    // 부르고, 갈래별로 다른 것은 값싼 모양 검사로만 가른다.
+    function validSharedPlaceFullUpdate(spaceId, placeId) {
+      return validSharedPlace(spaceId, placeId)
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.createdByProfileId == resource.data.createdByProfileId
+        && (
+          sharedPlaceOwnerEditShape()
+          || sharedPlaceInterestShape()
+          || sharedPlaceMeetingLinkShape()
+        );
     }
 
     function validSharedPlaceMeetingPatchUpdate(spaceId, placeId) {
@@ -1634,12 +1642,15 @@ service cloud.firestore {
         allow read: if isSpaceMember(spaceId);
         allow create: if isSpaceMember(spaceId)
           && validNewSharedPlace(spaceId, placeId);
+        // 규칙은 요청 하나에 표현식 1000개까지만 평가한다. 아래 검사들은
+        // 대부분 `validSharedPlace`를 통째로 다시 부르는 큰 식이라, 여러 개를
+        // `||`로 이어 붙이면 데이터와 상관없이 한도를 넘어 거부된다.
+        // `meetingPlanLinks`처럼 몇 필드만 바꾸는 patch가 가장 잦으므로
+        // 그 갈래를 맨 앞에 두어 무거운 검사에 닿기 전에 끝나게 한다.
         allow update: if isSpaceMember(spaceId)
           && (
-            validSharedPlaceOwnerEdit(spaceId, placeId)
-            || validSharedPlaceInterestUpdate(spaceId, placeId)
-            || validSharedPlaceMeetingLinkUpdate(spaceId, placeId)
-            || validSharedPlaceMeetingPatchUpdate(spaceId, placeId)
+            validSharedPlaceMeetingPatchUpdate(spaceId, placeId)
+            || validSharedPlaceFullUpdate(spaceId, placeId)
           );
         allow delete: if isSpaceMember(spaceId)
           && resource.data.createdByProfileId == request.auth.uid;

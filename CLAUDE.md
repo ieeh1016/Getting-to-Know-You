@@ -47,10 +47,13 @@ Claude Code가 이 저장소에서 작업할 때 따르는 계약이다.
 
 ```sh
 ./scripts/check_firestore_rules_sync.sh
+./scripts/check_firestore_rules_behavior.sh
 dart analyze
 flutter test
 flutter build web
 ```
+
+`check_firestore_rules_behavior.sh`는 `firestore.rules`를 emulator에 올려 실제 쓰기로 검사한다. 규칙을 고쳤으면 반드시 돌린다. 파일 비교만으로는 표현식 1000개 한도나 없는 field 접근 같은 것이 잡히지 않는다. node와 java가 필요하다.
 
 local one-command gate는 다음과 같다.
 
@@ -90,6 +93,7 @@ local one-command gate는 다음과 같다.
 - Firestore write는 명시적인 user action에서만 발생해야 한다.
 - draft typing, scrolling, route changes, tab changes, calendar navigation, music seen state는 Firestore write를 만들면 안 된다.
 - 새 Firebase-backed feature는 `docs/spec/firestore.md`에 정리된 Spark/free-plan assumption 안에 둔다.
+- `firestore.rules`를 고치면 `tools/firestore_rules_test`에 그 쓰기를 통과시키는 test를 함께 둔다. 규칙은 요청당 표현식 1000개 한도가 있고, 없는 field를 읽으면 평가 오류가 곧 거부가 된다. 둘 다 파일 비교로는 안 잡힌다.
 
 ## Git Hygiene
 
