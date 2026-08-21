@@ -598,23 +598,6 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
     }
 
-    // 여행을 지우면 그 안의 항목과 사진도 함께 지운다. 상대가 담은 것을
-    // 지우지 못하면 사라진 여행의 문서만 영원히 남는다.
-    function ownsParentTrip(spaceId, tripId) {
-      return exists(/databases/$(database)/documents/spaces/$(spaceId)/trips/$(tripId))
-        && get(/databases/$(database)/documents/spaces/$(spaceId)/trips/$(tripId)).data.createdByProfileId == request.auth.uid;
-    }
-
-    // 순서만 바꾸는 쓰기. `updatedAt`을 새로 찍지 않으므로 일반 update 검사를
-    // 통과할 수 없다. 순서 정리를 상대 홈의 '새로 도착한 것'으로 만들지 않으려면
-    // 이 한 갈래를 따로 열어야 한다. 바뀌는 키가 sortOrder 하나뿐임을 확인한다.
-    function isTripItemOrderOnlyUpdate() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sortOrder'])
-        && request.resource.data.sortOrder is int
-        && request.resource.data.sortOrder >= 0
-        && request.resource.data.sortOrder <= 999;
-    }
-
     function validTripItemShape(spaceId, itemId) {
       return request.resource.data.keys().hasOnly([
           'id',
@@ -1674,8 +1657,8 @@ service cloud.firestore {
         allow update: if isSpaceMember(spaceId)
           && validTripShape(spaceId, tripId)
           && request.resource.data.createdByProfileId == resource.data.createdByProfileId;
-        allow delete: if isSpaceMember(spaceId)
-          && resource.data.createdByProfileId == request.auth.uid;
+        // 여행 자체도 둘 중 누구든 지울 수 있다. 앱이 확인 sheet로 막는다.
+        allow delete: if isSpaceMember(spaceId);
       }
 
       match /tripPhotos/{photoId} {
@@ -1683,15 +1666,18 @@ service cloud.firestore {
         allow create: if isSpaceMember(spaceId)
           && validTripPhotoShape(spaceId, photoId)
           && request.resource.data.createdByProfileId == request.auth.uid;
+        // 설명은 올린 사람의 말이라 그대로 두지만, 날짜로 묶는 정리는
+        // 둘이 같이 한다. 올린 사람 표시는 어느 쪽이든 바뀌지 않는다.
         allow update: if isSpaceMember(spaceId)
           && validTripPhotoShape(spaceId, photoId)
-          && resource.data.createdByProfileId == request.auth.uid
-          && request.resource.data.createdByProfileId == resource.data.createdByProfileId;
-        allow delete: if isSpaceMember(spaceId)
+          && request.resource.data.createdByProfileId == resource.data.createdByProfileId
           && (
             resource.data.createdByProfileId == request.auth.uid
-            || ownsParentTrip(spaceId, resource.data.tripId)
+            || request.resource.data.caption == resource.data.caption
           );
+        // 여행은 둘이 같이 채우는 공간이다. 누가 담았는지로 지울 수 있는
+        // 사람을 가르면 상대가 담아둔 것을 정리할 길이 사라진다.
+        allow delete: if isSpaceMember(spaceId);
       }
 
       match /tripItems/{itemId} {
@@ -1700,17 +1686,12 @@ service cloud.firestore {
           && validTripItemShape(spaceId, itemId)
           && request.resource.data.createdByProfileId == request.auth.uid;
         allow update: if isSpaceMember(spaceId)
-          && (
-            isTripItemOrderOnlyUpdate()
-            || validTripItemShape(spaceId, itemId)
-          )
+          && validTripItemShape(spaceId, itemId)
           && request.resource.data.createdByProfileId == resource.data.createdByProfileId
           && request.resource.data.tripId == resource.data.tripId;
-        allow delete: if isSpaceMember(spaceId)
-          && (
-            resource.data.createdByProfileId == request.auth.uid
-            || ownsParentTrip(spaceId, resource.data.tripId)
-          );
+        // 여행은 둘이 같이 채우는 공간이다. 누가 담았는지로 지울 수 있는
+        // 사람을 가르면 상대가 담아둔 것을 정리할 길이 사라진다.
+        allow delete: if isSpaceMember(spaceId);
       }
 
       match /memoryCards/{cardId} {

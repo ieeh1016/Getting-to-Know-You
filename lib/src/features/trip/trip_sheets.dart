@@ -150,8 +150,11 @@ Future<String?> showTripFormSheet(
     title: trip == null ? '새 여행' : '여행 고치기',
     subtitle: trip == null ? '이름과 기간만 있으면 시작할 수 있어요' : null,
     scrollBody: false,
-    builder: (sheetContext) =>
-        _TripForm(controller: controller, trip: trip, sheetContext: sheetContext),
+    builder: (sheetContext) => _TripForm(
+      controller: controller,
+      trip: trip,
+      sheetContext: sheetContext,
+    ),
   );
 }
 
@@ -269,93 +272,93 @@ class _TripFormState extends State<_TripForm> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-        TripTextField(
-          fieldKey: tripTitleFieldKey,
-          controller: _titleController,
-          label: '여행 이름',
-          hint: '예: 가을 제주',
-          maxLength: 60,
-        ),
-        const SizedBox(height: 10),
-        TripTextField(
-          fieldKey: tripDestinationFieldKey,
-          controller: _destinationController,
-          label: '어디로',
-          hint: '예: 제주도',
-          maxLength: 60,
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: TripPickerRow(
-                rowKey: tripStartDateFieldKey,
-                label: '떠나는 날',
-                value: _startDateKey,
-                placeholder: '날짜 고르기',
-                icon: Icons.calendar_today_outlined,
-                onTap: () => _pickDate(isStart: true),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: TripPickerRow(
-                rowKey: tripEndDateFieldKey,
-                label: '돌아오는 날',
-                value: _endDateKey,
-                placeholder: '날짜 고르기',
-                icon: Icons.calendar_today_outlined,
-                onTap: () => _pickDate(isStart: false),
-              ),
-            ),
-          ],
-        ),
-        if (_durationLabel != null) ...[
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              const Icon(
-                Icons.nights_stay_outlined,
-                size: 15,
-                color: AlagagiColors.sageDeep,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                _durationLabel!,
-                style: sans(
-                  size: 12.5,
-                  weight: FontWeight.w800,
-                  color: AlagagiColors.sageDeep,
+                TripTextField(
+                  fieldKey: tripTitleFieldKey,
+                  controller: _titleController,
+                  label: '여행 이름',
+                  hint: '예: 가을 제주',
+                  maxLength: 60,
                 ),
-              ),
-            ],
+                const SizedBox(height: 10),
+                TripTextField(
+                  fieldKey: tripDestinationFieldKey,
+                  controller: _destinationController,
+                  label: '어디로',
+                  hint: '예: 제주도',
+                  maxLength: 60,
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TripPickerRow(
+                        rowKey: tripStartDateFieldKey,
+                        label: '떠나는 날',
+                        value: _startDateKey,
+                        placeholder: '날짜 고르기',
+                        icon: Icons.calendar_today_outlined,
+                        onTap: () => _pickDate(isStart: true),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TripPickerRow(
+                        rowKey: tripEndDateFieldKey,
+                        label: '돌아오는 날',
+                        value: _endDateKey,
+                        placeholder: '날짜 고르기',
+                        icon: Icons.calendar_today_outlined,
+                        onTap: () => _pickDate(isStart: false),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_durationLabel != null) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.nights_stay_outlined,
+                        size: 15,
+                        color: AlagagiColors.sageDeep,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _durationLabel!,
+                        style: sans(
+                          size: 12.5,
+                          weight: FontWeight.w800,
+                          color: AlagagiColors.sageDeep,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 10),
+                TripTextField(
+                  fieldKey: tripNoteFieldKey,
+                  controller: _noteController,
+                  label: '메모 (선택)',
+                  hint: '같이 기억해둘 것',
+                  maxLength: 500,
+                  maxLines: 3,
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 10),
+                  _FormError(message: _error!),
+                ],
+              ],
+            ),
           ),
-        ],
-        const SizedBox(height: 10),
-        TripTextField(
-          fieldKey: tripNoteFieldKey,
-          controller: _noteController,
-          label: '메모 (선택)',
-          hint: '같이 기억해둘 것',
-          maxLength: 500,
-          maxLines: 3,
         ),
-        if (_error != null) ...[
-          const SizedBox(height: 10),
-          _FormError(message: _error!),
-        ],
-            ],
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
+          child: TripPrimaryButton(
+            buttonKey: tripSubmitButtonKey,
+            label: widget.trip == null ? '여행 만들기' : '고친 내용 저장하기',
+            onPressed: _submit,
           ),
         ),
-      ),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
-        child: TripPrimaryButton(
-          buttonKey: tripSubmitButtonKey,
-          label: widget.trip == null ? '여행 만들기' : '고친 내용 저장하기',
-          onPressed: _submit,
-        ),
-      ),
       ],
     );
   }
@@ -365,10 +368,7 @@ class _TripFormState extends State<_TripForm> {
 enum TripAction { edit, delete }
 
 /// 여행 정보 고치기와 지우기를 sheet 한 장으로 모은다.
-Future<TripAction?> showTripActionsSheet(
-  BuildContext context, {
-  required bool canDelete,
-}) {
+Future<TripAction?> showTripActionsSheet(BuildContext context) {
   return _showFormSheet<TripAction>(
     context,
     sheetKey: tripMoreSheetKey,
@@ -382,17 +382,15 @@ Future<TripAction?> showTripActionsSheet(
           hint: '이름, 목적지, 기간을 바꿔요',
           onTap: () => Navigator.of(sheetContext).pop(TripAction.edit),
         ),
-        if (canDelete) ...[
-          const SizedBox(height: 8),
-          _ActionRow(
-            rowKey: tripDeleteActionKey,
-            icon: Icons.delete_outline_rounded,
-            label: '여행 지우기',
-            hint: '담아둔 일정과 사진도 함께 사라져요',
-            danger: true,
-            onTap: () => Navigator.of(sheetContext).pop(TripAction.delete),
-          ),
-        ],
+        const SizedBox(height: 8),
+        _ActionRow(
+          rowKey: tripDeleteActionKey,
+          icon: Icons.delete_outline_rounded,
+          label: '여행 지우기',
+          hint: '담아둔 일정과 사진도 함께 사라져요',
+          danger: true,
+          onTap: () => Navigator.of(sheetContext).pop(TripAction.delete),
+        ),
       ],
     ),
   );
@@ -1295,131 +1293,131 @@ class _TripItemFormState extends State<_TripItemForm> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-        // 자동으로 채우지 않는다. 다른 항목을 적으려고 연 경우에는 방해가 된다.
-        if (_restorableDraft != null) ...[
-          _DraftRestoreRow(
-            title: _restorableDraft!.title.trim(),
-            onRestore: _restoreDraft,
-            onDismiss: () {
-              widget.controller.clearTripItemDraft(widget.trip.id, _kind);
-              setState(() => _restorableDraft = null);
-            },
-          ),
-          const SizedBox(height: 10),
-        ],
-        // 고르고 나서야 종류를 잘못 골랐다는 걸 아는 일이 잦다.
-        TripPickerRow(
-          rowKey: tripItemKindFieldKey,
-          label: '종류',
-          value: kind.label,
-          placeholder: '종류 고르기',
-          icon: Icons.unfold_more_rounded,
-          onTap: _changeKind,
-        ),
-        const SizedBox(height: 10),
-        if (kind.usesRoute) ..._routeFields(),
-        TripTextField(
-          fieldKey: tripItemTitleFieldKey,
-          controller: _titleController,
-          label: kind.usesRoute ? '편명이나 노선' : kind.label,
-          hint: kind.usesRoute ? _mode.titleHint : kind.titleHint,
-          maxLength: 80,
-        ),
-        // 언제·몇 시가 제목 바로 다음에 온다. 키보드가 올라오면 sheet 본문이
-        // 300px 안팎으로 줄어, 가장 자주 채우는 칸이 아래에 있으면 항목마다
-        // 키보드를 내리고 스크롤하게 된다.
-        if (kind.usesDateRange) ..._stayFields(),
-        if (kind.usesRoute || kind == TripItemKind.plan) ..._scheduleFields(),
-        const SizedBox(height: 10),
-        TripTextField(
-          fieldKey: tripItemNoteFieldKey,
-          controller: _noteController,
-          label: '메모',
-          hint: kind.noteHint,
-          maxLength: 500,
-          maxLines: 3,
-        ),
-        if (kind.usesPlace) ..._placeFields(),
-        const SizedBox(height: 10),
-        TripTextField(
-          fieldKey: tripItemLinkFieldKey,
-          controller: _linkController,
-          label: '링크 (선택)',
-          hint: '예약 페이지나 지도 링크',
-          maxLength: 500,
-        ),
-        if (kind.usesCheck) ..._assigneeFields(),
-            ],
-          ),
-        ),
-      ),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 폼이 길어도 담기 결과는 button과 같은 고정 자리에 보인다.
-            // 스크롤 끝에 두면 화면 밖에 그려져 button이 고장난 것처럼 보인다.
-            if (_keepAddingNotice != null) ...[
-              _FormNotice(message: _keepAddingNotice!),
-              const SizedBox(height: 8),
-            ],
-            if (_error != null) ...[
-              _FormError(key: tripItemFormErrorKey, message: _error!),
-              const SizedBox(height: 8),
-            ],
-            TripPrimaryButton(
-              buttonKey: tripItemSubmitButtonKey,
-              label: widget.item == null ? '${kind.label} 담기' : '고친 내용 저장하기',
-              onPressed: _submit,
+                // 자동으로 채우지 않는다. 다른 항목을 적으려고 연 경우에는 방해가 된다.
+                if (_restorableDraft != null) ...[
+                  _DraftRestoreRow(
+                    title: _restorableDraft!.title.trim(),
+                    onRestore: _restoreDraft,
+                    onDismiss: () {
+                      widget.controller.clearTripItemDraft(
+                        widget.trip.id,
+                        _kind,
+                      );
+                      setState(() => _restorableDraft = null);
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                // 고르고 나서야 종류를 잘못 골랐다는 걸 아는 일이 잦다.
+                TripPickerRow(
+                  rowKey: tripItemKindFieldKey,
+                  label: '종류',
+                  value: kind.label,
+                  placeholder: '종류 고르기',
+                  icon: Icons.unfold_more_rounded,
+                  onTap: _changeKind,
+                ),
+                const SizedBox(height: 10),
+                if (kind.usesRoute) ..._routeFields(),
+                TripTextField(
+                  fieldKey: tripItemTitleFieldKey,
+                  controller: _titleController,
+                  label: kind.usesRoute ? '편명이나 노선' : kind.label,
+                  hint: kind.usesRoute ? _mode.titleHint : kind.titleHint,
+                  maxLength: 80,
+                ),
+                // 언제·몇 시가 제목 바로 다음에 온다. 키보드가 올라오면 sheet 본문이
+                // 300px 안팎으로 줄어, 가장 자주 채우는 칸이 아래에 있으면 항목마다
+                // 키보드를 내리고 스크롤하게 된다.
+                if (kind.usesDateRange) ..._stayFields(),
+                if (kind.usesRoute || kind == TripItemKind.plan)
+                  ..._scheduleFields(),
+                const SizedBox(height: 10),
+                TripTextField(
+                  fieldKey: tripItemNoteFieldKey,
+                  controller: _noteController,
+                  label: '메모',
+                  hint: kind.noteHint,
+                  maxLength: 500,
+                  maxLines: 3,
+                ),
+                if (kind.usesPlace) ..._placeFields(),
+                const SizedBox(height: 10),
+                TripTextField(
+                  fieldKey: tripItemLinkFieldKey,
+                  controller: _linkController,
+                  label: '링크 (선택)',
+                  hint: '예약 페이지나 지도 링크',
+                  maxLength: 500,
+                ),
+                if (kind.usesCheck) ..._assigneeFields(),
+              ],
             ),
-            if (widget.item == null) ...[
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 44,
-                child: OutlinedButton(
-                  key: tripItemKeepAddingButtonKey,
-                  onPressed: _submitAndKeepAdding,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AlagagiColors.sageDeep,
-                    side: const BorderSide(color: AlagagiColors.line),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    textStyle: sans(size: 12.5, weight: FontWeight.w700),
-                  ),
-                  child: const Text('담고 계속 적기'),
-                ),
-              ),
-            ],
-            // 계획과 이동은 타임라인에만 있고, 거기에는 지우기가 없었다.
-            // 담은 것을 지울 길은 종류와 상관없이 항상 있어야 한다.
-            if (widget.item != null && _canDelete) ...[
-              const SizedBox(height: 4),
-              SizedBox(
-                height: 44,
-                child: TextButton.icon(
-                  key: tripItemFormDeleteButtonKey,
-                  onPressed: _confirmDelete,
-                  icon: const Icon(Icons.delete_outline_rounded, size: 16),
-                  label: Text('${_kind.label} 지우기'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFFB35A49),
-                    textStyle: sans(size: 12.5, weight: FontWeight.w700),
-                  ),
-                ),
-              ),
-            ],
-          ],
+          ),
         ),
-      ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 폼이 길어도 담기 결과는 button과 같은 고정 자리에 보인다.
+              // 스크롤 끝에 두면 화면 밖에 그려져 button이 고장난 것처럼 보인다.
+              if (_keepAddingNotice != null) ...[
+                _FormNotice(message: _keepAddingNotice!),
+                const SizedBox(height: 8),
+              ],
+              if (_error != null) ...[
+                _FormError(key: tripItemFormErrorKey, message: _error!),
+                const SizedBox(height: 8),
+              ],
+              TripPrimaryButton(
+                buttonKey: tripItemSubmitButtonKey,
+                label: widget.item == null ? '${kind.label} 담기' : '고친 내용 저장하기',
+                onPressed: _submit,
+              ),
+              if (widget.item == null) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 44,
+                  child: OutlinedButton(
+                    key: tripItemKeepAddingButtonKey,
+                    onPressed: _submitAndKeepAdding,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AlagagiColors.sageDeep,
+                      side: const BorderSide(color: AlagagiColors.line),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      textStyle: sans(size: 12.5, weight: FontWeight.w700),
+                    ),
+                    child: const Text('담고 계속 적기'),
+                  ),
+                ),
+              ],
+              // 계획과 이동은 타임라인에만 있고, 거기에는 지우기가 없었다.
+              // 담은 것을 지울 길은 종류와 상관없이 항상 있어야 한다.
+              if (widget.item != null) ...[
+                const SizedBox(height: 4),
+                SizedBox(
+                  height: 44,
+                  child: TextButton.icon(
+                    key: tripItemFormDeleteButtonKey,
+                    onPressed: _confirmDelete,
+                    icon: const Icon(Icons.delete_outline_rounded, size: 16),
+                    label: Text('${_kind.label} 지우기'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFFB35A49),
+                      textStyle: sans(size: 12.5, weight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ],
     );
   }
-
-  /// 담은 사람만 지울 수 있다. 목록 카드의 지우기와 같은 기준이다.
-  bool get _canDelete =>
-      widget.item?.createdByProfileId == widget.controller.state.me.id;
 
   Future<void> _confirmDelete() async {
     final item = widget.item;

@@ -416,18 +416,6 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
     );
   }
 
-  /// 순서만 쓴다. `updatedAt`도 activity event도 남기지 않는다.
-  /// 순서를 정리한 것뿐인데 상대 홈이 '새로 도착한 것'으로 채워지면 안 된다.
-  @override
-  Future<void> saveTripItemOrder(String spaceId, String itemId, int sortOrder) {
-    return _firestore
-        .collection('spaces')
-        .doc(spaceId)
-        .collection('tripItems')
-        .doc(itemId)
-        .set({'sortOrder': sortOrder}, SetOptions(merge: true));
-  }
-
   @override
   Future<void> deleteTripItem(String spaceId, String itemId) {
     return _firestore

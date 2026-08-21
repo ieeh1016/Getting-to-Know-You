@@ -40,7 +40,6 @@ class TripTimeline extends StatelessWidget {
     required this.anchorKeyFor,
     required this.onTapItem,
     required this.onTapPhoto,
-    required this.onReorder,
     required this.onAddForDay,
     required this.onOpenExternalLink,
     required this.nextItemId,
@@ -61,9 +60,6 @@ class TripTimeline extends StatelessWidget {
   final GlobalKey? Function(TripDay day) anchorKeyFor;
   final ValueChanged<TripItem> onTapItem;
   final ValueChanged<TripPhoto> onTapPhoto;
-
-  /// (dateKey, oldIndex, newIndex)
-  final void Function(String? dateKey, int oldIndex, int newIndex) onReorder;
 
   /// 그 날 자리에서 바로 담기. 날짜를 폼에서 다시 고르지 않게 한다.
   final void Function(String? dateKey) onAddForDay;
@@ -86,9 +82,7 @@ class TripTimeline extends StatelessWidget {
 
   bool get _isEmpty =>
       days.every((day) => day.items.isEmpty) &&
-      days.every(
-        (day) => day.isUndated || staysForNight(day.dateKey).isEmpty,
-      );
+      days.every((day) => day.isUndated || staysForNight(day.dateKey).isEmpty);
 
   @override
   Widget build(BuildContext context) {
@@ -116,12 +110,11 @@ class TripTimeline extends StatelessWidget {
             photos: days[index].isUndated
                 ? const []
                 : photosForDate(days[index].dateKey),
-            isToday: !days[index].isUndated &&
-                days[index].dateKey == todayDateKey,
+            isToday:
+                !days[index].isUndated && days[index].dateKey == todayDateKey,
             anchorKey: anchorKeyFor(days[index]),
             onTapItem: onTapItem,
             onTapPhoto: onTapPhoto,
-            onReorder: onReorder,
             onAddForDay: onAddForDay,
             onOpenExternalLink: onOpenExternalLink,
             nextItemId: nextItemId,
@@ -178,7 +171,6 @@ class _TripTimelineDay extends StatelessWidget {
     required this.anchorKey,
     required this.onTapItem,
     required this.onTapPhoto,
-    required this.onReorder,
     required this.onAddForDay,
     required this.onOpenExternalLink,
     required this.nextItemId,
@@ -196,7 +188,6 @@ class _TripTimelineDay extends StatelessWidget {
   final GlobalKey? anchorKey;
   final ValueChanged<TripItem> onTapItem;
   final ValueChanged<TripPhoto> onTapPhoto;
-  final void Function(String? dateKey, int oldIndex, int newIndex) onReorder;
   final void Function(String? dateKey) onAddForDay;
   final ValueChanged<String> onOpenExternalLink;
   final String? nextItemId;
@@ -205,7 +196,8 @@ class _TripTimelineDay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isBlank = day.items.isEmpty &&
+    final isBlank =
+        day.items.isEmpty &&
         stays.isEmpty &&
         checkOuts.isEmpty &&
         photos.isEmpty;
@@ -241,30 +233,20 @@ class _TripTimelineDay extends StatelessWidget {
             onTap: () => onTapItem(stay),
             onOpenExternalLink: onOpenExternalLink,
           ),
-        if (day.items.isNotEmpty)
-          ReorderableListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.zero,
-            buildDefaultDragHandles: false,
-            itemCount: day.items.length,
-            // onReorderItem은 제거된 자리를 이미 보정한 index를 준다.
-            onReorderItem: (oldIndex, newIndex) =>
-                onReorder(day.isUndated ? null : day.dateKey, oldIndex, newIndex),
-            itemBuilder: (context, index) => _TripTimelineEntry(
-              key: ValueKey(day.items[index].id),
-              index: index,
-              item: day.items[index],
-              place: placeFor(day.items[index]),
-              // 아래에 담기 줄이 늘 붙으므로 여기서 rail을 끊으면 담기 줄이
-              // 세로선 밖에 떠 보인다. 종단은 담기 줄이 그린다.
-              isLastInDay: false,
-              onTap: () => onTapItem(day.items[index]),
-                onOpenExternalLink: onOpenExternalLink,
-              isNext: day.items[index].id == nextItemId,
-              showDoneToggle: showDoneToggle,
-              onToggleDone: onToggleDone,
-            ),
+        // 순서는 시각이 정한다. 끌어서 바꾸는 길은 두지 않는다.
+        for (final item in day.items)
+          _TripTimelineEntry(
+            key: ValueKey(item.id),
+            item: item,
+            place: placeFor(item),
+            // 아래에 담기 줄이 늘 붙으므로 여기서 rail을 끊으면 담기 줄이
+            // 세로선 밖에 떠 보인다. 종단은 담기 줄이 그린다.
+            isLastInDay: false,
+            onTap: () => onTapItem(item),
+            onOpenExternalLink: onOpenExternalLink,
+            isNext: item.id == nextItemId,
+            showDoneToggle: showDoneToggle,
+            onToggleDone: onToggleDone,
           ),
         if (photos.isNotEmpty) ...[
           _TripDayPhotoStrip(photos: photos, onTapPhoto: onTapPhoto),
@@ -415,89 +397,94 @@ class _TripStayBand extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.bed_outlined,
-                size: 15,
-                color: AlagagiColors.sageDeep,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                _leadLabel,
-                style: sans(
-                  size: 10.8,
-                  weight: FontWeight.w800,
-                  color: AlagagiColors.sageDeep,
-                  letterSpacing: 0.6,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  stay.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: sans(size: 12.5, weight: FontWeight.w700),
-                ),
-              ),
-              if (time != null) ...[
-                const SizedBox(width: 6),
-                Text(
-                  time,
-                  style: sans(
-                    size: 11.5,
-                    weight: FontWeight.w800,
+              Row(
+                children: [
+                  const Icon(
+                    Icons.bed_outlined,
+                    size: 15,
                     color: AlagagiColors.sageDeep,
                   ),
-                ),
-              ] else if (nights > 0 && mode == _StayBandMode.staying) ...[
-                const SizedBox(width: 6),
-                Text(
-                  '$nights박',
-                  style: sans(size: 11, color: AlagagiColors.muted),
-                ),
-              ],
-            ],
-          ),
-          // 주소를 같은 줄에 끼우면 390px에서 제목이 밀린다. 아래 줄로 푼다.
-          if (place != null) ...[
-            const SizedBox(height: 7),
-            if (place!.address.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(left: 23, bottom: 6),
-                child: Text(
-                  place!.address,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: sans(size: 12, height: 1.45, color: AlagagiColors.ink),
-                ),
-              ),
-            Padding(
-              padding: const EdgeInsets.only(left: 21),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: SizedBox(
-                  height: 32,
-                  child: OutlinedButton.icon(
-                    key: tripStayMapButtonKey(stay.id),
-                    onPressed: () => onOpenExternalLink(place!.googleMapsUrl),
-                    icon: const Icon(Icons.map_outlined, size: 13),
-                    label: const Text('지도'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AlagagiColors.sageDeep,
-                      side: const BorderSide(color: Color(0x339A7A2A)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999),
+                  const SizedBox(width: 8),
+                  Text(
+                    _leadLabel,
+                    style: sans(
+                      size: 10.8,
+                      weight: FontWeight.w800,
+                      color: AlagagiColors.sageDeep,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      stay.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: sans(size: 12.5, weight: FontWeight.w700),
+                    ),
+                  ),
+                  if (time != null) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      time,
+                      style: sans(
+                        size: 11.5,
+                        weight: FontWeight.w800,
+                        color: AlagagiColors.sageDeep,
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 11),
-                      textStyle: sans(size: 11, weight: FontWeight.w800),
+                    ),
+                  ] else if (nights > 0 && mode == _StayBandMode.staying) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      '$nights박',
+                      style: sans(size: 11, color: AlagagiColors.muted),
+                    ),
+                  ],
+                ],
+              ),
+              // 주소를 같은 줄에 끼우면 390px에서 제목이 밀린다. 아래 줄로 푼다.
+              if (place != null) ...[
+                const SizedBox(height: 7),
+                if (place!.address.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 23, bottom: 6),
+                    child: Text(
+                      place!.address,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: sans(
+                        size: 12,
+                        height: 1.45,
+                        color: AlagagiColors.ink,
+                      ),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 21),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      height: 32,
+                      child: OutlinedButton.icon(
+                        key: tripStayMapButtonKey(stay.id),
+                        onPressed: () =>
+                            onOpenExternalLink(place!.googleMapsUrl),
+                        icon: const Icon(Icons.map_outlined, size: 13),
+                        label: const Text('지도'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AlagagiColors.sageDeep,
+                          side: const BorderSide(color: Color(0x339A7A2A)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 11),
+                          textStyle: sans(size: 11, weight: FontWeight.w800),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-          ],
+              ],
             ],
           ),
         ),
@@ -607,7 +594,6 @@ class _TripDayHeader extends StatelessWidget {
 class _TripTimelineEntry extends StatelessWidget {
   const _TripTimelineEntry({
     super.key,
-    required this.index,
     required this.item,
     required this.place,
     required this.isLastInDay,
@@ -618,7 +604,6 @@ class _TripTimelineEntry extends StatelessWidget {
     required this.onToggleDone,
   });
 
-  final int index;
   final TripItem item;
   final SharedPlace? place;
   final bool isLastInDay;
@@ -658,9 +643,13 @@ class _TripTimelineEntry extends StatelessWidget {
                   margin: const EdgeInsets.only(top: 15),
                   decoration: BoxDecoration(
                     // 지금 다음에 오는 것만 점을 채운다.
-                    color: isNext ? AlagagiColors.sageDeep : AlagagiColors.paper,
+                    color: isNext
+                        ? AlagagiColors.sageDeep
+                        : AlagagiColors.paper,
                     border: Border.all(
-                      color: isNext ? AlagagiColors.sageDeep : AlagagiColors.sky,
+                      color: isNext
+                          ? AlagagiColors.sageDeep
+                          : AlagagiColors.sky,
                       width: 2,
                     ),
                     borderRadius: BorderRadius.circular(999),
@@ -808,21 +797,6 @@ class _TripTimelineEntry extends StatelessWidget {
                           ],
                         ),
                       ),
-                      // 시각이 같은 항목은 시각만으로 순서가 정해지지 않는다.
-                      // 길게 눌러 끌면 그 자리를 굳힌다.
-                      ReorderableDragStartListener(
-                        key: tripItemDragHandleKey(item.id),
-                        index: index,
-                        child: const SizedBox(
-                          width: 34,
-                          height: 44,
-                          child: Icon(
-                            Icons.drag_indicator_rounded,
-                            size: 17,
-                            color: AlagagiColors.muted,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -859,9 +833,7 @@ class _TripEntryMeta extends StatelessWidget {
           style: sans(
             size: 11.5,
             weight: FontWeight.w800,
-            color: start == null
-                ? AlagagiColors.muted
-                : AlagagiColors.sageDeep,
+            color: start == null ? AlagagiColors.muted : AlagagiColors.sageDeep,
           ),
         ),
         const SizedBox(width: 7),
@@ -974,7 +946,11 @@ class _TripPlaceLine extends StatelessWidget {
                 place.address,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: sans(size: 11.5, height: 1.4, color: AlagagiColors.muted),
+                style: sans(
+                  size: 11.5,
+                  height: 1.4,
+                  color: AlagagiColors.muted,
+                ),
               ),
             ),
         ],

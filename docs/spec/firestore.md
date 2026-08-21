@@ -33,7 +33,7 @@
 - `spaces/{spaceId}/scheduleEntries/{dateKey_uid}`
 - `spaces/{spaceId}/sharedPlaces/{placeId}`
 - `spaces/{spaceId}/trips/{tripId}`
-- `spaces/{spaceId}/tripItems/{itemId}`: 순서만 바뀔 때는 `sortOrder` 한 필드만 merge로 쓰고 `updatedAt`을 갱신하지 않는다. 순서 정리는 상대에게 알릴 내용이 아니다. 규칙은 모든 항목 update에 `updatedAt == request.time`을 요구하므로, 바뀌는 키가 `sortOrder` 하나뿐인 update를 따로 허용한다. `cost`, `paidByProfileId`, `wishId`와 여행 문서의 `currencyLabel`은 더 이상 쓰지 않는다. 이미 저장된 문서에 남아 있어 규칙의 허용 키 목록에서 빼면 그 문서들이 수정되지 않으므로, 키는 남기고 값이 있을 때만 검사한다.
+- `spaces/{spaceId}/tripItems/{itemId}`: `cost`, `paidByProfileId`, `wishId`와 여행 문서의 `currencyLabel`은 더 이상 쓰지 않는다. 이미 저장된 문서에 남아 있어 규칙의 허용 키 목록에서 빼면 그 문서들이 수정되지 않으므로, 키는 남기고 값이 있을 때만 검사한다.
 - `spaces/{spaceId}/tripPhotos/{photoId}`: 갤러리 사진을 줄여 담는 data URI. Cloud Storage 없이 Spark plan 안에서 다루기 위한 경로라 문서당 크기 상한이 있다. session 로딩에서 읽지 않고, 여행 **하나를 열 때 `tripId`로 걸러 그 여행 것만** 읽는다. 문서가 커서 매 접속마다 전부 받으면 전송량이 크게 든다.
 - `spaces/{spaceId}/diagnosticEvents/{eventId}`
 - `spaces/{spaceId}/curiosityCards/{cardId}`
@@ -52,7 +52,8 @@
 
 ## 삭제 권한
 
-- 여행 하위의 `tripItems`, `tripPhotos`는 만든 사람과 **부모 여행을 만든 사람**이 지울 수 있다. 여행을 지울 때 상대가 담은 것을 못 지우면 사라진 여행의 문서만 영원히 남는다. 자식을 먼저 지우고 여행을 마지막에 지운다. 부모를 먼저 지우면 규칙이 부모를 못 찾아 거절한다.
+- 여행과 그 하위의 `tripItems`, `tripPhotos`는 **space member 누구든** 지울 수 있다. 둘이 같이 채우는 공간이라 누가 담았는지로 가르면 상대가 담은 것을 정리할 길이 없고, 여행을 지울 때 자식 문서만 남는다. 되돌릴 수 없는 것은 규칙이 아니라 앱의 확인 sheet로 막는다.
+- 사진 문서의 `caption`만 올린 사람이 아니면 바꿀 수 없다. 남의 말을 고치는 것과 정리하는 것은 다르다. `dateKey`로 묶는 것은 둘 다 한다.
 - 그 밖의 collection은 만든 사람만 지운다.
 
 ## Rules Maintenance

@@ -169,7 +169,6 @@ class _TripPhotoViewerState extends State<TripPhotoViewer> {
                 _ViewerTopBar(
                   position: index + 1,
                   total: photos.length,
-                  canDelete: isMine,
                   onDelete: () => _deleteCurrent(photo),
                   onClose: () => Navigator.of(context).pop(),
                 ),
@@ -312,14 +311,12 @@ class _ViewerTopBar extends StatelessWidget {
   const _ViewerTopBar({
     required this.position,
     required this.total,
-    required this.canDelete,
     required this.onDelete,
     required this.onClose,
   });
 
   final int position;
   final int total;
-  final bool canDelete;
   final VoidCallback onDelete;
   final VoidCallback onClose;
 
@@ -347,15 +344,12 @@ class _ViewerTopBar extends StatelessWidget {
               ),
             ),
           ),
-          if (canDelete)
-            _ViewerIconButton(
-              buttonKey: tripPhotoViewerDeleteButtonKey,
-              icon: Icons.delete_outline_rounded,
-              tooltip: '지우기',
-              onTap: onDelete,
-            )
-          else
-            const SizedBox(width: 38),
+          _ViewerIconButton(
+            buttonKey: tripPhotoViewerDeleteButtonKey,
+            icon: Icons.delete_outline_rounded,
+            tooltip: '지우기',
+            onTap: onDelete,
+          ),
         ],
       ),
     );

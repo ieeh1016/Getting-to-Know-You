@@ -55,7 +55,7 @@ void main() {
   });
 
   test('a stuck write keeps the retry banner visible on later saves', () async {
-    final repository = FakeTripRepository(failOrderWrites: true);
+    final repository = FakeTripRepository(failItemWrites: true);
     final controller = buildController(repository);
 
     controller.saveTrip(
@@ -65,29 +65,22 @@ void main() {
       endDateKey: '2026-09-14',
     );
     final tripId = controller.trips.single.id;
-    for (final title in ['아침', '점심', '저녁']) {
-      controller.saveTripItem(
-        tripId: tripId,
-        kind: TripItemKind.plan,
-        title: title,
-        dateKey: '2026-09-12',
-      );
-    }
-    await Future<void>.delayed(Duration.zero);
-
-    // 순서 저장이 막히면 실패가 큐에 남는다.
-    controller.reorderTripDayItems(tripId, '2026-09-12', 2, 0);
+    // 항목 저장이 막히면 실패가 큐에 남는다.
+    controller.saveTripItem(
+      tripId: tripId,
+      kind: TripItemKind.plan,
+      title: '저녁',
+      dateKey: '2026-09-12',
+    );
     await Future<void>.delayed(Duration.zero);
     expect(controller.hasFailedTripWrites, isTrue);
     expect(controller.state.tripSaveError, isNotNull);
 
-    // 그 뒤 저장이 성공해도 화면이 조용해지면 안 된다. 다시 시도할 길이
-    // 사라지고 사용자는 저장이 안 된 줄 알게 된다.
-    controller.saveTripItem(
+    // 그 뒤 다른 저장이 성공해도 화면이 조용해지면 안 된다. 다시 시도할
+    // 길이 사라지고 사용자는 저장이 안 된 줄 알게 된다.
+    controller.saveTripPhoto(
       tripId: tripId,
-      kind: TripItemKind.plan,
-      title: '야식',
-      dateKey: '2026-09-12',
+      imageDataUrl: 'data:image/jpeg;base64,AAAA',
     );
     await Future<void>.delayed(Duration.zero);
 

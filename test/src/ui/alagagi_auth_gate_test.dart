@@ -621,12 +621,6 @@ class FakeAlagagiDataRepository implements AlagagiDataRepository {
   @override
   Future<void> saveTripItem(String spaceId, TripItem item) async {}
 
-  @override
-  Future<void> saveTripItemOrder(
-    String spaceId,
-    String itemId,
-    int sortOrder,
-  ) async {}
 
   @override
   Future<void> deleteTripItem(String spaceId, String itemId) async {}

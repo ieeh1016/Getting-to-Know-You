@@ -313,7 +313,6 @@ const tripStatusNudgeConfirmButtonKey = Key('trip-status-nudge-confirm');
 const homeUpcomingTripCardKey = Key('home-upcoming-trip-card');
 const homeTripTodayLineKey = Key('home-trip-today-line');
 Key tripTodayMarkerKey(String dateKey) => Key('trip-today-marker-$dateKey');
-Key tripItemDragHandleKey(String itemId) => Key('trip-item-drag-$itemId');
 Key tripItemAssigneeButtonKey(String itemId, String profileId) =>
     Key('trip-item-assignee-$itemId-$profileId');
 Key tripPhotoDayButtonKey(String dateKey) => Key('trip-photo-day-$dateKey');
@@ -361,6 +360,8 @@ Key tripStatusButtonKey(String tripId, String status) =>
 Key tripKindTabKey(String kind) => Key('trip-kind-tab-$kind');
 Key tripItemCardKey(String itemId) => Key('trip-item-card-$itemId');
 Key tripItemEditButtonKey(String itemId) => Key('trip-item-edit-$itemId');
+Key tripItemCardDeleteButtonKey(String itemId) =>
+    Key('trip-item-card-delete-$itemId');
 Key tripItemCheckButtonKey(String itemId) => Key('trip-item-check-$itemId');
 Key tripItemDateButtonKey(String dateKey) => Key('trip-item-date-$dateKey');
 

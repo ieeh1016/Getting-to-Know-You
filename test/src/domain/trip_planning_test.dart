@@ -600,7 +600,7 @@ void main() {
       expect(item.timeLabel, isNull);
     });
 
-    test('only the uploader can caption a photo', () {
+    test('captions stay with the uploader, tidying is shared', () {
       final owner = buildController();
       owner.saveTrip(
         title: '가을 제주',
@@ -642,8 +642,12 @@ void main() {
       );
 
       expect(partner.updateTripPhotoCaption(photo.id, '내가 고침'), isNotNull);
-      expect(partner.deleteTripPhoto(photo.id), isFalse);
       expect(partner.tripPhotosFor(tripId).single.caption, '숙소 앞에서');
+
+      // 지우기와 날짜 묶기는 둘이 같이 하는 정리라 상대도 할 수 있다.
+      expect(partner.setTripPhotoDateKey(photo.id, '2026-09-13'), isNull);
+      expect(partner.deleteTripPhoto(photo.id), isTrue);
+      expect(partner.tripPhotosFor(tripId), isEmpty);
     });
 
     test('photo caption keeps the documented limit', () {
@@ -780,39 +784,6 @@ void main() {
       expect(
         controller.tripsWithStatus(TripStatus.planning).map((t) => t.title),
         ['초가을', '늦가을'],
-      );
-    });
-
-    test('same-time items keep the order they were dragged into', () {
-      final controller = buildController();
-      controller.saveTrip(
-        title: '가을 제주',
-        destination: '제주도',
-        startDateKey: '2026-09-12',
-        endDateKey: '2026-09-13',
-      );
-      final tripId = controller.trips.single.id;
-      for (final title in ['가', '나', '다']) {
-        controller.saveTripItem(
-          tripId: tripId,
-          kind: TripItemKind.plan,
-          title: title,
-          dateKey: '2026-09-12',
-          timeLabel: '09:00',
-        );
-      }
-
-      // 시각이 같으면 담은 순서를 따른다.
-      expect(
-        controller.tripTimelineDays(tripId).first.items.map((i) => i.title),
-        ['가', '나', '다'],
-      );
-
-      controller.reorderTripDayItems(tripId, '2026-09-12', 2, 0);
-
-      expect(
-        controller.tripTimelineDays(tripId).first.items.map((i) => i.title),
-        ['다', '가', '나'],
       );
     });
 
@@ -1034,20 +1005,54 @@ void main() {
       );
     });
 
-    test('only the creator can delete a trip or an item', () async {
-      final controller = buildController();
-      controller.saveTrip(
+    test('either of us can delete anything inside a shared trip', () async {
+      final owner = buildController();
+      owner.saveTrip(
         title: '가을 제주',
         destination: '제주도',
         startDateKey: '2026-09-12',
         endDateKey: '2026-09-14',
       );
-      final tripId = controller.trips.single.id;
+      final tripId = owner.trips.single.id;
+      owner.saveTripItem(
+        tripId: tripId,
+        kind: TripItemKind.plan,
+        title: '성산일출봉',
+        dateKey: '2026-09-12',
+      );
+      final itemId = owner.tripItemsFor(tripId).single.id;
 
-      expect(await controller.deleteTrip('missing_trip'), isFalse);
-      expect(controller.deleteTripItem('missing_item'), isFalse);
-      expect(await controller.deleteTrip(tripId), isTrue);
-      expect(controller.trips, isEmpty);
+      expect(await owner.deleteTrip('missing_trip'), isFalse);
+      expect(owner.deleteTripItem('missing_item'), isFalse);
+
+      // 상대가 담은 것도 정리할 수 있어야 한다. 누가 담았는지로 가르면
+      // 지우기 button이 어떤 줄에만 보여 왜 다른지 알 수 없다.
+      final partner = AlagagiController.forSession(
+        AlagagiSession(
+          spaceId: 'main',
+          me: const AppProfile(
+            id: 'minyoungUid',
+            nickname: '민영',
+            avatar: '🪻',
+            isMe: true,
+          ),
+          partner: const AppProfile(
+            id: 'youngwooUid',
+            nickname: '영우',
+            avatar: '🌿',
+            isMe: false,
+          ),
+          data: AlagagiSpaceData(
+            trips: owner.trips,
+            tripItems: owner.tripItemsFor(tripId),
+          ),
+        ),
+      );
+
+      expect(partner.deleteTripItem(itemId), isTrue);
+      expect(partner.tripItemsFor(tripId), isEmpty);
+      expect(await partner.deleteTrip(tripId), isTrue);
+      expect(partner.trips, isEmpty);
     });
 
     test('status change is explicit and does not follow the calendar', () {
@@ -1178,40 +1183,6 @@ void main() {
       // 다녀온 여행은 앞으로의 달력을 더 막지 않는다.
       controller.setTripStatus(tripId, TripStatus.done);
       expect(controller.tripCoveringDate('2026-09-13'), isNull);
-    });
-
-    test('reordering a day does not stamp the items as updated', () {
-      final controller = buildController();
-      controller.saveTrip(
-        title: '가을 제주',
-        destination: '제주도',
-        startDateKey: '2026-09-12',
-        endDateKey: '2026-09-14',
-      );
-      final tripId = controller.lastSavedTripId!;
-      for (final title in ['아침', '점심', '저녁']) {
-        controller.saveTripItem(
-          tripId: tripId,
-          kind: TripItemKind.plan,
-          title: title,
-          dateKey: '2026-09-12',
-        );
-      }
-      final before = {
-        for (final item in controller.tripItemsFor(tripId))
-          item.id: item.updatedAt,
-      };
-
-      controller.reorderTripDayItems(tripId, '2026-09-12', 2, 0);
-
-      // 순서만 바꾼 것은 상대 홈에 '새로 도착한 것'을 만들지 않는다.
-      for (final item in controller.tripItemsFor(tripId)) {
-        expect(item.updatedAt, before[item.id]);
-      }
-      expect(
-        controller.tripItemsFor(tripId).map((item) => item.title).first,
-        '저녁',
-      );
     });
 
     test('the next item today follows the clock, not the first row', () {

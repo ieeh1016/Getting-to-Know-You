@@ -206,9 +206,7 @@ class _TripScreenState extends State<TripScreen> {
     }
     setState(() {
       _tab = TripDetailTab.packing;
-      _packingNotice = copied == 0
-          ? '이미 다 담겨 있어요.'
-          : '$copied개 가져왔어요.';
+      _packingNotice = copied == 0 ? '이미 다 담겨 있어요.' : '$copied개 가져왔어요.';
     });
   }
 
@@ -417,10 +415,8 @@ class _TripScreenState extends State<TripScreen> {
       if (widget.controller.tripNeedsStatusNudge(trip)) ...[
         const SizedBox(height: 12),
         _TripStatusNudge(
-          onConfirm: () => widget.controller.setTripStatus(
-            trip.id,
-            TripStatus.done,
-          ),
+          onConfirm: () =>
+              widget.controller.setTripStatus(trip.id, TripStatus.done),
         ),
       ],
       const SizedBox(height: 10),
@@ -486,10 +482,7 @@ class _TripScreenState extends State<TripScreen> {
   }
 
   Future<void> _openTripActions(Trip trip) async {
-    final action = await showTripActionsSheet(
-      context,
-      canDelete: trip.createdByProfileId == widget.controller.state.me.id,
-    );
+    final action = await showTripActionsSheet(context);
     if (action == null || !mounted) {
       return;
     }
@@ -541,8 +534,7 @@ class _TripScreenState extends State<TripScreen> {
         photosForDate: (dateKey) =>
             widget.controller.tripPhotosForDate(trip.id, dateKey),
         todayDateKey: widget.controller.tripTodayDateKey,
-        anchorKeyFor: (day) =>
-            day.isUndated ? null : _anchorFor(day.dateKey),
+        anchorKeyFor: (day) => day.isUndated ? null : _anchorFor(day.dateKey),
         onTapItem: (item) => _editItem(trip, item),
         onTapPhoto: (photo) => showTripPhotoViewer(
           context,
@@ -571,14 +563,6 @@ class _TripScreenState extends State<TripScreen> {
         photosLoaded: widget.controller.tripPhotosLoadedFor(trip.id),
         onLoadPhotos: () =>
             unawaited(widget.controller.ensureTripPhotosLoaded(trip.id)),
-        onReorder: (dateKey, oldIndex, newIndex) => setState(() {
-          widget.controller.reorderTripDayItems(
-            trip.id,
-            dateKey,
-            oldIndex,
-            newIndex,
-          );
-        }),
       ),
     ];
   }
@@ -651,9 +635,7 @@ class _TripScreenState extends State<TripScreen> {
     final filter = showsFilter ? _packingFilter : null;
     final visible = switch (filter) {
       null => items,
-      _kUncheckedPackingFilter => items
-          .where((item) => !item.checked)
-          .toList(),
+      _kUncheckedPackingFilter => items.where((item) => !item.checked).toList(),
       _ => items.where((item) => item.assigneeProfileId == filter).toList(),
     };
     final checked = visible.where((item) => item.checked).length;
@@ -751,22 +733,21 @@ class _TripScreenState extends State<TripScreen> {
     final loaded = widget.controller.tripPhotosFor(trip.id);
     final photos = _photoNewestFirst
         ? loaded
-        : (loaded.toList()
-            ..sort((first, second) {
-              // 날짜를 붙인 사진을 먼저, 그 안에서 이른 날짜부터 본다.
-              final firstDate = first.dateKey;
-              final secondDate = second.dateKey;
-              if (firstDate == secondDate) {
-                return 0;
-              }
-              if (firstDate == null) {
-                return 1;
-              }
-              if (secondDate == null) {
-                return -1;
-              }
-              return firstDate.compareTo(secondDate);
-            }));
+        : (loaded.toList()..sort((first, second) {
+            // 날짜를 붙인 사진을 먼저, 그 안에서 이른 날짜부터 본다.
+            final firstDate = first.dateKey;
+            final secondDate = second.dateKey;
+            if (firstDate == secondDate) {
+              return 0;
+            }
+            if (firstDate == null) {
+              return 1;
+            }
+            if (secondDate == null) {
+              return -1;
+            }
+            return firstDate.compareTo(secondDate);
+          }));
     final supported = _photoPicker.isSupported;
     final filter = _photoDayFilter;
     final visible = filter == null
@@ -782,9 +763,7 @@ class _TripScreenState extends State<TripScreen> {
         children: [
           Expanded(
             child: Text(
-              photos.isEmpty
-                  ? '둘이 남긴 여행 사진'
-                  : '둘이 남긴 여행 사진 ${photos.length}장',
+              photos.isEmpty ? '둘이 남긴 여행 사진' : '둘이 남긴 여행 사진 ${photos.length}장',
               style: sans(size: 13, weight: FontWeight.w800),
             ),
           ),
@@ -849,8 +828,7 @@ class _TripScreenState extends State<TripScreen> {
             key: tripPhotoSortButtonKey,
             label: _photoNewestFirst ? '최근 담은 순' : '여행 날짜 순',
             selected: !_photoNewestFirst,
-            onTap: () =>
-                setState(() => _photoNewestFirst = !_photoNewestFirst),
+            onTap: () => setState(() => _photoNewestFirst = !_photoNewestFirst),
           ),
         ),
         const SizedBox(height: 12),
@@ -874,9 +852,7 @@ class _TripScreenState extends State<TripScreen> {
               widget.controller.ensureTripPhotosLoaded(trip.id, force: true),
         )
       else if (photos.isEmpty)
-        const AlagagiEmptyStateCard(
-          text: '아직 담은 사진이 없어요. 다녀와서 천천히 채워도 괜찮아요.',
-        )
+        const AlagagiEmptyStateCard(text: '아직 담은 사진이 없어요. 다녀와서 천천히 채워도 괜찮아요.')
       else
         _TripPhotoMosaic(
           photos: visible,
@@ -912,10 +888,7 @@ class _PhotoLoadFailed extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              '사진을 불러오지 못했어요.',
-              style: sans(size: 12.5, height: 1.5),
-            ),
+            child: Text('사진을 불러오지 못했어요.', style: sans(size: 12.5, height: 1.5)),
           ),
           SizedBox(
             height: 44,
@@ -971,9 +944,7 @@ class _TripSaveStatus extends StatelessWidget {
             Icon(
               failed ? Icons.error_outline_rounded : Icons.check_circle_outline,
               size: 16,
-              color: failed
-                  ? const Color(0xFFB35A49)
-                  : AlagagiColors.sageDeep,
+              color: failed ? const Color(0xFFB35A49) : AlagagiColors.sageDeep,
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -982,9 +953,7 @@ class _TripSaveStatus extends StatelessWidget {
                 style: sans(
                   size: 12.3,
                   height: 1.5,
-                  color: failed
-                      ? const Color(0xFFB35A49)
-                      : AlagagiColors.ink,
+                  color: failed ? const Color(0xFFB35A49) : AlagagiColors.ink,
                 ),
               ),
             ),
@@ -1321,7 +1290,12 @@ class _TripDetailHeader extends StatelessWidget {
           Text(
             trip.title,
             key: tripDetailTitleKey,
-            style: serif(context, size: 19, weight: FontWeight.w800, height: 1.35),
+            style: serif(
+              context,
+              size: 19,
+              weight: FontWeight.w800,
+              height: 1.35,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
@@ -1839,33 +1813,34 @@ class _TripPhotoTile extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (mine)
-                Positioned(
-                  top: 5,
-                  right: 5,
-                  child: InkWell(
-                    key: tripPhotoDayTagButtonKey(photo.id),
-                    onTap: onTagDay,
-                    borderRadius: BorderRadius.circular(999),
-                    child: Container(
-                      constraints: const BoxConstraints(minHeight: 28),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.42),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 9),
-                      child: Text(
-                        photo.dateKey == null ? '날짜 정하기' : photo.dateKey!,
-                        style: sans(
-                          size: 9.5,
-                          weight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
+              // 날짜로 묶는 것은 둘이 같이 정리하는 일이다. 올린 사람만
+              // 할 수 있으면 상대가 담은 사진은 영영 미분류로 남는다.
+              Positioned(
+                top: 5,
+                right: 5,
+                child: InkWell(
+                  key: tripPhotoDayTagButtonKey(photo.id),
+                  onTap: onTagDay,
+                  borderRadius: BorderRadius.circular(999),
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 28),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.42),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 9),
+                    child: Text(
+                      photo.dateKey == null ? '날짜 정하기' : photo.dateKey!,
+                      style: sans(
+                        size: 9.5,
+                        weight: FontWeight.w700,
+                        color: Colors.white,
                       ),
                     ),
                   ),
                 ),
+              ),
             ],
           ),
         ),
@@ -2194,7 +2169,6 @@ class _TripItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mine = item.createdByProfileId == controller.state.me.id;
     final schedule = _itemScheduleLabel(item);
 
     final place = controller.placeForTripItem(item);
@@ -2206,205 +2180,206 @@ class _TripItemCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-      Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (item.kind.usesCheck)
-            SizedBox(
-              width: 44,
-              height: 44,
-              child: InkWell(
-                key: tripItemCheckButtonKey(item.id),
-                onTap: () => controller.toggleTripItemCheck(item.id),
-                borderRadius: BorderRadius.circular(999),
-                child: Icon(
-                  item.checked
-                      ? Icons.check_circle_rounded
-                      : Icons.circle_outlined,
-                  size: 21,
-                  color: item.checked
-                      ? AlagagiColors.sageDeep
-                      : AlagagiColors.muted,
-                ),
-              ),
-            )
-          else ...[
-            AlagagiSymbolMark(
-              icon: item.transportMode == null
-                  ? tripItemKindIcon(item.kind)
-                  : tripTransportModeIcon(item.transportMode!),
-              size: 30,
-              iconSize: 15,
-              tone: AlagagiColors.skyPanel,
-              iconColor: AlagagiColors.sageDeep,
-              radius: 11,
-            ),
-            const SizedBox(width: 10),
-          ],
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    style: sans(
-                      size: 13.5,
-                      weight: FontWeight.w700,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (item.kind.usesCheck)
+                SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: InkWell(
+                    key: tripItemCheckButtonKey(item.id),
+                    onTap: () => controller.toggleTripItemCheck(item.id),
+                    borderRadius: BorderRadius.circular(999),
+                    child: Icon(
+                      item.checked
+                          ? Icons.check_circle_rounded
+                          : Icons.circle_outlined,
+                      size: 21,
                       color: item.checked
-                          ? AlagagiColors.muted
-                          : AlagagiColors.ink,
+                          ? AlagagiColors.sageDeep
+                          : AlagagiColors.muted,
                     ),
                   ),
-                  if (schedule != null) ...[
-                    const SizedBox(height: 5),
-                    Text(
-                      schedule,
-                      style: sans(
-                        size: 11.5,
-                        weight: FontWeight.w700,
-                        color: AlagagiColors.sageDeep,
-                      ),
-                    ),
-                  ],
-                  if (item.kind.usesRoute &&
-                      (item.fromLabel != null || item.toLabel != null)) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      '${item.fromLabel ?? '출발지 미정'} → ${item.toLabel ?? '도착지 미정'}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: sans(size: 12, color: AlagagiColors.muted),
-                    ),
-                  ],
-                  if (place != null) ...[
-                    const SizedBox(height: 5),
-                    Row(
-                      children: [
-                        Icon(
-                          placeCategoryIcon(place.category),
-                          size: 13,
-                          color: AlagagiColors.sageDeep,
+                )
+              else ...[
+                AlagagiSymbolMark(
+                  icon: item.transportMode == null
+                      ? tripItemKindIcon(item.kind)
+                      : tripTransportModeIcon(item.transportMode!),
+                  size: 30,
+                  iconSize: 15,
+                  tone: AlagagiColors.skyPanel,
+                  iconColor: AlagagiColors.sageDeep,
+                  radius: 11,
+                ),
+                const SizedBox(width: 10),
+              ],
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        style: sans(
+                          size: 13.5,
+                          weight: FontWeight.w700,
+                          color: item.checked
+                              ? AlagagiColors.muted
+                              : AlagagiColors.ink,
                         ),
-                        const SizedBox(width: 5),
-                        Flexible(
-                          child: Text(
-                            place.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: sans(size: 12, weight: FontWeight.w700),
+                      ),
+                      if (schedule != null) ...[
+                        const SizedBox(height: 5),
+                        Text(
+                          schedule,
+                          style: sans(
+                            size: 11.5,
+                            weight: FontWeight.w700,
+                            color: AlagagiColors.sageDeep,
                           ),
                         ),
                       ],
-                    ),
-                    // 택시에서 보여줄 주소가 여행 안에 없으면 장소 보드로
-                    // 나갔다 와야 한다.
-                    if (place.address.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        place.address,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: sans(
-                          size: 12.5,
-                          height: 1.45,
-                          color: AlagagiColors.ink,
+                      if (item.kind.usesRoute &&
+                          (item.fromLabel != null || item.toLabel != null)) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '${item.fromLabel ?? '출발지 미정'} → ${item.toLabel ?? '도착지 미정'}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: sans(size: 12, color: AlagagiColors.muted),
                         ),
-                      ),
+                      ],
+                      if (place != null) ...[
+                        const SizedBox(height: 5),
+                        Row(
+                          children: [
+                            Icon(
+                              placeCategoryIcon(place.category),
+                              size: 13,
+                              color: AlagagiColors.sageDeep,
+                            ),
+                            const SizedBox(width: 5),
+                            Flexible(
+                              child: Text(
+                                place.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: sans(size: 12, weight: FontWeight.w700),
+                              ),
+                            ),
+                          ],
+                        ),
+                        // 택시에서 보여줄 주소가 여행 안에 없으면 장소 보드로
+                        // 나갔다 와야 한다.
+                        if (place.address.isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            place.address,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: sans(
+                              size: 12.5,
+                              height: 1.45,
+                              color: AlagagiColors.ink,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 6),
+                        _TripLinkPill(
+                          buttonKey: tripPlaceMapButtonKey(item.id),
+                          icon: Icons.map_outlined,
+                          label: '지도',
+                          onPressed: () =>
+                              onOpenExternalLink(place.googleMapsUrl),
+                        ),
+                      ],
+                      if (item.note.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          item.note,
+                          // 500자 메모가 접히지 않으면 카드 하나가 화면을 다 먹는다.
+                          maxLines: showsReadableCue(item.note) ? 2 : null,
+                          overflow: showsReadableCue(item.note)
+                              ? TextOverflow.ellipsis
+                              : null,
+                          style: sans(
+                            size: 12.5,
+                            height: 1.6,
+                            color: AlagagiColors.muted,
+                          ),
+                        ),
+                        if (showsReadableCue(item.note)) ...[
+                          const SizedBox(height: 6),
+                          InkWell(
+                            key: tripItemNoteCueKey(item.id),
+                            onTap: () => showReadableDetailSheet(
+                              context,
+                              label: item.kind.label,
+                              title: item.title,
+                              body: item.note,
+                            ),
+                            borderRadius: BorderRadius.circular(999),
+                            child: const Align(
+                              alignment: Alignment.centerLeft,
+                              child: AlagagiFullTextCue(),
+                            ),
+                          ),
+                        ],
+                      ],
+                      if (openableLink != null) ...[
+                        const SizedBox(height: 6),
+                        _TripLinkPill(
+                          buttonKey: tripItemLinkButtonKey(item.id),
+                          icon: Icons.open_in_new_rounded,
+                          label: '예약 열기',
+                          onPressed: () => onOpenExternalLink(openableLink),
+                        ),
+                      ],
                     ],
-                    const SizedBox(height: 6),
-                    _TripLinkPill(
-                      buttonKey: tripPlaceMapButtonKey(item.id),
-                      icon: Icons.map_outlined,
-                      label: '지도',
-                      onPressed: () => onOpenExternalLink(place.googleMapsUrl),
-                    ),
-                  ],
-                  if (item.note.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      item.note,
-                      // 500자 메모가 접히지 않으면 카드 하나가 화면을 다 먹는다.
-                      maxLines: showsReadableCue(item.note) ? 2 : null,
-                      overflow: showsReadableCue(item.note)
-                          ? TextOverflow.ellipsis
-                          : null,
-                      style: sans(
-                        size: 12.5,
-                        height: 1.6,
-                        color: AlagagiColors.muted,
-                      ),
-                    ),
-                    if (showsReadableCue(item.note)) ...[
-                      const SizedBox(height: 6),
-                      InkWell(
-                        key: tripItemNoteCueKey(item.id),
-                        onTap: () => showReadableDetailSheet(
-                          context,
-                          label: item.kind.label,
-                          title: item.title,
-                          body: item.note,
-                        ),
-                        borderRadius: BorderRadius.circular(999),
-                        child: const Align(
-                          alignment: Alignment.centerLeft,
-                          child: AlagagiFullTextCue(),
-                        ),
-                      ),
-                    ],
-                  ],
-                  if (openableLink != null) ...[
-                    const SizedBox(height: 6),
-                    _TripLinkPill(
-                      buttonKey: tripItemLinkButtonKey(item.id),
-                      icon: Icons.open_in_new_rounded,
-                      label: '예약 열기',
-                      onPressed: () => onOpenExternalLink(openableLink),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 44,
-            height: 44,
-            child: IconButton(
-              key: tripItemEditButtonKey(item.id),
-              onPressed: onEdit,
-              icon: const Icon(
-                Icons.edit_outlined,
-                size: 17,
-                color: AlagagiColors.muted,
-              ),
-            ),
-          ),
-          if (mine)
-            SizedBox(
-              width: 44,
-              height: 44,
-              child: IconButton(
-                onPressed: onDelete,
-                icon: const Icon(
-                  Icons.delete_outline_rounded,
-                  size: 18,
-                  color: AlagagiColors.muted,
+                  ),
                 ),
               ),
+              SizedBox(
+                width: 44,
+                height: 44,
+                child: IconButton(
+                  key: tripItemEditButtonKey(item.id),
+                  onPressed: onEdit,
+                  icon: const Icon(
+                    Icons.edit_outlined,
+                    size: 17,
+                    color: AlagagiColors.muted,
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: 44,
+                height: 44,
+                child: IconButton(
+                  key: tripItemCardDeleteButtonKey(item.id),
+                  onPressed: onDelete,
+                  icon: const Icon(
+                    Icons.delete_outline_rounded,
+                    size: 18,
+                    color: AlagagiColors.muted,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          // 담당 pill은 카드 아래 전폭으로 둔다. 위 Row 안에 두면 좌우 button에
+          // 132px을 내주고 남은 폭에서 세 칸이 두 줄로 접힌다.
+          if (onAssign != null) ...[
+            const SizedBox(height: 8),
+            _AssigneeRow(
+              item: item,
+              controller: controller,
+              onAssign: onAssign!,
             ),
-        ],
-      ),
-      // 담당 pill은 카드 아래 전폭으로 둔다. 위 Row 안에 두면 좌우 button에
-      // 132px을 내주고 남은 폭에서 세 칸이 두 줄로 접힌다.
-      if (onAssign != null) ...[
-        const SizedBox(height: 8),
-        _AssigneeRow(
-          item: item,
-          controller: controller,
-          onAssign: onAssign!,
-        ),
-      ],
+          ],
         ],
       ),
     );
