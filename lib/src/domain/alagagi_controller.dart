@@ -10866,6 +10866,7 @@ class AlagagiController extends ChangeNotifier {
       clearMeetingSaveFeedback: true,
     );
     notifyListeners();
+    _autoSaveMeetingPlanDraft();
   }
 
   void startEditingMeetingPlanDraftItem(int index) {
@@ -10918,6 +10919,7 @@ class AlagagiController extends ChangeNotifier {
       clearMeetingSaveFeedback: true,
     );
     notifyListeners();
+    _autoSaveMeetingPlanDraft();
   }
 
   void reorderMeetingPlanDraftItem(int oldIndex, int newIndex) {
@@ -10957,15 +10959,34 @@ class AlagagiController extends ChangeNotifier {
       clearMeetingSaveFeedback: true,
     );
     notifyListeners();
+    _autoSaveMeetingPlanDraft();
+  }
+
+  /// 계획 항목을 담거나 고치거나 지우면 그 자리에서 저장한다.
+  ///
+  /// 타이핑은 저장하지 않는다. `추가`를 누르는 것, 지우는 것, 순서를 바꾸는
+  /// 것만 명시적인 동작이고, 그때마다 문서 하나를 쓴다.
+  void _autoSaveMeetingPlanDraft() {
+    // 고치던 줄은 그대로 둔다. 저장했다고 편집을 취소해 버리면 순서를
+    // 바꾸는 사이에 적던 것이 사라진다.
+    _saveMeetingPlanDraft(feedback: '자동으로 저장했어요.', preserveEditing: true);
   }
 
   void submitMeetingPlanDraft() {
     if (_state.meetingSaveStatus == SaveStatus.saving) {
       return;
     }
+    _saveMeetingPlanDraft(feedback: '계획을 저장했어요.');
+  }
+
+  void _saveMeetingPlanDraft({
+    required String feedback,
+    bool preserveEditing = false,
+  }) {
     final dateKey = selectedMeetingPlanDateKey;
     final meetingDayEntry = meetingDayEntryFor(dateKey);
     if (meetingDayEntry == null) {
+      // 조용히 넘기면 적은 것이 저장된 줄 알고 화면을 떠난다.
       _state = _state.copyWith(meetingDraftError: '먼저 약속에서 만나는 날을 정해주세요.');
       notifyListeners();
       return;
@@ -10990,8 +11011,13 @@ class AlagagiController extends ChangeNotifier {
     _state = _state.copyWith(
       selectedMeetingPlanDateKey: dateKey,
       meetingPlanDraftText: _meetingPlanTextFromItems(meetingPlanItems),
-      meetingPlanItemDraft: '',
-      clearEditingMeetingPlanItemIndex: true,
+      meetingPlanItemDraft: preserveEditing
+          ? _state.meetingPlanItemDraft
+          : '',
+      editingMeetingPlanItemIndex: preserveEditing
+          ? _state.editingMeetingPlanItemIndex
+          : null,
+      clearEditingMeetingPlanItemIndex: !preserveEditing,
       meetingDraftMeetingPlanText: dateKey == selectedMeetingDateKey
           ? _meetingPlanTextFromItems(meetingPlanItems)
           : _state.meetingDraftMeetingPlanText,
@@ -11001,7 +11027,7 @@ class AlagagiController extends ChangeNotifier {
       clearMeetingSaveFeedback: true,
     );
     notifyListeners();
-    _persistMeetingPlan(plan, successFeedback: '계획을 저장했어요.');
+    _persistMeetingPlan(plan, successFeedback: feedback);
   }
 
   void submitMeetingDayDraft() {

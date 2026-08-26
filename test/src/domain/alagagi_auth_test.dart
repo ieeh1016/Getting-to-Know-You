@@ -483,28 +483,46 @@ void main() {
         );
 
         controller.goTo(AlagagiRoute.meetingPlans);
+
+        // 타이핑은 저장하지 않는다.
         controller.updateMeetingPlanItemDraft('전시 보기');
+        await Future<void>.delayed(Duration.zero);
+        expect(repository.savedMeetingPlans, isEmpty);
+
+        // 담는 순간 그것만으로 저장된다.
         controller.addMeetingPlanDraftItem();
+        await Future<void>.delayed(Duration.zero);
+        expect(repository.savedMeetingPlans, hasLength(1));
+
         controller.updateMeetingPlanItemDraft('근처 카페');
         controller.addMeetingPlanDraftItem();
-        controller.submitMeetingPlanDraft();
         await Future<void>.delayed(Duration.zero);
 
         expect(repository.savedScheduleEntries, isEmpty);
-        expect(repository.savedMeetingPlans.single.spaceId, 'main');
-        expect(repository.savedMeetingPlans.single.plan.dateKey, '2026-06-26');
-        expect(repository.savedMeetingPlans.single.plan.items, [
-          '전시 보기',
-          '근처 카페',
-        ]);
-        expect(
-          repository.savedMeetingPlans.single.plan.updatedByProfileId,
-          'youngwooUid',
-        );
+        expect(repository.savedMeetingPlans, hasLength(2));
+        final saved = repository.savedMeetingPlans.last;
+        expect(saved.spaceId, 'main');
+        expect(saved.plan.dateKey, '2026-06-26');
+        expect(saved.plan.items, ['전시 보기', '근처 카페']);
+        expect(saved.plan.updatedByProfileId, 'youngwooUid');
         expect(controller.meetingPlanItemsFor('2026-06-26'), [
           '전시 보기',
           '근처 카페',
         ]);
+
+        // 지우기와 순서 바꾸기도 그 자리에서 저장한다.
+        controller.reorderMeetingPlanDraftItem(1, 0);
+        await Future<void>.delayed(Duration.zero);
+        expect(repository.savedMeetingPlans, hasLength(3));
+        expect(repository.savedMeetingPlans.last.plan.items, [
+          '근처 카페',
+          '전시 보기',
+        ]);
+
+        controller.removeMeetingPlanDraftItem(0);
+        await Future<void>.delayed(Duration.zero);
+        expect(repository.savedMeetingPlans, hasLength(4));
+        expect(repository.savedMeetingPlans.last.plan.items, ['전시 보기']);
       },
     );
 

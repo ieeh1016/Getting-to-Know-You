@@ -282,6 +282,28 @@ void main() {
       expect(controller.state.meetingPlanItemDraft, '브런치 카페');
     });
 
+    test('auto save does not cancel the row being edited', () {
+      final controller = AlagagiController()..enterSpace('영우');
+
+      controller.selectMeetingDate('2026-06-11');
+      controller.updateMeetingDayDraft(timeLabel: '저녁 7시쯤');
+      controller.submitMeetingDayDraft();
+      controller.goTo(AlagagiRoute.meetingPlans);
+      for (final item in ['전시 보기', '브런치 카페']) {
+        controller.updateMeetingPlanItemDraft(item);
+        controller.addMeetingPlanDraftItem();
+      }
+
+      controller.startEditingMeetingPlanDraftItem(1);
+      controller.updateMeetingPlanItemDraft('브런치 카페에서 아침');
+
+      // 다른 줄을 지워 자동 저장이 돌아도 고치던 줄은 그대로 남아야 한다.
+      controller.removeMeetingPlanDraftItem(0);
+
+      expect(controller.state.editingMeetingPlanItemIndex, 0);
+      expect(controller.state.meetingPlanItemDraft, '브런치 카페에서 아침');
+    });
+
     test('meeting plan draft can store more than eight items', () {
       final controller = AlagagiController()..enterSpace('영우');
 

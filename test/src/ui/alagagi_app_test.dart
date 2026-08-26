@@ -4131,16 +4131,14 @@ void main() {
     expect(find.text('브런치 카페'), findsOneWidget);
     expect(find.text('근처 카페'), findsNothing);
 
-    await tester.ensureVisible(find.byKey(meetingPlanSaveButtonKey));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(meetingPlanSaveButtonKey));
-    await tester.pumpAndSettle();
+    // 담고 고치는 것만으로 저장된다. 따로 저장을 누르지 않는다.
+    expect(find.byKey(meetingPlanSaveButtonKey), findsNothing);
 
     final plan = controller.meetingPlanFor(dateKey);
     expect(plan, isNotNull);
     expect(plan!.items, ['전시 보기', '브런치 카페', '저녁 먹기']);
     expect(find.text('계획 3개'), findsOneWidget);
-    expect(find.text('계획을 저장했어요.'), findsOneWidget);
+    expect(find.text('자동으로 저장했어요.'), findsOneWidget);
 
     expect(
       find.byKey(meetingPlanPlaceLinkButtonKey('place_cafe')),

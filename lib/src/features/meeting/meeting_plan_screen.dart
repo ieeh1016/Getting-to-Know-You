@@ -887,13 +887,6 @@ class _MeetingPlanDetailCardState extends State<_MeetingPlanDetailCard> {
                   style: sans(size: 12, color: AlagagiColors.sageDeep),
                 ),
               ],
-              const SizedBox(height: 12),
-              AlagagiPrimaryButton(
-                label: '계획 저장',
-                buttonKey: meetingPlanSaveButtonKey,
-                onPressed: controller.submitMeetingPlanDraft,
-                color: AlagagiColors.ink,
-              ),
               const SizedBox(height: 8),
               SizedBox(
                 height: 40,
@@ -1271,7 +1264,9 @@ class _MeetingPlanTaskComposer extends StatelessWidget {
                   hint: isEditing ? '계획을 고쳐 적어주세요' : '예: 전시 보기',
                   initialValue: controller.state.meetingPlanItemDraft,
                   maxLength: 40,
-                  helperText: isEditing ? '완료를 누르면 목록에 반영돼요.' : '',
+                  helperText: isEditing
+                      ? '완료를 누르면 바로 저장돼요.'
+                      : '담으면 바로 저장돼요.',
                   minLines: 1,
                   maxLines: 1,
                   onChanged: controller.updateMeetingPlanItemDraft,
