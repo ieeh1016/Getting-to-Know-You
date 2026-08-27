@@ -44,10 +44,19 @@ void main() {
     return controller.lastSavedTripId!;
   }
 
+  /// 이 앱의 타깃은 390px급 휴대폰이다. test 기본 화면(800x600)은 세로가
+  /// 짧아, 상세가 조금만 길어져도 tab 줄이 하단 navigation 밑으로 밀린다.
+  void useMobileSurface(WidgetTester tester) {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+  }
+
   Future<void> pumpTrips(
     WidgetTester tester,
     AlagagiController controller,
   ) async {
+    useMobileSurface(tester);
     await tester.pumpWidget(
       MaterialApp(
         // 이 환경의 test engine은 Material 3 기본 splash shader
@@ -420,6 +429,7 @@ void main() {
       title: '시내 호텔',
       link: 'booking.com/abc',
     );
+    useMobileSurface(tester);
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData(splashFactory: NoSplash.splashFactory),
@@ -479,6 +489,7 @@ void main() {
     final opened = <String>[];
     final controller = buildController();
     final tripId = seedTrip(controller);
+    useMobileSurface(tester);
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData(splashFactory: NoSplash.splashFactory),
@@ -520,6 +531,91 @@ void main() {
       'https://www.google.com/maps/search/?api=1'
       '&query=Ramen%20Nagi%20Shinjuku%2C%20Tokyo',
     );
+  });
+
+  testWidgets('a memo is added with its link kept in its own field', (
+    tester,
+  ) async {
+    final opened = <String>[];
+    final controller = buildController();
+    final tripId = seedTrip(controller);
+    useMobileSurface(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(splashFactory: NoSplash.splashFactory),
+        home: AlagagiRoot(
+          controller: controller,
+          onOpenExternalLink: opened.add,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await openTripDetail(tester, controller, tripId);
+
+    // 메모 카드는 tab 줄 위에 늘 있다. 비어 있어도 자리를 알린다.
+    expect(find.byKey(tripMemoCardKey), findsOneWidget);
+    await tester.ensureVisible(find.byKey(tripMemoAddButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripMemoAddButtonKey));
+    await tester.pumpAndSettle();
+
+    // 글 칸과 링크 칸이 따로다.
+    expect(find.byKey(tripMemoTextFieldKey), findsOneWidget);
+    expect(find.byKey(tripMemoLinkFieldKey), findsOneWidget);
+    await tester.enterText(find.byKey(tripMemoTextFieldKey), '환전은 시내에서');
+    await tester.enterText(
+      find.byKey(tripMemoLinkFieldKey),
+      'blog.naver.com/abc',
+    );
+    await tester.tap(find.byKey(tripMemoSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    final memo = controller.tripMemosFor(tripId).single;
+    expect(memo.title, '환전은 시내에서');
+    expect(memo.link, 'blog.naver.com/abc');
+    // 메모는 일정이나 준비물 목록에 끼지 않는다.
+    expect(controller.tripItemsFor(tripId, kind: TripItemKind.plan), isEmpty);
+    expect(controller.tripTimelineDays(tripId).every((day) => day.items.isEmpty), isTrue);
+
+    await tester.ensureVisible(find.byKey(tripMemoLinkButtonKey(memo.id)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripMemoLinkButtonKey(memo.id)));
+    await tester.pumpAndSettle();
+    expect(opened, ['https://blog.naver.com/abc']);
+  });
+
+  testWidgets('a memo without a link gets no open button', (tester) async {
+    final controller = buildController();
+    final tripId = seedTrip(controller);
+    controller.saveTripMemo(tripId: tripId, text: '유심은 편의점에서');
+    await pumpTrips(tester, controller);
+    await openTripDetail(tester, controller, tripId);
+
+    final memo = controller.tripMemosFor(tripId).single;
+    expect(find.byKey(tripMemoRowKey(memo.id)), findsOneWidget);
+    expect(find.byKey(tripMemoLinkButtonKey(memo.id)), findsNothing);
+  });
+
+  testWidgets('a link that cannot be opened is called out before saving', (
+    tester,
+  ) async {
+    final controller = buildController();
+    final tripId = seedTrip(controller);
+    await pumpTrips(tester, controller);
+    await openTripDetail(tester, controller, tripId);
+
+    await tester.ensureVisible(find.byKey(tripMemoAddButtonKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(tripMemoAddButtonKey));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(tripMemoTextFieldKey), '메모');
+    await tester.enterText(find.byKey(tripMemoLinkFieldKey), 'javascript:alert');
+    await tester.tap(find.byKey(tripMemoSubmitButtonKey));
+    await tester.pumpAndSettle();
+
+    // 담고 나서 조용히 열기만 빠지면 오타를 눈치채지 못한다.
+    expect(find.byKey(tripMemoFormErrorKey), findsOneWidget);
+    expect(controller.tripMemosFor(tripId), isEmpty);
   });
 
   testWidgets('the meeting calendar shows which days a trip already holds', (

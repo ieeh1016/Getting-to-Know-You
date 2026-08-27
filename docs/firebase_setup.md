@@ -626,7 +626,7 @@ service cloud.firestore {
         ])
         && request.resource.data.id == itemId
         && request.resource.data.tripId is string
-        && request.resource.data.kind in ['stay', 'transport', 'packing', 'plan']
+        && request.resource.data.kind in ['stay', 'transport', 'packing', 'plan', 'memo']
         && request.resource.data.title is string
         && request.resource.data.title.size() > 0
         && request.resource.data.title.size() <= 80

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/test_keys.dart';
 import '../../domain/alagagi_controller.dart';
 import '../../shared/confirm_sheet.dart';
+import '../../shared/openable_link.dart';
 import '../../shared/picker_sheets.dart';
 import '../../shared/text_editing_sync.dart';
 import '../../shared/ui_components.dart';
@@ -334,15 +335,6 @@ class _TripFormState extends State<_TripForm> {
                     ],
                   ),
                 ],
-                const SizedBox(height: 10),
-                TripTextField(
-                  fieldKey: tripNoteFieldKey,
-                  controller: _noteController,
-                  label: '메모 (선택)',
-                  hint: '같이 기억해둘 것',
-                  maxLength: 500,
-                  maxLines: 3,
-                ),
                 if (_error != null) ...[
                   const SizedBox(height: 10),
                   _FormError(message: _error!),
@@ -503,6 +495,7 @@ class _KindOption extends StatelessWidget {
     TripItemKind.transport => '수단과 출발·도착',
     TripItemKind.packing => '챙길 것 목록',
     TripItemKind.plan => '그날 무엇을 할지',
+    TripItemKind.memo => '적어둘 것',
   };
 
   @override
@@ -913,6 +906,188 @@ class _PhotoDayOption extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// 여행 메모를 담거나 고친다.
+///
+/// 적는 칸과 링크 칸을 나눈다. 한 칸에 섞어 적게 하고 앱이 주소를 짐작하면,
+/// 짐작이 틀렸을 때 왜 안 열리는지 알 길이 없다.
+Future<bool> showTripMemoSheet(
+  BuildContext context, {
+  required AlagagiController controller,
+  required Trip trip,
+  TripItem? memo,
+}) async {
+  final saved = await _showFormSheet<bool>(
+    context,
+    keepsInput: true,
+    sheetKey: tripMemoSheetKey,
+    title: memo == null ? '메모 담기' : '메모 고치기',
+    subtitle: trip.title,
+    scrollBody: false,
+    builder: (sheetContext) => _TripMemoForm(
+      controller: controller,
+      trip: trip,
+      memo: memo,
+      sheetContext: sheetContext,
+    ),
+  );
+  return saved ?? false;
+}
+
+class _TripMemoForm extends StatefulWidget {
+  const _TripMemoForm({
+    required this.controller,
+    required this.trip,
+    required this.memo,
+    required this.sheetContext,
+  });
+
+  final AlagagiController controller;
+  final Trip trip;
+  final TripItem? memo;
+  final BuildContext sheetContext;
+
+  @override
+  State<_TripMemoForm> createState() => _TripMemoFormState();
+}
+
+class _TripMemoFormState extends State<_TripMemoForm> {
+  late final ImeSafeTextEditingController _textController;
+  late final ImeSafeTextEditingController _linkController;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _textController = ImeSafeTextEditingController(
+      text: widget.memo?.title ?? '',
+    );
+    _linkController = ImeSafeTextEditingController(
+      text: widget.memo?.link ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    _linkController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final link = _linkController.text.trim();
+    // 열 수 없는 주소를 담고 나서 열기가 조용히 빠지면 오타를 눈치채지
+    // 못한다. 저장은 막지 않고 한 번만 알려준다.
+    if (link.isNotEmpty && normalizedOpenableLink(link) == null) {
+      setState(() => _error = '링크를 열 수 없어요. 주소를 다시 확인해 주세요.');
+      return;
+    }
+    final error = widget.controller.saveTripMemo(
+      tripId: widget.trip.id,
+      itemId: widget.memo?.id,
+      text: _textController.text,
+      link: link,
+    );
+    if (error != null) {
+      setState(() => _error = error);
+      return;
+    }
+    Navigator.of(widget.sheetContext).pop(true);
+  }
+
+  Future<void> _confirmDelete() async {
+    final memo = widget.memo;
+    if (memo == null) {
+      return;
+    }
+    final navigator = Navigator.of(widget.sheetContext);
+    final confirmed = await showAlagagiConfirmSheet(
+      context,
+      title: '이 메모를 지울까요?',
+      body: '지우면 되돌릴 수 없어요.',
+      confirmLabel: '지우기',
+      confirmKey: tripItemDeleteConfirmButtonKey(memo.id),
+    );
+    if (!confirmed || !mounted) {
+      return;
+    }
+    widget.controller.deleteTripItem(memo.id);
+    navigator.pop(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(18, 4, 18, 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TripTextField(
+                  fieldKey: tripMemoTextFieldKey,
+                  controller: _textController,
+                  label: '내용',
+                  hint: '예: 환전은 공항 말고 시내에서',
+                  maxLength: 80,
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 10),
+                TripTextField(
+                  fieldKey: tripMemoLinkFieldKey,
+                  controller: _linkController,
+                  label: '링크 (선택)',
+                  hint: 'blog.naver.com/... 또는 https://...',
+                  maxLength: 500,
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  '주소만 붙여넣어도 돼요. 열 수 있을 때만 열기가 붙어요.',
+                  style: sans(size: 11, color: AlagagiColors.muted),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_error != null) ...[
+                _FormError(key: tripMemoFormErrorKey, message: _error!),
+                const SizedBox(height: 8),
+              ],
+              TripPrimaryButton(
+                buttonKey: tripMemoSubmitButtonKey,
+                label: widget.memo == null ? '메모 담기' : '고친 내용 저장하기',
+                onPressed: _submit,
+              ),
+              if (widget.memo != null) ...[
+                const SizedBox(height: 4),
+                SizedBox(
+                  height: 44,
+                  child: TextButton.icon(
+                    key: tripMemoDeleteButtonKey,
+                    onPressed: _confirmDelete,
+                    icon: const Icon(Icons.delete_outline_rounded, size: 16),
+                    label: const Text('메모 지우기'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFFB35A49),
+                      textStyle: sans(size: 12.5, weight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

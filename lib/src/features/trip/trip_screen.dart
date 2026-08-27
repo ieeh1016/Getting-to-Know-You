@@ -188,6 +188,18 @@ class _TripScreenState extends State<TripScreen> {
   }
 
   /// 사진을 여행의 어느 날 것으로 묶을지 고른다.
+  Future<void> _openMemoSheet(Trip trip, {TripItem? memo}) async {
+    await showTripMemoSheet(
+      context,
+      controller: widget.controller,
+      trip: trip,
+      memo: memo,
+    );
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   Future<void> _copyPacking(Trip trip) async {
     final sourceTripId = await showTripPackingSourceSheet(
       context,
@@ -408,10 +420,14 @@ class _TripScreenState extends State<TripScreen> {
         controller: widget.controller,
         onMore: () => _openTripActions(trip),
       ),
-      if (trip.note.trim().isNotEmpty) ...[
-        const SizedBox(height: 10),
-        _TripNoteCard(title: trip.title, note: trip.note.trim()),
-      ],
+      const SizedBox(height: 10),
+      _TripMemoCard(
+        trip: trip,
+        controller: widget.controller,
+        onOpenExternalLink: widget.onOpenExternalLink,
+        onAdd: () => _openMemoSheet(trip),
+        onEdit: (memo) => _openMemoSheet(trip, memo: memo),
+      ),
       if (widget.controller.tripNeedsStatusNudge(trip)) ...[
         const SizedBox(height: 12),
         _TripStatusNudge(
@@ -1079,69 +1095,231 @@ class _TripSearchFieldState extends State<_TripSearchField> {
 }
 
 /// 여행 전체에 남겨둔 메모.
-class _TripNoteCard extends StatelessWidget {
-  const _TripNoteCard({required this.title, required this.note});
+/// 일정도 숙소도 준비물도 아닌 것들을 한 줄씩 쌓아두는 카드.
+///
+/// 상태 카드와 고정 tab 줄 사이에 둔다. 입력은 카드 안에 펼쳐두지 않고
+/// sheet로 연다. 폼을 늘 펼쳐두면 읽을 자리를 뺏고 화면이 양식처럼 보인다.
+class _TripMemoCard extends StatelessWidget {
+  const _TripMemoCard({
+    required this.trip,
+    required this.controller,
+    required this.onOpenExternalLink,
+    required this.onAdd,
+    required this.onEdit,
+  });
 
-  final String title;
-  final String note;
+  final Trip trip;
+  final AlagagiController controller;
+  final ValueChanged<String> onOpenExternalLink;
+  final VoidCallback onAdd;
+  final ValueChanged<TripItem> onEdit;
 
   @override
   Widget build(BuildContext context) {
-    // 준비 메모는 길어지기 쉽다. 카드에서 잘리면 읽을 길이 없어진다.
-    final showsCue = showsReadableCue(note);
+    final memos = controller.tripMemosFor(trip.id);
+    final legacyNote = trip.note.trim();
 
-    return InkWell(
-      key: tripNoteCardKey,
-      onTap: showsCue
-          ? () => showReadableDetailSheet(
-              context,
-              label: '여행 메모',
-              title: title,
-              body: note,
-            )
-          : null,
-      borderRadius: BorderRadius.circular(AlagagiCardGeometry.compactRadius),
-      child: AlagagiPaperCard(
-        compact: true,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.sticky_note_2_outlined,
-                  size: 16,
-                  color: AlagagiColors.sageDeep,
+    return AlagagiPaperCard(
+      key: tripMemoCardKey,
+      compact: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              AlagagiSymbolMark(
+                icon: Icons.sticky_note_2_outlined,
+                size: 26,
+                iconSize: 14,
+                tone: AlagagiColors.skyPanel,
+                iconColor: AlagagiColors.sageDeep,
+                radius: 9,
+              ),
+              const SizedBox(width: 8),
+              Text('메모', style: sans(size: 13, weight: FontWeight.w700)),
+              const Spacer(),
+              if (memos.isNotEmpty)
+                Text(
+                  '${memos.length}',
+                  style: sans(size: 11.5, color: AlagagiColors.muted),
                 ),
-                const SizedBox(width: 9),
-                Expanded(
-                  child: Text(
-                    note,
-                    maxLines: showsCue ? 3 : null,
-                    overflow: showsCue ? TextOverflow.ellipsis : null,
-                    style: sans(
-                      size: 12.5,
-                      height: 1.65,
-                      color: AlagagiColors.ink,
+            ],
+          ),
+          const SizedBox(height: 11),
+          // 여행 폼에 적어둔 옛 메모. 새로 적는 것은 전부 아래 줄로 쌓인다.
+          if (legacyNote.isNotEmpty) ...[
+            Container(
+              key: tripLegacyNoteKey,
+              decoration: BoxDecoration(
+                color: AlagagiColors.skyPanel,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.fromLTRB(11, 9, 11, 9),
+              child: Text(
+                legacyNote,
+                style: sans(size: 12, height: 1.6, color: AlagagiColors.muted),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+          if (memos.isEmpty && legacyNote.isEmpty)
+            Text(
+              TripItemKind.memo.emptyText,
+              style: sans(size: 12.3, height: 1.75, color: AlagagiColors.muted),
+            )
+          else
+            for (final memo in memos)
+              _TripMemoRow(
+                memo: memo,
+                isFirst: memo == memos.first,
+                onOpenExternalLink: onOpenExternalLink,
+                onEdit: () => onEdit(memo),
+              ),
+          const SizedBox(height: 4),
+          InkWell(
+            key: tripMemoAddButtonKey,
+            onTap: onAdd,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 44),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              alignment: Alignment.centerLeft,
+              child: Row(
+                children: [
+                  Container(
+                    width: 20,
+                    height: 20,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AlagagiColors.skyPanel,
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+                    child: const Icon(
+                      Icons.add_rounded,
+                      size: 13,
+                      color: AlagagiColors.sageDeep,
                     ),
                   ),
-                ),
-              ],
-            ),
-            if (showsCue) ...[
-              const SizedBox(height: 8),
-              const Align(
-                alignment: Alignment.centerRight,
-                child: AlagagiFullTextCue(),
+                  const SizedBox(width: 8),
+                  Text(
+                    '메모 담기',
+                    style: sans(
+                      size: 12.5,
+                      weight: FontWeight.w700,
+                      color: AlagagiColors.sageDeep,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 메모 한 줄. 링크를 적어둔 것만 열기가 붙는다.
+class _TripMemoRow extends StatelessWidget {
+  const _TripMemoRow({
+    required this.memo,
+    required this.isFirst,
+    required this.onOpenExternalLink,
+    required this.onEdit,
+  });
+
+  final TripItem memo;
+  final bool isFirst;
+  final ValueChanged<String> onOpenExternalLink;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final link = normalizedOpenableLink(memo.link ?? '');
+    final showsCue = showsReadableCue(memo.title);
+
+    return InkWell(
+      key: tripMemoRowKey(memo.id),
+      onTap: onEdit,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: EdgeInsets.fromLTRB(2, isFirst ? 0 : 10, 2, 10),
+        decoration: BoxDecoration(
+          border: isFirst
+              ? null
+              : const Border(top: BorderSide(color: AlagagiColors.line)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 6,
+              height: 6,
+              margin: const EdgeInsets.only(top: 7),
+              decoration: const BoxDecoration(
+                color: AlagagiColors.sky,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    memo.title,
+                    maxLines: showsCue ? 2 : null,
+                    overflow: showsCue ? TextOverflow.ellipsis : null,
+                    style: sans(size: 13, height: 1.65),
+                  ),
+                  if (showsCue) ...[
+                    const SizedBox(height: 6),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: AlagagiFullTextCue(),
+                    ),
+                  ],
+                  if (link != null) ...[
+                    const SizedBox(height: 7),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: SizedBox(
+                        height: 30,
+                        child: OutlinedButton.icon(
+                          key: tripMemoLinkButtonKey(memo.id),
+                          onPressed: () => onOpenExternalLink(link),
+                          icon: const Icon(Icons.link_rounded, size: 13),
+                          // 390px에서 전체 주소는 무조건 잘린다. host만 보여준다.
+                          label: Text('${Uri.parse(link).host} 열기'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AlagagiColors.sageDeep,
+                            side: const BorderSide(color: Color(0x3D8A6B1E)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 11),
+                            textStyle: sans(size: 11, weight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 6),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 17,
+              color: AlagagiColors.muted,
+            ),
           ],
         ),
       ),
     );
   }
 }
+
 
 /// 목록 맨 위의 만들기 줄. 버튼 하나보다 다음 행동이 또렷하다.
 class _AddTripBanner extends StatelessWidget {

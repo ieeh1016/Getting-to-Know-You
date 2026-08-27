@@ -11,6 +11,7 @@ import {
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
 import {
+  deleteDoc,
   doc,
   serverTimestamp,
   setDoc,
@@ -46,6 +47,37 @@ async function seed(write) {
 
 function placeRef(db, id) {
   return doc(db, `spaces/${SPACE}/sharedPlaces/${id}`);
+}
+
+function tripItemRef(db, id) {
+  return doc(db, `spaces/${SPACE}/tripItems/${id}`);
+}
+
+/// 앱이 tripItems에 실제로 쓰는 모양.
+function tripItemDoc(id, uid, overrides = {}) {
+  return {
+    id,
+    tripId: 'trip_1',
+    kind: 'plan',
+    title: '성산일출봉',
+    note: '',
+    dateKey: '',
+    timeLabel: '',
+    endDateKey: '',
+    endTimeLabel: '',
+    transportMode: '',
+    fromLabel: '',
+    toLabel: '',
+    placeId: '',
+    assigneeProfileId: '',
+    sortOrder: 0,
+    link: '',
+    checked: false,
+    createdByProfileId: uid,
+    updatedByProfileId: uid,
+    updatedAt: serverTimestamp(),
+    ...overrides,
+  };
 }
 
 /// 계획 탭에서 장소를 그 날에 붙일 때 실제로 나가는 patch.
@@ -227,6 +259,66 @@ describe('sharedPlaces rules', () => {
       updateDoc(
         placeRef(db, 'legacy_place'),
         meetingLinkPatch('strangerUid', '2026-09-12'),
+      ),
+    );
+  });
+});
+
+describe('tripItems rules', () => {
+  before(async () => {
+    await seed(async (db) => {
+      await setDoc(doc(db, `spaces/${SPACE}/trips/trip_1`), {
+        id: 'trip_1',
+        title: '가을 도쿄',
+        destination: '도쿄',
+        startDateKey: '2026-10-09',
+        endDateKey: '2026-10-12',
+        status: 'planning',
+        note: '',
+        createdByProfileId: ME,
+        updatedByProfileId: ME,
+        updatedAt: new Date(),
+      });
+    });
+  });
+
+  it('메모를 담을 수 있다', async () => {
+    const db = env.authenticatedContext(ME).firestore();
+    await assertSucceeds(
+      setDoc(
+        tripItemRef(db, 'memo_1'),
+        tripItemDoc('memo_1', ME, {
+          kind: 'memo',
+          title: '환전은 공항 말고 시내에서',
+          link: 'https://blog.naver.com/abc',
+        }),
+      ),
+    );
+  });
+
+  it('상대가 담은 메모도 고치고 지울 수 있다', async () => {
+    const db = env.authenticatedContext(PARTNER).firestore();
+    await assertSucceeds(
+      setDoc(
+        tripItemRef(db, 'memo_1'),
+        tripItemDoc('memo_1', ME, {
+          kind: 'memo',
+          title: '환전은 시내 티켓샵에서',
+          link: '',
+          updatedByProfileId: PARTNER,
+        }),
+        { merge: true },
+      ),
+    );
+    await assertSucceeds(deleteDoc(tripItemRef(db, 'memo_1')));
+  });
+
+  it('없는 종류는 담을 수 없다', async () => {
+    const db = env.authenticatedContext(ME).firestore();
+    await assertFails(
+      setDoc(
+        tripItemRef(db, 'memo_bad'),
+        tripItemDoc('memo_bad', ME, { kind: 'scribble' }),
       ),
     );
   });

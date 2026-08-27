@@ -40,6 +40,14 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// 이 앱의 타깃은 390px급 휴대폰이다. test 기본 화면(800x600)은 세로가
+  /// 짧아, 여행 상세가 조금만 길어져도 tab 줄이 하단 navigation 밑으로 밀린다.
+  void useMobileSurface(WidgetTester tester) {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+  }
+
   /// 여행 만들기 sheet를 연다.
   Future<void> openTripForm(WidgetTester tester) async {
     await tester.ensureVisible(find.byKey(tripAddButtonKey));
@@ -407,6 +415,7 @@ void main() {
       ),
     )..goTo(AlagagiRoute.trips);
 
+    useMobileSurface(tester);
     await tester.pumpWidget(
       MaterialApp(home: AlagagiRoot(controller: controller)),
     );
@@ -535,6 +544,7 @@ void main() {
       title: '충전기',
     );
 
+    useMobileSurface(tester);
     await tester.pumpWidget(
       MaterialApp(home: AlagagiRoot(controller: controller)),
     );
@@ -668,6 +678,7 @@ void main() {
       toLabel: '제주공항',
     );
 
+    useMobileSurface(tester);
     await tester.pumpWidget(
       MaterialApp(home: AlagagiRoot(controller: controller)),
     );
@@ -746,6 +757,7 @@ void main() {
     );
     final tripId = controller.trips.single.id;
 
+    useMobileSurface(tester);
     await tester.pumpWidget(
       MaterialApp(home: AlagagiRoot(controller: controller)),
     );
@@ -815,6 +827,7 @@ void main() {
     );
     final tripId = controller.trips.single.id;
 
+    useMobileSurface(tester);
     await tester.pumpWidget(
       MaterialApp(home: AlagagiRoot(controller: controller)),
     );
@@ -898,6 +911,7 @@ void main() {
     );
     final tripId = controller.trips.single.id;
 
+    useMobileSurface(tester);
     await tester.pumpWidget(
       MaterialApp(home: AlagagiRoot(controller: controller)),
     );
@@ -1012,6 +1026,7 @@ void main() {
     );
     final item = controller.tripItemsFor(tripId).single;
 
+    useMobileSurface(tester);
     await tester.pumpWidget(
       MaterialApp(home: AlagagiRoot(controller: controller)),
     );
@@ -1107,6 +1122,7 @@ void main() {
     );
     final tripId = controller.trips.single.id;
 
+    useMobileSurface(tester);
     await tester.pumpWidget(
       MaterialApp(home: AlagagiRoot(controller: controller)),
     );
@@ -1205,6 +1221,7 @@ void main() {
     controller.saveTripPhoto(tripId: tripId, imageDataUrl: tinyPng);
     final photoId = controller.tripPhotosFor(tripId).single.id;
 
+    useMobileSurface(tester);
     await tester.pumpWidget(
       MaterialApp(home: AlagagiRoot(controller: controller)),
     );
@@ -1317,6 +1334,7 @@ void main() {
     );
     final tripId = controller.trips.single.id;
 
+    useMobileSurface(tester);
     await tester.pumpWidget(
       MaterialApp(home: AlagagiRoot(controller: controller)),
     );

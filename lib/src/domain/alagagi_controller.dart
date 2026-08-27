@@ -1145,7 +1145,10 @@ TripTransportMode tripTransportModeFromKey(String? key) => switch (key) {
   _ => TripTransportMode.flight,
 };
 
-enum TripItemKind { stay, transport, packing, plan }
+/// `memo`는 일정도 숙소도 준비물도 아닌 것들을 적어두는 갈래다.
+/// 종류 picker에는 넣지 않는다. 상세 위쪽 메모 카드에서만 담는다.
+enum TripItemKind { stay, transport, packing, plan, memo }
+
 
 extension TripItemKindMeta on TripItemKind {
   String get storageKey => switch (this) {
@@ -1153,6 +1156,7 @@ extension TripItemKindMeta on TripItemKind {
     TripItemKind.transport => 'transport',
     TripItemKind.packing => 'packing',
     TripItemKind.plan => 'plan',
+    TripItemKind.memo => 'memo',
   };
 
   String get label => switch (this) {
@@ -1160,6 +1164,7 @@ extension TripItemKindMeta on TripItemKind {
     TripItemKind.transport => '이동',
     TripItemKind.packing => '준비물',
     TripItemKind.plan => '계획',
+    TripItemKind.memo => '메모',
   };
 
   String get titleHint => switch (this) {
@@ -1167,6 +1172,7 @@ extension TripItemKindMeta on TripItemKind {
     TripItemKind.transport => '편명이나 노선',
     TripItemKind.packing => '챙길 것',
     TripItemKind.plan => '무엇을 할지',
+    TripItemKind.memo => '적어둘 것',
   };
 
   String get noteHint => switch (this) {
@@ -1174,6 +1180,7 @@ extension TripItemKindMeta on TripItemKind {
     TripItemKind.transport => '좌석, 예약 번호 같은 메모',
     TripItemKind.packing => '수량이나 챙길 이유',
     TripItemKind.plan => '가고 싶은 곳이나 하고 싶은 것',
+    TripItemKind.memo => '',
   };
 
   String get emptyText => switch (this) {
@@ -1181,6 +1188,7 @@ extension TripItemKindMeta on TripItemKind {
     TripItemKind.transport => '아직 정한 이동편이 없어요.',
     TripItemKind.packing => '챙길 것을 하나씩 적어두면 편해요.',
     TripItemKind.plan => '아직 정한 계획이 없어요. 천천히 채워도 괜찮아요.',
+    TripItemKind.memo => '일정도 준비물도 아닌 것들을 여기 적어둬요.',
   };
 
   bool get usesCheck => this == TripItemKind.packing;
@@ -1206,7 +1214,13 @@ extension TripItemKindMeta on TripItemKind {
   bool get usesPlace => this == TripItemKind.stay || this == TripItemKind.plan;
 }
 
-const tripItemKindOptions = TripItemKind.values;
+/// 종류 picker에 보여줄 갈래. `memo`는 상세 위 메모 카드에서만 담는다.
+const tripItemKindOptions = [
+  TripItemKind.stay,
+  TripItemKind.transport,
+  TripItemKind.packing,
+  TripItemKind.plan,
+];
 
 enum TripPhase { upcoming, ongoing, past }
 
@@ -8101,6 +8115,39 @@ class AlagagiController extends ChangeNotifier {
         .toList();
     scheduled.sort(_compareTripItems);
     return List<TripItem>.unmodifiable(scheduled);
+  }
+
+  /// 여행에 적어둔 메모. 담은 순서대로 읽는다.
+  List<TripItem> tripMemosFor(String tripId) {
+    final memos = _tripItems
+        .where((item) => item.tripId == tripId && item.kind == TripItemKind.memo)
+        .toList();
+    memos.sort((first, second) {
+      if (first.sortOrder != second.sortOrder) {
+        return first.sortOrder.compareTo(second.sortOrder);
+      }
+      return first.id.compareTo(second.id);
+    });
+    return List<TripItem>.unmodifiable(memos);
+  }
+
+  /// 메모를 담거나 고친다. 내용만 있으면 되고 링크는 선택이다.
+  ///
+  /// 링크를 따로 받는 이유는 앱이 글에서 주소를 짐작하지 않기 위해서다.
+  /// 짐작이 틀리면 사용자는 왜 안 열리는지 알 길이 없다.
+  String? saveTripMemo({
+    required String tripId,
+    String? itemId,
+    required String text,
+    String link = '',
+  }) {
+    return saveTripItem(
+      tripId: tripId,
+      itemId: itemId,
+      kind: TripItemKind.memo,
+      title: text,
+      link: link,
+    );
   }
 
   /// 여행 중 지금 시각 다음에 오는 항목. 화면을 그릴 때만 계산한다.

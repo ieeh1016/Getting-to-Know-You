@@ -13,6 +13,7 @@ IconData tripItemKindIcon(TripItemKind kind) => switch (kind) {
   TripItemKind.transport => Icons.swap_horiz_rounded,
   TripItemKind.packing => Icons.backpack_outlined,
   TripItemKind.plan => Icons.explore_outlined,
+  TripItemKind.memo => Icons.sticky_note_2_outlined,
 };
 
 IconData tripTransportModeIcon(TripTransportMode mode) => switch (mode) {

@@ -1283,6 +1283,7 @@ class FirestoreAlagagiDataRepository implements AlagagiDataRepository {
         'stay' => TripItemKind.stay,
         'transport' => TripItemKind.transport,
         'packing' => TripItemKind.packing,
+        'memo' => TripItemKind.memo,
         _ => TripItemKind.plan,
       },
       title: title,
