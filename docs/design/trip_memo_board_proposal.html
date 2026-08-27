@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우리 둘 · 여행 메모 제안</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --outer:#f9f1d8;
+    --bg:#fdf9ea;
+    --paper:#fffdf7;
+    --ink:#2f2e2a;
+    --text:#3f3e39;
+    --muted:#8c8069;
+    --line:#efe1be;
+    --sky:#ddb95e;
+    --sky-deep:#c1922c;
+    --sky-panel:#faf3dc;
+    --sage:#9c8952;
+    --sage-deep:#8a6b1e;
+    --clay:#b18472;
+  }
+  body{
+    min-height:100vh;background:var(--outer);color:var(--ink);
+    font-family:'Noto Sans KR',sans-serif;font-weight:300;padding:36px 18px 56px;
+  }
+  .wrap{max-width:1300px;margin:0 auto}
+
+  .page-title{text-align:center;margin-bottom:30px}
+  .page-title .eyebrow{margin-bottom:8px;color:var(--sage-deep);font-size:11px;font-weight:700;letter-spacing:3px}
+  .page-title h1{font-family:'Nanum Myeongjo',serif;font-size:30px;line-height:1.35;font-weight:800}
+  .page-title p{max-width:760px;margin:10px auto 0;color:var(--muted);font-size:14px;line-height:1.75}
+
+  .diagnosis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:1120px;margin:0 auto 34px}
+  .diag-card{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:18px}
+  .diag-card .num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;
+    margin-bottom:10px;border-radius:8px;background:var(--sky-panel);color:var(--sky-deep);font-size:11px;font-weight:700}
+  .diag-card h3{font-family:'Nanum Myeongjo',serif;font-size:16px;font-weight:800;margin-bottom:8px}
+  .diag-card p{color:var(--muted);font-size:12.8px;line-height:1.8}
+
+  .section-label{max-width:1120px;margin:0 auto 14px;padding-left:2px;font-size:12px;font-weight:700;
+    letter-spacing:2px;color:var(--sage-deep)}
+
+  .stage{display:grid;grid-template-columns:repeat(3,minmax(300px,390px));gap:24px;justify-content:center;
+    align-items:start;margin-bottom:38px}
+  .caption{margin:0 0 12px 2px}
+  .caption .tag{display:inline-flex;align-items:center;height:24px;padding:0 9px;
+    border:1px solid rgba(138,107,30,.22);border-radius:999px;background:rgba(255,253,247,.74);
+    color:var(--sage-deep);font-size:10.5px;font-weight:700;letter-spacing:1px}
+  .caption .tag.pick{background:var(--sage-deep);border-color:var(--sage-deep);color:#fff}
+  .caption h2{margin-top:8px;font-family:'Nanum Myeongjo',serif;font-size:19px;font-weight:800}
+  .caption p{margin-top:5px;color:var(--muted);font-size:12.5px;line-height:1.7}
+
+  .phone{width:390px;max-width:100%;background:var(--bg);border:1px solid var(--line);
+    border-radius:30px;overflow:hidden;box-shadow:0 18px 44px rgba(44,43,37,.10)}
+  .screen{padding:22px 20px 28px;min-height:780px}
+
+  .topbar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .topbar .back{width:34px;height:34px;border-radius:12px;background:var(--paper);
+    border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+    color:var(--muted);font-size:15px}
+  .topbar .title{font-family:'Nanum Myeongjo',serif;font-size:17px;font-weight:800;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:17px}
+  .card.compact{border-radius:18px;padding:14px}
+
+  .badges{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .badge{display:inline-flex;align-items:center;height:23px;padding:0 9px;border-radius:999px;
+    background:var(--sky-panel);border:1px solid var(--line);color:var(--muted);
+    font-size:10.5px;font-weight:600}
+  .badge.accent{background:var(--sage-deep);border-color:var(--sage-deep);color:#fff;font-weight:700}
+  .more{margin-left:auto;color:var(--muted);font-size:17px;letter-spacing:1px}
+  .trip-title{margin-top:11px;font-family:'Nanum Myeongjo',serif;font-size:19px;font-weight:800;line-height:1.35}
+  .trip-dates{margin-top:6px;color:var(--muted);font-size:12.5px}
+  .status-pills{display:flex;gap:7px;margin-top:13px}
+  .pill{height:31px;padding:0 13px;display:inline-flex;align-items:center;border-radius:11px;
+    border:1px solid var(--line);background:var(--paper);color:var(--muted);font-size:11.5px;font-weight:600}
+  .pill.on{background:var(--sage-deep);border-color:var(--sage-deep);color:#fff;font-weight:700}
+
+  /* memo board */
+  .memo-head{display:flex;align-items:center;gap:8px;margin-bottom:11px}
+  .memo-head .ico{width:26px;height:26px;border-radius:9px;background:var(--sky-panel);
+    display:flex;align-items:center;justify-content:center;font-size:13px}
+  .memo-head h3{font-size:13px;font-weight:700}
+  .memo-head .count{margin-left:auto;color:var(--muted);font-size:11.5px}
+
+  .memo-row{display:flex;gap:10px;padding:11px 0;border-top:1px solid var(--line)}
+  .memo-row:first-of-type{border-top:none;padding-top:2px}
+  .memo-dot{width:6px;height:6px;border-radius:999px;background:var(--sky);margin-top:7px;flex:none}
+  .memo-body{flex:1;min-width:0}
+  .memo-text{font-size:13px;line-height:1.65;color:var(--text);word-break:break-word}
+  .memo-actions{display:flex;gap:6px;align-items:flex-start;flex:none}
+  .icon-btn{width:30px;height:30px;border-radius:10px;border:1px solid transparent;
+    display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px}
+
+  .link-pill{display:inline-flex;align-items:center;gap:5px;height:29px;margin-top:7px;padding:0 11px;
+    border-radius:999px;border:1px solid rgba(138,107,30,.24);background:var(--paper);
+    color:var(--sage-deep);font-size:11px;font-weight:700;max-width:100%}
+  .link-pill .host{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .memo-add{display:flex;gap:8px;margin-top:12px}
+  .memo-field{flex:1;min-height:44px;border-radius:14px;border:1px solid var(--line);
+    background:var(--sky-panel);padding:12px 13px;color:var(--muted);font-size:12.5px}
+  .memo-btn{width:56px;border-radius:14px;background:var(--sage-deep);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700}
+  .helper{margin-top:7px;color:var(--muted);font-size:11px}
+
+  .empty{border:1px dashed var(--line);border-radius:16px;background:rgba(250,243,220,.5);
+    padding:16px;color:var(--muted);font-size:12.3px;line-height:1.75;text-align:center}
+
+  .tabbar{display:flex;gap:4px;margin-top:14px;padding:4px;border-radius:14px;
+    background:var(--sky-panel);border:1px solid var(--line)}
+  .tabbar span{flex:1;height:40px;border-radius:11px;display:flex;align-items:center;
+    justify-content:center;font-size:12px;font-weight:700;color:var(--muted)}
+  .tabbar span.on{background:var(--paper);color:var(--ink);box-shadow:0 1px 4px rgba(44,43,37,.07)}
+
+  .save-row{display:flex;align-items:center;gap:8px;margin-top:11px;padding:10px 12px;
+    border-radius:14px;border:1px solid rgba(138,107,30,.2);background:#fffcf3;
+    color:var(--sage-deep);font-size:11.8px;font-weight:600}
+  .save-row.fail{border-color:rgba(177,132,114,.32);background:#fff7f3;color:var(--clay)}
+  .save-row .retry{margin-left:auto;font-weight:700;text-decoration:underline}
+
+  .note-lead{margin-bottom:9px;padding:9px 11px;border-radius:13px;background:var(--sky-panel);
+    color:var(--muted);font-size:12px;line-height:1.6}
+
+  .proposal-note{max-width:1000px;margin:6px auto 0;background:var(--paper);
+    border:1px solid var(--line);border-radius:22px;padding:24px 26px}
+  .proposal-note h2{font-family:'Nanum Myeongjo',serif;font-size:20px;font-weight:800;margin-bottom:6px}
+  .proposal-note .sub{color:var(--muted);font-size:12.8px;margin-bottom:16px}
+  .proposal-note h3{font-size:13px;font-weight:700;margin:18px 0 8px;color:var(--sage-deep)}
+  .proposal-note ul{padding-left:18px}
+  .proposal-note li{color:var(--text);font-size:13px;line-height:1.9;margin-bottom:3px}
+  .proposal-note li b{font-weight:700}
+  .proposal-note code{background:var(--sky-panel);border-radius:5px;padding:1px 5px;font-size:12px}
+  .open-q{margin-top:18px;padding:14px 16px;border-radius:16px;background:var(--sky-panel);
+    border:1px solid var(--line)}
+  .open-q h3{margin-top:0}
+
+  @media (max-width:1180px){.stage{grid-template-columns:repeat(2,minmax(300px,390px))}}
+  @media (max-width:860px){.diagnosis,.stage{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="page-title">
+    <span class="eyebrow">DESIGN PROPOSAL</span>
+    <h1>여행 메모 — 상세 위쪽에 쌓아두는 한 줄들</h1>
+    <p>여행을 준비하다 보면 일정도 숙소도 준비물도 아닌 것들이 남는다. 환전 얼마, 유심 어디서, 저장해둔 블로그 링크 같은 것들. 지금은 그걸 둘 자리가 없어서 준비물에 억지로 끼워 넣거나 카톡으로 흘려보낸다. 상태 카드와 tab 줄 사이에 한 줄씩 쌓아두는 자리를 만든다.</p>
+  </header>
+
+  <section class="diagnosis" aria-label="지금 상태와 제약">
+    <article class="diag-card">
+      <div class="num">1</div>
+      <h3>지금은 둘 자리가 없다</h3>
+      <p>여행 폼의 <code>메모</code>는 여행 하나에 한 덩어리뿐이라 항목을 더할 수 없다. 준비물에 적으면 챙길 것 목록이 링크와 메모로 지저분해진다.</p>
+    </article>
+    <article class="diag-card">
+      <div class="num">2</div>
+      <h3>링크가 실제로 열려야 한다</h3>
+      <p>붙여넣은 주소가 글자로만 남으면 다시 복사해서 브라우저에 옮겨야 한다. 앱에는 이미 <code>normalizedOpenableLink</code>가 있어 그대로 쓰면 된다.</p>
+    </article>
+    <article class="diag-card">
+      <div class="num">3</div>
+      <h3>조용해야 한다</h3>
+      <p>상세 맨 위는 이미 뱃지·제목·기간·상태로 빽빽하다. 메모가 화면을 밀어내면 안 된다. 비어 있을 때는 거의 보이지 않는 한 줄로 접어둔다.</p>
+    </article>
+  </section>
+
+  <div class="section-label">화면 제안</div>
+
+  <section class="stage" aria-label="제안 화면">
+
+    <article>
+      <div class="caption">
+        <span class="tag pick">추천안</span>
+        <h2>메모 카드 · 한 줄씩 쌓기</h2>
+        <p>상태 카드 바로 아래, tab 줄 바로 위. 적은 순서대로 쌓이고 링크가 있으면 그 줄에 열기가 붙는다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <div class="back">‹</div>
+            <div class="title">가을 도쿄</div>
+          </div>
+
+          <div class="card">
+            <div class="badges">
+              <span class="badge accent">D-12</span>
+              <span class="badge">3박 4일</span>
+              <span class="badge">도쿄</span>
+              <span class="more">···</span>
+            </div>
+            <div class="trip-title">가을 도쿄</div>
+            <div class="trip-dates">2026-10-09 ~ 2026-10-12</div>
+            <div class="status-pills">
+              <span class="pill on">계획 중</span>
+              <span class="pill">다녀옴</span>
+            </div>
+          </div>
+
+          <div style="height:10px"></div>
+
+          <div class="card compact">
+            <div class="memo-head">
+              <div class="ico">📝</div>
+              <h3>메모</h3>
+              <span class="count">4</span>
+            </div>
+
+            <div class="memo-row">
+              <div class="memo-dot"></div>
+              <div class="memo-body">
+                <div class="memo-text">환전은 공항 말고 시내에서 — 신주쿠 티켓샵</div>
+              </div>
+              <div class="memo-actions">
+                <div class="icon-btn">✎</div>
+                <div class="icon-btn">🗑</div>
+              </div>
+            </div>
+
+            <div class="memo-row">
+              <div class="memo-dot"></div>
+              <div class="memo-body">
+                <div class="memo-text">여기 라멘 리스트 참고해서 고르자</div>
+                <span class="link-pill">🔗 <span class="host">blog.naver.com</span> 열기</span>
+              </div>
+              <div class="memo-actions">
+                <div class="icon-btn">✎</div>
+                <div class="icon-btn">🗑</div>
+              </div>
+            </div>
+
+            <div class="memo-row">
+              <div class="memo-dot"></div>
+              <div class="memo-body">
+                <div class="memo-text">유심은 도착해서 편의점에서 사도 된대</div>
+              </div>
+              <div class="memo-actions">
+                <div class="icon-btn">✎</div>
+                <div class="icon-btn">🗑</div>
+              </div>
+            </div>
+
+            <div class="memo-row">
+              <div class="memo-dot"></div>
+              <div class="memo-body">
+                <div class="memo-text">돌아오는 날 면세점 픽업 잊지 말기</div>
+              </div>
+              <div class="memo-actions">
+                <div class="icon-btn">✎</div>
+                <div class="icon-btn">🗑</div>
+              </div>
+            </div>
+
+            <div class="memo-add">
+              <div class="memo-field">적어둘 것 · 링크를 붙여도 돼요</div>
+              <div class="memo-btn">담기</div>
+            </div>
+            <div class="helper">담으면 바로 저장돼요</div>
+          </div>
+
+          <div class="tabbar">
+            <span class="on">일정</span><span>숙소</span><span>준비물</span><span>사진</span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article>
+      <div class="caption">
+        <span class="tag">상태</span>
+        <h2>비었을 때 · 저장 중 · 실패</h2>
+        <p>메모가 없으면 거의 보이지 않게 접어둔다. 저장 결과는 여행이 이미 쓰는 저장 상태 줄이 그대로 맡는다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <div class="back">‹</div>
+            <div class="title">가을 도쿄</div>
+          </div>
+
+          <div class="card">
+            <div class="badges">
+              <span class="badge accent">D-12</span>
+              <span class="badge">3박 4일</span>
+              <span class="badge">도쿄</span>
+              <span class="more">···</span>
+            </div>
+            <div class="trip-title">가을 도쿄</div>
+            <div class="trip-dates">2026-10-09 ~ 2026-10-12</div>
+            <div class="status-pills">
+              <span class="pill on">계획 중</span>
+              <span class="pill">다녀옴</span>
+            </div>
+          </div>
+
+          <div style="height:10px"></div>
+
+          <div class="card compact">
+            <div class="memo-head">
+              <div class="ico">📝</div>
+              <h3>메모</h3>
+            </div>
+            <div class="empty">일정도 준비물도 아닌 것들을 여기 적어둬요.<br>링크를 붙이면 눌러서 열 수 있어요.</div>
+            <div class="memo-add">
+              <div class="memo-field">적어둘 것 · 링크를 붙여도 돼요</div>
+              <div class="memo-btn">담기</div>
+            </div>
+          </div>
+
+          <div class="save-row">✓ 메모를 저장했어요.</div>
+          <div class="save-row fail">! 메모를 저장하지 못했어요. <span class="retry">다시 시도</span></div>
+
+          <div class="tabbar">
+            <span class="on">일정</span><span>숙소</span><span>준비물</span><span>사진</span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article>
+      <div class="caption">
+        <span class="tag">대안</span>
+        <h2>tab 하나로 빼기</h2>
+        <p>메모를 다섯 번째 tab으로 두는 안. 권하지 않는다.</p>
+      </div>
+      <div class="phone">
+        <div class="screen">
+          <div class="topbar">
+            <div class="back">‹</div>
+            <div class="title">가을 도쿄</div>
+          </div>
+
+          <div class="card">
+            <div class="badges">
+              <span class="badge accent">D-12</span>
+              <span class="badge">3박 4일</span>
+              <span class="badge">도쿄</span>
+              <span class="more">···</span>
+            </div>
+            <div class="trip-title">가을 도쿄</div>
+            <div class="trip-dates">2026-10-09 ~ 2026-10-12</div>
+            <div class="status-pills">
+              <span class="pill on">계획 중</span>
+              <span class="pill">다녀옴</span>
+            </div>
+          </div>
+
+          <div class="tabbar" style="margin-top:12px">
+            <span>일정</span><span>숙소</span><span>준비물</span><span>사진</span><span class="on">메모</span>
+          </div>
+
+          <div class="note-lead">
+            390px에서 다섯 칸이 되면 글자가 눌린다. 메모는 다른 tab을 보는 동안에도 눈에 띄어야 하는 종류인데, tab 안으로 들어가면 일부러 찾아가야만 보인다.
+          </div>
+
+          <div class="card compact">
+            <div class="memo-row" style="padding-top:2px">
+              <div class="memo-dot"></div>
+              <div class="memo-body"><div class="memo-text">환전은 공항 말고 시내에서</div></div>
+            </div>
+            <div class="memo-row">
+              <div class="memo-dot"></div>
+              <div class="memo-body">
+                <div class="memo-text">여기 라멘 리스트 참고</div>
+                <span class="link-pill">🔗 <span class="host">blog.naver.com</span> 열기</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+  </section>
+
+  <section class="proposal-note" aria-label="구현 방향 메모">
+    <h2>구현 방향</h2>
+    <p class="sub">추천안(메모 카드)을 기준으로 적는다. 확정되면 <code>docs/spec/trips.md</code>와 <code>docs/test_plan.md</code>를 먼저 고치고 코드에 들어간다.</p>
+
+    <h3>자리와 모양</h3>
+    <ul>
+      <li>상태 카드(<code>_TripDetailHeader</code>) 아래, 고정 tab 줄(<code>AlagagiPinnedScrollHeader</code>) 위. 스크롤과 함께 올라가는 영역이라 tab 줄을 밀어내지 않는다.</li>
+      <li>메모가 없으면 안내 한 줄과 입력칸만 남긴다. 카드 자체를 숨기지는 않는다. 숨기면 이 자리가 있다는 걸 알 길이 없다.</li>
+      <li>한 줄은 <b>내용 + (있으면) 링크 열기</b>. 카드 모양은 기존 두 가지(<code>AlagagiCardGeometry</code>) 안에서 <code>compact</code>를 쓴다.</li>
+      <li>긴 메모는 두 줄에서 접고 기존 <code>펼쳐 읽기</code>(<code>AlagagiFullTextCue</code>)로 전문을 연다.</li>
+    </ul>
+
+    <h3>링크</h3>
+    <ul>
+      <li>적은 글에서 <code>http</code>/<code>https</code>로 열 수 있는 주소를 찾아 그 줄에 <b>열기</b> pill을 붙인다. scheme을 안 적어도 되도록 기존 <code>lib/src/shared/openable_link.dart</code>의 <code>normalizedOpenableLink</code>를 그대로 쓴다.</li>
+      <li>열 수 없는 값이면 pill을 만들지 않는다. 죽은 button을 두지 않는다.</li>
+      <li>pill에는 host만 보여준다(<code>blog.naver.com</code>). 390px에서 전체 주소는 무조건 잘린다.</li>
+      <li>여는 통로는 여행 화면이 이미 받고 있는 <code>onOpenExternalLink</code>를 쓴다. 새로 뚫지 않는다.</li>
+    </ul>
+
+    <h3>데이터와 Firestore write</h3>
+    <ul>
+      <li>새 collection을 만들지 않는다. <code>tripItems</code>에 <code>kind: 'memo'</code>를 더해 기존 문서·규칙·재시도 채널을 그대로 쓴다. 메모는 타임라인에 나오지 않고 종류 picker에도 없다.</li>
+      <li>내용은 <code>title</code>, 찾아낸 주소는 <code>link</code>에 넣는다. 두 field 모두 이미 있다.</li>
+      <li><b>Firestore write</b>는 명시적인 동작에서만 난다. <b>담기 / 고친 내용 저장 / 지우기</b>가 각각 <code>tripItems/{itemId}</code> 한 문서를 쓴다.</li>
+      <li>입력칸 타이핑, 스크롤, tab 전환, 링크 열기는 <b>Firestore write를 만들지 않는다.</b></li>
+      <li>저장 결과와 실패 후 <code>다시 시도</code>는 여행이 이미 쓰는 저장 상태 채널(<code>tripSaveStatus</code>)이 맡는다. 새 배너를 만들지 않는다.</li>
+      <li>지우기는 여행의 다른 항목과 같이 확인 sheet를 거친다. 둘 중 누가 담았든 둘 다 지울 수 있다.</li>
+    </ul>
+
+    <h3>규칙 변경</h3>
+    <ul>
+      <li><code>firestore.rules</code>의 <code>kind in ['stay','transport','packing','plan']</code>에 <code>'memo'</code>를 더하고 <code>docs/firebase_setup.md</code>를 함께 갱신한다.</li>
+      <li><code>tools/firestore_rules_test</code>에 메모 담기·고치기·지우기를 실제 쓰기로 통과시키는 case를 추가한다. 규칙은 요청당 표현식 1000개 한도가 있어, 조건을 늘릴 때 실제로 돌려보지 않으면 다시 막힌다.</li>
+    </ul>
+
+    <h3>테스트</h3>
+    <ul>
+      <li>domain: 메모를 담으면 <code>tripItems</code> 한 문서만 쓰고 타이핑은 쓰지 않는다. 메모는 타임라인·숙소·준비물 목록에 끼지 않는다.</li>
+      <li>widget: 링크를 붙인 메모에 열기 pill이 뜨고 누르면 정규화된 주소로 밖을 연다. 열 수 없는 값이면 pill이 없다.</li>
+      <li>widget: 지우기가 확인 sheet를 거치고, 취소하면 그대로 남는다.</li>
+      <li>rules: 위 규칙 test.</li>
+    </ul>
+
+    <div class="open-q">
+      <h3>정해주셔야 하는 것 하나</h3>
+      <p style="color:var(--text);font-size:13px;line-height:1.9">
+        여행 폼에 이미 <b>메모</b> 칸이 하나 있다(<code>trip.note</code>, 500자, 상세에서 카드로 보임). 새 메모 목록이 생기면 메모가 두 군데가 된다.
+        <br>· <b>A안(권장)</b> — 여행 폼의 메모 칸을 없애고, 기존에 적어둔 값은 상세 메모 카드 맨 위에 회색 한 줄로 계속 보여준다. 새로 적는 것은 전부 목록으로 간다. 데이터를 지우거나 옮기지 않는다.
+        <br>· <b>B안</b> — 둘 다 그대로 둔다. 여행 폼 메모는 &lsquo;여행 한 줄 소개&rsquo;, 새 목록은 &lsquo;적어둘 것&rsquo;으로 성격을 나눈다. 다만 사용자가 둘을 구분해야 한다.
+      </p>
+    </div>
+  </section>
+</main>
+</body>
+</html>
